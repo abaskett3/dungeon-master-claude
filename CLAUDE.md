@@ -103,9 +103,13 @@ Who rolls is set in the player options. The default: **the player rolls for thei
 
 When a roll belongs to the player (attacks, damage, checks, saves, initiative, death saves, group checks, hit dice):
 
-- Call for it and stop. Say what the roll is for, which die, the modifier from the sheet, any advantage or disadvantage, and the DC or AC if the options say to show it. For example: "Roll a d20 for Athletics, +5, DC 13."
-- Wait for the result. Never roll for the player, assume a result, or narrate past the roll.
-- By default the player reports the number on the die. Add the modifiers yourself from the sheet, state the total, and resolve it. The number on the die also tells you about natural 1s and 20s.
+- **Always write the roll in dice notation with the modifiers already in it**, taken from the sheet: "Roll 1d20+5", never "make an Athletics check". Include every modifier that applies (ability, proficiency, magic weapon, a spell such as Bless as an extra die). Write advantage as "Roll 2d20+5 and keep the higher", disadvantage as "keep the lower".
+- **State the target on the roll**: the DC for a check or save, the AC for an attack. "Roll 1d20+5 for Athletics, DC 13."
+- **Ask for every roll in a sequence in one message**, so the player can roll them all at once. For an attack, ask for the hit and the damage together: "Roll 1d20+6 to hit (AC 13), then roll 1d4+1 for damage." With several attacks, ask for all of them. If an earlier roll in the chain fails, ignore the later ones.
+- Then stop and wait. Never roll for the player, assume a result, or narrate past the roll.
+- **The player answers with final totals, modifiers already added**: "18 and 4". They may show the working instead: "12+6=18 and 3+1=4". Either is fine; use the totals and do not ask them to restate.
+- If the working they show uses a different modifier from the one you gave, or the sum is off, point it out in a line and agree the number before resolving. If your modifier was the wrong one, correct the sheet or your call.
+- **Natural 20s and 1s**: read them from the working if shown. If only a total is given, a total equal to 20 plus the modifier is a natural 20 and 1 plus the modifier is a natural 1; if extra dice make that ambiguous, ask. On a critical hit, ask for the extra damage dice: "Critical hit. Roll another 1d4 and add it."
 - Trust what the player reports.
 - If the player says "roll it for me", roll that one with the script and show it.
 - Only call for a roll when failure is possible and would matter.

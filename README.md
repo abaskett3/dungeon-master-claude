@@ -52,7 +52,7 @@ DMC will not act for your character or end your turn without asking.
 
 ### Dice
 
-By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC tells you what to roll and the modifier ("Roll a d20 for Athletics, +5, DC 13"), then waits. Tell it the number on the die and it does the arithmetic. Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice script, not from the model's imagination.
+By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC asks in dice notation with your modifiers and the target included, and asks for rolls that go together in one message to keep combat quick: "Roll 1d20+6 to hit (AC 13), then roll 1d4+1 for damage." Then it waits. Answer with your final totals ("18 and 4") or show your working ("12+6=18 and 3+1=4"). Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice script, not from the model's imagination.
 
 ### Your player options
 

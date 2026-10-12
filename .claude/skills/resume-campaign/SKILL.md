@@ -13,7 +13,7 @@ Use the campaign the player named. Otherwise read `adventures/.active-campaign`.
 
 ## 2. Read, in this order
 
-1. `player-options.md`: how to run the game for this player.
+1. `adventures/player-options.md` (the player's general preferences; create it from `templates/player-options.md` if missing), then the campaign's own `player-options.md`, which overrides it.
 2. `game-state.md`: where things stand right now.
 3. `story/summary.md`: the story so far.
 4. `story/dm-notes.md`: your plans, secrets and open threads.
@@ -39,6 +39,6 @@ If this is a new play session, create the next `story/sessions/session-NNN.md` f
 
 ## 5. Recap and resume
 
-Give the player a short recap in the style they asked for in `player-options.md`: where they are, what just happened, what they were about to do, and their current condition (HP, key resources). Mention open quests in a line. Then restate the immediate scene and ask what they do.
+Give the player a short recap in the style the player options ask for: where they are, what just happened, what they were about to do, and their current condition (HP, key resources). Mention open quests in a line. Then restate the immediate scene and ask what they do.
 
 After a mid-session compaction, skip the recap unless the player asks; restate only the immediate situation.

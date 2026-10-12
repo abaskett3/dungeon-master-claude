@@ -27,20 +27,28 @@ For a module:
 
 ## 2. Session zero
 
-Have a short out-of-character conversation. Ask a few questions at a time, not a form. Cover:
+Have a short out-of-character conversation. Ask a few questions at a time, not a form.
 
-- **Rules edition**: 2014 or 2024 5e. Starting level.
-- **What they enjoy**: combat, intrigue, exploration, puzzles, roleplay; tone (heroic, grim, comic); any content to avoid.
-- **Lethality**: story, balanced or gritty. Explain each in a sentence.
-- **Dice**: DMC rolls everything and shows the results (default), DMC rolls only for the world, or the player rolls physical dice.
+**General preferences.** If `adventures/player-options.md` does not exist, this is the player's first campaign: create it from `templates/player-options.md` and ask about what it covers:
+
+- **Dice**: the default is that the player rolls for their own character and party checks and DMC rolls for everything else. Confirm, or change it.
+- **What they enjoy**: combat, intrigue, exploration, puzzles, roleplay; any content to avoid.
 - **Pacing and narration length**, and whether they want suggested actions offered.
+
+If the file already exists, read it, tell the player in a line or two what it says, and ask only whether anything should be different for this campaign. Differences go in the campaign file's Overrides section.
+
+**This campaign.** Write these into the campaign's `player-options.md`:
+
+- **Rules edition**: 2014 (default) or 2024 5e. Starting level.
+- **Tone**: heroic, grim, comic.
+- **Lethality**: story, balanced or gritty. Explain each in a sentence.
 - **Setting and premise**: their idea, or pitch three short hooks and let them choose.
 
-Write the answers into `player-options.md`. Leave defaults where the player has no preference.
+Leave defaults where the player has no preference.
 
 ## 3. The player character
 
-Build the character together, following the rules for the chosen edition. The player makes every choice; you explain options and do the arithmetic. Roll ability scores with the dice script if they want rolled stats.
+Build the character together, following the rules for the chosen edition. The player makes every choice; you explain options and do the arithmetic. If they want rolled stats, the player rolls them unless the player options say DMC rolls.
 
 Create `character-sheets/pc-<name>.md` from `templates/pc-sheet.md` and fill in every field. Double-check derived numbers (modifiers, proficiency bonus, AC, HP, save DCs, attack bonuses) before saving. Ask for a few lines of backstory, a goal and a tie to the setting.
 

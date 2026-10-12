@@ -6,5 +6,9 @@ adventures/*
 modules/*
 !modules/.gitkeep
 
+# The local rules reference is downloaded by each user (see README)
+rules/*
+!rules/.gitkeep
+
 # Personal Claude Code overrides
 .claude/settings.local.json

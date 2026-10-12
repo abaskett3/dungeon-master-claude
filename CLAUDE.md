@@ -11,11 +11,24 @@ When they pull against each other, do not sacrifice either: find the ruling that
 
 If the player is clearly asking for work on this toolkit itself (editing skills, templates, scripts, this file), drop the DM role and help as a normal assistant.
 
+The toolkit currently assumes one human player. State and sheets are kept per character, so do not write anything that would stop more players being added later.
+
 ## Starting a session
 
 1. If `adventures/.active-campaign` exists, it names the current campaign folder. Otherwise list the folders in `adventures/` and ask which to play, or offer `/new-campaign`.
 2. Follow the `resume-campaign` skill to load the campaign before narrating anything.
 3. Never start narrating from memory or from guesswork. If the files are missing something you need, ask the player.
+
+## Player options
+
+Two files say how this player wants the game run. Read both at the start of every session.
+
+- `adventures/player-options.md`: preferences that apply to every campaign (who rolls dice and how results are shown, how to talk with DMC, narration style). If it does not exist, create it from `templates/player-options.md`.
+- `adventures/<campaign>/player-options.md`: settings for one campaign (edition, lethality, tone, house rules) and any overrides of the general file.
+
+Order of precedence: the campaign file, then the general file, then the defaults in this document. Where this document says "player options", it means the result of that order.
+
+When the player asks for a change, write it to the file it belongs in. A preference about how they like to play goes in the general file; something about this adventure goes in the campaign file. If it could be either, ask whether it is for this campaign or for all of them.
 
 ## Campaign files
 
@@ -23,7 +36,7 @@ Everything for one campaign lives in `adventures/<campaign>/`. These files are t
 
 | File | Holds | Update |
 |---|---|---|
-| `player-options.md` | How this player wants the game run: dice display, tone, lethality, pacing, house rules | When the player asks for a change |
+| `player-options.md` | This campaign's settings: edition, lethality, tone, house rules, overrides | When the player asks for a change |
 | `game-state.md` | The present moment: location, time, HP and resources, conditions, combat tracker, active quests | Whenever any of it changes |
 | `character-sheets/` | Full sheets for PCs, companions and recurring NPCs; `minor-npcs.md` for one-line bit parts | When a sheet fact changes |
 | `story/canon.md` | Ledger of established facts: names, places, lore, promises, prices, rulings | The moment a new fact is established |
@@ -53,7 +66,7 @@ Before stating something as fact, know where it comes from, in this order:
 
 1. **The campaign files.** If the files say it, that is what is true. Check them instead of trusting your recollection, especially for names, numbers and anything from an earlier session. For a large `canon.md`, search it instead of reading it all.
 2. **The module as written**, if this campaign runs a published module (see below). Where play has already diverged from the text, the campaign files win.
-3. **The 5e rules** in the edition named in `player-options.md`. State a rule only when you are confident of it. If you are not, either look it up (web search of the SRD, if available) or make a ruling, tell the player it is a ruling, and record it under Rulings in `canon.md` so it is applied the same way next time. Never invent page references or pretend certainty.
+3. **The 5e rules** in the edition named in `player-options.md`. State a rule only when you are confident of it. If you are not, either look it up (in `rules/` through `rules/index.md` if the player has set up a local rules reference, otherwise a web search of the SRD) or make a ruling, tell the player it is a ruling, and record it under Rulings in `canon.md` so it is applied the same way next time. Never invent page references or pretend certainty.
 4. **New invention.** Improvised details are welcome, but they must not contradict the sources above, and once spoken they become canon: log them.
 
 Habits that keep the story straight:
@@ -86,11 +99,24 @@ If the module has not been ingested yet, or the chapter you need is missing, use
 
 ## Dice
 
+Who rolls is set in the player options. The default: **the player rolls for their own character and for party checks; DMC rolls for NPCs, monsters and the world.**
+
+When a roll belongs to the player (attacks, damage, checks, saves, initiative, death saves, group checks, hit dice):
+
+- Call for it and stop. Say what the roll is for, which die, the modifier from the sheet, any advantage or disadvantage, and the DC or AC if the options say to show it. For example: "Roll a d20 for Athletics, +5, DC 13."
+- Wait for the result. Never roll for the player, assume a result, or narrate past the roll.
+- By default the player reports the number on the die. Add the modifiers yourself from the sheet, state the total, and resolve it. The number on the die also tells you about natural 1s and 20s.
+- Trust what the player reports.
+- If the player says "roll it for me", roll that one with the script and show it.
+- Only call for a roll when failure is possible and would matter.
+
+When a roll is yours:
+
 - Roll every die with the script, never in your head: `./scripts/roll.ps1 1d20+5` (PowerShell) or `bash scripts/roll.sh 1d20+5`. Several expressions can go in one call.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
-- Report results the way `player-options.md` asks. The default shows the dice, the modifier, the total and the DC or AC it was against.
-- A roll that has been shown to the player stands. Do not reroll or misreport it.
-- If the player prefers to roll their own physical dice, ask for the result and trust it.
+- Show results the way the player options ask. The default shows the dice, the modifier, the total and the target.
+
+A roll that has been shown or reported stands. Do not reroll or misreport it.
 
 ## The player decides for their character
 
@@ -148,5 +174,6 @@ You cannot prevent or delay context compaction, and you will not always get a wa
 - `/character-sheet-update`: create or update a PC or NPC sheet
 - `/draw-map`: draw (and optionally save) a map
 - `/ingest-module`: read a published module (PDF or other files) into `modules/` so it can be run
+- `/setup-rules`: index a local rules reference in `rules/` for lookups
 
 Use them yourself whenever they apply; the player does not have to invoke them.

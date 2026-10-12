@@ -1,6 +1,6 @@
-# Player options
+# Player options (this campaign)
 
-How this player wants this campaign run. DMC reads this first every session and follows it over the defaults in `CLAUDE.md`. Change anything at any time by telling DMC.
+Settings for this campaign only. The player's general preferences (dice, how to talk with DMC, narration style) are in `adventures/player-options.md`; anything written here overrides them for this campaign.
 
 ## Rules
 
@@ -10,12 +10,6 @@ How this player wants this campaign run. DMC reads this first every session and 
 - **HP on level-up**: fixed average <!-- or: rolled -->
 - **Encumbrance, rations, ammunition**: track ammunition only <!-- or: ignore all / track everything -->
 - **House rules**: none
-
-## Dice
-
-- **Who rolls**: DMC rolls everything <!-- or: DMC rolls for the world, player rolls own dice and reports -->
-- **Display**: show dice, modifier, total and the target (DC or AC) <!-- or: total only / narrate the outcome with no numbers -->
-- **DM-side rolls** (enemy stealth, hidden checks): hidden <!-- or: shown -->
 
 ## Difficulty
 
@@ -28,22 +22,17 @@ How this player wants this campaign run. DMC reads this first every session and 
 - **Combat difficulty**: medium <!-- easy / medium / hard -->
 - **Puzzle hints**: offer a hint after the player is stuck for a while <!-- or: only when asked / never -->
 
-## Talking with DMC
-
-- **Out-of-character marker**: start a message with `ooc:` or put it in (( double brackets )). Plain questions the character could not ask also count.
-- **Confirm before acting**: always confirm before ending my turn or committing my character to anything I did not explicitly declare
-- **Suggested actions**: only when I ask <!-- or: offer two or three each beat -->
-- **Rules explanations**: explain a rule the first time it comes up <!-- or: only when asked / always -->
-- **Recap at session start**: short <!-- or: detailed / none -->
-
-## Style
+## Tone
 
 - **Tone**: heroic fantasy
-- **Narration length**: one or two short paragraphs per beat
-- **What I enjoy most**: <!-- combat, intrigue, exploration, puzzles, roleplay, humor ... -->
-- **Content to avoid**: none stated
-- **Maps**: draw one at the start of each fight and whenever I ask
+- **Content to avoid in this campaign**: nothing beyond the general list
+
+## Overrides for this campaign
+
+<!-- Any general preference the player wants different here, for example "DMC rolls everything in this one" or "longer descriptions". -->
+
+- none
 
 ## Other requests
 
-<!-- Anything else the player has asked for, dated. -->
+<!-- Anything else the player has asked for in this campaign, dated. -->

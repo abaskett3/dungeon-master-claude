@@ -7,7 +7,17 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 - [Claude Code](https://claude.com/claude-code), signed in.
 - This folder. Nothing else to install: the dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
 
-No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it.
+No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
+
+### Optional: add a local rules reference
+
+Giving DMC the rules to read makes its rulings, spells and monster stats more reliable than memory alone. The System Reference Document (SRD) is free and covers the core rules.
+
+1. Download the SRD 5.1 PDF (the 2014 rules, released by Wizards of the Coast under CC-BY-4.0): <https://media.wizards.com/2023/downloads/dnd/SRD_CC_v5.1.pdf>. Other versions, including the 5.2 SRD for the 2024 rules, are linked from <https://www.dndbeyond.com/srd>.
+2. Save it in the `rules/` folder.
+3. Run `claude` in this folder and type `/setup-rules`. DMC builds a page index so it can open the right pages quickly. This is a one-time step.
+
+A Markdown or text copy of the SRD works too, and is faster to search. The SRD does not contain everything in the published rulebooks (most subclasses and some spells and monsters are missing); for those DMC falls back to a web lookup or a ruling.
 
 ## Quick start
 
@@ -28,6 +38,7 @@ No rulebook text is included. DMC works from its knowledge of the 5e rules; for 
 | `/character-sheet-update` | Create or update a character or NPC sheet |
 | `/draw-map` | Draw an ASCII map of where you are |
 | `/ingest-module` | Read a published module so DMC can run it |
+| `/setup-rules` | Index a rules reference you have put in `rules/` |
 
 DMC uses these on its own as you play. You only need to type the first three.
 
@@ -35,17 +46,30 @@ DMC uses these on its own as you play. You only need to type the first three.
 
 - **In character**: just say what you do or say.
 - **Out of character**: start with `ooc:` or ask a plain question ("what are my odds?", "what can I do on my turn?", "remind me who that was"). DMC steps out of the story, answers frankly and steps back in. Asking about an option does not commit your character to it.
-- **Changing how the game runs**: tell DMC ("hide the dice math", "make fights harder", "shorter descriptions"). It records the change in the campaign's `player-options.md`.
+- **Changing how the game runs**: tell DMC ("hide the dice math", "make fights harder", "shorter descriptions"). It records the change in your player options.
 
 DMC will not act for your character or end your turn without asking.
+
+### Dice
+
+By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC tells you what to roll and the modifier ("Roll a d20 for Athletics, +5, DC 13"), then waits. Tell it the number on the die and it does the arithmetic. Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice script, not from the model's imagination.
+
+### Your player options
+
+- `adventures/player-options.md` holds your preferences for every campaign: who rolls, how results are shown, how you like to talk with DMC, narration style. It is created the first time you play.
+- `adventures/<campaign>/player-options.md` holds one campaign's settings (edition, lethality, tone, house rules) and can override the general file for that campaign.
+
+Edit either by hand or just tell DMC what you want.
 
 ## How it remembers
 
 Each campaign is a folder under `adventures/`:
 
 ```
+adventures/player-options.md   your preferences for every campaign
+
 adventures/<campaign>/
-  player-options.md      how you want this campaign run
+  player-options.md      this campaign's settings and overrides
   game-state.md          right now: location, time, HP, resources, combat, quests
   character-sheets/      full sheets for you, companions and recurring NPCs
   story/
@@ -79,11 +103,11 @@ During play DMC runs from the digest and the original pages, not from memory, an
 
 ## Tuning the game
 
-Set per campaign in `player-options.md`, or just ask DMC:
+Set in your player options, or just ask DMC:
 
-- **Lethality**: `story` (no death without your say-so), `balanced` (default: real danger, but bad luck alone will not end the campaign) or `gritty` (the dice decide).
-- **Dice**: DMC rolls and shows everything, shows totals only, hides the numbers entirely, or you roll your own.
-- **Edition**: 2014 or 2024 rules.
+- **Lethality** (per campaign): `story` (no death without your say-so), `balanced` (default: real danger, but bad luck alone will not end the campaign) or `gritty` (the dice decide).
+- **Dice**: who rolls what, whether you report the die or the total, whether DCs are announced, and how DMC's rolls are shown.
+- **Edition** (per campaign): 2014 rules by default, or 2024.
 - Tone, narration length, hints, suggested actions, how much rules explanation you want, content to avoid.
 
 ## Choosing a model
@@ -101,11 +125,16 @@ scripts/             dice roller (roll.ps1, roll.sh)
 templates/           blank campaign files and character sheets
 adventures/          your campaigns (not in git)
 modules/             ingested published modules (not in git)
+rules/               optional local rules reference (not in git)
 ```
 
-The toolkit is a git repository. Your campaigns and modules are ignored by it, so you can commit, push and share the toolkit without including your saves or any copyrighted books. Back up `adventures/` separately if you want a copy of your campaigns.
+The toolkit is a git repository. Your campaigns, modules and rules files are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns.
 
 ## Tips
 
 - If DMC ever gets a fact wrong, tell it. It will check the files and correct course.
 - You can run several campaigns; each is independent.
+
+## One player, for now
+
+The toolkit is built for a single player. Character sheets and game state are kept per character, so a companion or a second player's character fits the files already, but DMC's instructions (turn handling, who rolls, out-of-character talk) assume one person at the keyboard.

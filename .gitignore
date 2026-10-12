@@ -1,0 +1,10 @@
+# Campaign saves are personal and stay out of the repository
+adventures/*
+!adventures/.gitkeep
+
+# Published modules are copyrighted: neither the source files nor the digests are shared
+modules/*
+!modules/.gitkeep
+
+# Personal Claude Code overrides
+.claude/settings.local.json

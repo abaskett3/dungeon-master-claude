@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(adventures/**)",
+      "Edit(modules/**)",
+      "PowerShell(./scripts/roll.ps1 *)",
+      "Bash(bash scripts/roll.sh *)",
+      "Bash(./scripts/roll.sh *)"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"DMC campaign in progress. In the summary, preserve exactly: the active campaign folder name, the current scene and location, the in-world date and time, whose turn it is and the full combat tracker if a fight is running, any pending roll or unanswered question to the player, and every change to HP, spell slots, conditions, inventory, gold, quests or established facts that has not yet been written to the campaign files. List those unsaved changes explicitly under a heading UNSAVED CHANGES.\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"DMC: the conversation was just compacted. Before narrating anything: write any UNSAVED CHANGES from the summary to the campaign files, then follow the resume-campaign skill to reload the campaign from disk. Where the summary and the files disagree about anything already saved, the files are correct.\""
+          }
+        ]
+      }
+    ]
+  }
+}

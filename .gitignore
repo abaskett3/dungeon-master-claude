@@ -10,5 +10,9 @@ modules/*
 rules/*
 !rules/.gitkeep
 
+# Python libraries installed locally for scripts/pdf_extract.py
+scripts/.pylib/
+__pycache__/
+
 # Personal Claude Code overrides
 .claude/settings.local.json

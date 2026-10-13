@@ -6,7 +6,10 @@
       "Edit(rules/**)",
       "PowerShell(./scripts/roll.ps1 *)",
       "Bash(bash scripts/roll.sh *)",
-      "Bash(./scripts/roll.sh *)"
+      "Bash(./scripts/roll.sh *)",
+      "PowerShell(python scripts/pdf_extract.py *)",
+      "Bash(python scripts/pdf_extract.py *)",
+      "Bash(python3 scripts/pdf_extract.py *)"
     ]
   },
   "hooks": {

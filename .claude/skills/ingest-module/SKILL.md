@@ -19,17 +19,39 @@ If `modules/<module>/index.md` already exists, read its ingest status and contin
 
 Reading the source:
 
-- **PDF**: read with the Read tool using the `pages` parameter, at most 20 pages per call. Pages are shown as images as well as text, so scanned books and maps are readable.
-- **Markdown, text, HTML**: read directly, in sections.
+- **PDF**: extract it with the toolkit's script, then read the output. This works whatever the file's size (the Read tool refuses PDFs over 100 MB) and gives you both the words and the pictures.
+  1. `python scripts/pdf_extract.py info <pdf>` lists every page with its amount of text and number of images, and names the pages that have little or no text (scans, maps, full-page art).
+  2. `python scripts/pdf_extract.py all <pdf>` writes `source/extracted/all-text.txt` (every page, split by `===== PDF PAGE N =====` lines), `source/extracted/text/page-NNN.txt` and `source/extracted/pages/page-NNN.jpg` (a picture of each page). For a long book, do a chapter at a time with `--pages 1-40`. Use `--dpi 160` for a page whose small print or map labels are hard to read at the default.
+  3. Read the text files for the words. **Look at the page images too**, with the Read tool, one page per call: see "Pictures" below.
+  - If the script reports that PyMuPDF is missing, install it into the toolkit with `python -m pip install --target scripts/.pylib -r scripts/requirements.txt` and run it again. If Python itself is missing, fall back to the Read tool's `pages` parameter (at most 20 pages per call; it shows pages as images as well as text) and tell the player that a PDF over 100 MB will need Python installed.
+- **Markdown, text, HTML**: read directly, in sections. Open any image files they link to.
 - **EPUB**: it is a zip archive; extract it into `source/` and read the XHTML files in spine order.
 - **Anything else** (a website, an app): ask the player to export or paste it into a file.
+
+### Pictures
+
+The text layer of a book leaves out much of what a DM needs. Look at the image of:
+
+- **every page the script flags as having little text**, and every page whose text mentions a map, diagram, handout, puzzle or illustration;
+- **every page of a chapter as you digest it**, when the book is short enough (up to about 60 pages) or the chapter is map-heavy. For a long book, look at least at each chapter's maps, handouts, stat blocks and any page where the extracted text reads as jumbled (tables and multi-column layouts often do).
+
+From the pictures, record in the digest what the words do not say:
+
+- **Maps**: the layout, which areas connect and by what (doors, stairs, secret doors), the scale and compass rose, area numbers, and anything drawn but not described. This is what the ASCII sketch in the chapter digest is made from.
+- **Illustrations**: what creatures, NPCs, places and items look like (colors, build, clothing, distinguishing marks), so DMC describes them the way the book shows them. Put these in `npcs.md`, `monsters.md` or the keyed area they belong to, marked "(art, p. N)".
+- **Handouts and puzzles**: what the player is meant to see, including handwriting, symbols and anything hidden in the picture.
+- **Layout cues**: which boxes are read-aloud text, which are DM tips and which are stat blocks, if the text extraction has run them together.
+
+Check tables and stat blocks against the page image whenever the extracted text looks out of order. If an image and the text disagree, the text of the adventure wins; note the difference.
+
+In the index, list which pages' images were viewed and which were not, so a later session knows what is still unseen.
 
 ## 2. Survey and index
 
 Read the cover, table of contents, introduction and any "running the adventure" section. Write `index.md`:
 
 - Title, publisher, rules edition (2014 or 2024), level range, intended party size, setting.
-- **Page offset**: the difference between the PDF page number and the printed page number. State which one all references in the digest use (use PDF page numbers, since that is what the Read tool takes).
+- **Page offset**: the difference between the PDF page number and the printed page number. State which one all references in the digest use (use PDF page numbers, since that is what the extraction script and the Read tool take).
 - A DM-only synopsis: the background, the villain's plan, how the adventure is expected to unfold and end.
 - Chapter list with page ranges and a one-line purpose for each.
 - Adventure flow: what leads to what, which parts are linear, which are open, level expectations per chapter.
@@ -71,6 +93,7 @@ Copy numbers exactly: DCs, damage, quantities, HP, prices, distances. A wrong nu
 - Every chapter and appendix in the index has a digest and is ticked.
 - Every keyed area has a page reference.
 - Spot-check a sample of numbers in each chapter (a few DCs, a stat block, a treasure list) against the source and fix any mismatch.
+- Every map has been looked at and sketched, and the index says which page images were viewed.
 - Note in the index anything unreadable or missing.
 
 ## 6. Size and context
@@ -79,6 +102,6 @@ A full hardcover is hundreds of pages; ingesting it uses a lot of context.
 
 - Do it in its own session, not in the middle of play.
 - It does not have to be done at once. The survey plus the first chapter or two is enough to begin; ingest later chapters before the party reaches them, using the status checklist.
-- If the player has asked for subagents and they are available, one per chapter works well: give each the page range, the page offset and the digest format above, and have it write its chapter file directly.
+- If the player has asked for subagents and they are available, one per chapter works well: run the extraction script once first, then give each the page range, the paths of the extracted text and page images, the page offset and the digest format above, and have it write its chapter file directly.
 
 When finished or pausing, tell the player which chapters are ready, without describing what is in them.

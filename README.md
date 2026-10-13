@@ -94,8 +94,9 @@ Claude Code compacts a long conversation when it fills up, which can blur detail
 DMC can run a published adventure from your own copy instead of an original story.
 
 1. Type `/ingest-module` and give the path to the file. PDF (including scanned books), Markdown, text, HTML and EPUB work. For content that only exists in an app or on a website, export or paste it into a file first.
-2. DMC reads the book and writes an index, a DM digest of each chapter and reference lists into `modules/<module>/`, keeping page references back to your original. A long book takes a while and is best done in its own session; the opening chapters are enough to start, and the rest can be ingested later.
-3. Type `/new-campaign` and say you want to play that module.
+2. For a PDF, DMC first runs `scripts/pdf_extract.py`, which writes the text of every page and a picture of every page next to your file, so it can read books of any size and study the maps and illustrations as well as the words. This needs Python 3 and the PyMuPDF library; DMC installs the library into `scripts/.pylib/` the first time (`python -m pip install --target scripts/.pylib -r scripts/requirements.txt`), not system-wide.
+3. DMC reads the book and writes an index, a DM digest of each chapter and reference lists into `modules/<module>/`, keeping page references back to your original. A long book takes a while and is best done in its own session; the opening chapters are enough to start, and the rest can be ingested later.
+4. Type `/new-campaign` and say you want to play that module.
 
 During play DMC runs from the digest and the original pages, not from memory, and keeps `module-progress.md` in your campaign folder: where you are, which areas are cleared, what you found and where you left the script. You are free to leave the script; DMC improvises and records what changed. Encounters are scaled for a solo character, since modules assume a party of four or five.
 
@@ -121,7 +122,7 @@ CLAUDE.md            DMC's instructions
 README.md            this file
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dice, compaction reminders
-scripts/             dice roller (roll.ps1, roll.sh)
+scripts/             dice roller (roll.ps1, roll.sh), PDF extractor (pdf_extract.py)
 templates/           blank campaign files and character sheets
 adventures/          your campaigns (not in git)
 modules/             ingested published modules (not in git)

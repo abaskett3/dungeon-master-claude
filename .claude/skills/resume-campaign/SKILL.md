@@ -13,13 +13,15 @@ Use the campaign the player named. Otherwise read `adventures/.active-campaign`.
 
 ## 2. Read, in this order
 
+Open each file with the Read tool, one call per file (several calls can go in one message). Do not join files together with a shell command: output over a few thousand words is cut to a short preview, and you would resume without having read your own notes. If any read comes back shortened, read that file again in parts before going on.
+
 1. `adventures/player-options.md` (the player's general preferences; create it from `templates/player-options.md` if missing), then the campaign's own `player-options.md`, which overrides it.
 2. `game-state.md`: where things stand right now.
 3. `story/summary.md`: the story so far.
 4. `story/dm-notes.md`: your plans, secrets and open threads.
 5. Every `character-sheets/pc-*.md`, and the sheets of any companions and NPCs present in the current scene.
 6. The most recent file in `story/sessions/`, for the texture of the last few scenes.
-7. `story/canon.md`: read it all while it is short; once it is long, read the Rulings section and search the rest as subjects come up.
+7. `story/canon.md`: read it all while it is under about 150 lines. Past that, read only the Rulings section (find its line range with a search for `^## `) and search the rest as subjects come up.
 8. Any map in `maps/` for the current location. If a fight is running or the scene names a map, run `python scripts/map_render.py adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
 9. If `module-progress.md` exists, this is a published-module campaign: read it, then the module's `index.md`, then the section of the chapter digest it names under "Digest to read before continuing". If that chapter has not been ingested, say so and ingest it before play.
 

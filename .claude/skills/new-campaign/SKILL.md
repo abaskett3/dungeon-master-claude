@@ -58,7 +58,7 @@ If the player wants a companion, create it the same way from `templates/npc-shee
 
 Before the first scene, write down enough that you will stay consistent later:
 
-- `story/dm-notes.md`: the central conflict, the main antagonist and what they want, two or three secrets, a few possible directions. Keep it loose; this is a plan, not a script.
+- `story/dm-notes.md`: the central conflict, the main antagonist and what they want, two or three secrets, a few possible directions. Keep it loose; this is a plan, not a script. Fill in the Opposition table for whatever stands between the character and the first goal, sized for the party as described under "Sizing fights" in `CLAUDE.md`, and check that the party has some way to rest or heal along the way.
 - `story/canon.md`: the facts the player already knows (setting name, starting town, anyone they know).
 - `character-sheets/`: a sheet for each NPC who will matter in the first session.
 - `game-state.md`: starting location, date and time, the PC's current HP and resources, the opening quest hook if there is one.

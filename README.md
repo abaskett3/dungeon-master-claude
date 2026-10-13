@@ -6,7 +6,12 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 
 - [Claude Code](https://claude.com/claude-code), signed in.
 - This folder. The dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
-- Python 3, for the maps and for reading PDF modules. Without it DMC falls back to text maps.
+- Python 3 (3.8 or later), on your PATH as `python`. Three scripts use it:
+  - the maps (`map_render.py`): no extra libraries. Without Python, DMC falls back to text maps.
+  - reading PDF modules and rulebooks (`pdf_extract.py`): needs the PyMuPDF library, which DMC installs into `scripts/.pylib/` the first time, not system-wide.
+  - reviewing your sessions (`transcript_digest.py`, used by `/review-transcript`): no extra libraries.
+
+  Play itself, saving and the dice roller do not need Python.
 
 No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 
@@ -40,9 +45,10 @@ A Markdown or text copy of the SRD works too, and is faster to search. The SRD d
 | `/draw-map` | Show a map of where you are, in your browser |
 | `/ingest-module` | Read a published module so DMC can run it |
 | `/setup-rules` | Index a rules reference you have put in `rules/` |
+| `/rewind-campaign` | Go back to an earlier moment and undo what came after it |
 | `/review-transcript` | Review recorded play sessions and propose improvements to DMC's own prompts |
 
-DMC uses these on its own as you play. You only need to type the first three.
+DMC uses these on its own as you play. You only need to type the first three. `/review-transcript` is the exception: it is for working on the toolkit, and DMC only runs it when you ask.
 
 ## Talking to DMC
 
@@ -115,6 +121,8 @@ During play DMC runs from the digest and the original pages, not from memory, an
 Set in your player options, or just ask DMC:
 
 - **Lethality** (per campaign): `story` (no death without your say-so), `balanced` (default: real danger, but bad luck alone will not end the campaign) or `gritty` (the dice decide).
+- **Combat difficulty** (per campaign): `easy`, `medium` (default) or `hard`. DMC sizes every fight for the party actually present, whatever a module or its own earlier notes say.
+- **Talking in character**: free by default, so speech and instructions to companions never cost an action. Set it to `strict` for a by-the-book game.
 - **Dice**: who rolls what, whether you report the die or the total, whether DCs are announced, and how DMC's rolls are shown.
 - **Edition** (per campaign): 2014 rules by default, or 2024.
 - Tone, narration length, hints, suggested actions, how much rules explanation you want, content to avoid.
@@ -122,6 +130,14 @@ Set in your player options, or just ask DMC:
 ## Choosing a model
 
 Use `/model` in Claude Code. Sonnet is a good default: fast, and reliable at keeping the files up to date. Opus gives richer narration and longer-range plotting at higher usage. Haiku is not recommended as the DM.
+
+Reasoning effort matters more than it looks. At `high`, most of what the model produces in a long fight is hidden reasoning, which fills the conversation several times faster than the game itself. `medium` is enough for ordinary play; raise it for a rewind or for toolkit work.
+
+## Improving DMC from your own sessions
+
+Claude Code keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and reports where DMC's instructions let the game down: context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches and wasteful bookkeeping. It proposes changes to `CLAUDE.md`, the skills and the templates, and makes them once you say which you want. Your own preferences stay in your player options; they are not written into the toolkit.
+
+It needs Python 3 and nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The review reads DMC's side of the game, so its report can contain spoilers.
 
 ## Folder layout
 

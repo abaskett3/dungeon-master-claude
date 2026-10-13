@@ -79,6 +79,8 @@ The full format is in the comment at the top of `scripts/map_render.py`.
 
 The player can see everything in a map file. Put in only what the character can see or knows. Mark unexplored areas `?` or leave them empty. Hidden doors, unsprung traps, lurking enemies and anything else from `dm-notes.md` stay out until they are discovered; then add them.
 
+Draw only what exists now. Something the party is thinking of placing (a tripline, a lantern, a barricade) goes on the map when it has been placed, not while it is being discussed.
+
 ## Drawing
 
 Run the script on the scene (or on a place file, to show a place with nobody on it):

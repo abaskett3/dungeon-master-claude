@@ -17,6 +17,7 @@ How this player likes to play, whatever the adventure. DMC reads this at the sta
 
 - **Out-of-character marker**: start a message with `ooc:` or put it in (( double brackets )). Plain questions the character could not ask also count.
 - **Confirm before acting**: always confirm before ending my turn or committing my character to anything I did not explicitly declare
+- **Talking in character**: free. Speech, banter and instructions to companions or pets never cost an action <!-- or: strict: in a fight, more than a short sentence or a command to a companion costs what the rules say, and DMC tells me the cost before I commit -->
 - **Suggested actions**: only when I ask <!-- or: offer two or three each beat -->
 - **Rules explanations**: explain a rule the first time it comes up <!-- or: only when asked / always -->
 - **Recap at session start**: short <!-- or: detailed / none -->

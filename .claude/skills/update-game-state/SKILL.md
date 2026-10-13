@@ -10,8 +10,9 @@ description: Bring the active campaign's game-state.md in line with the present 
 ## How to update
 
 1. Read the current file first. Compute new values from what is written there, not from memory.
-2. Change only the lines that changed. Use small edits, not a rewrite of the file.
+2. Make one edit per reply. Work out everything that changed in this exchange first, then write it in a single call: for a fight, replace the whole combat tracker block; otherwise replace the section that changed. A string of small edits costs more than the play it records, and they fail when the file is not quite as you remember it.
 3. Keep the section layout from the template so every session finds things in the same place.
+4. Write the state, not the story of how it got there. A tracker row says where a combatant is and what condition it is in now; what it did last round goes in the session log at the end of the scene. If the file has grown well past the template's shape, rewrite it from the template with only current values.
 
 ## What to keep current
 

@@ -27,9 +27,13 @@ Append any scenes not yet written to the current `story/sessions/session-NNN.md`
 
 Go back over the session for facts you established and did not log: names, places, distances, prices, dates, lore, promises made by or to the PC, rulings. Add each to `story/canon.md` under the right heading. One line per fact, with the session number.
 
+Then prune. Merge lines that say the same thing, replace a superseded fact instead of keeping both versions, and delete anything struck through or marked void. Every line left should be true now.
+
 ## 5. DM notes
 
 Update `story/dm-notes.md`: threads opened, advanced or closed; what offscreen factions and villains have done in the meantime; what you plan to pay off later; what you learned about what this player enjoys.
+
+Bring the Opposition table up to date (who is dead, who has moved, what the party now knows), and check that no other file gives a different count. Delete plans the story has overtaken and threads that are closed; this file is read whole at every resume, so it should hold what is still ahead, not what has happened.
 
 ## 5a. Module progress
 

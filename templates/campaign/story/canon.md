@@ -2,7 +2,9 @@
 
 Facts established in play. Once something is here, it is true and stays true. One line per fact, with the session it was established in, for example: `- The ferry to Marrowgate costs 2 sp and takes half a day. (s3)`
 
-Add a line the moment a fact is spoken. Search this file before stating anything about a subject that has come up before. To change a fact by agreement with the player, strike it through and add the replacement with a note; do not delete it.
+Add a line the moment a fact is spoken. Search this file before stating anything about a subject that has come up before. To change a fact by agreement with the player, replace the line and note the change on it: `(changed s5: was 3 sp)`. After a rewind, delete the lines for things that no longer happened. Do not keep struck-through text: this file is read at the start of every session, and dead entries are read as if they might still be true.
+
+Enemy numbers and anything else the character does not know belong in `dm-notes.md`, not here.
 
 ## Rulings
 

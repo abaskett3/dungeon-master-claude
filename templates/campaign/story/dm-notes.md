@@ -12,6 +12,17 @@ DMC's private plans. Nothing here is true in the game until it appears in play; 
 
 <!-- For each: what they want, what they are doing right now offscreen, what they know about the PC. -->
 
+## Opposition
+
+<!--
+The only place enemy numbers are kept. One row per enemy or group the party may meet.
+Update it when one dies, moves or is discovered; read it before stating or implying a count.
+Stat blocks are sized for the party actually present (see "Sizing fights" in CLAUDE.md).
+-->
+
+| Who | How many (alive / started) | Where now | Stat block (AC, HP, attacks) | The party knows |
+|---|---|---|---|---|
+
 ## Secrets
 
 <!-- Things the player has not discovered. Note any clues already planted and where. -->

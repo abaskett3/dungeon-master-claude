@@ -20,7 +20,7 @@ Use the campaign the player named. Otherwise read `adventures/.active-campaign`.
 5. Every `character-sheets/pc-*.md`, and the sheets of any companions and NPCs present in the current scene.
 6. The most recent file in `story/sessions/`, for the texture of the last few scenes.
 7. `story/canon.md`: read it all while it is short; once it is long, read the Rulings section and search the rest as subjects come up.
-8. Any map in `maps/` for the current location.
+8. Any map in `maps/` for the current location. If a fight is running or the scene names a map, run `python scripts/map_render.py adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
 9. If `module-progress.md` exists, this is a published-module campaign: read it, then the module's `index.md`, then the section of the chapter digest it names under "Digest to read before continuing". If that chapter has not been ingested, say so and ingest it before play.
 
 Read other NPC sheets and older session logs only when they become relevant.

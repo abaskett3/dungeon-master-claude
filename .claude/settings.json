@@ -7,9 +7,15 @@
       "PowerShell(./scripts/roll.ps1 *)",
       "Bash(bash scripts/roll.sh *)",
       "Bash(./scripts/roll.sh *)",
+      "PowerShell(python scripts/map_render.py *)",
+      "Bash(python scripts/map_render.py *)",
+      "Bash(python3 scripts/map_render.py *)",
       "PowerShell(python scripts/pdf_extract.py *)",
       "Bash(python scripts/pdf_extract.py *)",
-      "Bash(python3 scripts/pdf_extract.py *)"
+      "Bash(python3 scripts/pdf_extract.py *)",
+      "PowerShell(python scripts/transcript_digest.py *)",
+      "Bash(python scripts/transcript_digest.py *)",
+      "Bash(python3 scripts/transcript_digest.py *)"
     ]
   },
   "hooks": {

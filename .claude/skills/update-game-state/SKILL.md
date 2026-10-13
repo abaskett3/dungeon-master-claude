@@ -18,7 +18,7 @@ description: Bring the active campaign's game-state.md in line with the present 
 - **Scene**: location (specific enough to resume from), in-world date and time, weather or light if it matters, who is present, what is happening and what the player was about to do.
 - **Party status**: for each PC and companion, current and max HP, temporary HP, hit dice left, spell slots left per level, class resources (rage, ki, channel divinity and so on), conditions and their remaining duration, concentration, exhaustion, death saves, inspiration.
 - **Carried changes**: gold and consumables spent or gained (ammunition, potions, rations, charges). The full inventory lives on the character sheet; update both when an item is gained or lost.
-- **Combat tracker**, while a fight is running: round number, initiative order with whose turn is next, each combatant's AC, current and max HP, conditions, position or zone, and the stat numbers you are using for each enemy. Clear this section when the fight ends, after logging the outcome.
+- **Combat tracker**, while a fight is running: round number, initiative order with whose turn is next, each combatant's AC, current and max HP, conditions, position, and the stat numbers you are using for each enemy. When a map is up, the position is the map cell (`E4`) and must match `maps/live.json`: change both together and redraw (see the `draw-map` skill). Clear this section when the fight ends, after logging the outcome.
 - **Quests**: active, completed and failed, each with a one-line status.
 - **Clocks**: anything counting down (a ritual in three days, a ship leaving at dawn, a spell that lasts an hour).
 - **Pending**: an unresolved roll, a question the player has not answered, a choice in front of them.

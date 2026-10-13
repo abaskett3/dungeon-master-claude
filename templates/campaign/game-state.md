@@ -43,7 +43,7 @@ While a fight is running, replace the line above with:
 - **Round**: 1
 - **Next to act**:
 
-| Init | Combatant | AC | HP | Conditions | Position |
+| Init | Combatant | AC | HP | Conditions | Position (map cell) |
 |---|---|---|---|---|---|
 
 Enemy stat blocks in use (attack bonus, damage, save DCs, speed, special traits):

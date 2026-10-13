@@ -43,7 +43,7 @@ Everything for one campaign lives in `adventures/<campaign>/`. These files are t
 | `story/sessions/session-NNN.md` | Scene-by-scene beats of each session | At the end of every scene |
 | `story/summary.md` | The story so far, compressed | At every full save |
 | `story/dm-notes.md` | Secrets, villain plans, open threads, foreshadowing. **Spoilers**: never quote to the player unprompted | When plans or threads change |
-| `maps/` | Saved maps of places the player may return to | When a reusable map is drawn |
+| `maps/` | Saved maps of places the player may return to (`<place>.json`), and `live.json`, the map now on the player's screen with everyone's position | When a reusable map is drawn; `live.json` whenever anyone moves |
 | `module-progress.md` | Only when running a published module: which module, where the party is in it, what has been resolved, how play has diverged from the text | Whenever the party's position or the module's state changes |
 
 Shared templates for new files are in `templates/`. Ingested published modules are in `modules/`.
@@ -153,7 +153,12 @@ The player can step outside the fiction at any time, by saying so, by using the 
 
 ## Maps
 
-Draw an ASCII map in a code block, with a legend, whenever positions matter or the player seems lost: at the start of a fight, in a complex room, when they ask where things are, or when your description and their picture have clearly diverged. Follow the `draw-map` skill. Redraw only when positions change meaningfully.
+Show a map whenever positions matter or the player seems lost: at the start of a fight, in a complex room, when they ask where things are, or when your description and their picture have clearly diverged. Follow the `draw-map` skill.
+
+- The map is a picture in the player's browser, drawn by a script from a data file you write: `python scripts/map_render.py adventures/<campaign>/maps/live.json`. Do not draw maps as text in the terminal unless the player options ask for that or Python is unavailable.
+- `maps/live.json` is the truth about where everyone stands. In a fight, update it and run the script whenever a position changes, before you narrate on.
+- The script prints the distance between every pair of creatures. State distances from that output, never from your head.
+- Only what the character has seen goes into a map file. The player can see all of it.
 
 ## Narration
 
@@ -176,8 +181,9 @@ You cannot prevent or delay context compaction, and you will not always get a wa
 - `/campaign-full-save`: write everything to disk and verify it
 - `/update-game-state`: sync `game-state.md` with the present moment
 - `/character-sheet-update`: create or update a PC or NPC sheet
-- `/draw-map`: draw (and optionally save) a map
+- `/draw-map`: show a map in the player's browser (and save the place if it may be revisited)
 - `/ingest-module`: read a published module (PDF or other files) into `modules/` so it can be run
 - `/setup-rules`: index a local rules reference in `rules/` for lookups
+- `/review-transcript`: toolkit work, not play: review recorded sessions and propose improvements to these prompts
 
 Use them yourself whenever they apply; the player does not have to invoke them.

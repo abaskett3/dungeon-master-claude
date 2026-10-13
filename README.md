@@ -5,7 +5,8 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 ## What you need
 
 - [Claude Code](https://claude.com/claude-code), signed in.
-- This folder. Nothing else to install: the dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
+- This folder. The dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
+- Python 3, for the maps and for reading PDF modules. Without it DMC falls back to text maps.
 
 No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 
@@ -36,9 +37,10 @@ A Markdown or text copy of the SRD works too, and is faster to search. The SRD d
 | `/campaign-full-save` | Save everything and check the files agree with each other |
 | `/update-game-state` | Sync HP, resources, location and the combat tracker to disk |
 | `/character-sheet-update` | Create or update a character or NPC sheet |
-| `/draw-map` | Draw an ASCII map of where you are |
+| `/draw-map` | Show a map of where you are, in your browser |
 | `/ingest-module` | Read a published module so DMC can run it |
 | `/setup-rules` | Index a rules reference you have put in `rules/` |
+| `/review-transcript` | Review recorded play sessions and propose improvements to DMC's own prompts |
 
 DMC uses these on its own as you play. You only need to type the first three.
 
@@ -53,6 +55,12 @@ DMC will not act for your character or end your turn without asking.
 ### Dice
 
 By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC asks in dice notation with your modifiers and the target included, and asks for rolls that go together in one message to keep combat quick: "Roll 1d20+6 to hit (AC 13), then roll 1d4+1 for damage." Then it waits. Answer with your final totals ("18 and 4") or show your working ("12+6=18 and 3+1=4"). Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice script, not from the model's imagination.
+
+### Maps
+
+When positions matter (a fight, a complicated room, or whenever you ask), DMC opens a map in your web browser: a grid with walls, terrain and a token for everyone in the scene. Keep that tab beside the terminal. It redraws itself within a couple of seconds whenever someone moves, with no reloading. Squares are named like a chessboard (`E4`), so you can say "I move to F4", and hovering over a token shows who it is.
+
+The map is a local file (`adventures/<campaign>/maps/live.html`); nothing is uploaded. It needs Python 3, and nothing else. If you would rather have plain text maps in the terminal, tell DMC.
 
 ### Your player options
 
@@ -77,7 +85,7 @@ adventures/<campaign>/
     canon.md             every established fact: names, places, prices, rulings
     dm-notes.md          DMC's secret plans  (SPOILERS - do not read)
     sessions/            scene-by-scene record of each session
-  maps/                  saved maps of places you may return to
+  maps/                  saved maps of places you may return to, and the live map
   module-progress.md     only for published modules: your place in the book  (SPOILERS)
 ```
 
@@ -122,7 +130,7 @@ CLAUDE.md            DMC's instructions
 README.md            this file
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dice, compaction reminders
-scripts/             dice roller (roll.ps1, roll.sh), PDF extractor (pdf_extract.py)
+scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py)
 templates/           blank campaign files and character sheets
 adventures/          your campaigns (not in git)
 modules/             ingested published modules (not in git)

@@ -12,6 +12,20 @@ if (-not $Rolls) {
     exit 1
 }
 
+# Each die is drawn from the operating system's cryptographic random source.
+# Draws above the largest multiple of the die size are thrown away and redrawn,
+# so every face is exactly equally likely (no modulo bias).
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$buf = [byte[]]::new(4)
+function Get-Die([int]$Sides) {
+    $limit = 4294967296 - (4294967296 % $Sides)
+    do {
+        $rng.GetBytes($buf)
+        $n = [BitConverter]::ToUInt32($buf, 0)
+    } while ($n -ge $limit)
+    return [int]($n % $Sides) + 1
+}
+
 $failed = $false
 foreach ($expr in $Rolls) {
     $m = [regex]::Match($expr.ToLower(), '^(\d*)d(\d+)(?:(kh|kl)(\d+))?([+-]\d+)?$')
@@ -34,7 +48,7 @@ foreach ($expr in $Rolls) {
         continue
     }
 
-    $dice = @(for ($i = 0; $i -lt $count; $i++) { Get-Random -Minimum 1 -Maximum ($sides + 1) })
+    $dice = @(for ($i = 0; $i -lt $count; $i++) { Get-Die $sides })
     $kept = $dice
     $keepText = ''
     if ($keepMode) {

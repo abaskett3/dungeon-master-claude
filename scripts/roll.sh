@@ -15,6 +15,31 @@ join() {
     printf '%s' "$out"
 }
 
+# Each die is drawn from the operating system's cryptographic random source
+# (/dev/urandom), not bash's $RANDOM. Draws above the largest multiple of the
+# die size are thrown away and redrawn, so every face is exactly equally likely
+# (no modulo bias). Sets ROLL to a number from 1 to $1.
+pool=()
+rand_die() {
+    local sides=$1 limit n
+    limit=$((4294967296 - 4294967296 % sides))
+    while :; do
+        if [ ${#pool[@]} -eq 0 ]; then
+            pool=($(od -An -v -N64 -tu4 /dev/urandom 2>/dev/null))
+            if [ ${#pool[@]} -eq 0 ]; then
+                echo "roll.sh: cannot read /dev/urandom, no dice rolled" >&2
+                exit 2
+            fi
+        fi
+        n=${pool[${#pool[@]}-1]}
+        unset "pool[${#pool[@]}-1]"
+        if [ "$n" -lt "$limit" ]; then
+            ROLL=$((n % sides + 1))
+            return
+        fi
+    done
+}
+
 failed=0
 re='^([0-9]*)d([0-9]+)((kh|kl)([0-9]+))?([+-][0-9]+)?$'
 for expr in "$@"; do
@@ -40,7 +65,8 @@ for expr in "$@"; do
 
     dice=()
     for ((i = 0; i < count; i++)); do
-        dice+=($(( ((RANDOM << 15) | RANDOM) % sides + 1 )))
+        rand_die "$sides"
+        dice+=("$ROLL")
     done
 
     kept=("${dice[@]}")

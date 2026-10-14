@@ -11,7 +11,7 @@ A map exists to remove confusion. You describe the place as a small data file; `
 
 Check `maps/` in the active campaign folder for an existing map of this place and start from it. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
 
-An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which the script rejects. Read its notes and any spoiler warning, then redraw it to scale as a `.json` that agrees with the distances in `canon.md`, and keep the `.md` for its notes.
+An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which the script rejects. Read its notes and any spoiler warning, then redraw it as a `.json` at 5 or 30 ft, whichever fits the place in about 30 cells, agreeing with the distances in `canon.md`, and keep the `.md` for its notes.
 
 ## The files
 
@@ -55,7 +55,7 @@ An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a 
 Rules for the grid:
 
 - One character per cell, no spaces between cells, every row the same length. A space means nothing is there (pad short rows with spaces).
-- Every map is to scale, never squeezed. Anything at close quarters is 5 ft squares (the default), under about 30 cells wide; draw only the part in play and describe the rest in `"edges"`. Overland, set `"cell_ft"` to 5280, 31680 or 316800 (1, 6 or 60 miles a square). A scene takes its place's scale; it cannot change it.
+- Every map is to scale, never squeezed, under about 30 cells wide. A fight uses 5 ft squares (the default), or `"cell_ft": 30` when the place is too large for 5 ft (a battlefield, a wide cavern, a town); draw only the part in play and describe the rest in `"edges"`. Never use a mile scale for a fight: 5280, 31680 and 316800 (1, 6, 60 miles a square) are for overland travel maps. A scene takes its place's scale; it cannot change it.
 - North is up unless `"north"` says otherwise (`"down"`, `"left"`, `"right"`, or `null` when no direction has been established).
 - Cells are named by column letter and row number, as printed along the edges of the picture: `E4` is the fifth cell of the fourth row. Use the same names in the combat tracker's Position column and when talking to the player, who can answer the same way ("I move to F4").
 

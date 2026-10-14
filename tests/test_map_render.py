@@ -207,31 +207,41 @@ class Distances(unittest.TestCase):
         self.assertEqual(map_render.squares_between([(4, 1)], ogre), 2)
         self.assertEqual(map_render.squares_between(ogre, [(3, 3)]), 1)
 
-    def test_feet(self):
-        self.assertEqual(map_render.feet(3, 5), "15 ft")
-        self.assertEqual(map_render.feet(0, 5), "0 ft")
+    def test_format_distance(self):
+        self.assertEqual(map_render.format_distance(3, 5), "15 ft")
+        self.assertEqual(map_render.format_distance(0, 5), "0 ft")
+        self.assertEqual(map_render.format_distance(3, 30), "90 ft")
 
     def test_overland_distances_are_given_in_miles(self):
-        self.assertEqual(map_render.feet(1, 5280), "1 mile")
-        self.assertEqual(map_render.feet(4, 31680), "24 miles")
-        self.assertEqual(map_render.feet(0, 5280), "0 miles")
-        self.assertEqual(map_render.feet(2, 316800), "120 miles")
+        self.assertEqual(map_render.format_distance(1, 5280), "1 mile")
+        self.assertEqual(map_render.format_distance(4, 31680), "24 miles")
+        self.assertEqual(map_render.format_distance(0, 5280), "0 miles")
+        self.assertEqual(map_render.format_distance(2, 316800), "120 miles")
 
-    def test_a_5_ft_map_always_says_feet(self):
-        self.assertEqual(map_render.feet(2000, 5), "10000 ft")
+    def test_units_follow_the_scale_not_the_size_of_the_distance(self):
+        self.assertEqual(map_render.format_distance(2000, 5), "10000 ft")
+        self.assertEqual(map_render.format_distance(300, 30), "9000 ft")
+
+    def test_only_the_mile_scales_are_overland(self):
+        self.assertEqual([map_render.is_overland(s) for s in map_render.SCALES],
+                         [False, False, True, True, True])
 
     def test_mile_scale_distances_are_straight_lines(self):
         # B2 to E5 is 3 squares across and 3 down: 4.24 squares, 25.5 miles at 6 miles a square.
         b2, e5 = [(1, 1)], [(4, 4)]
-        self.assertEqual(map_render.distance(b2, e5, 31680), "25 miles")
-        self.assertEqual(map_render.distance(b2, [(4, 1)], 31680), "18 miles")
-        self.assertEqual(map_render.distance(b2, [(2, 2)], 5280), "1 mile")  # 1.41 miles
-        # At 5 ft a diagonal costs the same as a straight step.
+        self.assertEqual(map_render.distance(b2, e5, 31680), "about 25 miles")
+        self.assertEqual(map_render.distance(b2, [(4, 1)], 31680), "about 18 miles")
+        self.assertEqual(map_render.distance(b2, [(2, 2)], 5280), "about 1 mile")  # 1.41 miles
+
+    def test_foot_scale_distances_count_squares_the_5e_way(self):
+        # A diagonal costs the same as a straight step, at 5 ft and at 30 ft.
+        b2, e5 = [(1, 1)], [(4, 4)]
         self.assertEqual(map_render.distance(b2, e5, 5), "15 ft")
+        self.assertEqual(map_render.distance(b2, e5, 30), "90 ft")
 
     def test_mile_scale_distances_measure_between_the_nearest_cells(self):
         ogre = [(1, 1), (2, 1), (1, 2), (2, 2)]
-        self.assertEqual(map_render.distance(ogre, [(5, 1)], 5280), "3 miles")
+        self.assertEqual(map_render.distance(ogre, [(5, 1)], 5280), "about 3 miles")
 
     def test_distance_lines(self):
         m = checked(tokens=SCENE["tokens"] + [{"id": "O", "name": "Ogre", "at": "G2", "size": 2}])
@@ -244,7 +254,7 @@ class Distances(unittest.TestCase):
 
     def test_distance_lines_use_the_cell_size(self):
         m = checked(cell_ft=31680, tokens=SCENE["tokens"])
-        self.assertTrue(map_render.distance_lines(m)[1].endswith(":  18 miles"))
+        self.assertTrue(map_render.distance_lines(m)[1].endswith(":  about 18 miles"))
 
     def test_no_distances_without_two_creatures(self):
         self.assertEqual(map_render.distance_lines(checked()), [])
@@ -256,15 +266,17 @@ class Distances(unittest.TestCase):
             with self.subTest(cell_ft=cell_ft):
                 lines = map_render.distance_lines(checked(cell_ft=cell_ft, tokens=pair))
                 self.assertEqual(len(lines), 2)
-                self.assertTrue(lines[1].endswith(f":  {map_render.feet(3, cell_ft)}"), lines)
+                self.assertTrue(lines[1].endswith(":  " + map_render.distance([(1, 1)], [(4, 1)], cell_ft)), lines)
 
-    def test_the_distance_heading_gives_the_scale_once_and_drops_combat_clauses_in_miles(self):
+    def test_the_distance_heading_gives_the_scale_once(self):
         pair = [{"id": "@", "at": "B2", "kind": "pc"}, {"id": "K", "at": "E4", "kind": "ally"}]
         miles = map_render.distance_lines(checked(cell_ft=31680, tokens=pair))
-        self.assertEqual(miles[0], "Distances (1 cell = 6 miles, straight line):")
-        self.assertTrue(miles[1].endswith(":  22 miles"), miles)  # 3 across, 2 down: 3.6 squares
-        feet = map_render.distance_lines(checked(tokens=pair))
-        self.assertEqual(feet[0], "Distances (1 cell = 5 ft, straight line, walls ignored; 5 ft is adjacent):")
+        self.assertEqual(miles[0], "Distances (1 cell = 6 miles, straight line, walls ignored):")
+        self.assertTrue(miles[1].endswith(":  about 22 miles"), miles)  # 3 across, 2 down: 3.6 squares
+        for cell_ft in (5, 30):
+            heading = map_render.distance_lines(checked(cell_ft=cell_ft, tokens=pair))[0]
+            self.assertEqual(heading, f"Distances (1 cell = {cell_ft} ft, straight line, walls ignored; "
+                                      f"{cell_ft} ft is adjacent):")
 
 
 class Drawing(unittest.TestCase):
@@ -307,7 +319,7 @@ class Drawing(unittest.TestCase):
         self.assertNotIn(" N ", f" {words} ")
 
     def test_every_picture_has_a_scale_bar_and_says_its_scale(self):
-        said = {5: "1 square = 5 ft", 5280: "1 square = 1 mile",
+        said = {5: "1 square = 5 ft", 30: "1 square = 30 ft", 5280: "1 square = 1 mile",
                 31680: "1 square = 6 miles", 316800: "1 square = 60 miles"}
         for cell_ft in map_render.SCALES:
             with self.subTest(cell_ft=cell_ft):
@@ -408,11 +420,11 @@ class CommandLine(unittest.TestCase):
         self.assertIn(":  15 ft", result.stdout)
 
     def test_a_scene_cannot_change_its_bases_scale(self):
-        for cell_ft in (31680, 5280, None):
+        for cell_ft in (30, 31680, 5280):
             with self.subTest(cell_ft=cell_ft):
                 self.write("live.json", dict(SCENE, cell_ft=cell_ft))
-                self.assertFails('sets "cell_ft": %s, but its base "goblin-hall" is drawn at 5: '
-                                 "a scene cannot change its place's scale" % cell_ft, self.scene)
+                self.assertFails(f'sets "cell_ft": {cell_ft}, but its base "goblin-hall" is drawn at 5: '
+                                 "a scene cannot change its place's scale", self.scene)
         self.write("overland.json", dict(PLACE, cell_ft=31680))
         self.write("live.json", {"base": "overland", "cell_ft": 5})
         self.assertFails('but its base "overland" is drawn at 31680', self.scene)
@@ -424,11 +436,38 @@ class CommandLine(unittest.TestCase):
         self.write("live.json", {"base": "overland", "cell_ft": 31680})
         self.assertEqual(run_script("map_render.py", self.scene).returncode, 0)
 
+    def test_a_bad_scale_names_the_file_that_holds_it(self):
+        # In the place file, reached through a scene: the error points at the place.
+        self.assertFails("old.json: \"cell_ft\" must be a standard map scale", self.scene_on("old"))
+        self.write("live.json", {"base": "old", "cell_ft": 5})  # the scene's own good value changes nothing
+        self.assertFails("old.json: \"cell_ft\" must be a standard map scale", self.scene)
+        # In the scene file.
+        self.write("live.json", dict(SCENE, cell_ft=7))
+        self.assertFails('live.json: "cell_ft" must be a standard map scale', self.scene)
+
+    def test_a_bad_scale_is_shown_the_way_json_writes_it(self):
+        for value, shown in ((None, "null"), (True, "true"), (False, "false"), ("5", '"5"'), (2.5, "2.5")):
+            with self.subTest(cell_ft=value):
+                self.write("live.json", dict(SCENE, cell_ft=value))
+                self.assertFails(f"not {shown}: every map is drawn to scale", self.scene)
+        self.write("overland.json", dict(PLACE, cell_ft=31680))
+        self.write("live.json", {"base": "overland", "cell_ft": 5})
+        self.assertFails("is drawn at 31680", self.scene)
+
     def test_measure_draws_nothing(self):
         result = run_script("map_render.py", self.scene, "--measure", "b2", "E4")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "B2 to E4: 3 squares, 15 ft (straight line, walls ignored)")
         self.assertEqual(self.outputs(), [])
+
+    def test_measure_says_one_square_not_one_squares(self):
+        result = run_script("map_render.py", self.scene, "--measure", "B2", "C3")
+        self.assertEqual(result.stdout.strip(), "B2 to C3: 1 square, 5 ft (straight line, walls ignored)")
+
+    def test_measure_counts_squares_the_5e_way_at_30_ft(self):
+        self.write("goblin-hall.json", dict(PLACE, cell_ft=30))
+        result = run_script("map_render.py", self.scene, "--measure", "B2", "E4")
+        self.assertEqual(result.stdout.strip(), "B2 to E4: 3 squares, 90 ft (straight line, walls ignored)")
 
     def test_measure_mistakes(self):
         self.assertFails("off the map", self.scene, "--measure", "B2", "Z99")
@@ -438,7 +477,7 @@ class CommandLine(unittest.TestCase):
         scene = self.scene_on("overland")
         result = run_script("map_render.py", scene, "--measure", "B2", "E5")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "B2 to E5: about 25 miles (straight line)")
+        self.assertEqual(result.stdout.strip(), "B2 to E5: about 25 miles (straight line, walls ignored)")
         self.assertEqual(self.outputs(), [])
 
     def test_a_map_not_to_scale_is_not_drawn(self):
@@ -450,8 +489,8 @@ class CommandLine(unittest.TestCase):
             {"id": "1", "name": "Wyvern", "kind": "enemy", "at": "G2"}])
         result = run_script("map_render.py", scene)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Distances (1 cell = 6 miles, straight line):", result.stdout)
-        self.assertIn("@ Thorin (B2)  <->  1 Wyvern (G2):  30 miles", result.stdout)
+        self.assertIn("Distances (1 cell = 6 miles, straight line, walls ignored):", result.stdout)
+        self.assertIn("@ Thorin (B2)  <->  1 Wyvern (G2):  about 30 miles", result.stdout)
 
     def test_png(self):
         need(has_pymupdf(), "PyMuPDF")

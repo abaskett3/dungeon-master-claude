@@ -2,7 +2,23 @@
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
   "enabledPlugins": {
-    "engineering@knowledge-work-plugins": false
+    "engineering@synced": false
+  },
+  "skillOverrides": {
+    "docs": "off",
+    "docx": "off",
+    "pptx": "off",
+    "xlsx": "off",
+    "pdf": "off",
+    "google-workspace": "off",
+    "computer-use": "off",
+    "built-in-browser": "off",
+    "chrome-browser": "off",
+    "deep-research": "off",
+    "morning": "off",
+    "skill-creator": "off",
+    "import-memory": "off",
+    "plugin-authoring": "off"
   },
   "permissions": {
     "deny": [

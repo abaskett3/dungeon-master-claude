@@ -101,6 +101,11 @@ class PlayLauncher(unittest.TestCase):
                     self.assertFalse(fnmatch.fnmatchcase(tool, rule.split("(", 1)[0]),
                                      f"play-settings.json denies {tool}, which play needs")
 
+    def test_play_keeps_every_project_skill(self):
+        overrides = self.settings.get("skillOverrides", {})
+        for name in skill_names():
+            self.assertEqual(overrides.get(name, "on"), "on", f"play-settings.json hides /{name}")
+
     def test_play_settings_grant_no_permissions_of_their_own(self):
         # The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.
         self.assertNotIn("allow", self.settings.get("permissions", {}))

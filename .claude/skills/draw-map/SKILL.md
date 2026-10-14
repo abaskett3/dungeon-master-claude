@@ -11,7 +11,7 @@ A map exists to remove confusion. You describe the place as a small data file; `
 
 Check `maps/` in the active campaign folder for an existing map of this place and start from it. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
 
-An older map may exist only as `maps/<place>.md` with an ASCII drawing. Read its notes and any spoiler warning, then write the `.json` beside it from the same layout and keep the `.md` for its notes.
+An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which the script rejects. Read its notes and any spoiler warning, then redraw it to scale as a `.json` that agrees with the distances in `canon.md`, and keep the `.md` for its notes.
 
 ## The files
 
@@ -55,8 +55,7 @@ An older map may exist only as `maps/<place>.md` with an ASCII drawing. Read its
 Rules for the grid:
 
 - One character per cell, no spaces between cells, every row the same length. A space means nothing is there (pad short rows with spaces).
-- Battle maps: one cell is 5 feet. Keep them under about 30 cells wide.
-- Larger areas: set `"cell_ft"` to the real scale (50, 500), or to `null` for a sketch that is not to scale, and say what the scale roughly is in `"scale_note"`. A map that is not to scale gives no distances.
+- Every map is to scale, never squeezed. Anything at close quarters is 5 ft squares (the default), under about 30 cells wide; draw only the part in play and describe the rest in `"edges"`. Overland, set `"cell_ft"` to 5280, 31680 or 316800 (1, 6 or 60 miles a square). A scene takes its place's scale; it cannot change it.
 - North is up unless `"north"` says otherwise (`"down"`, `"left"`, `"right"`, or `null` when no direction has been established).
 - Cells are named by column letter and row number, as printed along the edges of the picture: `E4` is the fifth cell of the fourth row. Use the same names in the combat tracker's Position column and when talking to the player, who can answer the same way ("I move to F4").
 
@@ -90,7 +89,7 @@ python scripts/map_render.py adventures/<campaign>/maps/live.json --png
 ```
 
 - It refuses a map with a mistake in it (rows of different lengths, an unknown symbol, a creature in a wall or off the edge, two creatures on one cell) and says what is wrong. Fix the file and run it again.
-- It prints the distance between every pair of creatures. **Use those numbers** whenever you state a distance or a position, in the state of play and in rulings on range and movement. For a distance between two cells, run it with `--measure E4 H9`. Distances are straight-line counts of squares that ignore walls; a route around a wall is longer, so count it along the path.
+- It prints the distance between every pair of creatures. **Use those numbers** whenever you state a distance or a position, in the state of play and in rulings on range and movement. For a distance between two cells, run it with `--measure E4 H9`. Distances are straight lines that ignore walls (squares at 5 ft, whole miles on a mile-scale map); a route around a wall is longer, so count it along the path.
 - `--png` also writes `maps/live.png`. When the layout is new or has changed, look at it with the Read tool and check it against what you described before telling the player it is there. For a redraw where only tokens moved, the distance list is enough and `--png` can be left off.
 - The first time in a session, add `--open`: it opens `maps/live.html` in the player's browser. Tell them once, in a line, that the map is in their browser and updates by itself. After that, do not open it again; each run updates the open tab within a couple of seconds. Just say the map is updated.
 
@@ -104,6 +103,6 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## When there is no picture
 
-If Python is missing, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most.
+If Python is missing, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
 
 For relationships that are not spatial (a faction web, a family tree, a timeline), a simple indented list or box-and-arrow diagram in a code block is still the right tool.

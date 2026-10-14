@@ -58,19 +58,28 @@ floor, door, window, water, hazard, stairs_down, stairs_up, tree, pillar,
 cover, difficult, unknown, feature. A new symbol with only a name is drawn
 as floor with the symbol written on it.
 
-Other keys, all optional: "cell_ft" (default 5; null for a map not to
-scale), "scale_note", "north" ("up", "down", "left", "right" or null when no
-direction is established), "edges" ({"top"|"bottom"|"left"|"right": text}),
-"notes" (a line under the title).
+Every map is drawn to scale: one square is the same distance everywhere.
+"cell_ft" is the feet in one square and must be 5 (the default; anything at
+close quarters) or, for overland maps, 5280, 31680 or 316800 (1, 6 or 60
+miles; shown as miles). Anything else, including null, is rejected. Any kind
+of token may sit on any map. A scene with a "base" cannot change its scale.
 
-Distances count squares the 5e way (a diagonal step costs the same as a
-straight one) between the nearest cells of two creatures, in a straight
-line. Walls are not taken into account.
+Other keys, all optional: "scale_note" (a line after the scale), "north"
+("up", "down", "left", "right" or null when no direction is established),
+"edges" ({"top"|"bottom"|"left"|"right": text}), "notes" (a line under the
+title).
+
+Distances are between the nearest cells of two creatures, in a straight
+line; walls are not taken into account. At 5 ft they count squares the 5e
+way (a diagonal step costs the same as a straight one). On a mile-scale map
+they are the true straight-line distance between cell centres, to the
+nearest mile.
 """
 import argparse
 import datetime
 import html
 import json
+import math
 import os
 import sys
 import webbrowser
@@ -112,6 +121,11 @@ TERRAINS = {"wall", "floor", "door", "window", "water", "hazard", "stairs_down",
 # A creature cannot stand in these.
 BLOCKED = {"wall", "void"}
 
+# Standard D&D map scales, in feet per square: 5 ft (the battle grid) and
+# 1, 6 and 60 miles (province, kingdom and continent hexes; DMG p. 14).
+SCALES = (5, 5280, 31680, 316800)
+MILE = 5280
+
 KINDS = {
     "pc": ("#2f6fed", "you"),
     "ally": ("#2e9e5b", "ally"),
@@ -151,6 +165,10 @@ def load_map(path):
         merged = load_json(base_path)
         if merged.get("base"):
             fail(f"{base_path} is a scene (it has its own \"base\"); base must be a place file.")
+        base_ft = merged.get("cell_ft", 5)
+        if "cell_ft" in data and data["cell_ft"] != base_ft:
+            fail(f'{path} sets "cell_ft": {data["cell_ft"]}, but its base "{base}" is drawn at '
+                 f"{base_ft}: a scene cannot change its place's scale.")
         merged.update({key: value for key, value in data.items() if key != "base"})
         data = merged
     if "grid" not in data:
@@ -244,8 +262,9 @@ def check(data):
         return "void" if symbol == " " else legend[symbol]["terrain"]
 
     cell_ft = data.get("cell_ft", 5)
-    if cell_ft is not None and (not isinstance(cell_ft, (int, float)) or cell_ft <= 0):
-        fail('"cell_ft" must be a positive number, or null for a map not to scale.')
+    if cell_ft not in SCALES:
+        fail('"cell_ft" must be a standard map scale in feet (5, or 5280, 31680, 316800 '
+             'for 1, 6, 60 miles): every map is drawn to scale.')
 
     north = data.get("north", "up")
     if north is not None and north not in NORTH_TURN:
@@ -310,25 +329,39 @@ def squares_between(cells_a, cells_b):
     return min(max(abs(ac - bc), abs(ar - br)) for ac, ar in cells_a for bc, br in cells_b)
 
 
+def straight_squares(cells_a, cells_b):
+    """True straight-line distance in squares between the nearest cell centres."""
+    return min(math.hypot(ac - bc, ar - br) for ac, ar in cells_a for bc, br in cells_b)
+
+
 def feet(squares, cell_ft):
-    value = squares * cell_ft
-    return f"{value:g} ft"
+    """A distance in squares as text: feet on a 5 ft map, whole miles on a mile-scale one."""
+    if cell_ft >= MILE:
+        miles = round(squares * cell_ft / MILE)
+        return f"{miles} mile" + ("" if miles == 1 else "s")
+    return f"{squares * cell_ft:g} ft"
+
+
+def distance(cells_a, cells_b, cell_ft):
+    """Chebyshev squares at 5 ft (the 5e rule), straight line on a mile-scale map."""
+    measure = straight_squares if cell_ft >= MILE else squares_between
+    return feet(measure(cells_a, cells_b), cell_ft)
 
 
 def distance_lines(m):
     tokens = m["tokens"]
     if len(tokens) < 2:
         return []
-    if m["cell_ft"] is None:
-        return ["This map is not to scale: no distances."]
-    lines = [f"Distances (1 cell = {m['cell_ft']:g} ft, straight line, walls ignored; "
-             f"{feet(1, m['cell_ft'])} is adjacent):"]
+    scale = feet(1, m["cell_ft"])
+    if m["cell_ft"] >= MILE:
+        lines = [f"Distances (1 cell = {scale}, straight line):"]
+    else:
+        lines = [f"Distances (1 cell = {scale}, straight line, walls ignored; {scale} is adjacent):"]
     for i, a in enumerate(tokens):
         for b in tokens[i + 1:]:
-            squares = squares_between(a["cells"], b["cells"])
             lines.append(f"  {a['id']} {a['name']} ({cell_name(a['col'], a['row'])})"
                          f"  <->  {b['id']} {b['name']} ({cell_name(b['col'], b['row'])})"
-                         f":  {feet(squares, m['cell_ft'])}")
+                         f":  {distance(a['cells'], b['cells'], m['cell_ft'])}")
     return lines
 
 
@@ -541,14 +574,11 @@ def render_svg(m):
 
     # scale bar and compass, under the map
     y += 22
-    if m["cell_ft"] is not None:
-        out.append(f'<path d="M{PAD} {y - 9} v8 h{CELL} v-8" fill="none" stroke="{INK}" stroke-width="1.5"/>')
-        scale = f"1 square = {m['cell_ft']:g} ft"
-    else:
-        scale = "Not to scale"
+    out.append(f'<path d="M{PAD} {y - 9} v8 h{CELL} v-8" fill="none" stroke="{INK}" stroke-width="1.5"/>')
+    scale = f"1 square = {feet(1, m['cell_ft'])}"
     if m["scale_note"]:
         scale += f". {m['scale_note']}"
-    sx = PAD + (CELL + 10 if m["cell_ft"] is not None else 0)
+    sx = PAD + CELL + 10
     scale_lines = wrap(scale, max(int((left_w - sx - 60) / 7), 16))
     for i, line in enumerate(scale_lines):
         out.append(text(sx, y + i * 17, line, 13, INK))
@@ -686,11 +716,12 @@ def main():
     if args.measure:
         a = parse_cell(args.measure[0], m["cols"], m["rows"], "--measure")
         b = parse_cell(args.measure[1], m["cols"], m["rows"], "--measure")
-        if m["cell_ft"] is None:
-            fail("this map is not to scale; it has no distances.")
-        squares = squares_between([a], [b])
-        print(f"{cell_name(*a)} to {cell_name(*b)}: {squares} squares, "
-              f"{feet(squares, m['cell_ft'])} (straight line, walls ignored)")
+        span = f"{cell_name(*a)} to {cell_name(*b)}: "
+        if m["cell_ft"] >= MILE:
+            print(f"{span}about {distance([a], [b], m['cell_ft'])} (straight line)")
+        else:
+            print(f"{span}{squares_between([a], [b])} squares, "
+                  f"{distance([a], [b], m['cell_ft'])} (straight line, walls ignored)")
         return
 
     svg = render_svg(m)

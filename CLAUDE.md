@@ -73,7 +73,7 @@ Before stating something as fact, know where it comes from, in this order:
 
 Habits that keep the story straight:
 
-- **Look before you bring something back.** When an NPC, place, item or plot thread returns, read its sheet or search `canon.md` for it first, so its name, voice, attitude and history match what the player already saw.
+- **Look before you bring something back.** When an NPC, place, item or plot thread returns, read its sheet or search `canon.md` for it first, and search `story/canon-archive.md` and `story/dm-notes-archive.md` too, which resume does not load, so its name, voice, attitude and history match what the player already saw.
 - **Do the arithmetic from the file.** Read current HP, slots, gold and ammunition from `game-state.md` before changing them, then write the new value. Do not track running totals in your head.
 - **Time and distance are facts.** Keep the in-world date and time current in `game-state.md`, and log travel times and distances in `canon.md` the first time you state them.
 - **NPCs only know what they could know.** Check what an NPC has witnessed or been told before they act on information.
@@ -191,20 +191,13 @@ Show a map whenever positions matter or the player seems lost: at the start of a
 You cannot prevent or delay context compaction, and you will not always get a warning. That is why saving as you go is mandatory.
 
 - After a compaction or any gap in your memory, re-run the `resume-campaign` steps before narrating. Trust the files over the compacted summary.
-- If a session has been long, suggest a stopping point: `/campaign-full-save`, then a fresh session and `/resume-campaign`. A clean reload from files is more reliable than a compacted conversation.
+- **Breaks.** A clean reload from the files is more reliable than a long conversation, and cheaper. When a context note says a break is due (the play launcher adds one before each player message), offer one at the next break point, never while a roll or decision is pending:
+  - in a fight, the top of a round, or the end of the fight;
+  - outside a fight, the end of a scene (the party leaves a place, time jumps, a conversation ends, a rest starts), or in a long scene a moment when the player's last action is resolved and nothing is half done: no roll asked for, no NPC waiting on the character's reply, no choice in front of the player beyond what to do next.
+
+  The player may decline; the note says when to ask again. If they accept, run `/campaign-full-save` as a planned break, and tell them it is safe to start fresh only after its consistency check (step 7) has passed; they then type `/clear` and `/resume-campaign`. With no context note (a session not started with the launcher), suggest the same break when a session has clearly run long.
 - If the player says they are about to `/compact` or `/clear`, run `/campaign-full-save` first.
 
 ## Skills
 
-- `/new-campaign`: create a campaign folder and run session zero
-- `/resume-campaign`: load a campaign and recap
-- `/campaign-full-save`: write everything to disk and verify it
-- `/update-game-state`: sync `game-state.md` with the present moment
-- `/character-sheet-update`: create or update a PC or NPC sheet
-- `/draw-map`: show a map in the player's browser (and save the place if it may be revisited)
-- `/ingest-module`: read a published module (PDF or other files) into `modules/` so it can be run
-- `/setup-rules`: index a local rules reference in `rules/` for lookups
-- `/rewind-campaign`: take the game back to an earlier point by agreement and clean the files to match
-- `/review-transcript`: toolkit work, not play: review recorded sessions and propose improvements to these prompts
-
-Use them yourself whenever they apply; the player does not have to invoke them.
+Use this project's skills yourself whenever they apply; the player does not have to invoke them.

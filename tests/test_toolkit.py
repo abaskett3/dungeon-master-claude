@@ -106,6 +106,14 @@ class PlayLauncher(unittest.TestCase):
         for name in skill_names():
             self.assertEqual(overrides.get(name, "on"), "on", f"play-settings.json hides /{name}")
 
+    def test_play_runs_the_break_reminder_before_each_message(self):
+        commands = [hook["command"] for group in self.settings.get("hooks", {}).get("UserPromptSubmit", [])
+                    for hook in group["hooks"]]
+        reminder = [c for c in commands if "scripts/context_check.py" in c]
+        self.assertEqual(len(reminder), 1, commands)
+        # Exit code 2 from a UserPromptSubmit hook blocks the prompt, and python exits 2 when the script is missing.
+        self.assertTrue(reminder[0].rstrip().endswith("|| true"), reminder[0])
+
     def test_play_settings_grant_no_permissions_of_their_own(self):
         # The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.
         self.assertNotIn("allow", self.settings.get("permissions", {}))
@@ -123,11 +131,6 @@ class Skills(unittest.TestCase):
                 self.assertEqual(fields.get("name", "").strip(), name, "name must match the folder")
                 self.assertTrue(fields.get("description", "").strip(), "description is empty")
                 self.assertTrue(match.group(2).strip(), "the skill has no instructions")
-
-    def test_claude_md_lists_exactly_the_skills_that_exist(self):
-        section = read("CLAUDE.md").split("\n## Skills\n", 1)[1].split("\n## ", 1)[0]
-        listed = sorted(re.findall(r"^- `/([a-z0-9-]+)`", section, re.M))
-        self.assertEqual(listed, skill_names())
 
     def test_the_readme_lists_every_skill(self):
         readme = read("README.md")

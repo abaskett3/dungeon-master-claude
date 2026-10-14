@@ -1,6 +1,6 @@
 ---
 name: new-campaign
-description: Create a new solo D&D campaign folder from the templates and run session zero (player preferences, character creation, opening premise). Use when the player wants to start a new adventure or no campaign exists yet.
+description: Create a new solo D&D campaign folder from the templates and run session zero (player preferences, character creation, opening premise). Use when the player wants to start a new adventure, to carry on a campaign played elsewhere (a chat export or transcript), or when no campaign exists yet.
 ---
 
 # New campaign
@@ -24,6 +24,18 @@ For a module:
 - In session zero, take the edition, starting level and setting from the module, and tell the player those without spoiling the plot. Offer the module's own character hooks or backgrounds if it has them.
 - In step 4, the conflict, antagonists and secrets in `dm-notes.md` come from the module's `index.md`. Use that file for how this player's character ties in and for anything you add.
 - Modules expect four or five characters. Agree how to handle that: companions run by DMC, a higher starting level, scaled encounters, or a mix. Record the choice in `module-progress.md`.
+
+## 1b. A campaign played elsewhere
+
+If the player wants to carry on a campaign played somewhere else (a chat export, a transcript, a handoff note), import it first. Put the files in `adventures/<folder>/import/` and leave them there as the record.
+
+Never read the export into this conversation. Whatever is read stays in context for the rest of the session, so reading a long export in parts still fills it. Give each part its own fresh context instead:
+
+1. Cut the export into parts of about 100 KB, at session or scene breaks, and note each part's line range.
+2. For each part in order, start a subagent with the Agent tool. Run them one after another, never at the same time: they write the same files. Tell each one: the campaign folder and its part's line range; to read the part with the Read tool's offset and limit, in pieces small enough for one read; to read the campaign files as earlier parts left them before adding to them; and to write, before it ends, everything its part establishes: canon lines (one per fact, with the session), character sheets from `templates/pc-sheet.md` and `templates/npc-sheet.md`, one session log per original session from `templates/session-log.md`, and DM plans, enemy numbers and anything the player has not seen in `story/dm-notes.md`. Only the last part writes `game-state.md`, as the present moment. Where the export contradicts itself, it adds the contradiction and a proposed reading under "Known inconsistencies" in `canon.md` instead of choosing silently. It replies with a short note only: where it stopped (line and in-world moment) and what it could not settle.
+3. If subagents are not available, do one part per session instead: write the files, record where you stopped in `import/progress.md`, and ask the player to type `/clear` and then ask you to continue the import.
+
+When every part is done, read the campaign files as `resume-campaign` does, run the consistency check from `campaign-full-save` (step 7), and settle the known inconsistencies with the player. Then go through steps 2 to 4 below only for what the export did not cover, such as the player options.
 
 ## 2. Session zero
 

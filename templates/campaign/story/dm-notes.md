@@ -29,7 +29,7 @@ Stat blocks are sized for the party actually present (see "Sizing fights" in CLA
 
 ## Open threads
 
-<!-- Unresolved hooks, mysteries and promises to the player, each with its current status. Close them out when resolved. -->
+<!-- Unresolved hooks, mysteries and promises to the player, each with its current status. When one is resolved, move it to dm-notes-archive.md, which resume does not read. -->
 
 ## Foreshadowing to pay off
 

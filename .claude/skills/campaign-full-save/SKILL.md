@@ -29,11 +29,13 @@ Go back over the session for facts you established and did not log: names, place
 
 Then prune. Merge lines that say the same thing, replace a superseded fact instead of keeping both versions, and delete anything struck through or marked void. Every line left should be true now.
 
+`canon.md` is read whole at every resume. If it has passed about 230 lines, move the lines whose subject can no longer come up (a person dead and done with, a place left for good, a promise kept) to `story/canon-archive.md`, under the same headings; create it if missing. Split by whether the subject is still live, not by age: anyone or anything that can still come up stays. Rulings never move.
+
 ## 5. DM notes
 
 Update `story/dm-notes.md`: threads opened, advanced or closed; what offscreen factions and villains have done in the meantime; what you plan to pay off later; what you learned about what this player enjoys.
 
-Bring the Opposition table up to date (who is dead, who has moved, what the party now knows), and check that no other file gives a different count. Delete plans the story has overtaken and threads that are closed; this file is read whole at every resume, so it should hold what is still ahead, not what has happened.
+Bring the Opposition table up to date (who is dead, who has moved, what the party now knows), and check that no other file gives a different count. This file is read whole at every resume, so it should hold what is still ahead, not what has happened. Delete plans the story has overtaken and anything voided by a rewind. Move threads that are closed to `story/dm-notes-archive.md` (create it if missing), which resume does not read. Never move the Opposition table, secrets, open threads, foreshadowing or the notes about this player.
 
 ## 5a. Module progress
 
@@ -45,7 +47,7 @@ Rewrite `story/summary.md` to include this session. Keep it under about 600 word
 
 ## 7. Consistency check
 
-Re-read the files you just changed and confirm:
+Read every file this save changed again, all of them in one message of parallel Read calls, then check them against each other. Do not skip the reads or check from memory: the point of this step is to catch what you think you wrote but did not. Confirm:
 
 - HP, resources, inventory and gold agree between `game-state.md` and the PC sheet.
 - Location and time agree between `game-state.md` and the end of the session log.
@@ -58,4 +60,6 @@ Fix what you find. If two sources disagree and you cannot tell which is right, a
 
 Set the "Last full save" line in `game-state.md` to the real-world date and time and the session number.
 
-Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence, and any discrepancy you corrected. Do not list every file.
+If this save is a planned break (the player accepted a break offer and will start a fresh session), also add this line under Pending in `game-state.md`: `Planned break: restate the immediate situation only.`
+
+Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence, and any discrepancy you corrected. Do not list every file. For a planned break, end by telling them it is safe to type `/clear` and then `/resume-campaign`.

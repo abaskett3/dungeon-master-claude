@@ -71,6 +71,6 @@ Enemy stat blocks in use (attack bonus, damage, save DCs, speed, special traits)
 
 ## Pending
 
-<!-- An unresolved roll, a question the player has not answered, a choice in front of them. -->
+<!-- An unresolved roll, a question the player has not answered, a choice in front of them, a plan agreed but not yet carried out. -->
 
 - none

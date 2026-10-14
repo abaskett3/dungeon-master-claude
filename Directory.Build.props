@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Settings shared by every .NET project in the repository. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- "dmc version" prints the plain version. Without this the SDK appends "+<commit sha>", which would make
+         the binary's version differ from the release tag it is pinned against (Phase 5). -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+</Project>

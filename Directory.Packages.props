@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- One place for package versions. Pin exactly any package that is below 1.0 (PdfPig, in Phase 3). -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="MSTest" Version="4.5.1" />
+  </ItemGroup>
+
+</Project>

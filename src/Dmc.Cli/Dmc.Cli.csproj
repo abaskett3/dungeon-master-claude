@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>dmc</AssemblyName>
+    <RootNamespace>Dmc</RootNamespace>
+    <Version>0.1.0</Version>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Run the AOT, trim and single-file analyzers on every build, so a local build already shows what a release
+         build would complain about. -->
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+
+  <!--
+    How dmc is built (issue #3, "Build and release"):
+
+      Local default   dotnet publish src/Dmc.Cli -r <rid> -o bin
+                      A self-contained single-file build without AOT. It needs no C++ or clang toolchain and no
+                      flags. It starts in about 160 ms on Windows.
+
+      Release and CI  dotnet publish src/Dmc.Cli -r <rid> -o bin -p:PublishAot=true
+                      Native AOT: starts in under 30 ms, needs Visual Studio's C++ workload on Windows, clang and
+                      zlib1g-dev on Linux, and the Xcode command line tools on macOS. Any test that measures time
+                      must use this build.
+
+    Plain "dotnet build" and "dotnet test" use neither: they build an ordinary framework-dependent assembly.
+  -->
+  <PropertyGroup>
+    <PublishAot Condition="'$(PublishAot)' == ''">false</PublishAot>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PublishAot)' != 'true' and '$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dmc.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -11,7 +11,7 @@ A map exists to remove confusion. You describe the place as a small data file; `
 
 Check `maps/` in the active campaign folder for an existing map of this place and start from it. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
 
-An older map may exist only as `maps/<place>.md` with an ASCII drawing. Read its notes and any spoiler warning, then write the `.json` beside it from the same layout and keep the `.md` for its notes.
+An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` with `"cell_ft": null` that the script now rejects. Read its notes and any spoiler warning, then redraw it to scale as a `.json` that agrees with the distances in `canon.md`, and keep the `.md` for its notes.
 
 ## The files
 
@@ -55,8 +55,7 @@ An older map may exist only as `maps/<place>.md` with an ASCII drawing. Read its
 Rules for the grid:
 
 - One character per cell, no spaces between cells, every row the same length. A space means nothing is there (pad short rows with spaces).
-- Battle maps: one cell is 5 feet. Keep them under about 30 cells wide.
-- Larger areas: set `"cell_ft"` to the real scale (50, 500), or to `null` for a sketch that is not to scale, and say what the scale roughly is in `"scale_note"`. A map that is not to scale gives no distances.
+- Every map is to scale, never squeezed. A fight is 5 ft squares (the default), under about 30 cells wide; draw only the part in play and describe the rest in `"edges"`. Otherwise set `"cell_ft"` to a standard scale: 10 (dungeon, building), 5280, 31680 or 316800 (1, 6 or 60 miles a square, overland). Enemy tokens only on a 5 ft map.
 - North is up unless `"north"` says otherwise (`"down"`, `"left"`, `"right"`, or `null` when no direction has been established).
 - Cells are named by column letter and row number, as printed along the edges of the picture: `E4` is the fifth cell of the fourth row. Use the same names in the combat tracker's Position column and when talking to the player, who can answer the same way ("I move to F4").
 
@@ -104,6 +103,6 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## When there is no picture
 
-If Python is missing, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most.
+If Python is missing, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
 
 For relationships that are not spatial (a faction web, a family tree, a timeline), a simple indented list or box-and-arrow diagram in a code block is still the right tool.

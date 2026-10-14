@@ -21,17 +21,19 @@ Giving DMC the rules to read makes its rulings, spells and monster stats more re
 
 1. Download the SRD 5.1 PDF (the 2014 rules, released by Wizards of the Coast under CC-BY-4.0): <https://media.wizards.com/2023/downloads/dnd/SRD_CC_v5.1.pdf>. Other versions, including the 5.2 SRD for the 2024 rules, are linked from <https://www.dndbeyond.com/srd>.
 2. Save it in the `rules/` folder.
-3. Run `claude` in this folder and type `/setup-rules`. DMC builds a page index so it can open the right pages quickly. This is a one-time step.
+3. Start DMC in this folder (see Quick start) and type `/setup-rules`. DMC builds a page index so it can open the right pages quickly. This is a one-time step.
 
 A Markdown or text copy of the SRD works too, and is faster to search. The SRD does not contain everything in the published rulebooks (most subclasses and some spells and monsters are missing); for those DMC falls back to a web lookup or a ruling.
 
 ## Quick start
 
-1. Open a terminal in this folder and run `claude`.
+1. Open a terminal in this folder and start DMC with `./play.ps1` in PowerShell on Windows, or `./play.sh` on macOS, Linux or Git Bash. It starts Claude Code on Sonnet at `high` effort with the settings made for play. If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy Bypass -File .\play.ps1`.
 2. Type `/new-campaign`. DMC asks how you like to play, helps you build a character and sets up the campaign files.
 3. Play. Say what your character does in plain language.
 4. When you want to stop, type `/campaign-full-save`.
-5. Next time, run `claude` here again and type `/resume-campaign`.
+5. Next time, start DMC the same way and type `/resume-campaign`.
+
+Plain `claude` also works, but loads more that play does not use and starts on your account's default model.
 
 ## Commands
 
@@ -129,9 +131,11 @@ Set in your player options, or just ask DMC:
 
 ## Choosing a model
 
-Use `/model` in Claude Code. Sonnet is a good default: fast, and reliable at keeping the files up to date. Opus gives richer narration and longer-range plotting at higher usage. Haiku is not recommended as the DM.
+The launcher starts DMC on Sonnet at `high` effort. Sonnet is a good default: fast, and reliable at keeping the files up to date. Opus gives richer narration and longer-range plotting at higher usage; to play on it, change `--model sonnet` to `--model opus` in both launchers (`play.ps1` and `play.sh`). Haiku is not recommended as the DM.
 
-Reasoning effort matters more than it looks. At `high`, most of what the model produces in a long fight is hidden reasoning, which fills the conversation several times faster than the game itself. `medium` is enough for ordinary play; raise it for a rewind or for toolkit work.
+Choose the model before your first message and keep it for the whole session. Switching with `/model` partway through makes Claude Code send the whole conversation to the new model again, which takes a large bite of your usage at once, and changes the DM in the middle of a scene.
+
+DMC runs at `high` effort. Its reasoning fills the conversation faster than the game does, but less reasoning is the biggest risk to keeping facts and numbers straight.
 
 ## Improving DMC from your own sessions
 
@@ -144,8 +148,10 @@ It needs Python 3 and nothing else. The condensed transcripts it works from are 
 ```
 CLAUDE.md            DMC's instructions
 README.md            this file
+play.ps1, play.sh    start a play session: Sonnet, high effort, play settings
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dice, compaction reminders
+.claude/play-settings.json  settings for play only
 scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py)
 templates/           blank campaign files and character sheets
 tests/               checks that the scripts, skills and settings still work

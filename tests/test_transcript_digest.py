@@ -237,6 +237,126 @@ class Parsing(unittest.TestCase):
         ])
 
 
+def call(minute, mid, ctx, *blocks):
+    """One API call of a reply, with the whole context read from the cache."""
+    return assistant(minute, mid, list(blocks) or [{"type": "text", "text": "Done."}], 0, ctx, 0, 1)
+
+
+STATE = "D:\\dmc\\adventures\\silver-egg\\game-state.md"
+ROLL = "bash scripts/roll.sh 1d20+5"
+
+# One player message for each class of third and later call, with distinct context sizes.
+CALL_RECORDS = [
+    user(0, "I attack"),
+    call(0, "a1", 100, tool_use("a1t", "Bash", command=ROLL)),
+    call(0, "a2", 110, tool_use("a2t", "Edit", file_path=STATE, old_string="HP 10", new_string="HP 7")),
+    call(0, "a3", 120),
+    user(1, "I drink the potion"),
+    call(1, "b1", 200, tool_use("b1t", "Edit", file_path=STATE, old_string="abc", new_string="abcdef")),
+    call(1, "b2", 210, tool_use("b2t", "Edit", file_path=STATE, old_string="x", new_string="y")),
+    call(1, "b3", 220),
+    user(2, "They both attack"),
+    call(2, "c1", 300, tool_use("c1t", "Bash", command=ROLL)),
+    call(2, "c2", 310, tool_use("c2t", "PowerShell", command=".\\scripts\\roll.ps1 1d6")),
+    call(2, "c3", 320),
+    user(3, "Who was the smith?"),
+    call(3, "d1", 400, tool_use("d1t", "Grep", pattern="smith")),
+    call(3, "d2", 410, tool_use("d2t", "Edit", file_path="canon.md", old_string="", new_string="Smith: Bera")),
+    call(3, "d3", 420),
+    user(4, "<command-message>campaign-full-save</command-message>\n<command-name>/campaign-full-save</command-name>"),
+    call(4, "e1", 500, tool_use("e1t", "Write", file_path=STATE, content="1234567890")),
+    call(4, "e2", 510, tool_use("e2t", "Read", file_path=STATE), tool_use("e2u", "Read", file_path="canon.md")),
+    call(4, "e3", 520, tool_use("e3t", "Edit", file_path="summary.md", old_string="a", new_string="b")),
+    call(4, "e4", 530),
+    user(5, "resume please"),
+    call(5, "f1", 600, tool_use("f1t", "Skill", skill="resume-campaign")),
+    call(5, "f2", 610, tool_use("f2t", "Read", file_path=STATE)),
+    call(5, "f3", 620),
+    user(6, "Show me the map"),
+    call(6, "g1", 700, tool_use("g1t", "Bash", command="python scripts/map_render.py live.json")),
+    call(6, "g2", 710, tool_use("g2t", "Bash", command="ls")),
+    call(6, "g3", 720),
+    user(7, "Next"),
+    call(7, "h1", 800, tool_use("h1t", "Edit", file_path=STATE, old_string="gone", new_string="here")),
+    user(7, [tool_result("h1t", "String to replace not found in file.", is_error=True)]),
+    call(7, "h2", 810),
+]
+CALL_TOTAL = sum(c["message"]["usage"]["cache_read_input_tokens"] for c in CALL_RECORDS if c["type"] == "assistant")
+
+
+class CallsPerMessage(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.tmp.cleanup)
+        cls.s = td.Session(write_log(cls.tmp.name, CALL_RECORDS))
+
+    def test_call_kinds(self):
+        self.assertEqual(td.call_kind("Bash", {"command": ROLL}), "roll")
+        self.assertEqual(td.call_kind("PowerShell", {"command": ".\\scripts\\roll.ps1 1d6"}), "roll")
+        self.assertEqual(td.call_kind("Bash", {"command": "python scripts/map_render.py x"}), "other")
+        self.assertEqual(td.call_kind("Edit", {}), "write")
+        self.assertEqual(td.call_kind("Write", {}), "write")
+        for name in ("Read", "Grep", "Glob"):
+            self.assertEqual(td.call_kind(name, {}), "lookup")
+        self.assertEqual(td.call_kind("Skill", {"skill": "draw-map"}), "other")
+
+    def test_calls_are_grouped_by_player_message(self):
+        self.assertEqual([len(t["calls"]) for t in self.s.turns], [3, 3, 3, 3, 4, 3, 3, 2])
+        self.assertEqual(self.s.turns[0]["calls"][0], {"ctx": 100, "kinds": {"roll"}})
+        self.assertEqual(self.s.turns[4]["calls"][1]["kinds"], {"lookup"})
+
+    def test_skills_come_from_the_skill_tool_or_a_slash_command(self):
+        self.assertIn("campaign-full-save", self.s.turns[4]["skills"])
+        self.assertEqual(self.s.turns[5]["skills"], {"resume-campaign"})
+        self.assertEqual(self.s.turns[0]["skills"], set())
+
+    def test_third_and_later_calls_are_classed(self):
+        self.assertEqual([td.extra_calls(t) for t in self.s.turns], [
+            [("dm-roll", 120)], [("write", 220)], [("roll", 320)], [("lookup", 420)],
+            [("save", 520), ("save", 530)], [("resume", 620)], [("other", 720)], []])
+
+    def test_files_read_again_after_writing(self):
+        self.assertEqual(td.reread_after_write(self.s.turns[4]), ["game-state.md"])
+        self.assertEqual(td.reread_after_write(self.s.turns[5]), [])
+
+    def test_state_file_characters_per_message(self):
+        self.assertEqual([t["state_chars"] for t in self.s.turns], [9, 11, 0, 0, 10, 0, 0, 8])
+
+    def test_median(self):
+        self.assertEqual(td.median([3, 1, 2]), 2)
+        self.assertEqual(td.median([4, 1, 2, 3]), 2.5)
+
+    def test_stats(self):
+        text = td.stats(self.s)
+        extra = 120 + 220 + 320 + 420 + 520 + 530 + 620 + 720
+        for expected in ("**Context read by third and later calls of a message**: %s of all context read (%d of %d)."
+                         % (td.percent(extra, CALL_TOTAL), extra, CALL_TOTAL),
+                         "  - Full save: %s" % td.percent(1050, CALL_TOTAL),
+                         "  - A turn with a DM roll: roll, then write, then narrate: %s" % td.percent(120, CALL_TOTAL),
+                         "  - A second write call in one reply: %s" % td.percent(220, CALL_TOTAL),
+                         "  - A Read, Grep or Glob as its own call: %s" % td.percent(420, CALL_TOTAL),
+                         "  - A second roll call in one reply: %s" % td.percent(320, CALL_TOTAL),
+                         "  - Resume: %s" % td.percent(620, CALL_TOTAL),
+                         "  - Anything else: %s" % td.percent(720, CALL_TOTAL),
+                         # 9, 11, 10 and 8 chars: mean 9 (rounded down), median 9.5 (rounded up).
+                         "**game-state.md**: read 2 times. Edited in 4 player messages, 38 chars sent; "
+                         "per editing message mean 9, median 10.",
+                         "**Failed edits**: 1.",
+                         "**Full save at player message 5**: 4 calls; files read again after writing: game-state.md."):
+            self.assertIn(expected, text)
+
+    def test_stats_without_extra_calls_or_edits(self):
+        text = td.stats(td.Session(write_log(self.tmp.name, [user(0, "hi"), call(0, "z1", 50)],
+                                             session_id="dddd5555-0000")))
+        self.assertIn("**Context read by third and later calls of a message**: 0.0% of all context read (0 of 50).",
+                      text)
+        self.assertIn("**game-state.md**: read 0 times. Edited in 0 player messages.", text)
+        self.assertIn("**Failed edits**: 0.", text)
+        self.assertNotIn("Full save at", text)
+        self.assertNotIn("  - Full save", text)
+
+
 class CommandLine(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

@@ -1,0 +1,27 @@
+{
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
+  "enabledPlugins": {
+    "engineering@knowledge-work-plugins": false
+  },
+  "permissions": {
+    "deny": [
+      "mcp__*",
+      "ListMcpResourcesTool",
+      "ReadMcpResourceTool",
+      "Artifact*",
+      "NotebookEdit",
+      "LSP",
+      "EnterWorktree",
+      "ExitWorktree",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "PushNotification",
+      "ReportFindings",
+      "ShareOnboardingGuide"
+    ]
+  }
+}

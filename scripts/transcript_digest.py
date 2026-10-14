@@ -48,6 +48,13 @@ FRICTION = re.compile(
     re.I,
 )
 CAMPAIGN = re.compile(r"adventures/([a-z0-9][a-z0-9-]*)/")
+SLASH_SKILL = re.compile(r"<command-(?:name|message)>/?([\w:-]+)")
+STATE_FILE = "game-state.md"
+SAVE_SKILL, RESUME_SKILL = "campaign-full-save", "resume-campaign"
+# Why a call after the second one in a player message was needed (see extra_calls).
+EXTRA_CLASSES = (("save", "Full save"), ("dm-roll", "A turn with a DM roll: roll, then write, then narrate"),
+                 ("write", "A second write call in one reply"), ("lookup", "A Read, Grep or Glob as its own call"),
+                 ("roll", "A second roll call in one reply"), ("resume", "Resume"), ("other", "Anything else"))
 
 
 def log_dir():
@@ -83,6 +90,17 @@ def describe_call(name, args):
     return one_line(json.dumps(args), 220)
 
 
+def call_kind(name, args):
+    """What a tool call did, for classing the calls of a message: roll, write, lookup or other."""
+    if name in ("Bash", "PowerShell") and "scripts/roll" in str(args.get("command", "")).replace("\\", "/"):
+        return "roll"
+    if name in ("Edit", "Write"):
+        return "write"
+    if name in ("Read", "Grep", "Glob"):
+        return "lookup"
+    return "other"
+
+
 def result_text(content):
     if isinstance(content, str):
         return content
@@ -111,6 +129,7 @@ class Session:
         self.read_chars = collections.Counter()
         self.result_chars = collections.Counter()
         self.errors = []
+        self.failed_edits = 0
         self.turns = []            # player messages with the reply that followed
         self.lines = []            # transcript lines
         self._parse()
@@ -121,6 +140,7 @@ class Session:
 
     def _parse_lines(self, handle):
         tool_of = {}               # tool_use id -> (name, file)
+        call_of = {}               # API message id -> its entry in the turn's "calls"
         seen_ids = set()
         ctx_now = 0
         for raw in handle:
@@ -154,6 +174,9 @@ class Session:
                     seen_ids.add(mid)
                     self.ctx.append(ctx_now)
                     self.models[msg.get("model")] += 1
+                    if self.turns:
+                        call_of[mid] = {"ctx": ctx_now, "kinds": set()}
+                        self.turns[-1]["calls"].append(call_of[mid])
                 for block in msg.get("content") or []:
                     if block.get("type") == "text" and block.get("text", "").strip():
                         text = block["text"]
@@ -175,7 +198,18 @@ class Session:
                             self.reads[target] += 1
                         self.lines.append("  -> %s %s" % (name, describe_call(name, args)))
                         if self.turns:
-                            self.turns[-1]["tools"].append(name + (":" + target if target else ""))
+                            turn = self.turns[-1]
+                            turn["tools"].append(name + (":" + target if target else ""))
+                            kind = call_kind(name, args)
+                            if mid in call_of:
+                                call_of[mid]["kinds"].add(kind)
+                            if name == "Skill":
+                                turn["skills"].add(args.get("skill", "?"))
+                            if target and name in ("Read", "Edit", "Write"):
+                                turn["files"].append((kind, target))
+                            if target == STATE_FILE and kind == "write":
+                                turn["state_chars"] += sum(
+                                    len(args.get(k, "")) for k in ("old_string", "new_string", "content"))
                 continue
 
             if kind != "user":
@@ -193,6 +227,7 @@ class Session:
                     flag = ""
                     if block.get("is_error"):
                         flag = " ERROR"
+                        self.failed_edits += name == "Edit"
                         self.errors.append("%s %s %s: %s" % (clock, name, target, one_line(text, 160)))
                     self.lines.append("  <- %d chars%s: %s" % (size, flag, one_line(text, 160)))
                 elif block.get("type") == "text":
@@ -206,7 +241,9 @@ class Session:
                             self.interrupts += 1
                         self.lines.append("\n### PLAYER %s\n%s" % (clock, cut(text, 3000)))
                         self.turns.append({"time": clock, "ctx": ctx_now, "text": text,
-                                           "reply_chars": 0, "tools": []})
+                                           "reply_chars": 0, "tools": [], "calls": [],
+                                           "skills": set(SLASH_SKILL.findall(text)), "files": [],
+                                           "state_chars": 0})
 
     def tokens(self):
         total = collections.Counter()
@@ -225,6 +262,86 @@ def table(counter, extra=None, top=8):
         note = " (%d chars)" % extra[key] if extra else ""
         rows.append("%s x%d%s" % (key or "?", count, note))
     return ", ".join(rows) or "none"
+
+
+def extra_calls(turn):
+    """(class, context) for each call after the second in one player message.
+
+    A reply that uses a tool needs two calls; a third and later call is needed
+    because an earlier call made a tool call of its own. A message that ran the
+    full save or resume is classed by that skill. Otherwise a call is classed by
+    the call just before it and those earlier still: a write after a write is a
+    second write, a write after a roll a DM-roll turn, a roll after a roll a
+    second roll, and a call after a lookup a lookup.
+    """
+    out = []
+    calls = turn["calls"]
+    for i in range(2, len(calls)):
+        prev = calls[i - 1]["kinds"]
+        before = set().union(*(c["kinds"] for c in calls[:i - 1]))
+        if SAVE_SKILL in turn["skills"]:
+            cls = "save"
+        elif RESUME_SKILL in turn["skills"]:
+            cls = "resume"
+        elif "write" in prev and "write" in before:
+            cls = "write"
+        elif "write" in prev and "roll" in before:
+            cls = "dm-roll"
+        elif "roll" in prev and "roll" in before:
+            cls = "roll"
+        elif "lookup" in prev or "lookup" in before:
+            cls = "lookup"
+        else:
+            cls = "other"
+        out.append((cls, calls[i]["ctx"]))
+    return out
+
+
+def percent(part, whole):
+    return "%.1f%%" % (100.0 * part / whole) if whole else "0%"
+
+
+def median(values):
+    values = sorted(values)
+    mid = len(values) // 2
+    return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2.0
+
+
+def reread_after_write(turn):
+    """Files read again after being written, in the order of their first re-read."""
+    written, reread = set(), []
+    for kind, target in turn["files"]:
+        if kind == "write":
+            written.add(target)
+        elif target in written and target not in reread:
+            reread.append(target)
+    return reread
+
+
+def call_figures(s):
+    """Lines on calls per message, game-state.md edits and full saves."""
+    out = []
+    total = sum(s.ctx)
+    extra = collections.Counter()
+    for turn in s.turns:
+        for cls, ctx in extra_calls(turn):
+            extra[cls] += ctx
+    if total:
+        out.append("- **Context read by third and later calls of a message**: %s of all context read (%d of %d)." % (
+            percent(sum(extra.values()), total), sum(extra.values()), total))
+        out.extend("  - %s: %s" % (label, percent(extra[cls], total)) for cls, label in EXTRA_CLASSES if extra[cls])
+    edits = [t["state_chars"] for t in s.turns if t["state_chars"]]
+    out.append("- **%s**: read %d times. Edited in %d player messages%s." % (
+        STATE_FILE, s.reads[STATE_FILE], len(edits),
+        ", %d chars sent; per editing message mean %d, median %d" % (
+            sum(edits), sum(edits) // len(edits), int(median(edits) + 0.5))
+        if edits else ""))
+    out.append("- **Failed edits**: %d." % s.failed_edits)
+    for n, turn in enumerate(s.turns, 1):
+        if SAVE_SKILL in turn["skills"]:
+            out.append("- **Full save at player message %d**: %d calls; files read again after writing: %s." % (
+                n, len(turn["calls"]), ", ".join(reread_after_write(turn)) or "none"))
+    return out
 
 
 def stats(s):
@@ -251,6 +368,7 @@ def stats(s):
     out.append("- **Files read** (calls, chars returned): %s" % table(s.reads, s.read_chars))
     out.append("- **Tool output by tool** (chars): %s" % (
         ", ".join("%s %d" % kv for kv in s.result_chars.most_common(8)) or "none"))
+    out.extend(call_figures(s))
     jumps = sorted(((b["ctx"] - a["ctx"], a) for a, b in zip(s.turns, s.turns[1:]) if b["ctx"] > a["ctx"]),
                    key=lambda j: -j[0])[:5]
     if jumps:

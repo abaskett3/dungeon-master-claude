@@ -1,0 +1,43 @@
+{
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
+  "enabledPlugins": {
+    "engineering@synced": false
+  },
+  "skillOverrides": {
+    "docs": "off",
+    "docx": "off",
+    "pptx": "off",
+    "xlsx": "off",
+    "pdf": "off",
+    "google-workspace": "off",
+    "computer-use": "off",
+    "built-in-browser": "off",
+    "chrome-browser": "off",
+    "deep-research": "off",
+    "morning": "off",
+    "skill-creator": "off",
+    "import-memory": "off",
+    "plugin-authoring": "off"
+  },
+  "permissions": {
+    "deny": [
+      "mcp__*",
+      "ListMcpResourcesTool",
+      "ReadMcpResourceTool",
+      "Artifact*",
+      "NotebookEdit",
+      "LSP",
+      "EnterWorktree",
+      "ExitWorktree",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "PushNotification",
+      "ReportFindings",
+      "ShareOnboardingGuide"
+    ]
+  }
+}

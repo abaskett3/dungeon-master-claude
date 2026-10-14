@@ -1,4 +1,5 @@
 """The toolkit as a whole: settings, skills and the files the prompts point at."""
+import fnmatch
 import glob
 import json
 import os
@@ -54,6 +55,60 @@ class Settings(unittest.TestCase):
                 for hook in group["hooks"]:
                     self.assertEqual(hook["type"], "command", event)
                     self.assertTrue(hook["command"].strip(), event)
+
+
+class PlayLauncher(unittest.TestCase):
+    # Tools play, the dice and map scripts, rules lookups and the module and import skills need.
+    NEEDED = ("Read", "Write", "Edit", "Glob", "Grep", "Bash", "PowerShell", "Skill", "ToolSearch",
+              "AskUserQuestion", "WebSearch", "WebFetch", "Agent")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.settings = json.loads(read(".claude", "play-settings.json"))
+
+    def test_both_launchers_start_play_with_the_play_settings(self):
+        for name in ("play.ps1", "play.sh"):
+            with self.subTest(launcher=name):
+                text = read(name)
+                self.assertIn("--settings .claude/play-settings.json", text)
+                self.assertRegex(text, r"--model \w+")
+                self.assertIn("--effort high", text)
+
+    def test_the_launchers_pass_extra_arguments_on(self):
+        self.assertIn("@args", read("play.ps1"))
+        self.assertIn('"$@"', read("play.sh"))
+
+    def test_play_sh_has_unix_line_endings(self):
+        with open(os.path.join(ROOT, "play.sh"), "rb") as handle:
+            self.assertNotIn(b"\r", handle.read())
+
+    def test_play_sh_is_executable_in_git(self):
+        if not os.path.isdir(os.path.join(ROOT, ".git")):
+            self.skipTest("not a git checkout")
+        try:
+            result = run(["git", "ls-files", "-s", "play.sh"])
+        except OSError:
+            self.skipTest("git is not available")
+        if not result.stdout.strip():
+            self.skipTest("play.sh is not committed yet")
+        self.assertTrue(result.stdout.startswith("100755"), result.stdout)
+
+    def test_play_never_loses_a_tool_it_needs(self):
+        deny = self.settings.get("permissions", {}).get("deny", [])
+        for rule in deny:
+            for tool in self.NEEDED:
+                with self.subTest(rule=rule, tool=tool):
+                    self.assertFalse(fnmatch.fnmatchcase(tool, rule.split("(", 1)[0]),
+                                     f"play-settings.json denies {tool}, which play needs")
+
+    def test_play_keeps_every_project_skill(self):
+        overrides = self.settings.get("skillOverrides", {})
+        for name in skill_names():
+            self.assertEqual(overrides.get(name, "on"), "on", f"play-settings.json hides /{name}")
+
+    def test_play_settings_grant_no_permissions_of_their_own(self):
+        # The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.
+        self.assertNotIn("allow", self.settings.get("permissions", {}))
 
 
 class Skills(unittest.TestCase):

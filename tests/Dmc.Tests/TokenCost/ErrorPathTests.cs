@@ -48,6 +48,10 @@ public sealed partial class ErrorPathTests
         [new[] { "roll", "99999999999d6" }],
         [new[] { "roll", "2d20kh3" }],
         [new[] { "roll", "2d20kl0" }],
+        [new[] { "roll", "1d20+99999999999999999999" }], // a modifier too large for any number
+        [new[] { "roll", "a\nb" }], // a line break in the echoed expression is written out, not printed
+        [new[] { "roll", "a\r\nb" }],
+        [new[] { "roll", "1d20\n" }],
     ];
 
     public static string Name(System.Reflection.MethodInfo method, object[] data) =>

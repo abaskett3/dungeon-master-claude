@@ -15,19 +15,17 @@ public static class Legacy
     public static string Script(string name) => Path.Combine(Scripts, name).Replace('\\', '/');
 
     /// <summary>
-    /// Full path of a bash that works, or null. On Windows a bare "bash" can start the WSL launcher in System32
-    /// instead of Git Bash, so candidates are tried by full path until one answers.
+    /// Full path of a bash that runs <c>scripts/roll.sh</c>, or null. On Windows a bare "bash" can be the WSL
+    /// launcher, <c>C:\Windows\System32\bash.exe</c>, which answers <c>echo ok</c> but cannot run a script given by a
+    /// Windows path. So on Windows: Git Bash is tried first (found from <c>git</c> and Program Files), the bash on
+    /// PATH after it, and anything under the Windows folder is never used. Each candidate must then actually
+    /// run the real script and roll a die, not just say "ok".
     /// </summary>
     public static string? Bash() => _bash.Value;
 
-    public static string? PowerShell() => Which("pwsh") ?? Which("powershell");
-
-    /// <summary>A Python that answers <c>--version</c>. On Windows <c>python3</c> can be the Store stub, which does not.</summary>
-    public static string? Python() => _python.Value;
-
     static readonly Lazy<string?> _bash = new(() =>
     {
-        var candidates = new List<string?> { Which("bash") };
+        var candidates = new List<string?>();
         if (OperatingSystem.IsWindows())
         {
             string? git = Which("git");
@@ -39,8 +37,24 @@ public static class Legacy
                     candidates.Add(Path.Combine(baseDir, "Git", "bin", "bash.exe"));
             }
         }
-        return candidates.FirstOrDefault(c => c is not null && File.Exists(c) && Answers(c, "-c", "echo ok") == "ok");
+        candidates.Add(Which("bash"));
+        return candidates.FirstOrDefault(c => c is not null && File.Exists(c) && !IsUnderWindowsFolder(c) && RunsRollSh(c));
     });
+
+    static bool IsUnderWindowsFolder(string path)
+    {
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        return windows.Length > 0 && Path.GetFullPath(path).StartsWith(windows + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    }
+
+    static bool RunsRollSh(string bash) =>
+        Answers(bash, Script("roll.sh"), "1d6") is { } line && System.Text.RegularExpressions.Regex.IsMatch(line, @"^1d6: \[[1-6]\] = [1-6]$");
+
+    public static string? PowerShell() => Which("pwsh") ?? Which("powershell");
+
+    /// <summary>A Python that answers <c>--version</c>. On Windows <c>python3</c> can be the Store stub, which does not.</summary>
+    public static string? Python() => _python.Value;
+
 
     static readonly Lazy<string?> _python = new(() =>
         new[] { "python3", "python" }.Select(Which).FirstOrDefault(c => c is not null && Answers(c, "--version") is { } v && v.StartsWith("Python 3", StringComparison.Ordinal)));

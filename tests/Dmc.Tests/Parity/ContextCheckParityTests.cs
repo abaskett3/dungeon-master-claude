@@ -32,6 +32,16 @@ public sealed class ContextCheckParityTests
         work => new JsonObject { ["session_id"] = "s", ["transcript_path"] = Path.Combine(work, Log) }.ToJsonString(),
         work => File.WriteAllText(Path.Combine(work, Log), content, new UTF8Encoding(false)));
 
+    /// <summary>Like <see cref="WithLog"/>, for a log that is not text (bytes that are not UTF-8, a BOM).</summary>
+    static ParityCase WithLogBytes(string name, byte[] content) => new(name, _ => [],
+        work => new JsonObject { ["session_id"] = "s", ["transcript_path"] = Path.Combine(work, Log) }.ToJsonString(),
+        work => File.WriteAllBytes(Path.Combine(work, Log), content));
+
+    static byte[] Utf8(string text) => Encoding.UTF8.GetBytes(text);
+
+    static string BigAssistant(int context, int size) => ContextCheckContract.Assistant(context).ToJsonString()
+        .Replace("\"content\":[]", "\"content\":\"" + new string('x', size) + "\"");
+
     static string Lines(params string[] lines) => string.Join("\n", lines) + "\n";
 
     /// <summary>A case with this exact stdin and no log.</summary>
@@ -67,6 +77,27 @@ public sealed class ContextCheckParityTests
         WithLog("a token count that is a string", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": \"7\"}}}")),
         WithLog("an empty message and usage", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": null}", "{\"type\": \"assistant\", \"message\": {\"usage\": []}}")),
         WithLog("values that are not objects", Lines(Assistant(180000), "[1, 2]", "5", "\"text\"", "null", "")),
+        // Bytes and numbers Python's json.loads treats in its own way.
+        WithLogBytes("invalid UTF-8 inside a string", [.. Utf8(Lines(Assistant(180000))),
+            .. Utf8("{\"type\": \"assistant\", \"message\": {\"content\": \"x"), 0xFF, .. Utf8("y\", \"usage\": {\"input_tokens\": 5}}}\n")]),
+        WithLogBytes("invalid UTF-8 outside a string", [.. Utf8(Lines(Assistant(180000))),
+            .. Utf8("{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 5}}}"), 0x80, (byte)'\n']),
+        WithLogBytes("a BOM at the start of the log", [0xEF, 0xBB, 0xBF, .. Utf8(Lines(Assistant(180000), User()))]),
+        WithLog("NaN as a token count", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": NaN}}}")),
+        WithLog("Infinity as a token count", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": Infinity}}}")),
+        WithLog("-Infinity as a token count", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": {\"usage\": {\"cache_read_input_tokens\": -Infinity}}}")),
+        WithLog("NaN in a field that is not used", Lines(Assistant(180000), "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 170000, \"output_tokens\": NaN}}}")),
+        WithLog("NaN in a compaction boundary", Lines(Assistant(180000), "{\"type\": \"system\", \"subtype\": \"compact_boundary\", \"x\": NaN}")),
+        WithLog("NaN inside a string", Lines("{\"type\": \"assistant\", \"message\": {\"content\": \"NaN\", \"usage\": {\"input_tokens\": 170000}}}")),
+        WithLog("a type written with escapes", Lines("{\"type\": \"\\u0061ssistant\", \"message\": {\"usage\": {\"input_tokens\": 170000}}}")),
+        WithLog("a compaction written with escapes", Lines(Assistant(180000), "{\"type\": \"system\", \"subtype\": \"compact\\u005fboundary\"}")),
+        // Lines longer than a chunk.
+        WithLog("a user line of 3 MiB at the end", Lines(Assistant(175000), ContextCheckContract.User(new string('x', 3 * TranscriptReader.ChunkSize)).ToJsonString())),
+        WithLog("an assistant line of 2 MiB at the end", Lines(Assistant(180000), BigAssistant(170000, 2 * TranscriptReader.ChunkSize + 123))),
+        // A BOM on stdin is a character to Python, which then rejects the JSON.
+        new("a BOM on stdin", _ => [],
+            work => "\uFEFF" + new JsonObject { ["transcript_path"] = Path.Combine(work, Log) }.ToJsonString(),
+            work => File.WriteAllText(Path.Combine(work, Log), Lines(Assistant(180000)))),
         // No log, an empty one, and bad input: never an error, never any output.
         WithLog("an empty log", ""),
         WithLog("a log with no usage", Lines(User())),

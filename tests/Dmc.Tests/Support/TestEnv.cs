@@ -45,8 +45,9 @@ public static class TestEnv
             start.ArgumentList.Add(arg);
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException($"could not start {file}");
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
+        // Raw bytes, not a decoded reader: a reader quietly drops a leading byte-order mark, and a test must see it.
+        var stdout = ReadAll(process.StandardOutput.BaseStream);
+        var stderr = ReadAll(process.StandardError.BaseStream);
         try
         {
             process.StandardInput.Write(stdin ?? "");
@@ -63,7 +64,20 @@ public static class TestEnv
             throw new TimeoutException($"{file} did not finish in {timeoutSeconds} s");
         }
         process.WaitForExit(); // let the output readers drain
-        return new ProcessResult(process.ExitCode, stdout.Result, stderr.Result);
+        // GetString keeps a leading U+FEFF where a StreamReader would swallow the BOM.
+        var utf8 = new UTF8Encoding(false);
+        return new ProcessResult(process.ExitCode, utf8.GetString(stdout.Result), utf8.GetString(stderr.Result))
+        {
+            StdoutBytes = stdout.Result,
+            StderrBytes = stderr.Result,
+        };
+    }
+
+    static async Task<byte[]> ReadAll(Stream stream)
+    {
+        using var copy = new MemoryStream();
+        await stream.CopyToAsync(copy);
+        return copy.ToArray();
     }
 
     static string FindRoot()
@@ -80,6 +94,11 @@ public static class TestEnv
 /// <summary>What a command printed and returned.</summary>
 public sealed record ProcessResult(int ExitCode, string Stdout, string Stderr)
 {
+    /// <summary>The raw bytes of stdout and stderr, for a process run through <see cref="TestEnv.Run"/>; null in-process.</summary>
+    public byte[]? StdoutBytes { get; init; }
+
+    public byte[]? StderrBytes { get; init; }
+
     /// <summary>The non-empty lines of stdout, with any CR removed (PowerShell writes CRLF).</summary>
     public string[] StdoutLines => Lines(Stdout);
 

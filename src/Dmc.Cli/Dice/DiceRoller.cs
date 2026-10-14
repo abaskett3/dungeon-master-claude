@@ -20,15 +20,20 @@ public sealed partial class DiceRoller(IRandomBytes random)
 
     public RollOutcome Roll(string expr)
     {
+        long mod = 0;
         var m = Expression().Match(expr.ToLowerInvariant());
         if (!m.Success)
-            return Failed($"{expr}: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)");
+            return Failed($"{Printable(expr)}: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)");
 
-        // A number too long for an int is out of range, as it is in the scripts.
+        // A count or die size too long for an int is out of range, as it is in the scripts.
         if (!TryInt(m.Groups[1].Value, empty: 1, out int count) || !TryInt(m.Groups[2].Value, empty: 0, out int sides)
-            || !TryInt(m.Groups[5].Value, empty: 0, out int mod)
             || count < 1 || count > 100 || sides < 2 || sides > 1000)
             return Failed($"{expr}: out of range (1-100 dice, 2-1000 sides)");
+
+        // A modifier is a 64-bit number, as in roll.sh (roll.ps1 silently drops one that does not fit an int, which
+        // is a bug). One too large even for that gets its own message, and so does a total that overflows.
+        if (m.Groups[5].Length > 0 && !long.TryParse(m.Groups[5].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out mod))
+            return Failed($"{expr}: modifier {m.Groups[5].Value} is too large (at most {long.MaxValue})");
 
         // Checked before any die is drawn: a rejected expression uses no randomness.
         bool keeping = m.Groups[3].Success;
@@ -56,7 +61,15 @@ public sealed partial class DiceRoller(IRandomBytes random)
             keepText = $" keep [{string.Join(", ", kept)}]";
         }
 
-        long total = kept.Sum(d => (long)d) + mod;
+        long total;
+        try
+        {
+            total = checked(kept.Sum(d => (long)d) + mod);
+        }
+        catch (OverflowException)
+        {
+            return Failed($"{expr}: modifier {m.Groups[5].Value} is too large (at most {long.MaxValue})");
+        }
         string modText = mod > 0 ? $" +{mod}" : mod < 0 ? $" {mod}" : "";
         return new RollOutcome($"{expr}: [{string.Join(", ", dice)}]{keepText}{modText} = {total}", Rolled: true);
     }
@@ -77,6 +90,32 @@ public sealed partial class DiceRoller(IRandomBytes random)
             if (n < limit)
                 return (int)(n % (uint)sides) + 1;
         }
+    }
+
+    /// <summary>
+    /// The expression as it is echoed in an error line: line breaks are written out (as a backslash and a letter),
+    /// so that an error is always one line, whatever was typed. A rolled line cannot contain one: the pattern
+    /// rejects it.
+    /// </summary>
+    // The characters string.ReplaceLineEndings treats as line breaks: LF, CR, FF, NEL, LS and PS.
+    static readonly char[] LineBreaks = ['\n', '\r', (char)0x0C, (char)0x85, (char)0x2028, (char)0x2029];
+
+    static string Printable(string expr)
+    {
+        if (expr.AsSpan().IndexOfAny(LineBreaks) < 0)
+            return expr;
+        var text = new System.Text.StringBuilder();
+        foreach (char c in expr)
+        {
+            text.Append(c switch
+            {
+                '\n' => "\\n",
+                '\r' => "\\r",
+                _ when LineBreaks.Contains(c) => $"\\u{(int)c:x4}",
+                _ => c.ToString(),
+            });
+        }
+        return text.ToString();
     }
 
     static RollOutcome Failed(string line) => new(line, Rolled: false);

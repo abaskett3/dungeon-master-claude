@@ -21,18 +21,13 @@ public sealed class ContextCheckCommand : ICommand
 
     public bool NeverFails => true;
 
+    // No catch here: a failure anywhere in this method is swallowed by CommandLine, which is the one place that
+    // enforces "never fails" (see NeverFails). The line is written last, so a failure leaves no partial output.
     public int Run(string[] args, Io io)
     {
-        try
-        {
-            string line = BreakReminder.For(ContextOfHook(io.In.ReadToEnd()));
-            if (line.Length > 0)
-                io.Out.WriteLine(line);
-        }
-        catch (Exception)
-        {
-            // A broken check must never block the player's message.
-        }
+        string line = BreakReminder.For(ContextOfHook(io.In.ReadToEnd()));
+        if (line.Length > 0)
+            io.Out.WriteLine(line);
         return 0;
     }
 
@@ -45,14 +40,18 @@ public sealed class ContextCheckCommand : ICommand
             || value.ValueKind != JsonValueKind.String)
             return 0;
         string? path = value.GetString();
-        return string.IsNullOrEmpty(path) ? 0 : TranscriptReader.LastContext(ExpandUser(path));
+        return string.IsNullOrEmpty(path) ? 0 : TranscriptReader.LastContext(ExpandUser(path, OperatingSystem.IsWindows()));
     }
 
-    /// <summary>Python's <c>os.path.expanduser</c> for the forms that matter: <c>~</c>, <c>~/x</c> and <c>~\x</c>.</summary>
-    static string ExpandUser(string path)
+    /// <summary>
+    /// Python's <c>os.path.expanduser</c> for the forms that matter. <c>~</c> and <c>~/x</c> everywhere; <c>~\x</c>
+    /// only on Windows, where <c>ntpath</c> takes both separators. On Linux and macOS (<c>posixpath</c>) a
+    /// backslash is an ordinary character, so <c>~\x</c> is a file name in the current folder.
+    /// </summary>
+    internal static string ExpandUser(string path, bool windows)
     {
-        if (path == "~" || path.StartsWith("~/", StringComparison.Ordinal) || path.StartsWith("~\\", StringComparison.Ordinal))
-            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
-        return path;
+        bool home = path == "~" || path.StartsWith("~/", StringComparison.Ordinal)
+            || (windows && path.StartsWith("~\\", StringComparison.Ordinal));
+        return home ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..] : path;
     }
 }

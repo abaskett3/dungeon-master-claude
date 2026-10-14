@@ -64,6 +64,12 @@ public sealed class RollParityTests
     [DynamicData(nameof(CaseData), DynamicDataDisplayName = nameof(CaseName))]
     public void RollMatchesRollSh(ParityCase test) => ParityCheck.Run(RollSh, test);
 
+    // roll.ps1 is left out here on purpose: it silently drops a modifier that does not fit an int (it prints the
+    // roll as if there were none), which is a bug in the script, not behaviour to keep. roll.sh keeps it.
+    [TestMethod]
+    public void RollMatchesRollShForAModifierBeyondAnInt() => ParityCheck.Run(RollSh,
+        new("a modifier beyond an int", "1d20+99999999999", "2d6-99999999999", "1d20+9999999999999", "3d6kh2-4294967296"));
+
     [TestMethod]
     [DynamicData(nameof(CaseData), DynamicDataDisplayName = nameof(CaseName))]
     public void RollMatchesRollPs1(ParityCase test) => ParityCheck.Run(RollPs1, test);

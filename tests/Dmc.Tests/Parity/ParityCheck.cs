@@ -161,9 +161,9 @@ public static partial class RollOutput
             Assert.IsFalse(rolled.Groups[3].Success, $"unexpected 'keep': {line}");
         }
 
-        int mod = expr.Groups[5].Success ? int.Parse(expr.Groups[5].Value) : 0;
+        long mod = expr.Groups[5].Success ? long.Parse(expr.Groups[5].Value) : 0;
         Assert.AreEqual(mod == 0 ? "" : mod.ToString("+0;-0"), rolled.Groups[4].Value, $"modifier shown: {line}");
-        Assert.AreEqual(kept.Sum() + mod, int.Parse(rolled.Groups[5].Value), $"total: {line}");
+        Assert.AreEqual(kept.Sum() + mod, long.Parse(rolled.Groups[5].Value), $"total: {line}");
 
         string modShape = mod == 0 ? "" : $" {mod:+0;-0}";
         return $"{rolled.Groups[1].Value}: [{count} dice in 1..{sides}]{keepShape}{modShape} = <total>";

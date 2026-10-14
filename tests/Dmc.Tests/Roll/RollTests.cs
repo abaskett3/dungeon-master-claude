@@ -89,7 +89,109 @@ public sealed class DiceRollerTests
         const string text = "out of range (1-100 dice, 2-1000 sides)";
         Assert.AreEqual($"99999999999d6: {text}", Roll("99999999999d6").Line);
         Assert.AreEqual($"1d99999999999: {text}", Roll("1d99999999999").Line);
-        Assert.AreEqual($"1d20+99999999999: {text}", Roll("1d20+99999999999").Line);
+    }
+
+    // Item 7: a modifier is a 64-bit number, as in roll.sh (roll.ps1 silently drops one that does not fit an int:
+    // it prints the roll as if there were no modifier). One that does not fit even 64 bits is named in its own line.
+    [TestMethod]
+    public void AModifierBeyondAnIntIsKept()
+    {
+        Assert.AreEqual("1d20+99999999999: [1] +99999999999 = 100000000000", Roll("1d20+99999999999", 0).Line);
+        Assert.AreEqual("1d20-99999999999: [1] -99999999999 = -99999999998", Roll("1d20-99999999999", 0).Line);
+    }
+
+    [TestMethod]
+    public void AModifierTooLargeForAnyNumberHasItsOwnOneLineMessage()
+    {
+        const string max = "9223372036854775807";
+        var tooBig = Roll("1d20+99999999999999999999");
+        Assert.IsFalse(tooBig.Rolled);
+        Assert.AreEqual($"1d20+99999999999999999999: modifier +99999999999999999999 is too large (at most {max})", tooBig.Line);
+        Assert.AreEqual($"1d6-99999999999999999999: modifier -99999999999999999999 is too large (at most {max})",
+            Roll("1d6-99999999999999999999").Line);
+        // The modifier fits, the total does not.
+        Assert.AreEqual($"1d20+{max}: modifier +{max} is too large (at most {max})", Roll($"1d20+{max}", 5).Line);
+        // The largest total that does fit.
+        Assert.AreEqual($"1d20+9223372036854775806: [1] +9223372036854775806 = {max}", Roll("1d20+9223372036854775806", 0).Line);
+    }
+
+    // Item 3: an error is one line, whatever was typed.
+    [TestMethod]
+    public void LineBreaksInAnExpressionAreWrittenOutInTheErrorLine()
+    {
+        Assert.AreEqual("a\\nb: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)", Roll("a\nb").Line);
+        Assert.AreEqual("a\\r\\nb: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)", Roll("a\r\nb").Line);
+        Assert.AreEqual("1d20\\n: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)", Roll("1d20\n").Line);
+        // FF, NEL, LS and PS are line breaks to string.ReplaceLineEndings, so they are written out too.
+        string odd = "x" + (char)0x2028 + "y" + (char)0x85 + "z" + (char)0x0C + (char)0x2029;
+        Assert.AreEqual("x\\u2028y\\u0085z\\u000c\\u2029: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)", Roll(odd).Line);
+        Assert.IsFalse(Roll("a\nb\nc").Line.Contains((char)10));
+    }
+
+    // Item 8: dice are read from /dev/urandom in pools, like roll.sh, not one read per die.
+    sealed class CountingStream : Stream
+    {
+        public List<int> Reads { get; } = [];
+        long _position;
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            Reads.Add(count);
+            for (int i = 0; i < count; i++)
+                buffer[offset + i] = (byte)(_position++ % 256);
+            return count;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [TestMethod]
+    public void RandomBytesAreReadInPools()
+    {
+        var stream = new CountingStream();
+        using var random = new OsRandomBytes(stream);
+        var buffer = new byte[4];
+        var all = new List<byte>();
+        for (int i = 0; i < 100; i++) // 400 bytes: 6.25 pools of 64
+        {
+            random.Fill(buffer);
+            all.AddRange(buffer);
+        }
+        Assert.AreEqual(7, stream.Reads.Count);
+        Assert.IsTrue(stream.Reads.All(r => r == OsRandomBytes.PoolSize));
+        // Every byte is used, in order, across the pool boundaries.
+        CollectionAssert.AreEqual(Enumerable.Range(0, 400).Select(i => (byte)(i % 256)).ToArray(), all.ToArray());
+    }
+
+    [TestMethod]
+    public void AFailureToReadTheSourceIsTheScriptsError()
+    {
+        using var random = new OsRandomBytes(new ThrowingStream());
+        var e = Assert.ThrowsExactly<DmcException>(() => random.Fill(new byte[4]));
+        Assert.AreEqual("cannot read /dev/urandom, no dice rolled", e.Message);
+        Assert.AreEqual(2, e.ExitCode);
+    }
+
+    sealed class ThrowingStream : Stream
+    {
+        public override int Read(byte[] buffer, int offset, int count) => throw new IOException("no entropy");
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     [TestMethod]

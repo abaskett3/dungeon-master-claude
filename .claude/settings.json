@@ -15,7 +15,10 @@
       "Bash(python3 scripts/pdf_extract.py *)",
       "PowerShell(python scripts/transcript_digest.py *)",
       "Bash(python scripts/transcript_digest.py *)",
-      "Bash(python3 scripts/transcript_digest.py *)"
+      "Bash(python3 scripts/transcript_digest.py *)",
+      "PowerShell(python scripts/context_check.py *)",
+      "Bash(python scripts/context_check.py *)",
+      "Bash(python3 scripts/context_check.py *)"
     ]
   },
   "hooks": {

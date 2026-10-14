@@ -6,8 +6,9 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 
 - [Claude Code](https://claude.com/claude-code), signed in.
 - This folder. The dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
-- Python 3 (3.8 or later), on your PATH as `python`. Three scripts use it:
+- Python 3 (3.8 or later), on your PATH as `python`. Four scripts use it:
   - the maps (`map_render.py`): no extra libraries. Without Python, DMC falls back to text maps.
+  - the break reminder (`context_check.py`), which the launcher runs before each of your messages: no extra libraries. Without Python, play still works, but DMC cannot tell when to offer a break.
   - reading PDF modules and rulebooks (`pdf_extract.py`): needs the PyMuPDF library, which DMC installs into `scripts/.pylib/` the first time, not system-wide.
   - reviewing your sessions (`transcript_digest.py`, used by `/review-transcript`): no extra libraries.
 
@@ -30,10 +31,11 @@ A Markdown or text copy of the SRD works too, and is faster to search. The SRD d
 1. Open a terminal in this folder and start DMC with `./play.ps1` in PowerShell on Windows, or `./play.sh` on macOS, Linux or Git Bash. It starts Claude Code on Sonnet at `high` effort with the settings made for play. If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy Bypass -File .\play.ps1`.
 2. Type `/new-campaign`. DMC asks how you like to play, helps you build a character and sets up the campaign files.
 3. Play. Say what your character does in plain language.
-4. When you want to stop, type `/campaign-full-save`.
-5. Next time, start DMC the same way and type `/resume-campaign`.
+4. When the conversation gets long, DMC offers a break at a natural pause. Say yes, and when it confirms the save, type `/clear` and then `/resume-campaign`. You carry on from where you were.
+5. When you want to stop, type `/campaign-full-save`.
+6. Next time, start DMC the same way and type `/resume-campaign`.
 
-Plain `claude` also works, but loads more that play does not use and starts on your account's default model.
+Plain `claude` also works, but loads more that play does not use, starts on your account's default model and gets no break reminder.
 
 ## Commands
 
@@ -50,7 +52,7 @@ Plain `claude` also works, but loads more that play does not use and starts on y
 | `/rewind-campaign` | Go back to an earlier moment and undo what came after it |
 | `/review-transcript` | Review recorded play sessions and propose improvements to DMC's own prompts |
 
-DMC uses these on its own as you play. You only need to type the first three. `/review-transcript` is the exception: it is for working on the toolkit, and DMC only runs it when you ask.
+DMC uses these on its own as you play. You only need to type the first three, plus Claude Code's own `/clear` when you take a break. `/review-transcript` is the exception: it is for working on the toolkit, and DMC only runs it when you ask.
 
 ## Talking to DMC
 
@@ -91,7 +93,9 @@ adventures/<campaign>/
   story/
     summary.md           the story so far, compressed
     canon.md             every established fact: names, places, prices, rulings
+    canon-archive.md     facts that can no longer come up, searched when needed
     dm-notes.md          DMC's secret plans  (SPOILERS - do not read)
+    dm-notes-archive.md  DMC's closed threads  (SPOILERS)
     sessions/            scene-by-scene record of each session
   maps/                  saved maps of places you may return to, and the live map
   module-progress.md     only for published modules: your place in the book  (SPOILERS)
@@ -99,11 +103,15 @@ adventures/<campaign>/
 
 DMC writes to these files as you play, not only when you save, so closing the terminal by accident costs you very little. `/campaign-full-save` additionally rewrites the summary and cross-checks the files.
 
-These are ordinary text files. You can read and edit your character sheet or the options by hand. Stay out of `story/dm-notes.md` and the NPC sheets if you want to be surprised.
+These are ordinary text files. You can read and edit your character sheet or the options by hand. Stay out of `story/dm-notes.md`, `story/dm-notes-archive.md` and the NPC sheets if you want to be surprised.
 
 ### Long sessions
 
-Claude Code compacts a long conversation when it fills up, which can blur details. This project is built so that does not matter: state is saved continuously, and after a compaction DMC reloads from the files. For the cleanest results, play in sessions: save, close, and start fresh with `/resume-campaign`.
+Every message re-reads the whole conversation, so a long one uses more of your usage limit with each message, and details blur as it grows. DMC therefore keeps sessions short and reloads from the files, which are always up to date.
+
+Started with the launcher, DMC is told before each of your messages how full the conversation is. Past a point it offers a break at the next natural pause: the end of a scene, the end of a fight, or the start of a combat round with nothing waiting on you. Say yes and it saves everything and checks the files; then type `/clear` and `/resume-campaign`. DMC restates where you are without a full recap, and a fight resumes on the same round with everyone where they stood. Say no and it asks again later.
+
+Claude Code can still compact a conversation on its own. That loses nothing either: state is saved as you play, and after a compaction DMC reloads from the files.
 
 ## Playing a published module
 
@@ -152,7 +160,7 @@ play.ps1, play.sh    start a play session: Sonnet, high effort, play settings
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dice, compaction reminders
 .claude/play-settings.json  settings for play only
-scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py)
+scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py), break reminder (context_check.py)
 templates/           blank campaign files and character sheets
 tests/               checks that the scripts, skills and settings still work
 adventures/          your campaigns (not in git)
@@ -160,7 +168,7 @@ modules/             ingested published modules (not in git)
 rules/               optional local rules reference (not in git)
 ```
 
-The toolkit is a git repository. Your campaigns, modules and rules files are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns.
+The toolkit is a git repository. Your campaigns, modules and rules files are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ### Tests
 

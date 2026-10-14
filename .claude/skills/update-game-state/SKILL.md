@@ -23,6 +23,7 @@ description: Bring the active campaign's game-state.md in line with the present 
 - **Quests**: active, completed and failed, each with a one-line status.
 - **Clocks**: anything counting down (a ritual in three days, a ship leaving at dawn, a spell that lasts an hour).
 - **Pending**: an unresolved roll, a question the player has not answered, a choice in front of them.
+- **Plans agreed but not yet carried out**, under Pending: who stands where, who holds what, what triggers what, the order of the steps. A plan that lives only in the conversation is lost at a break or a compaction.
 
 ## Rests
 

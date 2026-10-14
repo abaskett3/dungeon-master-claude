@@ -39,5 +39,17 @@
       "ReportFindings",
       "ShareOnboardingGuide"
     ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/scripts/context_check.py\" || true"
+          }
+        ]
+      }
+    ]
   }
 }

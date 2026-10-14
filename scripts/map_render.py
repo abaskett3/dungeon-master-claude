@@ -45,7 +45,9 @@ Grid: one character per cell, every row the same length, no spaces between
 cells. A space is empty (nothing there). Columns are lettered A, B, C from
 the left and rows numbered 1, 2, 3 from the top, so "E3" is the fifth cell
 of the third row. A token's "at" is its top-left cell; "size" is its width
-in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan).
+in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan). Above 5 ft (30
+ft and the mile scales) every creature fits in one square, so "size" counts
+as 1 for footprint, blocking and distance, and is only shown in the legend.
 
 Built-in symbols:
   #  wall        .  floor       +  door        =  window      ~  water
@@ -59,10 +61,13 @@ cover, difficult, unknown, feature. A new symbol with only a name is drawn
 as floor with the symbol written on it.
 
 Every map is drawn to scale: one square is the same distance everywhere.
-"cell_ft" is the feet in one square and must be 5 (the default; anything at
-close quarters) or, for overland maps, 5280, 31680 or 316800 (1, 6 or 60
-miles; shown as miles). Anything else, including null, is rejected. Any kind
-of token may sit on any map. A scene with a "base" cannot change its scale.
+"cell_ft" is the feet in one square and must be 5 (the default; a fight or
+close quarters), 30 (a larger place: one turn of movement at speed 30) or,
+for overland maps, 5280, 31680 or 316800 (1, 6 or 60 miles; shown as miles).
+Anything else, including null, is rejected. Any kind of token may sit on any
+map. At 5 ft two tokens cannot share a cell; above 5 ft several can (a melee),
+drawn small inside the cell: the first three, then a "+N" badge whose tooltip
+lists the rest. A scene with a "base" cannot change its scale.
 
 Other keys, all optional: "scale_note" (a line after the scale), "north"
 ("up", "down", "left", "right" or null when no direction is established),
@@ -70,10 +75,11 @@ Other keys, all optional: "scale_note" (a line after the scale), "north"
 title).
 
 Distances are between the nearest cells of two creatures, in a straight
-line; walls are not taken into account. At 5 ft they count squares the 5e
-way (a diagonal step costs the same as a straight one). On a mile-scale map
-they are the true straight-line distance between cell centres, to the
-nearest mile.
+line; walls are not taken into account. At 5 and 30 ft they count squares
+the 5e way (a diagonal step costs the same as a straight one). Above 5 ft they
+are approximate ("about", and "same square" for one cell). On a mile-scale
+map they are the true straight-line distance between cell centres, to the
+nearest mile ("about").
 """
 import argparse
 import datetime
@@ -121,10 +127,21 @@ TERRAINS = {"wall", "floor", "door", "window", "water", "hazard", "stairs_down",
 # A creature cannot stand in these.
 BLOCKED = {"wall", "void"}
 
-# Standard D&D map scales, in feet per square: 5 ft (the battle grid) and
+# Map scales, in feet per square: 5 ft (the 5e grid), 30 ft (one turn of
+# movement at speed 30; a choice for this toolkit, not a DMG scale) and
 # 1, 6 and 60 miles (province, kingdom and continent hexes; DMG p. 14).
-SCALES = (5, 5280, 31680, 316800)
+SCALES = (5, 30, 5280, 31680, 316800)
 MILE = 5280
+
+
+def is_overland(cell_ft):
+    return cell_ft >= MILE
+
+
+def is_coarse(cell_ft):
+    """Any square bigger than a creature's 5 ft: tokens share cells and size counts as 1."""
+    return cell_ft > 5
+
 
 KINDS = {
     "pc": ("#2f6fed", "you"),
@@ -151,7 +168,17 @@ def load_json(path):
         fail(f"{path} is not valid JSON: {err}")
     if not isinstance(data, dict):
         fail(f"{path} must hold a JSON object.")
+    if "cell_ft" in data:
+        check_scale(data["cell_ft"], path)
     return data
+
+
+def check_scale(cell_ft, where="the map"):
+    """Reject a scale that is not standard. `where` names the file that holds it."""
+    if cell_ft not in SCALES:
+        allowed = ", ".join(f"{s} ({format_distance(1, s)})" if is_overland(s) else str(s) for s in SCALES)
+        fail(f'{where}: "cell_ft" must be a standard map scale in feet ({allowed}), '
+             f"not {json.dumps(cell_ft)}: every map is drawn to scale.")
 
 
 def load_map(path):
@@ -167,8 +194,8 @@ def load_map(path):
             fail(f"{base_path} is a scene (it has its own \"base\"); base must be a place file.")
         base_ft = merged.get("cell_ft", 5)
         if "cell_ft" in data and data["cell_ft"] != base_ft:
-            fail(f'{path} sets "cell_ft": {data["cell_ft"]}, but its base "{base}" is drawn at '
-                 f"{base_ft}: a scene cannot change its place's scale.")
+            fail(f'{path} sets "cell_ft": {json.dumps(data["cell_ft"])}, but its base "{base}" '
+                 f"is drawn at {json.dumps(base_ft)}: a scene cannot change its place's scale.")
         merged.update({key: value for key, value in data.items() if key != "base"})
         data = merged
     if "grid" not in data:
@@ -262,9 +289,7 @@ def check(data):
         return "void" if symbol == " " else legend[symbol]["terrain"]
 
     cell_ft = data.get("cell_ft", 5)
-    if cell_ft not in SCALES:
-        fail('"cell_ft" must be a standard map scale in feet (5, or 5280, 31680, 316800 '
-             'for 1, 6, 60 miles): every map is drawn to scale.')
+    check_scale(cell_ft)  # load_json has already checked it by file name; this one guards direct callers
 
     north = data.get("north", "up")
     if north is not None and north not in NORTH_TURN:
@@ -289,8 +314,9 @@ def check(data):
         size = token.get("size", 1)
         if size not in (1, 2, 3, 4):
             fail(f"token {tid}: size must be 1, 2, 3 or 4 (cells across).")
+        span = 1 if is_coarse(cell_ft) else size  # cells across on this map
         col, row = parse_cell(token["at"], cols, rows, f"token {tid} ({name})")
-        cells = [(col + dx, row + dy) for dy in range(size) for dx in range(size)]
+        cells = [(col + dx, row + dy) for dy in range(span) for dx in range(span)]
         for c, r in cells:
             if c >= cols or r >= rows:
                 fail(f"token {tid} ({name}) at {cell_name(col, row)} with size {size} "
@@ -298,10 +324,10 @@ def check(data):
             if terrain_at(c, r) in BLOCKED:
                 fail(f"token {tid} ({name}) is on {cell_name(c, r)}, which is "
                      f"{'empty space' if terrain_at(c, r) == 'void' else 'a wall'}.")
-            if (c, r) in taken:
+            if (c, r) in taken and not is_coarse(cell_ft):
                 fail(f"tokens {taken[(c, r)]} and {tid} are both on {cell_name(c, r)}.")
             taken[(c, r)] = tid
-        tokens.append({"id": tid, "name": name, "kind": kind, "size": size,
+        tokens.append({"id": tid, "name": name, "kind": kind, "size": size, "span": span,
                        "col": col, "row": row, "cells": cells,
                        "note": str(token.get("note", "")),
                        "down": bool(token.get("down", False))})
@@ -334,27 +360,56 @@ def straight_squares(cells_a, cells_b):
     return min(math.hypot(ac - bc, ar - br) for ac, ar in cells_a for bc, br in cells_b)
 
 
-def feet(squares, cell_ft):
-    """A distance in squares as text: feet on a 5 ft map, whole miles on a mile-scale one."""
-    if cell_ft >= MILE:
+def format_distance(squares, cell_ft):
+    """A distance in squares as text: feet on a foot-scale map, whole miles on an overland one."""
+    if is_overland(cell_ft):
         miles = round(squares * cell_ft / MILE)
         return f"{miles} mile" + ("" if miles == 1 else "s")
     return f"{squares * cell_ft:g} ft"
 
 
+def squares_apart(cells_a, cells_b, cell_ft):
+    """Chebyshev squares on a foot-scale map (the 5e rule); a straight line, in
+    squares, on an overland map."""
+    measure = straight_squares if is_overland(cell_ft) else squares_between
+    return measure(cells_a, cells_b)
+
+
+def distance_text(squares, cell_ft):
+    """A distance as text. Above 5 ft a square is bigger than a creature, so it is
+    only approximate ("about"), and one cell is "same square"."""
+    if not is_coarse(cell_ft):
+        return format_distance(squares, cell_ft)
+    if squares == 0:
+        return f"same square (within {format_distance(1, cell_ft)})"
+    return "about " + format_distance(squares, cell_ft)
+
+
 def distance(cells_a, cells_b, cell_ft):
-    """Chebyshev squares at 5 ft (the 5e rule), straight line on a mile-scale map."""
-    measure = straight_squares if cell_ft >= MILE else squares_between
-    return feet(measure(cells_a, cells_b), cell_ft)
+    return distance_text(squares_apart(cells_a, cells_b, cell_ft), cell_ft)
+
+
+def measure_text(a, b, cell_ft):
+    """The line `--measure` prints for two cells."""
+    squares = squares_apart([a], [b], cell_ft)
+    span = f"{cell_name(*a)} to {cell_name(*b)}: "
+    far = distance_text(squares, cell_ft)
+    if is_coarse(cell_ft) and squares == 0:
+        return span + far
+    if not is_overland(cell_ft):  # a count of squares only means something on a grid
+        far = f"{squares} square{'' if squares == 1 else 's'}, {far}"
+    return f"{span}{far} (straight line, walls ignored)"
 
 
 def distance_lines(m):
     tokens = m["tokens"]
     if len(tokens) < 2:
         return []
-    scale = feet(1, m["cell_ft"])
-    if m["cell_ft"] >= MILE:
-        lines = [f"Distances (1 cell = {scale}, straight line):"]
+    scale = format_distance(1, m["cell_ft"])
+    if is_overland(m["cell_ft"]):
+        lines = [f"Distances (1 cell = {scale}, straight line, walls ignored):"]
+    elif is_coarse(m["cell_ft"]):  # a foot scale above 5 ft: 30 ft
+        lines = [f"Distances (1 cell = {scale}, so about ±{scale}; straight line, walls ignored):"]
     else:
         lines = [f"Distances (1 cell = {scale}, straight line, walls ignored; {scale} is adjacent):"]
     for i, a in enumerate(tokens):
@@ -465,18 +520,67 @@ def tile(terrain, symbol, x, y, s, color=None):
     return "".join(out)
 
 
-def draw_token(token, x0, y0, legend_scale=None):
-    """SVG for a creature. With legend_scale, draw a small sample at x0, y0."""
+SLOT_RADIUS = 8.5    # tokens sharing a cell: two across, so four fit in a 40 px cell
+SLOT_FONT = 10       # and their ids are never drawn smaller than this
+SHOWN_IN_A_CELL = 4  # when more share a cell, the last place is a "+N" badge
+
+
+def shared_slots(tokens):
+    """Lay out tokens that share a cell. Returns (slots, badges). slots maps a token id
+    to (dx, dy) in pixels from the cell's top-left corner, or to None for a token left
+    out because the cell is crowded. badges is one (col, row, dx, dy, hidden tokens) for
+    each crowded cell, drawn as "+N" in the last place."""
+    groups = {}
+    for token in tokens:
+        groups.setdefault((token["col"], token["row"]), []).append(token)
+    slots, badges = {}, []
+    half = CELL / 2
+    for (col, row), group in groups.items():
+        if len(group) < 2:
+            continue
+        places = min(len(group), SHOWN_IN_A_CELL)
+        rows = (places + 1) // 2
+        for i in range(places):
+            r, c = divmod(i, 2)
+            across = 1 if r == rows - 1 and places % 2 else 2
+            place = ((CELL - across * half) / 2 + (c + 0.5) * half, (CELL - rows * half) / 2 + (r + 0.5) * half)
+            if len(group) > SHOWN_IN_A_CELL and i == places - 1:
+                badges.append((col, row, *place, group[places - 1:]))
+            else:
+                slots[group[i]["id"]] = place
+        for token in group[places - 1:] if len(group) > SHOWN_IN_A_CELL else []:
+            slots[token["id"]] = None
+    return slots, badges
+
+
+def draw_badge(col, row, dx, dy, hidden, x0, y0):
+    """The "+N" that stands for the tokens that did not fit in a crowded cell."""
+    cx, cy = x0 + col * CELL + dx, y0 + row * CELL + dy
+    tip = "Also here: " + ", ".join(t["name"] for t in hidden)
+    return (f'<g><title>{esc(tip)}</title>'
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{SLOT_RADIUS}" fill="{MUTED}" stroke="#ffffff" stroke-width="2.5"/>'
+            + text(cx, cy + SLOT_FONT * 0.36, f"+{len(hidden)}", SLOT_FONT, "#15181c", "middle", "bold") + "</g>")
+
+
+def draw_token(token, x0, y0, legend_scale=None, slot=None):
+    """SVG for a creature. With legend_scale, draw a small sample at x0, y0. With
+    slot (dx, dy), draw it small inside its cell, which it shares with others."""
     color, _ = KINDS[token["kind"]]
-    if legend_scale is None:
-        span = token["size"] * CELL
-        cx = x0 + token["col"] * CELL + span / 2
-        cy = y0 + token["row"] * CELL + span / 2
-        radius = span / 2 - 4
+    if slot is not None:
+        cx = x0 + token["col"] * CELL + slot[0]
+        cy = y0 + token["row"] * CELL + slot[1]
+        radius = SLOT_RADIUS
+    elif legend_scale is None:
+        width = token["span"] * CELL
+        cx = x0 + token["col"] * CELL + width / 2
+        cy = y0 + token["row"] * CELL + width / 2
+        radius = width / 2 - 4
     else:
         cx, cy, radius = x0, y0, legend_scale
     opacity = "0.45" if token["down"] else "1"
     font = min(radius * 1.05, 26) if len(token["id"]) == 1 else min(radius * 0.85, 22)
+    if slot is not None:
+        font = SLOT_FONT
     tip = f"{token['name']} ({cell_name(token['col'], token['row'])})"
     if token["note"]:
         tip += f": {token['note']}"
@@ -562,8 +666,12 @@ def render_svg(m):
         out.append(text(lx, ly + 4, label["text"], 11, "#2b2f36", "middle"))
 
     # creatures
+    slots, badges = shared_slots(m["tokens"])
     for token in m["tokens"]:
-        out.append(draw_token(token, x0, y0))
+        if slots.get(token["id"], ()) is not None:  # None: too many in one cell, shown as +N
+            out.append(draw_token(token, x0, y0, slot=slots.get(token["id"])))
+    for badge in badges:
+        out.append(draw_badge(*badge, x0, y0))
 
     y = y0 + map_h + GUTTER
     if edges.get("bottom"):
@@ -575,7 +683,7 @@ def render_svg(m):
     # scale bar and compass, under the map
     y += 22
     out.append(f'<path d="M{PAD} {y - 9} v8 h{CELL} v-8" fill="none" stroke="{INK}" stroke-width="1.5"/>')
-    scale = f"1 square = {feet(1, m['cell_ft'])}"
+    scale = f"1 square = {format_distance(1, m['cell_ft'])}"
     if m["scale_note"]:
         scale += f". {m['scale_note']}"
     sx = PAD + CELL + 10
@@ -716,12 +824,7 @@ def main():
     if args.measure:
         a = parse_cell(args.measure[0], m["cols"], m["rows"], "--measure")
         b = parse_cell(args.measure[1], m["cols"], m["rows"], "--measure")
-        span = f"{cell_name(*a)} to {cell_name(*b)}: "
-        if m["cell_ft"] >= MILE:
-            print(f"{span}about {distance([a], [b], m['cell_ft'])} (straight line)")
-        else:
-            print(f"{span}{squares_between([a], [b])} squares, "
-                  f"{distance([a], [b], m['cell_ft'])} (straight line, walls ignored)")
+        print(measure_text(a, b, m["cell_ft"]))
         return
 
     svg = render_svg(m)

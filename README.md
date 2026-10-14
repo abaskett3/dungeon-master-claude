@@ -148,12 +148,23 @@ README.md            this file
 .claude/settings.json  permissions for saving and dice, compaction reminders
 scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py)
 templates/           blank campaign files and character sheets
+tests/               checks that the scripts, skills and settings still work
 adventures/          your campaigns (not in git)
 modules/             ingested published modules (not in git)
 rules/               optional local rules reference (not in git)
 ```
 
 The toolkit is a git repository. Your campaigns, modules and rules files are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns.
+
+### Tests
+
+After changing a script, a skill or the settings, run the tests from the toolkit folder:
+
+```
+python -m unittest discover -s tests
+```
+
+They need Python 3 and nothing else, never touch `adventures/`, and take about twenty seconds. Tests for something you do not have (bash, PowerShell, PyMuPDF) are skipped. On GitHub the same tests run on Linux and Windows for every push to `main` and every pull request (`.github/workflows/tests.yml`).
 
 ## Tips
 

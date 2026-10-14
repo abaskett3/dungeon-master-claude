@@ -116,10 +116,14 @@ class Session:
         self._parse()
 
     def _parse(self):
+        with open(self.path, encoding="utf-8") as handle:
+            self._parse_lines(handle)
+
+    def _parse_lines(self, handle):
         tool_of = {}               # tool_use id -> (name, file)
         seen_ids = set()
         ctx_now = 0
-        for raw in open(self.path, encoding="utf-8"):
+        for raw in handle:
             try:
                 rec = json.loads(raw)
             except ValueError:

@@ -45,7 +45,8 @@ Grid: one character per cell, every row the same length, no spaces between
 cells. A space is empty (nothing there). Columns are lettered A, B, C from
 the left and rows numbered 1, 2, 3 from the top, so "E3" is the fifth cell
 of the third row. A token's "at" is its top-left cell; "size" is its width
-in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan).
+in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan). At 30 ft every
+creature fits in one square, so "size" counts as 1 there.
 
 Built-in symbols:
   #  wall        .  floor       +  door        =  window      ~  water
@@ -63,7 +64,9 @@ Every map is drawn to scale: one square is the same distance everywhere.
 close quarters), 30 (a larger place: one turn of movement at speed 30) or,
 for overland maps, 5280, 31680 or 316800 (1, 6 or 60 miles; shown as miles).
 Anything else, including null, is rejected. Any kind of token may sit on any
-map. A scene with a "base" cannot change its scale.
+map. At 5 ft two tokens cannot share a cell; at 30 ft several can (a melee),
+and they are drawn small inside the cell. A scene with a "base" cannot change
+its scale.
 
 Other keys, all optional: "scale_note" (a line after the scale), "north"
 ("up", "down", "left", "right" or null when no direction is established),
@@ -72,9 +75,10 @@ title).
 
 Distances are between the nearest cells of two creatures, in a straight
 line; walls are not taken into account. At 5 and 30 ft they count squares
-the 5e way (a diagonal step costs the same as a straight one). On a
-mile-scale map they are the true straight-line distance between cell
-centres, to the nearest mile.
+the 5e way (a diagonal step costs the same as a straight one); at 30 ft they
+are approximate ("about", and "same square" for one cell). On a mile-scale
+map they are the true straight-line distance between cell centres, to the
+nearest mile ("about").
 """
 import argparse
 import datetime
@@ -131,6 +135,11 @@ MILE = 5280
 
 def is_overland(cell_ft):
     return cell_ft >= MILE
+
+
+def is_coarse(cell_ft):
+    """30 ft squares: too big for one creature each, so tokens share cells."""
+    return cell_ft == 30
 
 
 KINDS = {
@@ -278,8 +287,7 @@ def check(data):
         symbol = grid[row][col]
         return "void" if symbol == " " else legend[symbol]["terrain"]
 
-    cell_ft = data.get("cell_ft", 5)
-    check_scale(cell_ft)
+    cell_ft = data.get("cell_ft", 5)  # already checked, with its file's name, by load_json
 
     north = data.get("north", "up")
     if north is not None and north not in NORTH_TURN:
@@ -304,6 +312,8 @@ def check(data):
         size = token.get("size", 1)
         if size not in (1, 2, 3, 4):
             fail(f"token {tid}: size must be 1, 2, 3 or 4 (cells across).")
+        if is_coarse(cell_ft):
+            size = 1
         col, row = parse_cell(token["at"], cols, rows, f"token {tid} ({name})")
         cells = [(col + dx, row + dy) for dy in range(size) for dx in range(size)]
         for c, r in cells:
@@ -313,7 +323,7 @@ def check(data):
             if terrain_at(c, r) in BLOCKED:
                 fail(f"token {tid} ({name}) is on {cell_name(c, r)}, which is "
                      f"{'empty space' if terrain_at(c, r) == 'void' else 'a wall'}.")
-            if (c, r) in taken:
+            if (c, r) in taken and not is_coarse(cell_ft):
                 fail(f"tokens {taken[(c, r)]} and {tid} are both on {cell_name(c, r)}.")
             taken[(c, r)] = tid
         tokens.append({"id": tid, "name": name, "kind": kind, "size": size,
@@ -357,12 +367,19 @@ def format_distance(squares, cell_ft):
     return f"{squares * cell_ft:g} ft"
 
 
+def squares_distance(squares, cell_ft):
+    """A count of squares on a foot-scale map as text; at 30 ft it is only approximate."""
+    if is_coarse(cell_ft):
+        return "same square (within 30 ft)" if squares == 0 else "about " + format_distance(squares, cell_ft)
+    return format_distance(squares, cell_ft)
+
+
 def distance(cells_a, cells_b, cell_ft):
     """Chebyshev squares on a foot-scale map (the 5e rule); on an overland map a
     straight line, "about" because it is rounded to the mile."""
     if is_overland(cell_ft):
         return "about " + format_distance(straight_squares(cells_a, cells_b), cell_ft)
-    return format_distance(squares_between(cells_a, cells_b), cell_ft)
+    return squares_distance(squares_between(cells_a, cells_b), cell_ft)
 
 
 def distance_lines(m):
@@ -372,6 +389,8 @@ def distance_lines(m):
     scale = format_distance(1, m["cell_ft"])
     if is_overland(m["cell_ft"]):
         lines = [f"Distances (1 cell = {scale}, straight line, walls ignored):"]
+    elif is_coarse(m["cell_ft"]):
+        lines = [f"Distances (1 cell = {scale}, so about ±{scale}; straight line, walls ignored):"]
     else:
         lines = [f"Distances (1 cell = {scale}, straight line, walls ignored; {scale} is adjacent):"]
     for i, a in enumerate(tokens):
@@ -482,10 +501,38 @@ def tile(terrain, symbol, x, y, s, color=None):
     return "".join(out)
 
 
-def draw_token(token, x0, y0, legend_scale=None):
-    """SVG for a creature. With legend_scale, draw a small sample at x0, y0."""
+def shared_slots(tokens):
+    """Where each token sits inside its cell when several share it: {id: (dx, dy, radius)}
+    in pixels from the cell's top-left corner. Two to four tokens share it in a grid
+    of two columns; more need more columns and are smaller."""
+    groups = {}
+    for token in tokens:
+        groups.setdefault((token["col"], token["row"]), []).append(token)
+    slots = {}
+    for group in groups.values():
+        if len(group) < 2:
+            continue
+        columns = max(2, math.isqrt(len(group) - 1) + 1)  # ceil(sqrt(n)), at least 2
+        rows = -(-len(group) // columns)
+        slot = CELL / columns
+        for i, token in enumerate(group):
+            r, c = divmod(i, columns)
+            across = columns if r < rows - 1 or len(group) % columns == 0 else len(group) % columns
+            left = (CELL - across * slot) / 2
+            slots[token["id"]] = (left + (c + 0.5) * slot, (CELL - rows * slot) / 2 + (r + 0.5) * slot,
+                                  slot / 2 - 2)
+    return slots
+
+
+def draw_token(token, x0, y0, legend_scale=None, slot=None):
+    """SVG for a creature. With legend_scale, draw a small sample at x0, y0. With
+    slot (dx, dy, radius), draw it small inside its cell, sharing the cell."""
     color, _ = KINDS[token["kind"]]
-    if legend_scale is None:
+    if slot is not None:
+        cx = x0 + token["col"] * CELL + slot[0]
+        cy = y0 + token["row"] * CELL + slot[1]
+        radius = slot[2]
+    elif legend_scale is None:
         span = token["size"] * CELL
         cx = x0 + token["col"] * CELL + span / 2
         cy = y0 + token["row"] * CELL + span / 2
@@ -579,8 +626,9 @@ def render_svg(m):
         out.append(text(lx, ly + 4, label["text"], 11, "#2b2f36", "middle"))
 
     # creatures
+    slots = shared_slots(m["tokens"])
     for token in m["tokens"]:
-        out.append(draw_token(token, x0, y0))
+        out.append(draw_token(token, x0, y0, slot=slots.get(token["id"])))
 
     y = y0 + map_h + GUTTER
     if edges.get("bottom"):
@@ -734,10 +782,13 @@ def main():
         a = parse_cell(args.measure[0], m["cols"], m["rows"], "--measure")
         b = parse_cell(args.measure[1], m["cols"], m["rows"], "--measure")
         span = f"{cell_name(*a)} to {cell_name(*b)}: "
-        far = distance([a], [b], m["cell_ft"])
-        if not is_overland(m["cell_ft"]):
+        if is_overland(m["cell_ft"]):
+            far = distance([a], [b], m["cell_ft"])
+        else:
             squares = squares_between([a], [b])
-            far = f"{squares} square{'' if squares == 1 else 's'}, {far}"
+            far = squares_distance(squares, m["cell_ft"])
+            if squares or not is_coarse(m["cell_ft"]):
+                far = f"{squares} square{'' if squares == 1 else 's'}, {far}"
         print(f"{span}{far} (straight line, walls ignored)")
         return
 

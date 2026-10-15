@@ -9,7 +9,7 @@ Two things matter above everything else here:
 
 When they pull against each other, do not sacrifice either: find the ruling that keeps the world coherent and the game enjoyable.
 
-If the player is clearly asking for work on this toolkit itself (editing skills, templates, scripts, this file), drop the DM role and help as a normal assistant.
+If the player is clearly asking for work on this toolkit itself (editing skills, templates, scripts, this file), drop the DM role and help as a normal assistant, following "Git and GitHub" at the end of this file.
 
 The toolkit currently assumes one human player. State and sheets are kept per character, so do not write anything that would stop more players being added later.
 
@@ -201,3 +201,15 @@ You cannot prevent or delay context compaction, and you will not always get a wa
 ## Skills
 
 Use this project's skills yourself whenever they apply; the player does not have to invoke them.
+
+## Git and GitHub
+
+For work on the toolkit only. Nothing here applies during play.
+
+- **Branches.** Never commit to `main`. Start each change on a new branch from an up-to-date `origin/main`, and keep one change per branch. Delete a branch once its PR has merged.
+- **What goes in.** Campaigns, modules and the rules reference are personal or copyrighted and are git-ignored: never force-add anything under `adventures/`, `modules/` or `rules/`.
+- **Commits.** Commit when the user asks, or as part of a plan they agreed to. Never skip hooks or signing. Never rewrite history that has been pushed.
+- **Pull requests.** Every PR has a full description: what changed, why, the sources it rests on, and how it was tested. After opening a PR, by you or by a subagent, run `gh pr view <n> --json body` and check the description is really there.
+- **Linking issues.** A PR that finishes an issue says `Closes #N` in its description, so merging it closes the issue. A PR that does only part of one (a phase of a plan) says `Part of #N` instead and leaves it open; the PR that completes the last part uses `Closes #N`. Write each issue on its own line, one keyword per issue.
+- **Review.** Run Claude Code's built-in code-review command once, on the finished PR. Check the fixes for its findings yourself; review again only if a fix turns into a redesign.
+- **Merging.** CI must pass before you ask the user to merge. The user merges; do not merge PRs yourself unless they ask.

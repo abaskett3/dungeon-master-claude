@@ -123,6 +123,34 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    public static IEnumerable<object[]> DigestErrors { get; } =
+        DigestParityTests.ErrorCases().Concat(DigestParityTests.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
+
+    /// <summary>
+    /// Every bad argument, missing folder, empty result and bad log prints one line and no stack trace: the parity cases
+    /// that fail, plus the ones the script crashes on (a log that is not UTF-8, a record of the wrong shape, an output
+    /// path that is a file). Every one of them must fail, and none may write an output folder.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(DigestErrors), DynamicDataDisplayName = nameof(MapName))]
+    public void EveryErrorOfDigestPrintsOneLine(ParityCase test)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            test.Seed?.Invoke(folder);
+            string[] args = ["digest", .. test.Args(folder)];
+            var result = DmcRunner.BlackBox(args, cwd: folder);
+            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
+            Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")), "a failed run must not write an output folder");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [TestMethod]
     public void TheHookNeverPrintsAnErrorOrAStackTrace()
     {

@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Dmc.Tests.Parity;
 using Dmc.Tests.Support;
 
 namespace Dmc.Tests.TokenCost;
@@ -64,6 +65,35 @@ public sealed partial class ErrorPathTests
         // "roll" with several arguments prints one line per argument, so each case here is one bad expression.
         AssertOneLine(DmcRunner.BlackBox(args), $"dmc {string.Join(' ', args)}");
         AssertOneLine(DmcRunner.InProcess(args), $"dmc {string.Join(' ', args)} (in-process)");
+    }
+
+    public static IEnumerable<object[]> MapErrors { get; } = MapParityTests.ErrorCases.Select(c => new object[] { c }).ToArray();
+
+    public static string MapName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
+
+    /// <summary>
+    /// Every bad map file, bad argument and bad cell prints one line and no stack trace: the same inputs as the
+    /// parity check, plus the ones the script crashes on. A case that is not an error after all draws the map.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(MapErrors), DynamicDataDisplayName = nameof(MapName))]
+    public void EveryErrorOfMapPrintsOneLine(ParityCase test)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            test.Seed?.Invoke(folder);
+            string[] args = ["map", .. test.Args(folder)];
+            var result = DmcRunner.BlackBox(args, cwd: folder);
+            if (result.ExitCode != 0)
+                AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
+            Assert.IsFalse(StackTrace().IsMatch(result.Stdout + result.Stderr), $"{test} printed a stack trace: {result}");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [TestMethod]

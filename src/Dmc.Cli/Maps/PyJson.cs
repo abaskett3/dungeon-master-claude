@@ -181,7 +181,7 @@ public static class PyJson
             if (isFloat)
                 return double.Parse(number, NumberStyles.Float, CultureInfo.InvariantCulture);
             var whole = BigInteger.Parse(number, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
-            return whole >= long.MinValue && whole <= long.MaxValue ? (long)whole : whole;
+            return whole >= long.MinValue && whole <= long.MaxValue ? (object)(long)whole : whole;
         }
 
         static int HexValue(int c) => c switch

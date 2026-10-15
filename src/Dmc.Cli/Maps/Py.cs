@@ -281,15 +281,39 @@ public static class Py
         if (double.IsInfinity(value))
             return value > 0 ? "inf" : "-inf";
 
-        // .NET rounds an exact tie (0.25 to one place, 2.5 to none) away from zero; Python rounds it to even.
-        // A tie can only be a multiple of 1/4 (one place) or 1/2 (none), and those are exact in binary.
-        double scaled = value * (digits == 1 ? 4 : 2);
-        if (scaled == Math.Floor(scaled) && Math.Abs(scaled % 2) == 1)
+        // Exact: the double is mantissa * 2^exponent, so scale it by 10^digits as a whole number and round that
+        // half to even. (.NET's own "F1" rounds an exact tie, 0.25, away from zero, and loses digits past the 15th.)
+        long bits = BitConverter.DoubleToInt64Bits(value);
+        bool negative = bits < 0;
+        int exponent = (int)((bits >> 52) & 0x7FF);
+        BigInteger mantissa = bits & 0xFFFFFFFFFFFFFL;
+        if (exponent == 0)
+            exponent++;
+        else
+            mantissa |= 1L << 52;
+        exponent -= 1075;
+
+        BigInteger scaled = mantissa * BigInteger.Pow(10, digits);
+        if (exponent >= 0)
         {
-            decimal rounded = Math.Round((decimal)value, digits, MidpointRounding.ToEven);
-            return rounded.ToString(digits == 1 ? "0.0" : "0", CultureInfo.InvariantCulture);
+            scaled <<= exponent;
         }
-        return value.ToString(digits == 1 ? "F1" : "F0", CultureInfo.InvariantCulture);
+        else
+        {
+            int shift = -exponent;
+            var quotient = scaled >> shift;
+            var remainder = scaled - (quotient << shift);
+            var half = BigInteger.One << (shift - 1);
+            int compare = remainder.CompareTo(half);
+            if (compare > 0 || (compare == 0 && !quotient.IsEven))
+                quotient += 1;
+            scaled = quotient;
+        }
+
+        string text = scaled.ToString(CultureInfo.InvariantCulture).PadLeft(digits + 1, '0');
+        if (digits > 0)
+            text = text[..^digits] + "." + text[^digits..];
+        return negative ? "-" + text : text;
     }
 
     /// <summary>Python's <c>f"{value:g}"</c> for a whole number.</summary>

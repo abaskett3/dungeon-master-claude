@@ -34,8 +34,14 @@ public sealed record ParityCase(string Name, Func<string, string[]> Args, Func<s
 /// Rewrites text output before it is compared, to remove what may legitimately differ. Line endings and the
 /// working folder's name are always normalized first.
 /// </param>
+/// <param name="NormalizeFile">
+/// Rewrites a text file the command wrote (its relative path and contents) before it is compared; null compares
+/// the bytes as they are.
+/// </param>
+/// <param name="SkipContents">True for a file that only has to exist, because its contents differ on purpose.</param>
 public sealed record ParityTool(string Name, string DmcCommand,
-    Func<string, string[], string?, ProcessResult> RunLegacy, Func<string, string>? Normalize = null);
+    Func<string, string[], string?, ProcessResult> RunLegacy, Func<string, string>? Normalize = null,
+    Func<string, string, string>? NormalizeFile = null, Func<string, bool>? SkipContents = null);
 
 /// <summary>
 /// The parity check of issue #3 ("Parity check during phases 1-5"): run the old script and the matching
@@ -68,8 +74,8 @@ public static class ParityCheck
         Compare("stdout", Normalize(legacy.Stdout, legacyFolder.Path), Normalize(dmc.Stdout, dmcFolder.Path), problems);
         Compare("stderr", Normalize(legacy.Stderr, legacyFolder.Path), Normalize(dmc.Stderr, dmcFolder.Path), problems);
 
-        var legacyFiles = Snapshot(legacyFolder.Path);
-        var dmcFiles = Snapshot(dmcFolder.Path);
+        var legacyFiles = Snapshot(tool, legacyFolder.Path);
+        var dmcFiles = Snapshot(tool, dmcFolder.Path);
         foreach (string file in legacyFiles.Keys.Union(dmcFiles.Keys).Order())
         {
             legacyFiles.TryGetValue(file, out string? a);
@@ -95,10 +101,22 @@ public static class ParityCheck
     }
 
     /// <summary>Every file under a folder, by relative path, with a hash of its contents.</summary>
-    static Dictionary<string, string> Snapshot(string folder) =>
+    static Dictionary<string, string> Snapshot(ParityTool tool, string folder) =>
         Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(
             f => Path.GetRelativePath(folder, f).Replace('\\', '/'),
-            f => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(f))));
+            f => Hash(tool, Path.GetRelativePath(folder, f).Replace('\\', '/'), File.ReadAllBytes(f)));
+
+    static string Hash(ParityTool tool, string name, byte[] bytes)
+    {
+        if (tool.SkipContents?.Invoke(name) == true)
+            return "(contents not compared)";
+        if (tool.NormalizeFile is not null)
+        {
+            var utf8 = new System.Text.UTF8Encoding(false);
+            bytes = utf8.GetBytes(tool.NormalizeFile(name, utf8.GetString(bytes)));
+        }
+        return Convert.ToHexString(SHA256.HashData(bytes));
+    }
 
     /// <summary>A fresh working folder, removed afterwards.</summary>
     sealed class Folder : IDisposable

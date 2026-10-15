@@ -56,6 +56,18 @@ public static class Legacy
     public static string? Python() => _python.Value;
 
 
+    /// <summary>True when the Python can import PyMuPDF, from <c>scripts/.pylib</c> as the scripts do or from site-packages.</summary>
+    public static bool HasPyMuPdf() => _pymupdf.Value;
+
+    static readonly Lazy<bool> _pymupdf = new(() =>
+    {
+        string? python = Python();
+        if (python is null)
+            return false;
+        string pylib = Path.Combine(Scripts, ".pylib").Replace(Path.DirectorySeparatorChar, '/');
+        return Answers(python, "-c", $"import sys; sys.path.insert(0, '{pylib}'); import pymupdf") is not null;
+    });
+
     static readonly Lazy<string?> _python = new(() =>
         new[] { "python3", "python" }.Select(Which).FirstOrDefault(c => c is not null && Answers(c, "--version") is { } v && v.StartsWith("Python 3", StringComparison.Ordinal)));
 

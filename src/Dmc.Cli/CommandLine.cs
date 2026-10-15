@@ -64,5 +64,25 @@ public static class CommandLine
     static string Names(IReadOnlyList<ICommand> commands) => string.Join(", ", commands.Select(c => c.Name));
 
     /// <summary>Collapse line breaks so a message is always one line.</summary>
-    static string OneLine(string text) => text.ReplaceLineEndings(" ").Trim();
+    /// <remarks>
+    /// A lone surrogate (which JSON can spell as an escape, and no encoding can write) is written as a backslash escape,
+    /// as Python writes it to stderr.
+    /// </remarks>
+    static string OneLine(string text)
+    {
+        text = text.ReplaceLineEndings(" ").Trim();
+        if (!text.Any(char.IsSurrogate))
+            return text;
+        var builder = new System.Text.StringBuilder(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                builder.Append(text, i++, 2);
+            else if (char.IsSurrogate(text[i]))
+                builder.Append('\\').Append('u').Append(((int)text[i]).ToString("x4", System.Globalization.CultureInfo.InvariantCulture));
+            else
+                builder.Append(text[i]);
+        }
+        return builder.ToString();
+    }
 }

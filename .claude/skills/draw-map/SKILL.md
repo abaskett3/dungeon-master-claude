@@ -72,7 +72,7 @@ T  tree            o  pillar/boulder  _  table/low cover
 
 Tokens: `id` is one or two characters (`@` for the player character, a letter for each named ally or NPC, a number for each enemy). `kind` is `pc`, `ally`, `enemy` or `neutral`. `at` is the top-left cell; `size` is the width in cells (2 Large, 3 Huge, 4 Gargantuan); above 5 ft it counts as 1, and several tokens may share a cell. `note` is a short status the player can see (prone, on the ledge, 10 ft up). `down` greys out a creature that is dead or unconscious.
 
-The full format is in the comment at the top of `scripts/map_render.py`.
+The full format is in `.claude/skills/draw-map/map-format.md`.
 
 ## What must not be in these files
 

@@ -29,7 +29,7 @@ public static class TestEnv
 
     /// <summary>Run a command from the repository root and capture its output as text.</summary>
     public static ProcessResult Run(string file, IEnumerable<string> args, string? stdin = null, string? cwd = null,
-        int timeoutSeconds = 120)
+        int timeoutSeconds = 120, IReadOnlyDictionary<string, string>? environment = null)
     {
         var start = new ProcessStartInfo(file)
         {
@@ -43,6 +43,8 @@ public static class TestEnv
         };
         foreach (string arg in args)
             start.ArgumentList.Add(arg);
+        foreach (var (name, value) in environment ?? new Dictionary<string, string>())
+            start.Environment[name] = value;
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException($"could not start {file}");
         // Raw bytes, not a decoded reader: a reader quietly drops a leading byte-order mark, and a test must see it.

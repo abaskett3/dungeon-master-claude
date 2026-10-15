@@ -175,6 +175,30 @@ public abstract partial class PdfCommandContract
     // ---------- beyond the Python tests ----------
 
     [TestMethod]
+    public void APageThatCannotBeReadDoesNotStopTheOthers()
+    {
+        // Page 2 uses a font its resources do not list, so PdfPig fails as it loads the page, before any text is read.
+        string broken = Path.Combine(_folder, "broken.pdf");
+        File.WriteAllBytes(broken, Build(
+        [
+            new Page(Line(72, 72, "First page")),
+            new Page("BT /F9 11 Tf 72 720 Td (Lost) Tj ET\n", Image: true),
+            new Page(Line(72, 72, "Third page")),
+        ]));
+
+        var text = Extract("text", [], pdf: broken);
+        Assert.AreEqual(0, text.ExitCode, text.ToString());
+        StringAssert.StartsWith(Read("text", "page-002.txt"), "[text extraction failed: ");
+        Assert.AreEqual("Third page", Read("text", "page-003.txt"));
+        StringAssert.Contains(Read("all-text.txt"), "===== PDF PAGE 3 =====\nThird page");
+
+        var info = Extract("info", [], pdf: broken, outFolder: false);
+        Assert.AreEqual(0, info.ExitCode, info.ToString());
+        StringAssert.Matches(info.StdoutLines[2], new Regex(@"^p2: \d+ chars, 1 images, 8\.5 x 11\.0 in$"));
+        StringAssert.StartsWith(info.StdoutLines[3], "p3: 10 chars, 0 images");
+    }
+
+    [TestMethod]
     public void AnOwnerPasswordAloneDoesNotStopReading()
     {
         // Commercial modules are often print-restricted this way; PyMuPDF and dmc both open them.

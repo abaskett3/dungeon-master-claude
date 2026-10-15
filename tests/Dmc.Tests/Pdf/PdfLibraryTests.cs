@@ -257,6 +257,24 @@ public sealed class PdfFileTests
     }
 
     [TestMethod]
+    public void TheEncryptEntryIsFoundInACrossReferenceStreamFarFromBothEnds()
+    {
+        // The dictionary of the last cross-reference stream sits 3 MiB in, followed by 3 MiB of its compressed data.
+        byte[] filler = new byte[3 << 20];
+        Array.Fill(filler, (byte)'x');
+        byte[] Pdf(string dictionary)
+        {
+            byte[] head = [.. System.Text.Encoding.ASCII.GetBytes("%PDF-1.7\n"), .. filler];
+            string tail = $"\nendstream\nendobj\nstartxref\n{head.Length}\n%%EOF\n";
+            return [.. head, .. System.Text.Encoding.ASCII.GetBytes($"9 0 obj\n{dictionary}\nstream\n"), .. filler,
+                .. System.Text.Encoding.ASCII.GetBytes(tail)];
+        }
+
+        Assert.IsTrue(PdfFile.LooksEncrypted(Write("xref-stream.pdf", Pdf("<< /Type /XRef /Encrypt 5 0 R /Root 1 0 R >>"))));
+        Assert.IsFalse(PdfFile.LooksEncrypted(Write("xref-stream-plain.pdf", Pdf("<< /Type /XRef /Root 1 0 R >>"))));
+    }
+
+    [TestMethod]
     public void OpenSslIsFoundOnThisMachineOrNotWithoutCrashing()
     {
         // Only that the probe answers: it is a load attempt, and on Windows and macOS it is never asked.

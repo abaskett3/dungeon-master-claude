@@ -52,6 +52,24 @@ public static class Argparse
         return new Classified(true);
     }
 
+    /// <summary>
+    /// Classify every argument before any is acted on, as argparse does: an ambiguous option is an error even after a
+    /// "--help". After a "--" every argument is a plain one, and the "--" itself goes (its entry stays null).
+    /// </summary>
+    public static Classified?[] ClassifyAll(string[] args, string[] options)
+    {
+        var kinds = new Classified?[args.Length];
+        bool onlyPositional = false;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (!onlyPositional && args[i] == "--")
+                onlyPositional = true; // kinds[i] stays null: it is the separator
+            else
+                kinds[i] = onlyPositional ? new Classified(false) : Classify(args[i], options);
+        }
+        return kinds;
+    }
+
     /// <summary>argparse's <c>^-\d+$|^-\d*\.\d+$</c> (a parser with no option that looks like a number reads these as plain arguments).</summary>
     public static bool IsNegativeNumber(string arg)
     {

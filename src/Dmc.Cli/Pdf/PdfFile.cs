@@ -50,7 +50,9 @@ public static class PdfFile
 
     /// <summary>
     /// An <c>/Encrypt</c> entry in the first or last MiB, where the trailer, or the first cross-reference stream of a
-    /// linearized file, sits. A guess in the safe direction: a false "yes" only matters when libssl is missing.
+    /// linearized file, sits; or just after the offset the file's <c>startxref</c> gives, where the dictionary of the last
+    /// cross-reference stream sits, however much compressed data follows it. A guess in the safe direction: a false "yes"
+    /// only matters when libssl is missing.
     /// </summary>
     public static bool LooksEncrypted(string path)
     {
@@ -65,6 +67,31 @@ public static class PdfFile
             return false;
         file.Seek(-buffer.Length, SeekOrigin.End);
         file.ReadExactly(buffer);
-        return buffer.AsSpan().IndexOf(marker) >= 0;
+        if (buffer.AsSpan().IndexOf(marker) >= 0)
+            return true;
+        if (StartXref(buffer) is not { } offset || offset >= file.Length)
+            return false;
+        // A cross-reference dictionary is small; 64 KiB after its start is plenty.
+        file.Seek(offset, SeekOrigin.Begin);
+        var section = new byte[(int)Math.Min(1 << 16, file.Length - offset)];
+        file.ReadExactly(section);
+        return section.AsSpan().IndexOf(marker) >= 0;
+    }
+
+    /// <summary>The number after the last <c>startxref</c> in <paramref name="tail"/>, the end of the file.</summary>
+    static long? StartXref(ReadOnlySpan<byte> tail)
+    {
+        int at = tail.LastIndexOf("startxref"u8);
+        if (at < 0)
+            return null;
+        var rest = tail[(at + "startxref".Length)..];
+        int i = 0;
+        while (i < rest.Length && rest[i] is (byte)' ' or (byte)'\r' or (byte)'\n' or (byte)'\t')
+            i++;
+        long value = 0;
+        int digits = 0;
+        for (; i < rest.Length && rest[i] is >= (byte)'0' and <= (byte)'9' && digits < 18; i++, digits++)
+            value = value * 10 + (rest[i] - '0');
+        return digits > 0 ? value : null;
     }
 }

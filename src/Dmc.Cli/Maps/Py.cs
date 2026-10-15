@@ -113,6 +113,45 @@ public static class Py
         return text.ToUpperInvariant();
     }
 
+    /// <summary>
+    /// <c>int(text)</c>: surrounding whitespace, an optional sign, then decimal digits of any script, with single
+    /// underscores allowed between digits ("1_000"). Any size. False for anything else, where Python raises ValueError.
+    /// </summary>
+    public static bool TryParseInt(string text, out BigInteger number)
+    {
+        number = BigInteger.Zero;
+        int[] cps = CodePoints(Strip(text));
+        int i = 0;
+        bool negative = false;
+        if (i < cps.Length && cps[i] is '+' or '-')
+            negative = cps[i++] == '-';
+        if (i >= cps.Length)
+            return false;
+
+        var digits = new StringBuilder();
+        bool previousDigit = false;
+        for (; i < cps.Length; i++)
+        {
+            if (IsDigit(cps[i]))
+            {
+                digits.Append((char)('0' + CharUnicodeInfo.GetDecimalDigitValue(FromCodePoint(cps[i]), 0)));
+                previousDigit = true;
+            }
+            else if (cps[i] == '_' && previousDigit && i + 1 < cps.Length && IsDigit(cps[i + 1]))
+            {
+                previousDigit = false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        number = BigInteger.Parse(digits.ToString(), CultureInfo.InvariantCulture);
+        if (negative)
+            number = -number;
+        return true;
+    }
+
     /// <summary><c>text.strip()</c>.</summary>
     public static string Strip(string text)
     {

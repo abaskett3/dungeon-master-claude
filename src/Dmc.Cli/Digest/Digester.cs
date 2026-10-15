@@ -60,8 +60,11 @@ internal static class Digester
         static string Row(string id, string start, string end, string kb, string messages, string peak, string campaign, string first) =>
             $"{PadRight(id, 9)} {PadRight(start, 17)} {PadRight(end, 17)} {PadLeft(kb, 6)} {PadLeft(messages, 5)} {PadLeft(peak, 8)}  {PadRight(campaign, 20)} {first}";
 
+        // The script prints the heading first, so that a missing folder gives the heading and then the error. Here the
+        // logs are read first: a failed list prints the error alone, one line.
+        var sessions = Load(request);
         io.Out.WriteLine(Row("id", "start (UTC)", "end (UTC)", "KB", "msgs", "peak ctx", "campaign", "first message"));
-        foreach (var s in Load(request))
+        foreach (var s in sessions)
         {
             string first = s.Turns.Count > 0 ? OneLine(s.Turns[0].Text, 50) : "";
             io.Out.WriteLine(Row(Slice(s.Id, 0, 8), Report.Minute(s.Start), Report.Minute(s.End), Num(s.Size / 1024), Num(s.Turns.Count),

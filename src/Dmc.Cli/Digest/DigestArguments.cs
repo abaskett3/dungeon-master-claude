@@ -18,7 +18,7 @@ internal sealed record DigestRequest(string Command, string? Campaign, string? A
 /// this: the command is picked first, and everything after it belongs to the command's own parser. The order argparse
 /// follows is kept: every argument is sorted as an option, a plain argument or the "--" marker before any is read; the
 /// session ids are the plain arguments up to the first option after them (a later one is "unrecognized"); an option
-/// takes the one argument after it, or the text after "="; a repeated option is overridden by its last use; and the
+/// takes the one plain argument after it, or the text after "="; a repeated option is overridden by its last use; and the
 /// unrecognized arguments are reported last, after every other mistake.
 /// </summary>
 internal static class DigestArguments
@@ -162,16 +162,12 @@ internal static class DigestArguments
             }
             else
             {
-                // One argument, which may have the "--" marker before or after it.
+                // The one plain argument after it. (A "--" in between does not do: argparse leaves it out of an option's pattern.)
                 int j = start + 1;
-                if (j < args.Length && kinds[j] == '-')
-                    j++;
                 if (j >= args.Length || kinds[j] != 'A')
                     throw Argparse.Usage($"argument {option.Option}: expected one argument");
-                value = args[j++];
-                if (j < args.Length && kinds[j] == '-')
-                    j++;
-                start = j;
+                value = args[j];
+                start = j + 1;
             }
             switch (option.Option)
             {

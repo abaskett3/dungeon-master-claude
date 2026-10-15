@@ -27,9 +27,12 @@ public static class TestEnv
         Assert.Inconclusive($"{what} is not available");
     }
 
-    /// <summary>Run a command from the repository root and capture its output as text.</summary>
+    /// <summary>
+    /// Run a command from the repository root and capture its output as text. Each entry of
+    /// <paramref name="environment"/> sets a variable, or removes it when the value is null.
+    /// </summary>
     public static ProcessResult Run(string file, IEnumerable<string> args, string? stdin = null, string? cwd = null,
-        int timeoutSeconds = 120, IReadOnlyDictionary<string, string>? environment = null)
+        int timeoutSeconds = 120, IReadOnlyDictionary<string, string?>? environment = null)
     {
         var start = new ProcessStartInfo(file)
         {
@@ -43,8 +46,13 @@ public static class TestEnv
         };
         foreach (string arg in args)
             start.ArgumentList.Add(arg);
-        foreach (var (name, value) in environment ?? new Dictionary<string, string>())
-            start.Environment[name] = value;
+        foreach (var (name, value) in environment ?? new Dictionary<string, string?>())
+        {
+            if (value is null)
+                start.Environment.Remove(name);
+            else
+                start.Environment[name] = value;
+        }
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException($"could not start {file}");
         // Raw bytes, not a decoded reader: a reader quietly drops a leading byte-order mark, and a test must see it.

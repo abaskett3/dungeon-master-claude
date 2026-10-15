@@ -51,7 +51,7 @@ public sealed partial class DigestParityTests
         string? python = Legacy.Python();
         TestEnv.Need(python is not null, "Python 3");
         var result = TestEnv.Run(python!, [Legacy.Script("transcript_digest.py"), .. args], stdin, work,
-            environment: new Dictionary<string, string> { ["PYTHONIOENCODING"] = "utf-8" });
+            environment: new Dictionary<string, string?> { ["PYTHONIOENCODING"] = "utf-8" });
         // The one deliberate difference in what is printed: "list" prints the heading of its table before it looks for the
         // logs, so with no log folder the script prints the heading and then the error. dmc looks first and prints the
         // error alone (the one-line rule). So on a failure the heading is taken off the script's output.

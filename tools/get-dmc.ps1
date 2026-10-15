@@ -12,6 +12,11 @@
 $ErrorActionPreference = 'Stop'
 # The progress bar makes Invoke-WebRequest very slow in Windows PowerShell 5.1.
 $ProgressPreference = 'SilentlyContinue'
+# Windows PowerShell 5.1 started from PowerShell 7 (or from Git Bash running in it) inherits 7's module folders, and then
+# cannot load its own Get-FileHash or Expand-Archive. Its own folders are the machine's setting.
+if ($PSVersionTable.PSEdition -ne 'Core') {
+    $env:PSModulePath = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+}
 
 $repo = 'abaskett3/dungeon-master-claude'
 $root = Split-Path -Parent $PSScriptRoot

@@ -30,8 +30,12 @@ public static class PdfFixtures
     /// <param name="Rotate">The page's /Rotate, a multiple of 90.</param>
     /// <param name="CropBox">The visible part as left, bottom, right, top; null for the whole page.</param>
     /// <param name="Image">Draw a small grey image on the page.</param>
+    /// <param name="XObjects">
+    /// The entries of the page's /XObject resources, written as given, in place of what <paramref name="Image"/> puts
+    /// there: <c>4 0 R</c> is the image and <c>5 0 R</c> a form that draws it. Null: as <paramref name="Image"/> says.
+    /// </param>
     public sealed record Page(string Content, double Width = 612, double Height = 792, int Rotate = 0,
-        double[]? CropBox = null, bool Image = false);
+        double[]? CropBox = null, bool Image = false, string? XObjects = null);
 
     /// <summary>The same as <c>insert_text((x, y), text)</c> of PyMuPDF: Helvetica 11, with y counted from the top of a page.</summary>
     public static string Line(double x, double yFromTop, string text, double height = 792, double size = 11) =>
@@ -82,13 +86,16 @@ public static class PdfFixtures
     /// <summary>A PDF of these pages: Helvetica as /F1 on every page, and the image as /Im1 where asked.</summary>
     public static byte[] Build(IReadOnlyList<Page> pages)
     {
-        // Objects: 1 catalog, 2 page tree, 3 font, 4 image, then a page and its content for each page.
+        // Objects: 1 catalog, 2 page tree, 3 font, 4 image, 5 a form that draws the image, then a page and its content
+        // for each page.
+        const int FirstPage = 6;
         var objects = new List<string>
         {
             "<< /Type /Catalog /Pages 2 0 R >>",
-            "<< /Type /Pages /Kids [" + string.Join(" ", pages.Select((_, i) => $"{5 + 2 * i} 0 R")) + $"] /Count {pages.Count} >>",
+            "<< /Type /Pages /Kids [" + string.Join(" ", pages.Select((_, i) => $"{FirstPage + 2 * i} 0 R")) + $"] /Count {pages.Count} >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
             "<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length 4 >>\nstream\n" + "\x20\x80\xC0\xFF" + "\nendstream",
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 1 1] /Resources << /XObject << /Im1 4 0 R >> >> /Length 8 >>\nstream\n/Im1 Do\n\nendstream",
         };
         for (int i = 0; i < pages.Count; i++)
         {
@@ -100,9 +107,10 @@ public static class PdfFixtures
                 entries.Append(Inv($"/CropBox [{string.Join(' ', box)}] "));
             if (page.Rotate != 0)
                 entries.Append($"/Rotate {page.Rotate} ");
-            // Only a page that draws the image lists it: PyMuPDF counts the images a page's resources hold, drawn or not.
-            string images = page.Image ? " /XObject << /Im1 4 0 R >>" : "";
-            entries.Append($"/Resources << /Font << /F1 3 0 R >>{images} >> /Contents {6 + 2 * i} 0 R >>");
+            // PyMuPDF counts the images a page's resources list, drawn or not, so what is listed here is what info counts.
+            string? xobjects = page.XObjects ?? (page.Image ? "/Im1 4 0 R" : null);
+            string images = xobjects is null ? "" : $" /XObject << {xobjects} >>";
+            entries.Append($"/Resources << /Font << /F1 3 0 R >>{images} >> /Contents {FirstPage + 1 + 2 * i} 0 R >>");
             objects.Add(entries.ToString());
             objects.Add($"<< /Length {content.Length} >>\nstream\n{content}endstream");
         }

@@ -154,6 +154,17 @@ public sealed partial class PdfParityTests
         yield return Pdf("a cropped page", [("module.pdf", Build([new Page(Line(72, 72, "Cropped"), CropBox: [0, 396, 612, 792])]))], "all", "--dpi", "40");
         yield return Pdf("a page with an image", [("module.pdf", Build([new Page(Line(72, 72, "Picture"), Image: true), new Page(Line(72, 72, "Plain"))]))], "all", "--dpi", "40");
         yield return Pdf("a page with no text", [("module.pdf", Build([new Page("", Image: true)]))], "all", "--dpi", "40");
+        // info counts the images the page's resources list, as PyMuPDF's get_images does, not the images the page draws.
+        const string drawImage = "q 50 0 0 50 400 400 cm /Im1 Do Q\n";
+        yield return Pdf("images listed and drawn in different ways", [("module.pdf", Build(
+        [
+            new Page(Line(72, 72, "drawn twice") + drawImage + drawImage, XObjects: "/Im1 4 0 R"),
+            new Page(Line(72, 72, "listed, not drawn"), XObjects: "/Im1 4 0 R"),
+            new Page(Line(72, 72, "one image under two names"), XObjects: "/Im1 4 0 R /Im2 4 0 R"),
+            new Page(Line(72, 72, "only inside a form") + "q 50 0 0 50 400 400 cm /Fm1 Do Q\n", XObjects: "/Fm1 5 0 R"),
+            new Page(Line(72, 72, "one form under two names"), XObjects: "/Fm1 5 0 R /Fm2 5 0 R"),
+            new Page(Line(72, 72, "an inline image") + "q 50 0 0 50 400 400 cm BI /W 1 /H 1 /CS /G /BPC 8 ID \x80 EI Q\n"),
+        ]))], "info");
         yield return Pdf("a page of exactly 200 characters is not sparse", [("module.pdf", Build([new Page(Lines(49, 49, 49, 50))]))], "info");
         yield return Pdf("a page of 199 characters is sparse", [("module.pdf", Build([new Page(Lines(49, 49, 49, 49))]))], "info");
     }

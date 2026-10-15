@@ -25,9 +25,11 @@ public static class PageRanges
             string firstText = dash < 0 ? part : part[..dash];
             string lastText = dash < 0 ? "" : part[(dash + 1)..];
             // The script's int() raises ValueError here, which is a traceback; dmc says it in one line.
-            if (!Py.TryParseInt(firstText, out BigInteger first) || (lastText.Length > 0 && !Py.TryParseInt(lastText, out _)))
+            BigInteger last = default;
+            if (!Py.TryParseInt(firstText, out BigInteger first) || (lastText.Length > 0 && !Py.TryParseInt(lastText, out last)))
                 throw new DmcException($"Page range {Py.Repr(part)} is not a page number or range.");
-            BigInteger last = lastText.Length > 0 ? ParseLast(lastText) : first;
+            if (lastText.Length == 0)
+                last = first;
 
             if (first < 1 || last > count || first > last)
                 throw new DmcException($"Page range {Py.Repr(part)} is outside 1-{count}.");
@@ -35,11 +37,5 @@ public static class PageRanges
                 pages.Add(n);
         }
         return [.. pages];
-    }
-
-    static BigInteger ParseLast(string text)
-    {
-        Py.TryParseInt(text, out BigInteger last);
-        return last;
     }
 }

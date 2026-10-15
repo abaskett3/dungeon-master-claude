@@ -59,17 +59,7 @@ Page numbers are PDF page numbers, starting at 1.
         BigInteger dpi = 110;
         var extra = new List<string>();
 
-        // argparse looks at every argument before it acts on any, so an ambiguous option is an error even after a "--help".
-        // After a "--" every argument is a plain one (and the "--" itself goes).
-        var kinds = new Argparse.Classified?[args.Length];
-        bool onlyPositional = false;
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (!onlyPositional && args[i] == "--")
-                onlyPositional = true; // kinds[i] stays null: it is the separator
-            else
-                kinds[i] = onlyPositional ? new Argparse.Classified(false) : Argparse.Classify(args[i], Options);
-        }
+        var kinds = Argparse.ClassifyAll(args, Options);
 
         for (int i = 0; i < args.Length; i++)
         {

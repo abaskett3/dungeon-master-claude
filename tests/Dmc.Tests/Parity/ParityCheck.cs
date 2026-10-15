@@ -39,9 +39,14 @@ public sealed record ParityCase(string Name, Func<string, string[]> Args, Func<s
 /// the bytes as they are.
 /// </param>
 /// <param name="SkipContents">True for a file that only has to exist, because its contents differ on purpose.</param>
+/// <param name="Fingerprint">
+/// For a binary file whose bytes differ on purpose but whose shape must not (a picture's size): what to compare
+/// instead of the bytes, from the file's relative path and contents. Null, or null for a file, compares the file as usual.
+/// </param>
 public sealed record ParityTool(string Name, string DmcCommand,
     Func<string, string[], string?, ProcessResult> RunLegacy, Func<string, string>? Normalize = null,
-    Func<string, string, string>? NormalizeFile = null, Func<string, bool>? SkipContents = null);
+    Func<string, string, string>? NormalizeFile = null, Func<string, bool>? SkipContents = null,
+    Func<string, byte[], string?>? Fingerprint = null);
 
 /// <summary>
 /// The parity check of issue #3 ("Parity check during phases 1-5"): run the old script and the matching
@@ -110,6 +115,8 @@ public static class ParityCheck
     {
         if (tool.SkipContents?.Invoke(name) == true)
             return "(contents not compared)";
+        if (tool.Fingerprint?.Invoke(name, bytes) is { } fingerprint)
+            return fingerprint;
         if (tool.NormalizeFile is not null)
         {
             var utf8 = new System.Text.UTF8Encoding(false);

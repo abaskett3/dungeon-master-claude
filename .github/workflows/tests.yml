@@ -56,7 +56,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang zlib1g-dev
       - name: Publish dmc with Native AOT
         run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o bin -p:PublishAot=true
-      - name: Install PyMuPDF (the parity check runs map_render.py --png)
+      - name: Install PyMuPDF (the parity check runs map_render.py --png and pdf_extract.py)
         run: python -m pip install -r scripts/requirements.txt
       - name: Build the tests
         run: dotnet build tests/Dmc.Tests -c Release

@@ -184,6 +184,74 @@ public sealed partial class DigestParityTests
         WriteLog(logs, [User(0, "the other log that starts abcd1234"), Assistant(1, "o1", Blocks(Text("ok")), 1, 1, 1, 1)], "abcd1234-bbbb", garbage: false);
     }
 
+    /// <summary>One assistant record as JSON text, so that an id, a model or a field can be null, empty or a number.</summary>
+    static string Msg(int minute, string id, string model, string usage, string content = "[]") =>
+        "{\"type\":\"assistant\",\"timestamp\":\"" + Stamp(minute) + "\",\"message\":{\"id\":" + id + ",\"model\":" + model
+        + ",\"usage\":" + usage + ",\"content\":" + content + "}}";
+
+    static string ToolJson(string id, string name, string input) => "{\"type\":\"tool_use\",\"id\":" + id + ",\"name\":" + name + ",\"input\":" + input + "}";
+
+    /// <summary>
+    /// Python keeps <c>None</c>, <c>""</c>, <c>1</c> and <c>"1"</c> apart as keys and joins <c>True</c>, <c>1</c> and <c>1.0</c>,
+    /// and a null where text is expected is "None" in <c>str()</c> and a key of its own. The ids, models, tool names and skills
+    /// of this log are all of those, so the calls counted, the Models and Skills rows and the tool output rows show it.
+    /// A time that is 0 is "" (<c>or ""</c>), and a path that is a number is its text.
+    /// </summary>
+    static void KeysLog(string logs)
+    {
+        const string usage = "{\"input_tokens\":1,\"output_tokens\":2}";
+        string[] lines =
+        [
+            // Before anyone speaks: a tool with no name and a null path, and a result that names no tool (so it finds the null id).
+            Msg(0, "null", "null", usage, "[" + ToolJson("null", "null", "{\"file_path\":null}") + "]"),
+            "{\"type\":\"user\",\"timestamp\":\"" + Stamp(1) + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"content\":\"boom\",\"is_error\":true}]}}",
+            "{\"type\":\"user\",\"timestamp\":0,\"message\":{\"role\":\"user\",\"content\":\"hello\"}}",
+            // Ids: null is seen, "" and "1" are new, 1 is new and then true and 1.0 are the same call.
+            Msg(2, "\"\"", "\"\"", usage),
+            Msg(2, "1", "1", usage),
+            Msg(2, "true", "true", usage),
+            Msg(2, "1.0", "1.0", usage),
+            Msg(2, "\"1\"", "\"1\"", usage),
+            // Models: 1, true and 1.0 are one key; the first used is shown. No model is None, like null.
+            Msg(3, "\"m1\"", "1", usage),
+            Msg(3, "\"m2\"", "true", usage),
+            Msg(3, "\"m3\"", "1.0", usage),
+            Msg(3, "\"m4\"", "\"1\"", usage),
+            Msg(3, "\"m5\"", "null", usage),
+            // Skills and files of tool calls: null, "" and 1; a path and a command that are not text.
+            Msg(4, "\"m6\"", "\"claude-test\"", usage, "[" + string.Join(",",
+                ToolJson("\"k1\"", "\"Skill\"", "{\"skill\":null}"), ToolJson("\"k2\"", "\"Skill\"", "{\"skill\":\"\"}"),
+                ToolJson("\"k3\"", "\"Skill\"", "{\"skill\":1}"), ToolJson("\"k4\"", "\"Skill\"", "{}"),
+                ToolJson("\"k5\"", "\"Read\"", "{\"file_path\":5}"), ToolJson("\"k6\"", "\"Bash\"", "{\"command\":null}"),
+                ToolJson("\"k7\"", "\"Edit\"", "{\"file_path\":null,\"old_string\":\"a\",\"new_string\":\"b\"}")) + "]"),
+            "{\"type\":\"user\",\"timestamp\":\"" + Stamp(5) + "\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"k5\",\"content\":null},"
+                + "{\"type\":\"tool_result\",\"tool_use_id\":\"k7\",\"content\":\"nope\",\"is_error\":true}]}}",
+        ];
+        File.WriteAllText(Path.Combine(logs, "0000aaaa-keys.jsonl"), string.Join("\n", lines) + "\n", new UTF8Encoding(false));
+    }
+
+    /// <summary>
+    /// Token counts that Python adds without complaint: floats (shown with <c>%d</c>, which cuts towards zero), a bool
+    /// (<c>True</c> is 1) and counts that are missing. The context ends below where it started, by a fraction, so that
+    /// Python's float <c>//</c> (round down) is what makes "-2" of -1.25.
+    /// </summary>
+    static void NumbersLog(string logs)
+    {
+        string[] lines =
+        [
+            User(0, "first").ToJsonString(),
+            Msg(1, "\"a\"", "\"claude-test\"", "{\"input_tokens\":1.5,\"cache_read_input_tokens\":true,\"cache_creation_input_tokens\":2.5,\"output_tokens\":2.5}",
+                "[" + ToolJson("\"t1\"", "\"Bash\"", "{\"command\":\"bash scripts/roll.sh 1d20\"}") + "]"),
+            User(2, "second").ToJsonString(),
+            Msg(3, "\"b\"", "\"claude-test\"", "{\"input_tokens\":3.7}"),
+            Msg(3, "\"c\"", "\"claude-test\"", "{\"input_tokens\":1e3,\"cache_read_input_tokens\":false,\"output_tokens\":0.5}"),
+            Msg(3, "\"d\"", "\"claude-test\"", "{\"input_tokens\":2.5}"),
+            User(4, "third").ToJsonString(),
+            Msg(5, "\"e\"", "\"claude-test\"", "{\"input_tokens\":2.5,\"cache_read_input_tokens\":1500.9}"),
+        ];
+        File.WriteAllText(Path.Combine(logs, "0000bbbb-numbers.jsonl"), string.Join("\n", lines) + "\n", new UTF8Encoding(false));
+    }
+
     static IEnumerable<ParityCase> SameOutput()
     {
         yield return Case("list", StandardLogs, "list", "--logs", "logs");
@@ -198,6 +266,8 @@ public sealed partial class DigestParityTests
         yield return Case("odd records, listed", Logs(OddLog), "list", "--logs", "logs");
         yield return Case("odd records, digested", Logs(OddLog), "digest", "--logs", "logs", "--out", "out");
         yield return Case("growth, ties and a short id shared by two logs", Logs(GrowthLog), "digest", "--logs", "logs", "--out", "out");
+        yield return Case("ids, models, names and skills that are null, empty or numbers", Logs(KeysLog), "digest", "--logs", "logs", "--out", "out");
+        yield return Case("token counts that are floats and bools", Logs(NumbersLog), "digest", "--logs", "logs", "--out", "out");
         yield return Case("growth, listed", Logs(GrowthLog), "list", "--logs", "logs", "--after", "2026-01-02");
     }
 
@@ -236,6 +306,10 @@ public sealed partial class DigestParityTests
         yield return Bad("a record that is not an object", "list.jsonl", "[1, 2]\n"u8.ToArray());
         yield return Bad("a message that is a number", "number.jsonl", "{\"type\": \"user\", \"message\": 5}\n"u8.ToArray());
         yield return Bad("a content block that is a string", "string.jsonl", "{\"type\": \"user\", \"message\": {\"content\": [\"x\"]}}\n"u8.ToArray());
+        yield return Bad("a token count that is text", "count.jsonl",
+            "{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"usage\": {\"input_tokens\": \"5\"}}}\n"u8.ToArray());
+        yield return Bad("a tool name that is a number, after a player spoke", "name.jsonl",
+            Encoding.UTF8.GetBytes("{\"type\": \"user\", \"message\": {\"content\": \"hi\"}}\n{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": 5, \"input\": {}}]}}\n"));
         yield return Bad("a tool call whose input is a list", "input.jsonl",
             "{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Bash\", \"input\": [1]}]}}\n"u8.ToArray());
         yield return new ParityCase("an output path that is a file", _ => ["digest", "--logs", "logs", "--out", "out"], null, work =>

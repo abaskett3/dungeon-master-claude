@@ -8,8 +8,9 @@ internal static class LogFolder
 {
     /// <summary>
     /// <c>$CLAUDE_CONFIG_DIR</c> (or <c>~/.claude</c> when it is unset or empty), then <c>projects</c>, then the toolkit's
-    /// path with every character outside <c>A-Za-z0-9</c> replaced by "-". A character is one code point, so a letter
-    /// outside the BMP is one "-", not two.
+    /// path with every character outside <c>A-Za-z0-9</c> replaced by "-". A character is one UTF-16 unit, so a letter
+    /// outside the BMP is two "-": that is how Claude Code names the folder (JavaScript's <c>replace(/[^a-zA-Z0-9]/g, "-")</c>
+    /// works on UTF-16 units), so that dmc finds the folder where the script, which counts code points, does not.
     /// </summary>
     public static string Of(string root, Func<string, string?> environment)
     {
@@ -23,8 +24,8 @@ internal static class LogFolder
     public static string ProjectName(string root)
     {
         var name = new StringBuilder(root.Length);
-        foreach (int cp in Py.CodePoints(root))
-            name.Append(cp is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' ? (char)cp : '-');
+        foreach (char c in root)
+            name.Append(c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' ? c : '-');
         return name.ToString();
     }
 

@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text;
+using System.Numerics;
 using Dmc.Maps;
 
 namespace Dmc.Digest;
@@ -66,11 +66,11 @@ internal static class DigestText
     public static string BaseName(string path) => path.Replace('\\', '/').Split('/')[^1];
 
     /// <summary>What a tool call is shown as in the transcript.</summary>
-    public static string DescribeCall(string name, PyDict args)
+    public static string DescribeCall(string? name, PyDict args)
     {
         if (name is "Read" or "Write" or "Edit" or "NotebookEdit")
         {
-            string description = BaseName(TextField(args, "file_path"));
+            string description = BaseName(StrOf(args, "file_path"));
             if (name == "Write")
                 description += $" [{Len(args, "content")} chars]";
             else if (name == "Edit")
@@ -83,9 +83,9 @@ internal static class DigestText
     }
 
     /// <summary>What a tool call did, for classing the calls of a message: roll, write, lookup or other.</summary>
-    public static string CallKind(string name, PyDict args)
+    public static string CallKind(string? name, PyDict args)
     {
-        if (name is "Bash" or "PowerShell" && TextField(args, "command").Replace('\\', '/').Contains("scripts/roll", StringComparison.Ordinal))
+        if (name is "Bash" or "PowerShell" && StrOf(args, "command").Replace('\\', '/').Contains("scripts/roll", StringComparison.Ordinal))
             return "roll";
         if (name is "Edit" or "Write")
             return "write";
@@ -115,13 +115,35 @@ internal static class DigestText
     public static string Table(Counter counter, Counter? extra = null, int top = 8)
     {
         var rows = counter.MostCommon(top).Select(p =>
-            $"{(p.Key.Length == 0 ? "?" : p.Key)} x{p.Value}{(extra is { IsEmpty: false } ? $" ({extra[p.Key]} chars)" : "")}");
+            $"{(p.Key.Truthy ? p.Key.Display : "?")} x{p.Value}{(extra is { IsEmpty: false } ? $" ({extra[p.Key]} chars)" : "")}");
         string text = string.Join(", ", rows);
         return text.Length == 0 ? "none" : text;
     }
 
-    public static string Percent(long part, long whole) =>
+    public static string Percent(double part, double whole) =>
         whole != 0 ? Py.F1(100.0 * part / whole) + "%" : "0%";
+
+    /// <summary>
+    /// Python's <c>"%d" % number</c>: a whole number as it is, a float cut towards zero. Python refuses <c>nan</c> and
+    /// <c>inf</c> (ValueError, OverflowError), and so does this, in one line.
+    /// </summary>
+    public static string Whole(double number)
+    {
+        if (!double.IsFinite(number))
+            throw new LogShapeException("a token count that is not a finite number");
+        return new BigInteger(Math.Truncate(number)).ToString(CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Python's <c>a // b</c>: the quotient rounded towards minus infinity. Counts of tokens are whole numbers (a float only
+    /// if the log says so), and whole numbers are divided exactly.
+    /// </summary>
+    public static double FloorDiv(double a, double b)
+    {
+        if (Math.Abs(a) < 1L << 53 && Math.Abs(b) < 1L << 53 && a == Math.Floor(a) && b == Math.Floor(b))
+            return FloorDiv((long)a, (long)b);
+        return Math.Floor(a / b);
+    }
 
     public static double Median(IEnumerable<long> values)
     {
@@ -153,36 +175,40 @@ internal static class DigestText
     public static PyDict AsDict(object? value, string what) =>
         value as PyDict ?? throw new LogShapeException($"{what} is not an object");
 
-    /// <summary>A text field; <paramref name="fallback"/> when it is missing. A JSON <c>null</c> is not text (the script stops on one).</summary>
+    /// <summary>A text field; <paramref name="fallback"/> when it is missing. Any other kind of value is an error (the script stops on one).</summary>
     public static string TextField(PyDict record, string key, string fallback = "") => record.TryGetValue(key, out var value)
         ? value as string ?? throw new LogShapeException($"\"{key}\" is not text")
         : fallback;
 
-    /// <summary>
-    /// A field read as a key or a label (a record type, a message id, a model name): missing or <c>null</c> is the empty
-    /// string, text is itself, and anything else is its Python <c>str()</c>, as a Python <c>Counter</c> key would show it.
-    /// </summary>
-    public static string KeyText(PyDict record, string key) => Get(record, key) switch
-    {
-        null => "",
-        string s => s,
-        var other => Py.Str(other),
-    };
+    /// <summary>Python's <c>str(record.get(key, fallback))</c>: what a path or a command is made of, whatever the log holds there ("None" for a null).</summary>
+    public static string StrOf(PyDict record, string key, string fallback = "") =>
+        record.TryGetValue(key, out var value) ? Py.Str(value) : fallback;
 
-    /// <summary>A text field that is <c>null</c> or missing as the empty string; any other kind of value is an error.</summary>
+    /// <summary>
+    /// Python's <c>record.get(key) or ""</c> for a time: missing, null, 0, false and empty are all "", text is itself. (A
+    /// time that is a number, a list or an object would stop the script when it is cut, and so it does here.)
+    /// </summary>
     public static string TextOrNull(PyDict record, string key) => Get(record, key) switch
     {
-        null => "",
         string s => s,
+        var other when !Py.Truthy(other) => "",
         _ => throw new LogShapeException($"\"{key}\" is not text"),
     };
 
-    /// <summary>A whole number field, 0 when missing.</summary>
-    public static long Number(PyDict record, string key) => Get(record, key) switch
+    /// <summary>A record's type or subtype, to compare with a name: the text, or "" for anything else (which equals no name).</summary>
+    public static string TypeOf(PyDict record, string key) => Get(record, key) as string ?? "";
+
+    /// <summary>
+    /// A number field, 0 when missing: what Python's <c>+</c> and <c>sum</c> take, a whole number of any size, a float, or a
+    /// bool (<c>True</c> is 1). A string, a null, a list or an object is an error, as it is in Python.
+    /// </summary>
+    public static double Number(PyDict record, string key) => !record.TryGetValue(key, out var value) ? 0 : value switch
     {
+        bool b => b ? 1 : 0,
         long n => n,
-        null when !record.ContainsKey(key) => 0,
-        _ => throw new LogShapeException($"\"{key}\" is not a whole number"),
+        BigInteger big => (double)big,
+        double d => d,
+        _ => throw new LogShapeException($"\"{key}\" is not a number"),
     };
 
     /// <summary>Python's <c>len(record.get(key, ""))</c>.</summary>
@@ -193,14 +219,4 @@ internal static class DigestText
         PyDict dict => dict.Count,
         _ => throw new LogShapeException($"\"{key}\" has no length"),
     };
-
-    /// <summary>The text written as UTF-8 with no byte-order mark, as the script writes its files (a lone surrogate becomes "?").</summary>
-    public static readonly Encoding Utf8 = MakeUtf8();
-
-    static Encoding MakeUtf8()
-    {
-        var encoding = (Encoding)new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).Clone();
-        encoding.EncoderFallback = new EncoderReplacementFallback("?");
-        return encoding;
-    }
 }

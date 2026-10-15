@@ -9,7 +9,7 @@ namespace Dmc.Tests.Digest;
 /// <summary>
 /// The <c>Helpers</c> class of <c>tests/test_transcript_digest.py</c>, ported one for one (<c>test_cut</c> is
 /// <see cref="Cut"/>, and so on), against the library code. After them come two tests of what the script gets for
-/// free from Python: text counted in code points, and a folder name made of them.
+/// free from Python: text counted in code points, and one for Claude Code's folder name, which counts UTF-16 units.
 /// </summary>
 [TestClass]
 public sealed class DigestHelperTests
@@ -101,10 +101,10 @@ public sealed class DigestHelperTests
     }
 
     [TestMethod]
-    public void TheFolderNameCountsCodePoints()
+    public void TheFolderNameCountsUtf16Units()
     {
-        // Python's re.sub works on code points: a letter outside the BMP is one "-", where two UTF-16 units would be two.
-        Assert.AreEqual("D--Thr-r-s----", LogFolder.ProjectName("D:\\Thrór's \U0001D54F\u5317\\"));
+        // Claude Code names the folder with JavaScript's replace(/[^a-zA-Z0-9]/g, "-"), which works on UTF-16 units: a letter outside the BMP is two "-" (the script's re.sub, on code points, would write one, and miss the folder).
+        Assert.AreEqual("D--Thr-r-s-----", LogFolder.ProjectName("D:\\Thrór's \U0001D54F\u5317\\"));
     }
 
     [TestMethod]
@@ -176,8 +176,8 @@ public sealed class DigestParsingTests
     [TestMethod]
     public void ContextSizeCountsEachApiCallOnce()
     {
-        CollectionAssert.AreEqual(new long[] { 1000, 3000, 3500 }, _s.Ctx);
-        CollectionAssert.AreEqual(new long[] { 0, 1000 }, _s.Turns.Select(t => t.Ctx).ToArray());
+        CollectionAssert.AreEqual(new double[] { 1000, 3000, 3500 }, _s.Ctx);
+        CollectionAssert.AreEqual(new double[] { 0, 1000 }, _s.Turns.Select(t => t.Ctx).ToArray());
         Assert.AreEqual(3, _s.Calls.Count);
         AssertCounts(new() { ["claude-test"] = 3 }, _s.Models);
     }
@@ -197,7 +197,7 @@ public sealed class DigestParsingTests
         AssertCounts(new() { ["game-state.md"] = "\"HP 10/12\"".Length }, _s.ReadChars);
         AssertCounts(new() { ["canon.md"] = 1, ["live.json"] = 1 }, _s.Writes);
         AssertCounts(new() { ["canon.md"] = 7, ["live.json"] = 2 }, _s.WriteChars);
-        CollectionAssert.AreEquivalent(new[] { "Read", "Edit", "Bash" }, _s.ResultChars.Items.Select(p => p.Key).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "Read", "Edit", "Bash" }, _s.ResultChars.Items.Select(p => p.Key.Display).ToArray());
     }
 
     [TestMethod]
@@ -331,7 +331,7 @@ public sealed class DigestCallsPerMessageTests
     public void SkillsComeFromTheSkillToolOrASlashCommand()
     {
         Assert.IsTrue(_s.Turns[4].Skills.Contains("campaign-full-save"));
-        CollectionAssert.AreEquivalent(new[] { "resume-campaign" }, _s.Turns[5].Skills.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "resume-campaign" }, _s.Turns[5].Skills.Select(k => k.Display).ToArray());
         Assert.IsEmpty(_s.Turns[0].Skills);
     }
 

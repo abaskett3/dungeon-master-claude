@@ -68,7 +68,7 @@ internal static class Digester
         {
             string first = s.Turns.Count > 0 ? OneLine(s.Turns[0].Text, 50) : "";
             io.Out.WriteLine(Row(Slice(s.Id, 0, 8), Report.Minute(s.Start), Report.Minute(s.End), Num(s.Size / 1024), Num(s.Turns.Count),
-                Num(s.Ctx.Count > 0 ? s.Ctx.Max() : 0), s.Campaign(), first));
+                Whole(s.Ctx.Count > 0 ? s.Ctx.Max() : 0), s.Campaign(), first));
         }
     }
 
@@ -86,11 +86,11 @@ internal static class Digester
         {
             report.Add(Report.Stats(s));
             string id = Slice(s.Id, 0, 8);
-            File.WriteAllText(Path.Combine(outDir, $"{id}-turns.txt"), Report.TurnIndex(s), Utf8);
-            File.WriteAllText(Path.Combine(outDir, $"{id}-transcript.md"), string.Join("\n", s.Lines) + "\n", Utf8);
+            File.WriteAllText(Path.Combine(outDir, $"{id}-turns.txt"), Report.TurnIndex(s), Io.Utf8Replacing);
+            File.WriteAllText(Path.Combine(outDir, $"{id}-transcript.md"), string.Join("\n", s.Lines) + "\n", Io.Utf8Replacing);
         }
         string text = string.Join("\n", report);
-        File.WriteAllText(Path.Combine(outDir, "stats.md"), text, Utf8);
+        File.WriteAllText(Path.Combine(outDir, "stats.md"), text, Io.Utf8Replacing);
         io.Out.Write(text);
         io.Out.WriteLine($"\nWrote stats.md and, for each session, <id>-turns.txt and <id>-transcript.md to {outDir}");
     }

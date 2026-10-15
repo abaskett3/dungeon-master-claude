@@ -11,7 +11,9 @@ internal static partial class Report
 {
     /// <summary>
     /// Player messages matching this are marked "!" in the turn index. It only points at places to read; most
-    /// friction has to be found by reading.
+    /// friction has to be found by reading. (Known difference: .NET's <c>\b</c> counts nonspacing marks, connector
+    /// punctuation and the zero-width joiners as word characters, and Python's does not, so exotic text next to a trigger word
+    /// can be marked differently.)
     /// </summary>
     [GeneratedRegex(
         @"request interrupted|\bwrong\b|\bagain\b|\brewind\b|\bconsisten|\bconfus|" +
@@ -40,9 +42,9 @@ internal static partial class Report
     /// call just before it and those earlier still: a write after a write is a second write, a write after a roll a
     /// DM-roll turn, a roll after a roll a second roll, and a call after a lookup a lookup.
     /// </summary>
-    public static List<(string Class, long Ctx)> ExtraCalls(Turn turn)
+    public static List<(string Class, double Ctx)> ExtraCalls(Turn turn)
     {
-        var result = new List<(string, long)>();
+        var result = new List<(string, double)>();
         var calls = turn.Calls;
         for (int i = 2; i < calls.Count; i++)
         {
@@ -87,17 +89,19 @@ internal static partial class Report
     static List<string> CallFigures(Session s)
     {
         var lines = new List<string>();
-        long total = s.Ctx.Sum();
-        var extra = new Counter();
+        double total = s.Ctx.Sum();
+        var extra = new Dictionary<string, double>();
         foreach (var turn in s.Turns)
         {
             foreach (var (cls, ctx) in ExtraCalls(turn))
-                extra.Add(cls, ctx);
+                extra[cls] = extra.GetValueOrDefault(cls) + ctx;
         }
         if (total != 0)
         {
-            lines.Add($"- **Context read by third and later calls of a message**: {Percent(extra.Total, total)} of all context read ({extra.Total} of {total}).");
-            lines.AddRange(ExtraClasses.Where(c => extra[c.Class] != 0).Select(c => $"  - {c.Label}: {Percent(extra[c.Class], total)}"));
+            double extraTotal = extra.Values.Sum();
+            lines.Add($"- **Context read by third and later calls of a message**: {Percent(extraTotal, total)} of all context read ({Whole(extraTotal)} of {Whole(total)}).");
+            lines.AddRange(ExtraClasses.Where(c => extra.GetValueOrDefault(c.Class) != 0)
+                .Select(c => $"  - {c.Label}: {Percent(extra[c.Class], total)}"));
         }
         var edits = s.Turns.Where(t => t.StateChars != 0).Select(t => t.StateChars).ToList();
         string editFigures = edits.Count > 0
@@ -130,17 +134,17 @@ internal static partial class Report
         o.Add($"- **Player messages**: {s.Turns.Count} ({s.Turns.Count(t => Friction().IsMatch(t.Text))} marked \"!\", {s.Interrupts} interrupted). **API calls**: {s.Calls.Count}.");
         if (s.Ctx.Count > 0)
         {
-            long growth = FloorDiv(s.Ctx[^1] - s.Ctx[0], Math.Max(1, s.Turns.Count));
-            o.Add($"- **Context**: starts at {s.Ctx[0]} tokens, ends at {s.Ctx[^1]}, peak {s.Ctx.Max()}. About {growth} tokens added per player message. Compactions: {s.Compactions}.");
+            double growth = FloorDiv(s.Ctx[^1] - s.Ctx[0], Math.Max(1, s.Turns.Count));
+            o.Add($"- **Context**: starts at {Whole(s.Ctx[0])} tokens, ends at {Whole(s.Ctx[^1])}, peak {Whole(s.Ctx.Max())}. About {Whole(growth)} tokens added per player message. Compactions: {s.Compactions}.");
         }
-        o.Add($"- **Tokens**: output {tok.Output}; input read from cache {tok.CacheRead}, written to cache {tok.CacheCreation}, uncached {tok.Input}.");
+        o.Add($"- **Tokens**: output {Whole(tok.Output)}; input read from cache {Whole(tok.CacheRead)}, written to cache {Whole(tok.CacheCreation)}, uncached {Whole(tok.Input)}.");
         if (replies.Count > 0)
             o.Add($"- **Replies to the player**: average {FloorDiv(replies.Sum(), replies.Count)} chars, longest {replies.Max()}; {replies.Count(r => r > 1500)} of {replies.Count} over 1,500 chars.");
         o.Add($"- **Tool calls**: {Table(s.Tools, top: 12)}");
         o.Add($"- **Skills run**: {Table(s.Skills)}");
         o.Add($"- **Files written** (calls, chars sent): {Table(s.Writes, s.WriteChars)}");
         o.Add($"- **Files read** (calls, chars returned): {Table(s.Reads, s.ReadChars)}");
-        string output = string.Join(", ", s.ResultChars.MostCommon(8).Select(p => $"{p.Key} {p.Value}"));
+        string output = string.Join(", ", s.ResultChars.MostCommon(8).Select(p => $"{p.Key.Display} {p.Value}"));
         o.Add($"- **Tool output by tool** (chars): {(output.Length > 0 ? output : "none")}");
         o.AddRange(CallFigures(s));
 
@@ -153,7 +157,7 @@ internal static partial class Report
             foreach (var (size, turn) in jumps)
             {
                 string tools = string.Join(" ", turn.Tools.Take(10));
-                o.Add($"  - +{size} at {turn.Time}: \"{OneLine(turn.Text, 70)}\" -> {(tools.Length > 0 ? tools : "no tools")}");
+                o.Add($"  - +{Whole(size)} at {turn.Time}: \"{OneLine(turn.Text, 70)}\" -> {(tools.Length > 0 ? tools : "no tools")}");
             }
         }
         if (s.Errors.Count > 0)
@@ -171,7 +175,7 @@ internal static partial class Report
         {
             var turn = s.Turns[n - 1];
             string mark = Friction().IsMatch(turn.Text) ? "!" : " ";
-            o.Add($"{mark}{PadLeft(Num(n), 3)} {turn.Time} ctx={FloorDiv(turn.Ctx, 1000)}k | {OneLine(turn.Text, 600)}");
+            o.Add($"{mark}{PadLeft(Num(n), 3)} {turn.Time} ctx={Whole(FloorDiv(turn.Ctx, 1000))}k | {OneLine(turn.Text, 600)}");
             string tools = string.Join(" ", turn.Tools);
             o.Add($"       reply {turn.ReplyChars} chars; tools: {(tools.Length > 0 ? tools : "none")}");
         }

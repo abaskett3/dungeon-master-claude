@@ -148,6 +148,7 @@ public abstract class DigestCommandContract
             var result = Digest(args);
             Assert.AreEqual(0, result.ExitCode, string.Join(' ', args));
             StringAssert.Contains(result.Stdout, "usage: dmc digest list");
+            Assert.IsTrue(result.Stdout.EndsWith("on that call.\n", StringComparison.Ordinal), "the help ends in one line break, no blank line");
             Assert.AreEqual("", result.Stderr);
         }
     }
@@ -159,7 +160,24 @@ public abstract class DigestCommandContract
         File.WriteAllText(Path.Combine(_out, "ffff9999-turns.txt"), "old");
         Assert.AreEqual(0, DigestOf("ffff").ExitCode);
         StringAssert.Contains(Read("ffff9999-turns.txt"), "red-keep");
-        Assert.IsFalse(Read("stats.md").Contains('\r'), "dmc writes LF on every OS");
+        // The raw bytes: Read() turns CRLF into LF, so it could not tell.
+        foreach (string name in new[] { "stats.md", "ffff9999-turns.txt", "ffff9999-transcript.md" })
+            Assert.IsFalse(File.ReadAllBytes(Path.Combine(_out, name)).Contains((byte)'\r'), $"{name}: dmc writes LF on every OS");
+    }
+
+    [TestMethod]
+    public void ALogThatClaudeCodeIsStillWritingToCanBeRead()
+    {
+        // The log of the session in progress is open for appending while review-transcript runs. Reading it must neither
+        // fail with a sharing violation (Windows) nor stop the writer from appending.
+        string live = Path.Combine(_logs, SessionId + ".jsonl");
+        using (var writer = new FileStream(live, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+        {
+            Assert.AreEqual(0, Run("list").ExitCode);
+            Assert.AreEqual(0, DigestOf("abcd").ExitCode);
+            writer.Write("\n"u8);
+            writer.Flush();
+        }
     }
 }
 

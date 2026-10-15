@@ -360,7 +360,6 @@ public sealed partial class MapParityTests
         yield return Args("an unknown option and no map", "--bogus");
         yield return Args("measure with no values", "live.json", "--measure");
         yield return Args("measure with one value", "live.json", "--measure", "B2");
-        yield return Args("measure with an option as a value", "live.json", "--measure", "B2", "--png");
         yield return Args("measure with an equals sign", "live.json", "--measure=B2");
         yield return Args("two maps", "live.json", "goblin-hall.json");
         yield return Args("two maps and an unknown option", "live.json", "goblin-hall.json", "--x");
@@ -386,6 +385,8 @@ public sealed partial class MapParityTests
     public static IEnumerable<ParityCase> ErrorCases { get; } =
     [
         .. Measured(), .. Rejected(), .. Broken(), .. Arguments(),
+        // Python 3.12 (not 3.11) takes "--png" here as the second cell, so the script is not compared on it.
+        Files("measure with an option as a value", [("goblin-hall.json", Place()), ("live.json", Scene_())], "live.json", "--measure", "B2", "--png"),
         Alone("north is a list", Hall(("north", Arr("up")))),
         Alone("tokens is a number", Hall(("tokens", 5))),
         Alone("tokens is null", Hall(("tokens", null))),

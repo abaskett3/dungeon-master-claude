@@ -105,30 +105,34 @@ public sealed class GetDmcTests
     }
 
     /// <summary>
-    /// On Windows, the machines that <c>PROCESSOR_ARCHITECTURE</c> and <c>PROCESSOR_ARCHITEW6432</c> can name. Elsewhere
-    /// PowerShell 7 asks .NET, which cannot be made to lie, so the one case is this computer.
+    /// On Windows, the machine types the system can name (through <c>DMC_GET_TEST_MACHINE</c>, which stands in for the
+    /// registry), and this computer as the registry says. Elsewhere PowerShell 7 asks .NET, which cannot be made to lie,
+    /// so the one case is this computer.
     /// </summary>
     public static IEnumerable<object?[]> Machines { get; } = OperatingSystem.IsWindows()
         ?
         [
-            ["AMD64", null, "win-x64"],
-            ["ARM64", null, "win-arm64"],
-            ["x86", "ARM64", "win-arm64"], // an emulated or 32-bit PowerShell on an Arm64 machine
-            ["x86", null, "not built for x86 processors on Windows"],
+            ["AMD64", "win-x64"],
+            ["ARM64", "win-arm64"],
+            ["x86", "not built for x86 processors on Windows"],
+            [null, Rid],
         ]
-        : [[null, null, Rid]];
+        : [[null, Rid]];
 
-    /// <summary>Which archive get-dmc.ps1 asks for: Windows PowerShell 5.1 on Windows, PowerShell 7 elsewhere.</summary>
+    /// <summary>
+    /// Which archive get-dmc.ps1 asks for: Windows PowerShell 5.1 on Windows, PowerShell 7 elsewhere. On Windows the
+    /// process says it is AMD64 every time, as one emulated on Arm64 does, and must not be believed.
+    /// </summary>
     [TestMethod]
     [DynamicData(nameof(Machines))]
-    public void PowerShellPicksTheArchiveForThisComputer(string? architecture, string? architectureOfTheMachine, string expected)
+    public void PowerShellPicksTheArchiveForThisComputer(string? machine, string expected)
     {
         var (toolkit, assets) = JunkReleases();
         using (toolkit)
         {
             var result = OperatingSystem.IsWindows()
                 ? RunScript("powershell", toolkit, "tools/get-dmc", environment: From(assets,
-                    ("PROCESSOR_ARCHITECTURE", architecture), ("PROCESSOR_ARCHITEW6432", architectureOfTheMachine)))
+                    ("DMC_GET_TEST_MACHINE", machine), ("PROCESSOR_ARCHITECTURE", "AMD64"), ("PROCESSOR_ARCHITEW6432", null)))
                 : RunScript("pwsh", toolkit, "tools/get-dmc", environment: From(assets));
             AssertRefused(result, toolkit, expected.Contains(' ') ? expected : $"{Asset(JunkTag, expected)} does not match its SHA-256");
         }

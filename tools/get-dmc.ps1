@@ -6,8 +6,8 @@
 # The archive comes from this repository's GitHub Release, over HTTPS only. Its SHA-256 is checked against the pin
 # before anything in it is unpacked or run; on a mismatch nothing is installed.
 #
-# For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub. The
-# SHA-256 check still applies.
+# For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub (the
+# SHA-256 check still applies), and DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64).
 
 $ErrorActionPreference = 'Stop'
 # The progress bar makes Invoke-WebRequest very slow in Windows PowerShell 5.1.
@@ -30,8 +30,17 @@ function Get-Platform {
     # $IsWindows does not exist in Windows PowerShell 5.1, which runs only on Windows.
     $onWindows = $PSVersionTable.PSEdition -ne 'Core' -or $IsWindows
     if ($onWindows) {
-        # A 32-bit or emulated PowerShell names the machine in PROCESSOR_ARCHITEW6432.
-        $machine = $env:PROCESSOR_ARCHITEW6432
+        # The machine, not this process: an x64 program emulated on Arm64 (Git Bash, say) and everything it starts see
+        # PROCESSOR_ARCHITECTURE=AMD64, but the system's own setting says ARM64. DMC_GET_TEST_MACHINE is for the tests.
+        $machine = $env:DMC_GET_TEST_MACHINE
+        if (-not $machine) {
+            try {
+                $machine = (Get-ItemProperty -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name PROCESSOR_ARCHITECTURE).PROCESSOR_ARCHITECTURE
+            } catch {
+                $machine = $null
+            }
+        }
+        if (-not $machine) { $machine = $env:PROCESSOR_ARCHITEW6432 }
         if (-not $machine) { $machine = $env:PROCESSOR_ARCHITECTURE }
         switch ($machine) {
             'AMD64' { return 'win-x64' }

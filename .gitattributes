@@ -1,2 +1,5 @@
 # Shell scripts must keep LF line endings or bash cannot run them
 *.sh text eol=lf
+
+# PDF test fixtures are binary: no line-ending conversion
+*.pdf binary

@@ -9,6 +9,10 @@
     <PackageVersion Include="MSTest" Version="4.5.1" />
     <!-- The browser tests of the map page. The .v4 package is the one built for MSTest 4. -->
     <PackageVersion Include="Microsoft.Playwright.MSTest.v4" Version="1.63.0" />
+    <!-- Exact pins: PdfPig is below 1.0 and may change its API between minor versions; PDFtoImage draws the page images
+         (PDFium through SkiaSharp). Both are Native AOT-clean as of Phase 0. -->
+    <PackageVersion Include="PdfPig" Version="[0.1.16]" />
+    <PackageVersion Include="PDFtoImage" Version="[5.4.0]" />
     <!-- Exact pins (the bracket form): Svg.Skia draws the map PNG. Native AOT-clean as of Phase 0. -->
     <PackageVersion Include="Svg.Skia" Version="[5.2.3]" />
     <!-- Svg.Skia asks for SkiaSharp 4.148.0; the spike tested 4.150.1 (which PDFtoImage needs in Phase 3), so use that.

@@ -77,60 +77,6 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         return 0;
     }
 
-    /// <summary>How argparse sees one argument: a plain word, or an option (known or not) with a value written after "=".</summary>
-    /// <param name="Option">The option it is, or null for an option that does not exist.</param>
-    /// <param name="Explicit">The text after "=", or null if there was none.</param>
-    sealed record Classified(bool IsOption, string? Option = null, string? Explicit = null);
-
-    /// <summary>
-    /// <c>ArgumentParser._parse_optional</c>: an exact option, then <c>--option=value</c>, then a unique prefix of one,
-    /// then a negative number or a word with a space (a plain argument), and anything else that starts with "-" is an
-    /// unknown option.
-    /// </summary>
-    static Classified Classify(string arg)
-    {
-        if (arg.Length == 0 || arg[0] != '-')
-            return new Classified(false);
-        if (arg == "-h" || Options.Contains(arg))
-            return new Classified(true, arg == "-h" ? "--help" : arg);
-        if (arg.Length == 1)
-            return new Classified(false);
-
-        int equals = arg.IndexOf('=');
-        if (equals > 0)
-        {
-            string name = arg[..equals];
-            if (name == "-h" || Options.Contains(name))
-                return new Classified(true, name == "-h" ? "--help" : name, arg[(equals + 1)..]);
-        }
-
-        if (arg.StartsWith("--", StringComparison.Ordinal))
-        {
-            string prefix = equals > 0 ? arg[..equals] : arg;
-            var matches = Options.Where(o => o.StartsWith(prefix, StringComparison.Ordinal)).ToList();
-            if (matches.Count > 1)
-                throw Usage($"ambiguous option: {arg} could match {string.Join(", ", matches)}");
-            if (matches.Count == 1)
-                return new Classified(true, matches[0], equals > 0 ? arg[(equals + 1)..] : null);
-        }
-
-        if (IsNegativeNumber(arg) || arg.Contains(' '))
-            return new Classified(false);
-        return new Classified(true);
-    }
-
-    /// <summary>argparse's <c>^-\d+$|^-\d*\.\d+$</c> (a parser with no option that looks like a number reads these as plain arguments).</summary>
-    static bool IsNegativeNumber(string arg)
-    {
-        if (arg.Length < 2 || arg[0] != '-')
-            return false;
-        string rest = arg[1..];
-        if (rest.All(char.IsDigit))
-            return true;
-        int dot = rest.IndexOf('.');
-        return dot >= 0 && rest[..dot].All(char.IsDigit) && rest.Length > dot + 1 && rest[(dot + 1)..].All(char.IsDigit);
-    }
-
     /// <summary>Read the arguments as <c>argparse</c> does, in order, with its messages.</summary>
     static Arguments Parse(string[] args)
     {
@@ -141,14 +87,14 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
 
         // argparse looks at every argument before it acts on any, so an ambiguous option is an error even after a "--help".
         // After a "--" every argument is a plain one (and the "--" itself goes).
-        var kinds = new Classified?[args.Length];
+        var kinds = new Argparse.Classified?[args.Length];
         bool onlyPositional = false;
         for (int i = 0; i < args.Length; i++)
         {
             if (!onlyPositional && args[i] == "--")
                 onlyPositional = true; // kinds[i] stays null: it is the separator
             else
-                kinds[i] = onlyPositional ? new Classified(false) : Classify(args[i]);
+                kinds[i] = onlyPositional ? new Argparse.Classified(false) : Argparse.Classify(args[i], Options);
         }
 
         for (int i = 0; i < args.Length; i++)
@@ -204,5 +150,5 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         return new Arguments(map, png, open, measure, Help: false);
     }
 
-    static DmcException Usage(string message) => new(message, exitCode: 2);
+    static DmcException Usage(string message) => Argparse.Usage(message);
 }

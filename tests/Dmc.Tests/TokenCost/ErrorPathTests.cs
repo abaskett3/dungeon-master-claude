@@ -95,6 +95,34 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    public static IEnumerable<object[]> PdfErrors { get; } =
+        PdfParityTests.ErrorCases().Concat(PdfParityTests.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
+
+    /// <summary>
+    /// Every bad argument, missing file, bad page range, protected PDF and file that is not a PDF prints one line and no stack
+    /// trace: the parity cases that fail, plus the ones the script crashes on or does not check. Every one of them must fail.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(PdfErrors), DynamicDataDisplayName = nameof(MapName))]
+    public void EveryErrorOfPdfPrintsOneLine(ParityCase test)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            test.Seed?.Invoke(folder);
+            string[] args = ["pdf", .. test.Args(folder)];
+            var result = DmcRunner.BlackBox(args, cwd: folder);
+            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
+            Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")) || Directory.Exists(Path.Combine(folder, "extracted")),
+                "a failed run must not write anything");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [TestMethod]
     public void TheHookNeverPrintsAnErrorOrAStackTrace()
     {

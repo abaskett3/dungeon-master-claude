@@ -116,8 +116,9 @@ public static class Bootstrap
 
     /// <summary>
     /// A folder with a fake <c>claude</c> in it, to put first on the PATH. It prints the folder it runs in and each
-    /// argument on its own line, and exits with 7. On Windows there are two: <c>claude.cmd</c>, which dmc and
-    /// PowerShell run, and a <c>claude</c> shell script, which Git Bash runs.
+    /// argument on its own line, and exits with 7. On Windows it is the three shims npm installs: <c>claude.ps1</c>,
+    /// which dmc and PowerShell run; a <c>claude</c> shell script, which Git Bash runs; and <c>claude.cmd</c>, which
+    /// nothing may run (it says so and exits with 9).
     /// </summary>
     public static string FakeClaude()
     {
@@ -127,8 +128,9 @@ public static class Bootstrap
         File.WriteAllText(script, "#!/bin/sh\necho \"fake claude in $(pwd)\"\nfor a in \"$@\"; do echo \"arg: $a\"; done\nexit 7\n");
         if (OperatingSystem.IsWindows())
         {
-            File.WriteAllText(Path.Combine(folder, "claude.cmd"),
-                "@echo off\r\necho fake claude in %CD%\r\n:next\r\nif \"%~1\"==\"\" goto done\r\necho arg: %~1\r\nshift\r\ngoto next\r\n:done\r\nexit /b 7\r\n");
+            File.WriteAllText(Path.Combine(folder, "claude.ps1"),
+                "\"fake claude in $((Get-Location).Path)\"\r\nforeach ($a in $args) { \"arg: $a\" }\r\nexit 7\r\n");
+            File.WriteAllText(Path.Combine(folder, "claude.cmd"), "@echo off\r\necho the cmd shim ran\r\nexit /b 9\r\n");
         }
         else
         {
@@ -137,8 +139,28 @@ public static class Bootstrap
         return folder;
     }
 
-    /// <summary>The PATH with <paramref name="folder"/> first.</summary>
-    public static string PathWith(string folder) => folder + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+    /// <summary>
+    /// The PATH with <paramref name="folder"/> first, and without the folders of a real Claude Code: dmc takes a
+    /// <c>claude.exe</c> anywhere on the PATH before npm's shims, which is what the fake is on Windows.
+    /// </summary>
+    public static string PathWith(string folder) =>
+        string.Join(Path.PathSeparator, (Environment.GetEnvironmentVariable("PATH") ?? "")
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Where(dir => !HasClaude(dir))
+            .Prepend(folder));
+
+    static bool HasClaude(string dir)
+    {
+        try
+        {
+            return Directory.Exists(dir.Trim('"')) && Directory.EnumerateFiles(dir.Trim('"'), "claude*").Any(
+                f => Path.GetFileNameWithoutExtension(f).Equals("claude", StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>What the fake claude printed: the folder it ran in, and its arguments.</summary>
     public static (string Folder, string[] Args) ClaudeSaw(ProcessResult result)

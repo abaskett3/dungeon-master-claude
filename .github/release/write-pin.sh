@@ -17,13 +17,28 @@ if ! printf '%s\n' "$tag" | grep -Eq '^dmc-v[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo "write-pin: \"$tag\" is not a dmc release tag (dmc-vX.Y.Z)" >&2
     exit 1
 fi
-about="$(grep -m 1 '^[[:space:]]*"about"' "$pin" | tr -d '\r')"
+if [ ! -f "$pin" ]; then
+    echo "write-pin: $pin is missing" >&2
+    exit 1
+fi
+# The about line is copied as it is, without the comma it may or may not have (it is written first, so it gets one).
+about="$( (grep -m 1 '^[[:space:]]*"about"[[:space:]]*:' "$pin" || true) | tr -d '\r' | sed 's/[[:space:]]*$//; s/,$//')"
+if [ -z "$about" ]; then
+    echo "write-pin: $pin has no \"about\" line to keep" >&2
+    exit 1
+fi
 
 entries=()
 for rid in win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64 osx-x64; do
+    seen=""
     for extension in zip tar.gz; do
         file="$folder/$tag-$rid.$extension.sha256"
         [ -f "$file" ] || continue
+        if [ -n "$seen" ]; then
+            echo "write-pin: $folder has two archives for $rid ($seen and $(basename "$file")); a pin holds one" >&2
+            exit 1
+        fi
+        seen="$(basename "$file")"
         hash="$(cut -d ' ' -f 1 < "$file" | tr 'A-F' 'a-f')"
         if ! printf '%s\n' "$hash" | grep -Eq '^[0-9a-f]{64}$'; then
             echo "write-pin: $file does not start with a SHA-256" >&2
@@ -41,7 +56,7 @@ fi
 
 {
     echo "{"
-    echo "$about"
+    echo "$about,"
     echo "  \"tag\": \"$tag\","
     echo "  \"sha256\": {"
     last=$((${#entries[@]} - 1))

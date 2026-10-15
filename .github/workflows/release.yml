@@ -43,6 +43,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Read the version
         id: version
         run: |
@@ -100,6 +101,8 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
@@ -203,6 +206,7 @@ jobs:
           name: dmc-${{ matrix.rid }}
           path: dist/
           if-no-files-found: error
+          overwrite: true
 
   release:
     name: GitHub Release
@@ -224,6 +228,12 @@ jobs:
       - name: Publish the release
         run: |
           set -euo pipefail
+          # A re-run (after a failed pin job, say) keeps a release that is already published: its archives are what
+          # players download, so the pin is written from them below, and this run's builds are not uploaded.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::notice::$TAG is already published. Its archives are kept, and the pin is written from them."
+            exit 0
+          fi
           cat dist/*.sha256 > dist/SHA256SUMS.txt
           {
             echo "dmc $VERSION, the toolkit's helper program, built with Native AOT for Windows, Linux and macOS."
@@ -238,6 +248,31 @@ jobs:
           } > notes.md
           gh release create "$TAG" dist/*.zip dist/*.tar.gz dist/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --verify-tag --title "dmc $VERSION" --notes-file notes.md
+      - name: Hash the archives on the release
+        run: |
+          set -euo pipefail
+          # The pin is written from what the release really holds: downloaded back and hashed here.
+          mkdir -p published hashes
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir published --pattern "$TAG-*"
+          for rid in win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64; do
+            found="$(find published -maxdepth 1 \( -name "$TAG-$rid.zip" -o -name "$TAG-$rid.tar.gz" \) | wc -l | tr -d ' ')"
+            if [ "$found" -ne 1 ]; then
+              echo "::error::$TAG on GitHub has $found archives for $rid, not 1. Delete the release (gh release delete $TAG --yes, keeping the tag) and re-run this workflow."
+              exit 1
+            fi
+          done
+          for file in published/*; do
+            asset="$(basename "$file")"
+            hash="$(sha256sum < "$file")"
+            printf '%s  %s\n' "${hash%% *}" "$asset" > "hashes/$asset.sha256"
+          done
+          cat hashes/*.sha256
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-hashes
+          path: hashes/
+          if-no-files-found: error
+          overwrite: true
 
   pin:
     name: Pin pull request
@@ -255,11 +290,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # On a release the pin goes onto main. DMC_PIN_PR_TOKEN (optional, a token that may push and open pull
-          # requests) makes the pull request run the tests; one opened with the workflow's own token does not.
+          # On a release the pin goes onto main. No credentials are left in .git/config, where write-pin.sh (from a
+          # pull request, on a dry run) could read them: the push below names its token itself.
           ref: ${{ needs.prepare.outputs.publish == 'true' && 'main' || '' }}
-          token: ${{ secrets.DMC_PIN_PR_TOKEN || github.token }}
+          persist-credentials: false
+      # On a release, the hashes of the archives on the release (which a re-run keeps); on a dry run, of this run's.
       - uses: actions/download-artifact@v8
+        if: env.PUBLISH == 'true'
+        with:
+          name: release-hashes
+          path: ${{ runner.temp }}/dist
+      - uses: actions/download-artifact@v8
+        if: env.PUBLISH != 'true'
         with:
           pattern: dmc-*
           path: ${{ runner.temp }}/dist
@@ -284,27 +326,40 @@ jobs:
         with:
           name: pin
           path: ${{ runner.temp }}/pin/
+          overwrite: true
+      # Safe to re-run: it force-pushes its own branch pin-<tag>, and leaves an open pull request open. DMC_PIN_PR_TOKEN
+      # (optional, a token that may push and open pull requests) makes the pull request run the tests; one opened with
+      # the workflow's own token does not.
       - name: Open the pull request
         if: env.PUBLISH == 'true'
         env:
           GH_TOKEN: ${{ secrets.DMC_PIN_PR_TOKEN || github.token }}
         run: |
           set -euo pipefail
+          if git diff --quiet; then
+            echo "::notice::main already pins $TAG. Nothing to do."
+            exit 0
+          fi
           branch="pin-$TAG"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
+          git switch -C "$branch"
           git add tools/dmc-release.json src/Dmc.Cli/Dmc.Cli.csproj
           git commit -m "Pin dmc $VERSION" -m "Written by the release workflow for $TAG: the tag and the SHA-256 of each archive in tools/dmc-release.json, and the project's version."
-          git push origin "$branch"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          open="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --base main --state open --json url --jq '.[0].url // ""')"
+          if [ -n "$open" ]; then
+            echo "::notice::The pin pull request is already open: $open. Its branch now holds this run's commit."
+            exit 0
+          fi
           {
             echo "Pins the release [$TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG) in \`tools/dmc-release.json\`, written by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID))."
             echo
-            echo "- \`tools/dmc-release.json\`: the tag and the SHA-256 of each archive. Once this is merged, \`./play.ps1\` and \`./play.sh\` fetch dmc into \`bin/\` with \`tools/get-dmc\` and start play through \`bin/dmc play\`."
+            echo "- \`tools/dmc-release.json\`: the tag and the SHA-256 of each archive on the release. Once this is merged, \`./play.ps1\` and \`./play.sh\` fetch dmc into \`bin/\` with \`tools/get-dmc\` and start play through \`bin/dmc play\`."
             echo "- \`src/Dmc.Cli/Dmc.Cli.csproj\`: \`<Version>\` set to $VERSION, so a build from main matches the pin and is not reported as stale."
             echo
             echo "Each archive was installed with get-dmc and run on its own platform's runner before the release was published."
             echo
             echo "If no checks ran on this pull request (a pull request opened with the workflow's own token does not start other workflows), close and reopen it to run the tests before merging."
           } > body.md
-          gh pr create --base main --head "$branch" --title "Pin dmc $VERSION" --body-file body.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "Pin dmc $VERSION" --body-file body.md

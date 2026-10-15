@@ -15,22 +15,82 @@ public sealed class PlayTests
     public void PlayStartsClaudeFromTheToolkitRootWithThePlayersArguments()
     {
         ProcessStartInfo? started = null;
-        int exit = PlayCommand.Run(["--continue", "two words"], "/somewhere/claude", info =>
+        int exit = PlayCommand.Run(["--continue", "two words"], new PlayCommand.Launch("/somewhere/pwsh", ["-File", "claude.ps1"]), info =>
         {
             started = info;
             return 7;
         });
         Assert.AreEqual(7, exit, "claude's exit code is dmc's");
         Assert.IsNotNull(started);
-        Assert.AreEqual("/somewhere/claude", started.FileName);
+        Assert.AreEqual("/somewhere/pwsh", started.FileName);
         Assert.AreEqual(Dmc.Toolkit.Root, started.WorkingDirectory);
         Assert.IsFalse(started.UseShellExecute);
         Assert.IsFalse(started.RedirectStandardInput || started.RedirectStandardOutput || started.RedirectStandardError,
             "claude gets the terminal");
-        CollectionAssert.AreEqual(ClaudeArgs("--continue", "two words"), started.ArgumentList.ToArray());
+        CollectionAssert.AreEqual(new[] { "-File", "claude.ps1" }.Concat(ClaudeArgs("--continue", "two words")).ToArray(),
+            started.ArgumentList.ToArray());
     }
 
-    /// <summary>The published binary finds claude on the PATH (claude.cmd on Windows) and starts it in the toolkit root.</summary>
+    /// <summary>Folders holding empty files of the given names, joined as a PATH; deleted afterwards.</summary>
+    static void WithPath(string[][] folders, Action<string[], string> test)
+    {
+        string[] dirs = folders.Select(_ => Path.Combine(Path.GetTempPath(), "dmc-path-" + Guid.NewGuid().ToString("N"))).ToArray();
+        try
+        {
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                Directory.CreateDirectory(dirs[i]);
+                foreach (string name in folders[i])
+                    File.WriteAllText(Path.Combine(dirs[i], name), "");
+            }
+            test(dirs, string.Join(Path.PathSeparator, dirs));
+        }
+        finally
+        {
+            foreach (string dir in dirs)
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    // The three cases of Windows, which FindClaude takes as a flag so that they run on every OS.
+
+    [TestMethod]
+    public void OnWindowsClaudeExeAnywhereOnThePathComesBeforeNpmsShims()
+    {
+        WithPath([["claude.cmd", "claude.ps1"], ["claude.exe"]], (dirs, path) =>
+        {
+            var launch = PlayCommand.FindClaude(path, windows: true);
+            Assert.AreEqual(Path.Combine(dirs[1], "claude.exe"), launch.File);
+            Assert.IsEmpty(launch.Prefix);
+        });
+    }
+
+    [TestMethod]
+    public void OnWindowsNpmsShimRunsThroughPowerShellNotCmd()
+    {
+        WithPath([["claude.cmd", "claude.ps1"], ["pwsh.exe"]], (dirs, path) =>
+        {
+            var launch = PlayCommand.FindClaude(path, windows: true);
+            Assert.AreEqual(Path.Combine(dirs[1], "pwsh.exe"), launch.File);
+            CollectionAssert.AreEqual(new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(dirs[0], "claude.ps1") },
+                launch.Prefix.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void OnWindowsALoneCmdShimIsOneClearLine()
+    {
+        WithPath([["claude.cmd"]], (dirs, path) =>
+        {
+            var error = Assert.ThrowsExactly<DmcException>(() => PlayCommand.FindClaude(path, windows: true));
+            StringAssert.StartsWith(error.Message, $"only {Path.Combine(dirs[0], "claude.cmd")} was found, and dmc does not start Claude Code through cmd.exe");
+        });
+    }
+
+    /// <summary>
+    /// The published binary finds claude on the PATH (on Windows npm's claude.ps1, never its claude.cmd) and starts it
+    /// in the toolkit root.
+    /// </summary>
     [TestMethod]
     public void ThePublishedDmcFindsClaudeOnThePath()
     {

@@ -85,18 +85,6 @@ public static class Legacy
     }
 
     /// <summary>The full path of a program on PATH, or null.</summary>
-    static string? Which(string name)
-    {
-        string[] extensions = OperatingSystem.IsWindows() ? [".exe", ".cmd", ".bat"] : [""];
-        foreach (string dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            foreach (string extension in extensions)
-            {
-                string candidate = Path.Combine(dir.Trim('"'), name + extension);
-                if (File.Exists(candidate))
-                    return candidate;
-            }
-        }
-        return null;
-    }
+    static string? Which(string name) =>
+        Dmc.Commands.PlayCommand.FindOnPath(name, Environment.GetEnvironmentVariable("PATH"), ".exe;.cmd;.bat", OperatingSystem.IsWindows());
 }

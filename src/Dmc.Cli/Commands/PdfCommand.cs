@@ -81,7 +81,8 @@ Page numbers are PDF page numbers, starting at 1.
                 if (command is null)
                 {
                     if (!Commands.Contains(arg))
-                        throw Argparse.Usage($"argument command: invalid choice: {Py.Repr(arg)} (choose from {string.Join(", ", Commands.Select(c => Py.Repr(c)))})");
+                        // Python 3.12.something and later list the choices bare; 3.11 and the first 3.12s put each in quotes.
+                        throw Argparse.Usage($"argument command: invalid choice: {Py.Repr(arg)} (choose from {string.Join(", ", Commands)})");
                     command = arg;
                 }
                 else if (pdf is null)

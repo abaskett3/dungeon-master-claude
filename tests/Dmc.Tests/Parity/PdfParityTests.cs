@@ -45,7 +45,9 @@ public sealed partial class PdfParityTests
     /// <summary>The script's messages come with no prefix; dmc's with "dmc pdf: ".</summary>
     static string Errors(string text)
     {
-        text = ArgparseUsage().Replace(text, "").Replace("pdf_extract.py: error: ", "dmc pdf: ");
+        // Python 3.12.something and later list the choices bare, 3.11 and the first 3.12s quote each one; dmc writes them bare.
+        text = ArgparseUsage().Replace(text, "").Replace("pdf_extract.py: error: ", "dmc pdf: ")
+            .Replace("(choose from 'info', 'text', 'render', 'all')", "(choose from info, text, render, all)");
         return text.Length > 0 && !text.StartsWith("dmc pdf: ", StringComparison.Ordinal) ? "dmc pdf: " + text : text;
     }
 

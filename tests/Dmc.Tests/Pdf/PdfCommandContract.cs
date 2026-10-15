@@ -242,7 +242,7 @@ public abstract partial class PdfCommandContract
     {
         var result = Pdf("extract", _pdf);
         Assert.AreEqual(2, result.ExitCode);
-        Assert.AreEqual("dmc pdf: argument command: invalid choice: 'extract' (choose from 'info', 'text', 'render', 'all')\n", result.Stderr);
+        Assert.AreEqual("dmc pdf: argument command: invalid choice: 'extract' (choose from info, text, render, all)\n", result.Stderr);
     }
 
     [TestMethod]

@@ -75,10 +75,19 @@ public sealed partial class DigestParityTests
     {
         string logs = Directory.CreateDirectory(Path.Combine(work, "logs")).FullName;
         write(logs);
+        AgeInReverseNameOrder(logs);
+    };
+
+    /// <summary>
+    /// Give the logs modification times a minute apart, the last name the oldest. Logs with the same time come out in
+    /// the script's directory order, which is the file system's and not a thing to compare.
+    /// </summary>
+    static void AgeInReverseNameOrder(string logs)
+    {
         var names = Directory.GetFiles(logs, "*.jsonl").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal).Reverse().ToList();
         for (int i = 0; i < names.Count; i++)
             File.SetLastWriteTimeUtc(Path.Combine(logs, names[i]), new DateTime(2026, 1, 5, 12, 0, 0, DateTimeKind.Utc).AddMinutes(i));
-    };
+    }
 
     static readonly Action<string> StandardLogs = Logs(WriteLogFolder);
 
@@ -265,6 +274,7 @@ public sealed partial class DigestParityTests
         {
             ParityCheck.Run(Tool, new ParityCase("the folder is missing", "list"));
             WriteLogFolder(Directory.CreateDirectory(project).FullName);
+            AgeInReverseNameOrder(project);
             ParityCheck.Run(Tool, new ParityCase("the folder is there", "list"));
         }
         finally

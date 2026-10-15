@@ -73,7 +73,8 @@ public sealed partial class ErrorPathTests
 
     /// <summary>
     /// Every bad map file, bad argument and bad cell prints one line and no stack trace: the same inputs as the
-    /// parity check, plus the ones the script crashes on. A case that is not an error after all draws the map.
+    /// parity check, plus the ones the script crashes on. Every one of them must fail: a case that draws the map is
+    /// a mistake in the list, and the test says so.
     /// </summary>
     [TestMethod]
     [DynamicData(nameof(MapErrors), DynamicDataDisplayName = nameof(MapName))]
@@ -86,9 +87,7 @@ public sealed partial class ErrorPathTests
             test.Seed?.Invoke(folder);
             string[] args = ["map", .. test.Args(folder)];
             var result = DmcRunner.BlackBox(args, cwd: folder);
-            if (result.ExitCode != 0)
-                AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
-            Assert.IsFalse(StackTrace().IsMatch(result.Stdout + result.Stderr), $"{test} printed a stack trace: {result}");
+            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})"); // which also needs a non-zero exit code
         }
         finally
         {

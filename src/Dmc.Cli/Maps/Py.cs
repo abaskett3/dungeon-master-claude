@@ -96,6 +96,23 @@ public static class Py
         return words;
     }
 
+    /// <summary>
+    /// <c>text.upper()</c>: .NET only maps one character to one, and Python also turns a few into several (the German
+    /// sharp s into SS, the fi ligature into FI). The common ones are handled here; the rest of Python's one-to-many
+    /// mappings (Greek letters with an iota subscript, the Armenian ligature and so on) are not, and stay as .NET gives them.
+    /// </summary>
+    public static string Upper(string text)
+    {
+        if (text.All(char.IsAscii))
+            return text.ToUpperInvariant();
+        // Python's one-to-many mappings that matter here (sharp s, the n with an apostrophe, j with a caron, the f-ligatures).
+        string[] from = ["ß", "ŉ", "ǰ", "ﬀ", "ﬁ", "ﬂ", "ﬃ", "ﬄ", "ﬅ", "ﬆ"];
+        string[] to = ["SS", "ʼN", "J̌", "FF", "FI", "FL", "FFI", "FFL", "ST", "ST"];
+        for (int i = 0; i < from.Length; i++)
+            text = text.Replace(from[i], to[i], StringComparison.Ordinal);
+        return text.ToUpperInvariant();
+    }
+
     /// <summary><c>text.strip()</c>.</summary>
     public static string Strip(string text)
     {

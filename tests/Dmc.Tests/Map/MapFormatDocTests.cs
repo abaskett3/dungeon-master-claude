@@ -53,6 +53,7 @@ public sealed class MapFormatDocTests
             Assert.AreEqual(0, result.ExitCode, result.ToString());
             StringAssert.Contains(result.Stdout, ".claude/skills/draw-map/map-format.md");
             Assert.AreEqual("", result.Stderr);
+            Assert.DoesNotContain("\r", result.Stdout); // the help text has "\n" line endings whatever the checkout's
         }
     }
 }

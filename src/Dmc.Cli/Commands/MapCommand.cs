@@ -8,8 +8,8 @@ namespace Dmc.Commands;
 /// creatures. The format of a map file is in <c>.claude/skills/draw-map/map-format.md</c>.
 /// </summary>
 /// <remarks>
-/// Arguments follow Python's <c>argparse</c> (an option may be shortened to a unique prefix), but a mistake is one
-/// line and exit code 2, never the usage text.
+/// Arguments are read the way Python's <c>argparse</c> reads them (an option may be shortened to a unique prefix, and
+/// <c>--option=value</c> is understood), with its messages, but a mistake is one line and exit code 2, never the usage text.
 /// </remarks>
 public sealed class MapCommand(Action<string>? open = null) : ICommand
 {
@@ -19,7 +19,8 @@ public sealed class MapCommand(Action<string>? open = null) : ICommand
 
     public string Summary => "draw a map for the player's browser: dmc map <map.json> [--png] [--open] [--measure A B]";
 
-    const string Help = """
+    // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
+    static readonly string Help = """
 usage: dmc map <map.json> [--png] [--open]
        dmc map <map.json> --measure FROM TO
 
@@ -29,22 +30,23 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
   --png      also write live.png, the same picture, for DMC to look at with Read
   --open     also open live.html in the default browser
   --measure  only print the distance between two cells, draw nothing
-""";
+""".Replace("\r\n", "\n");
 
     static readonly string[] Options = ["--help", "--png", "--open", "--measure"];
 
-    sealed record Arguments(string Map, bool Png, bool Open, string[]? Measure);
+    sealed record Arguments(string? Map, bool Png, bool Open, string[]? Measure, bool Help);
 
     public int Run(string[] args, Io io)
     {
-        if (WantsHelp(args))
+        var parsed = Parse(args);
+        if (parsed.Help)
         {
             io.Out.WriteLine(Help);
             return 0;
         }
 
-        var parsed = Parse(args);
-        var model = MapChecker.Check(MapChecker.LoadMap(parsed.Map));
+        string mapPath = parsed.Map!;
+        var model = MapChecker.Check(MapChecker.LoadMap(mapPath));
 
         if (parsed.Measure is not null)
         {
@@ -55,7 +57,7 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         }
 
         string svg = SvgDrawing.Render(model);
-        string folder = Path.GetDirectoryName(Path.GetFullPath(parsed.Map)) ?? "";
+        string folder = Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "";
         MapPage.WriteText(Path.Combine(folder, "live-data.js"), MapPage.Data(DateTime.Now, model.Title, svg));
         string page = Path.Combine(folder, "live.html");
         MapPage.WriteText(page, MapPage.Html);
@@ -75,33 +77,86 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         return 0;
     }
 
-    /// <summary>-h or any unambiguous start of --help, anywhere before a "--".</summary>
-    static bool WantsHelp(string[] args)
+    /// <summary>How argparse sees one argument: a plain word, or an option (known or not) with a value written after "=".</summary>
+    /// <param name="Option">The option it is, or null for an option that does not exist.</param>
+    /// <param name="Explicit">The text after "=", or null if there was none.</param>
+    sealed record Classified(bool IsOption, string? Option = null, string? Explicit = null);
+
+    /// <summary>
+    /// <c>ArgumentParser._parse_optional</c>: an exact option, then <c>--option=value</c>, then a unique prefix of one,
+    /// then a negative number or a word with a space (a plain argument), and anything else that starts with "-" is an
+    /// unknown option.
+    /// </summary>
+    static Classified Classify(string arg)
     {
-        foreach (string arg in args)
+        if (arg.Length == 0 || arg[0] != '-')
+            return new Classified(false);
+        if (arg == "-h" || Options.Contains(arg))
+            return new Classified(true, arg == "-h" ? "--help" : arg);
+        if (arg.Length == 1)
+            return new Classified(false);
+
+        int equals = arg.IndexOf('=');
+        if (equals > 0)
         {
-            if (arg == "--")
-                return false;
-            if (arg == "-h" || (arg.Length > 2 && arg.StartsWith("--", StringComparison.Ordinal) && "--help".StartsWith(arg, StringComparison.Ordinal)
-                                && Options.Count(o => o.StartsWith(arg, StringComparison.Ordinal)) == 1))
-                return true;
+            string name = arg[..equals];
+            if (name == "-h" || Options.Contains(name))
+                return new Classified(true, name == "-h" ? "--help" : name, arg[(equals + 1)..]);
         }
-        return false;
+
+        if (arg.StartsWith("--", StringComparison.Ordinal))
+        {
+            string prefix = equals > 0 ? arg[..equals] : arg;
+            var matches = Options.Where(o => o.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+            if (matches.Count > 1)
+                throw Usage($"ambiguous option: {arg} could match {string.Join(", ", matches)}");
+            if (matches.Count == 1)
+                return new Classified(true, matches[0], equals > 0 ? arg[(equals + 1)..] : null);
+        }
+
+        if (IsNegativeNumber(arg) || arg.Contains(' '))
+            return new Classified(false);
+        return new Classified(true);
     }
 
-    /// <summary>Read the arguments as <c>argparse</c> does, with its messages.</summary>
+    /// <summary>argparse's <c>^-\d+$|^-\d*\.\d+$</c> (a parser with no option that looks like a number reads these as plain arguments).</summary>
+    static bool IsNegativeNumber(string arg)
+    {
+        if (arg.Length < 2 || arg[0] != '-')
+            return false;
+        string rest = arg[1..];
+        if (rest.All(char.IsDigit))
+            return true;
+        int dot = rest.IndexOf('.');
+        return dot >= 0 && rest[..dot].All(char.IsDigit) && rest.Length > dot + 1 && rest[(dot + 1)..].All(char.IsDigit);
+    }
+
+    /// <summary>Read the arguments as <c>argparse</c> does, in order, with its messages.</summary>
     static Arguments Parse(string[] args)
     {
         string? map = null;
         bool png = false, open = false;
         string[]? measure = null;
         var extra = new List<string>();
+
+        // argparse looks at every argument before it acts on any, so an ambiguous option is an error even after a "--help".
+        // After a "--" every argument is a plain one (and the "--" itself goes).
+        var kinds = new Classified?[args.Length];
         bool onlyPositional = false;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (!onlyPositional && args[i] == "--")
+                onlyPositional = true; // kinds[i] stays null: it is the separator
+            else
+                kinds[i] = onlyPositional ? new Classified(false) : Classify(args[i]);
+        }
 
         for (int i = 0; i < args.Length; i++)
         {
             string arg = args[i];
-            if (onlyPositional || !LooksLikeOption(arg))
+            if (kinds[i] is not { } kind)
+                continue;
+            if (!kind.IsOption)
             {
                 if (map is null)
                     map = arg;
@@ -109,42 +164,31 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
                     extra.Add(arg);
                 continue;
             }
-            if (arg == "--")
+            if (kind.Option is null)
             {
-                onlyPositional = true;
+                extra.Add(arg); // an option that does not exist: reported at the end, after the required argument
                 continue;
             }
 
-            string name = arg, explicitValue = "";
-            bool hasValue = false;
-            int equals = arg.IndexOf('=');
-            if (arg.StartsWith("--", StringComparison.Ordinal) && equals > 0)
+            switch (kind.Option)
             {
-                name = arg[..equals];
-                explicitValue = arg[(equals + 1)..];
-                hasValue = true;
-            }
-            string? option = Resolve(name);
-            if (option is null)
-            {
-                extra.Add(arg);
-                continue;
-            }
-            switch (option)
-            {
-                case "--png" or "--open":
-                    if (hasValue)
-                        throw Usage($"argument {option}: ignored explicit argument '{explicitValue}'");
-                    if (option == "--png")
+                case "--help" or "--png" or "--open":
+                    if (kind.Explicit is not null)
+                    {
+                        string names = kind.Option == "--help" ? "-h/--help" : kind.Option;
+                        throw Usage($"argument {names}: ignored explicit argument {Py.Repr(kind.Explicit)}");
+                    }
+                    if (kind.Option == "--help")
+                        return new Arguments(null, false, false, null, Help: true);
+                    if (kind.Option == "--png")
                         png = true;
                     else
                         open = true;
                     break;
                 case "--measure":
+                    // A value written with "=" is one argument, and the option takes two: argparse refuses it.
                     var values = new List<string>();
-                    if (hasValue)
-                        values.Add(explicitValue);
-                    while (values.Count < 2 && i + 1 < args.Length && !LooksLikeOption(args[i + 1]))
+                    while (kind.Explicit is null && values.Count < 2 && i + 1 < args.Length && kinds[i + 1] is { IsOption: false })
                         values.Add(args[++i]);
                     if (values.Count < 2)
                         throw Usage("argument --measure: expected 2 arguments");
@@ -157,32 +201,7 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
             throw Usage("the following arguments are required: map");
         if (extra.Count > 0)
             throw Usage("unrecognized arguments: " + string.Join(' ', extra));
-        return new Arguments(map, png, open, measure);
-    }
-
-    /// <summary>Whether an argument is an option, as argparse decides it: it starts with "-", is not just "-" or a negative number, and has no space.</summary>
-    static bool LooksLikeOption(string arg)
-    {
-        if (arg == "--")
-            return true;
-        if (arg.Length < 2 || arg[0] != '-' || arg.Contains(' '))
-            return false;
-        string rest = arg[1..];
-        bool negativeNumber = rest.Any(char.IsAsciiDigit) && rest.All(c => char.IsAsciiDigit(c) || c == '.');
-        return !negativeNumber;
-    }
-
-    /// <summary>An option may be written in full or as any prefix of it that no other option shares (like <c>--pn</c>).</summary>
-    static string? Resolve(string name)
-    {
-        if (!name.StartsWith("--", StringComparison.Ordinal))
-            return null;
-        if (Options.Contains(name))
-            return name;
-        var matches = Options.Where(o => o.StartsWith(name, StringComparison.Ordinal)).ToList();
-        if (matches.Count > 1)
-            throw Usage($"ambiguous option: {name} could match {string.Join(", ", matches)}");
-        return matches.Count == 1 ? matches[0] : null;
+        return new Arguments(map, png, open, measure, Help: false);
     }
 
     static DmcException Usage(string message) => new(message, exitCode: 2);

@@ -265,24 +265,18 @@ public static class SvgDrawing
         }
 
         string opacity = token.Down ? "0.45" : "1";
-        // min(a, b) keeps a unless b is smaller; the cap is a whole number, so it prints without a ".0".
-        string font;
-        if (Py.Len(token.Id) == 1)
-        {
-            double a = radius * 1.05;
-            font = 26 < a ? Num(26) : Num(a);
-        }
-        else
-        {
-            double a = radius * 0.85;
-            font = 22 < a ? Num(22) : Num(a);
-        }
-        double fontValue = double.Parse(font, CultureInfo.InvariantCulture);
+        // min(a, b) keeps a unless b is smaller. A cap (a whole number in the script) prints without a ".0".
+        double cap = Py.Len(token.Id) == 1 ? 26 : 22;
+        double fontSize = radius * (Py.Len(token.Id) == 1 ? 1.05 : 0.85);
+        bool whole = cap < fontSize;
+        if (whole)
+            fontSize = cap;
         if (slot is not null)
         {
-            font = Num(SlotFont);
-            fontValue = SlotFont;
+            fontSize = SlotFont;
+            whole = true;
         }
+        string font = whole ? Num((int)fontSize) : Num(fontSize);
         string tip = $"{token.Name} ({Cells.CellName(token.Col, token.Row)})";
         if (token.Note.Length > 0)
             tip += $": {token.Note}";
@@ -291,7 +285,7 @@ public static class SvgDrawing
             $"<g opacity=\"{opacity}\"><title>{Py.HtmlEscape(tip)}</title>",
             $"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(radius)}\" fill=\"{color}\" stroke=\"#ffffff\" stroke-width=\"2.5\"/>",
             $"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(radius + 1.5)}\" fill=\"none\" stroke=\"#15181c\" stroke-width=\"1\"/>",
-            Text(cx, cy + fontValue * 0.36, token.Id, font, "#ffffff", "middle", "bold"),
+            Text(cx, cy + fontSize * 0.36, token.Id, font, "#ffffff", "middle", "bold"),
         };
         if (token.Down)
         {

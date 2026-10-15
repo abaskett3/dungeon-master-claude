@@ -68,8 +68,9 @@ If a place is too big for 5 ft, draw only the part in play and describe the rest
 never squeeze or skip stretches.
 
 Any kind of token may sit on any map. At 5 ft two tokens cannot share a cell. Above 5 ft several can (a melee), drawn
-small inside the cell: the first three, then a "+N" badge whose tooltip lists the rest. A scene with a `"base"`
-cannot change its place's scale.
+small inside the cell: up to four are all drawn; with more than four, the first three are drawn and the fourth place
+is a "+N" badge, where N counts the fourth creature and every one after it and its tooltip names them. A scene with a
+`"base"` cannot change its place's scale.
 
 ## Other keys, all optional
 

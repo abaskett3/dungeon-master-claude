@@ -47,6 +47,9 @@ public sealed partial class MapParityTests
 
     // ---------- building cases ----------
 
+    /// <summary>A surrogate with no partner: JSON can spell it, and no text encoding can write it.</summary>
+    static readonly string Lone = ((char)0xD800).ToString();
+
     static string Text(object? value) => value as string ?? Json(value);
 
     /// <summary>A case with these files in the working folder and these arguments (file names are relative to it).</summary>
@@ -187,6 +190,10 @@ public sealed partial class MapParityTests
         yield return Alone("an emoji symbol in the grid", Hall(("grid", Arr("#\ud83d\ude00.", "#...")), ("labels", Arr()),
             ("legend", Obj(("\ud83d\ude00", "a smiley")))));
         yield return Alone("a missing title", Hall(("title", null)));
+        yield return Alone("a lone surrogate in the title", Hall(("title", "a" + Lone + "b"), ("notes", "n" + Lone)));
+        yield return Alone("a lone surrogate in names and notes", Hall(("tokens", Arr(
+            Obj(("id", "1"), ("name", "x" + Lone), ("at", "B2"), ("note", Lone)), Obj(("id", "2"), ("name", Lone + "y"), ("at", "C2"))))));
+        yield return Alone("a lone surrogate in a legend name", Hall(("legend", Obj(("o", "pillar" + Lone)))));
         yield return Alone("a title that is a number", Hall(("title", 5)));
         yield return Alone("notes and a scale note that are not text", Hall(("notes", 12), ("scale_note", 1.5)));
         yield return Alone("ids and names that are numbers", Hall(("tokens", Arr(Obj(("id", 1), ("name", 2.5), ("at", "B2")),
@@ -234,6 +241,8 @@ public sealed partial class MapParityTests
         yield return Scene("measure a negative row", Scene_(), "--measure", "B-2", "E3");
         yield return Scene("measure a huge column", Scene_(), "--measure", "ZZZZZZZZZZZZZZZZZZZZ1", "B2");
         yield return Scene("measure a huge row", Scene_(), "--measure", "B99999999999999999999", "B2");
+        foreach (string odd in new[] { "ß1", "ﬁ1", "ŉ1", "ǰ1", "é1", "α1", "ббб1", "ﬀﬃﬅ" + "1" })
+            yield return Scene($"measure the cell {odd}", Scene_(), "--measure", odd, "B2");
         yield return Scene("measure after a scale error", Obj(("base", "goblin-hall"), ("cell_ft", 7)), "--measure", "B2", "C3");
     }
 
@@ -272,6 +281,9 @@ public sealed partial class MapParityTests
             ("a size of zero", Hall(("tokens", Arr(Obj(("id", "1"), ("at", "B2"), ("size", 0)))))),
             ("a size that is text", Hall(("tokens", Arr(Obj(("id", "1"), ("at", "B2"), ("size", "2")))))),
             ("a token in a wall", Hall(("tokens", Arr(Obj(("id", "1"), ("at", "A1")))))),
+            ("a lone surrogate in a token name, in an error", Hall(("tokens", Arr(Obj(("id", "1"), ("name", "x" + Lone + "y"), ("at", "A1")))))),
+            ("a lone surrogate in a kind", Hall(("tokens", Arr(Obj(("id", "1"), ("at", "B2"), ("kind", Lone)))))),
+            ("a lone surrogate in a label", Hall(("labels", Arr(Obj(("at", "Z9"), ("text", Lone)))))),
             ("a token in empty space", Hall(("grid", Arr("# .", "#..")), ("labels", Arr()), ("tokens", Arr(Obj(("id", "1"), ("at", "B1")))))),
             ("a token off the map", Hall(("tokens", Arr(Obj(("id", "1"), ("at", "Z9")))))),
             ("a token whose at is a number", Hall(("tokens", Arr(Obj(("id", "1"), ("at", 5)))))),
@@ -372,19 +384,60 @@ public sealed partial class MapParityTests
         yield return Args("a negative number as the map", "-5");
         yield return Args("a map with a space in its name", "my map.json");
         yield return Args("a repeated flag", "live.json", "--png", "--png");
+        // "--option=value" and abbreviations, as argparse reads them.
+        yield return Args("--help with a value", "live.json", "--help=x");
+        yield return Args("an abbreviated --help with a value", "live.json", "--he=x");
+        yield return Args("an abbreviated --help with an empty value", "--hel=", "live.json");
+        yield return Args("--png with an empty value", "live.json", "--png=");
+        yield return Args("an abbreviated --png with a value", "live.json", "--p=x");
+        yield return Args("--png with a value that has a space", "live.json", "--png=x y");
+        yield return Args("--measure with two values in one argument", "live.json", "--measure=A1 B2");
+        yield return Args("--measure with one value after an equals sign", "live.json", "--measure=A1", "B2");
+        yield return Args("an abbreviated --measure with an equals sign", "live.json", "--meas=B2", "E4");
+        yield return Args("--measure then a double dash", "live.json", "--measure", "B2", "--", "E4");
+        yield return Args("an unknown option with an equals sign", "live.json", "--bogus=x");
+        yield return Args("an unknown option with an equals sign and a space", "live.json", "--bogus=x y");
+        yield return Args("an unknown option with a space is a plain argument", "live.json", "-a b");
+        yield return Args("a negative number after the map", "live.json", "-5");
+        yield return Args("a negative decimal after the map", "live.json", "-.5");
+        yield return Args("a negative decimal with digits", "live.json", "-1.25");
+        yield return Args("a dash and a letter after the digits", "live.json", "-5x");
+        yield return Args("a negative number is a --measure value", "live.json", "--measure", "-1", "B2");
+        yield return Args("a lone dash", "live.json", "-");
+        yield return Args("a lone dash as the map", "-");
+        yield return Args("an option error before a missing map", "--measure", "A1");
+        yield return Args("an unknown option before a missing map", "--bogus", "--png");
     }
 
     public static IEnumerable<ParityCase> All { get; } =
         [.. Drawn(), .. Measured(), .. Rejected(), .. Broken(), .. Arguments()];
 
     /// <summary>
-    /// Every input that should end in an error, for the token-cost guard: it must be one line, never a stack trace.
-    /// It adds what the script cannot be compared on, because it crashes with a traceback there: a compass
-    /// direction or the tokens given as the wrong kind of value, an empty file name, and a folder given as the file.
+    /// The cases above that are not errors: the map draws, or a distance is printed. They are in the parity check to
+    /// show that dmc does the same as the script, and are left out of <see cref="ErrorCases"/>.
+    /// </summary>
+    static readonly HashSet<string> Fine =
+    [
+        "measure with the options in front", "measure to the same cell on a 5 ft map", "measure one square",
+        "measure draws nothing even with --png", "measure on a big map", "measure on a very big map",
+        "measure far on a 30 ft map", "rejects: tokens is an empty object", "a scene repeats an overland base",
+        "a scene against a base written 5.0, repeated", "a base with a path in it", "a base that is a scene with a falsy base",
+        "broken json #76", "broken json #77", "an abbreviation of --measure", "png abbreviated", "the map after the options",
+        "a double dash", "the options between", "a repeated flag",
+    ];
+
+    static bool IsFine(ParityCase test) =>
+        Fine.Contains(test.Name) || Regex.IsMatch(test.Name, @"^measure .* to .* at \d+ ft$");
+
+    /// <summary>
+    /// Every input that must end in an error, for the token-cost guard: it must fail with exactly one line and never a
+    /// stack trace. It is the parity cases that are errors, plus the ones the script cannot be compared on because it
+    /// crashes with a traceback there: a compass direction, the tokens, the labels or a base given as the wrong kind of
+    /// value, an empty file name, and a folder or a file that is not UTF-8 given as the map.
     /// </summary>
     public static IEnumerable<ParityCase> ErrorCases { get; } =
     [
-        .. Measured(), .. Rejected(), .. Broken(), .. Arguments(),
+        .. new[] { Measured(), Rejected(), Broken(), Arguments() }.SelectMany(cases => cases).Where(c => !IsFine(c)),
         // Python 3.12 (not 3.11) takes "--png" here as the second cell, so the script is not compared on it.
         Files("measure with an option as a value", [("goblin-hall.json", Place()), ("live.json", Scene_())], "live.json", "--measure", "B2", "--png"),
         Alone("north is a list", Hall(("north", Arr("up")))),
@@ -392,7 +445,6 @@ public sealed partial class MapParityTests
         Alone("tokens is null", Hall(("tokens", null))),
         Alone("labels is a number", Hall(("labels", 5))),
         Alone("a base that is a number", Obj(("base", 5), ("grid", Arr("..")))),
-        Alone("an edge that is a list", Hall(("edges", Obj(("top", Arr(1)))))),
         Files("an empty map name", [], ""),
         Files("a folder instead of a file", [("d/x.json", "{}")], "d"),
         Files("a file that is not UTF-8", [("live.json", "{}")], "live.json").WithBytes("live.json", [0x7B, 0xFF, 0x7D]),

@@ -30,7 +30,7 @@ public static class Cells
     /// <param name="what">Names the thing the cell belongs to, for the error ("token 1 (Thorin)").</param>
     public static (int Col, int Row) Parse(object? value, int cols, int rows, string what)
     {
-        string text = Py.Strip(Py.Str(value)).ToUpperInvariant();
+        string text = Py.Upper(Py.Strip(Py.Str(value)));
         int[] cps = Py.CodePoints(text);
         int[] letters = cps.Where(Py.IsAlpha).ToArray();
         int[] digits = cps[letters.Length..];

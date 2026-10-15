@@ -118,4 +118,14 @@ public sealed class PythonCompatTests
         Assert.AreEqual("x y", Py.Strip("\u3000 x y \n"));
         Assert.AreEqual(2, Py.Len("a\ud83d\ude00"));
     }
+
+    [TestMethod]
+    public void UpperMakesTheOneToManyMappingsPythonMakes()
+    {
+        Assert.AreEqual("E3", Py.Upper("e3"));
+        Assert.AreEqual("SS1", Py.Upper("ß1"));
+        Assert.AreEqual("FI1", Py.Upper("ﬁ1"));
+        Assert.AreEqual("FFL", Py.Upper("ﬄ"));
+        Assert.AreEqual("É1", Py.Upper("é1"));
+    }
 }

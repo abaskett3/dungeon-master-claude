@@ -1,20 +1,65 @@
+using System.Text.Json;
+
 namespace Dmc;
 
 /// <summary>
-/// The seam for the stale-binary warning. Phase 5 fills it in; until then it does nothing, because
-/// <c>tools/dmc-release.json</c> (the pinned release) does not exist yet.
+/// The stale-binary warning. <c>tools/dmc-release.json</c> pins the release the toolkit expects (its <c>tag</c>,
+/// <c>dmc-vX.Y.Z</c>). When this <c>dmc</c> is a different version, for example after a <c>git pull</c> in a session
+/// not started through a launcher, it prints one line to stderr naming the command that fetches the pinned one, and
+/// carries on.
 /// </summary>
 /// <remarks>
-/// What Phase 5 puts here: compare <see cref="CommandLine.Version"/> with the tag in
-/// <see cref="ReleaseFile"/>. If they differ, print one line to <paramref name="err"/> naming the command to run
-/// (<c>tools/get-dmc</c>) and carry on. Stay silent when the file is missing or unreadable, as it is in a
-/// developer's checkout. Commands with <see cref="ICommand.NeverFails"/> (the hook) never reach this call.
+/// It says nothing when the file is missing, unreadable, or pins no release yet (an empty tag), as in a developer's
+/// checkout before the first release. Commands with <see cref="ICommand.NeverFails"/> (the hook) never reach it.
 /// </remarks>
 public static class StaleBinaryCheck
 {
     public static string ReleaseFile { get; } = Path.Combine(Toolkit.Root, "tools", "dmc-release.json");
 
+    public const string TagPrefix = "dmc-v";
+
     public static void Run(TextWriter err)
     {
+        string? pin;
+        try
+        {
+            pin = File.ReadAllText(ReleaseFile);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return;
+        }
+        string? warning = Warning(pin, CommandLine.Version);
+        if (warning is not null)
+            err.WriteLine(warning);
+    }
+
+    /// <summary>The warning for a pin file's text and this program's version, or null when there is nothing to say.</summary>
+    internal static string? Warning(string pin, string version)
+    {
+        string? tag = PinnedTag(pin);
+        if (tag is null || !tag.StartsWith(TagPrefix, StringComparison.Ordinal) || tag[TagPrefix.Length..] == version)
+            return null;
+        return $"dmc: this is dmc {version}, but the toolkit pins {tag}: run ./tools/get-dmc.ps1 (PowerShell) or bash tools/get-dmc.sh to update it";
+    }
+
+    /// <summary>The <c>tag</c> of a pin file; null when the text is not a pin, or the tag is empty.</summary>
+    internal static string? PinnedTag(string pin)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(pin);
+            if (document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("tag", out var tag)
+                && tag.ValueKind == JsonValueKind.String)
+            {
+                string? value = tag.GetString();
+                return string.IsNullOrEmpty(value) ? null : value;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+        return null;
     }
 }

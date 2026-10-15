@@ -7,6 +7,14 @@
 
   <ItemGroup>
     <PackageVersion Include="MSTest" Version="4.5.1" />
+    <!-- The browser tests of the map page. The .v4 package is the one built for MSTest 4. -->
+    <PackageVersion Include="Microsoft.Playwright.MSTest.v4" Version="1.63.0" />
+    <!-- Exact pins (the bracket form): Svg.Skia draws the map PNG. Native AOT-clean as of Phase 0. -->
+    <PackageVersion Include="Svg.Skia" Version="[5.2.3]" />
+    <!-- Svg.Skia asks for SkiaSharp 4.148.0; the spike tested 4.150.1 (which PDFtoImage needs in Phase 3), so use that.
+         The Linux native library comes without fontconfig, so it loads on a machine with nothing installed. -->
+    <PackageVersion Include="SkiaSharp" Version="[4.150.1]" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="[4.150.1]" />
   </ItemGroup>
 
 </Project>

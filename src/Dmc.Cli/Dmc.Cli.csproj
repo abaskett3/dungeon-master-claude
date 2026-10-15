@@ -41,4 +41,16 @@
     <InternalsVisibleTo Include="Dmc.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Svg.Skia" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Liberation Sans (SIL OFL 1.1; the licence sits next to the fonts), embedded so that the map PNG has text on a
+         machine with no fonts installed. -->
+    <EmbeddedResource Include="Maps\Fonts\*.ttf" LogicalName="Dmc.Maps.Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

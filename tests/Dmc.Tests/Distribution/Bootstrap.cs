@@ -1,0 +1,210 @@
+using System.Formats.Tar;
+using System.IO.Compression;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using Dmc.Commands;
+using Dmc.Tests.Support;
+
+namespace Dmc.Tests.Distribution;
+
+/// <summary>
+/// What the tests of <c>tools/get-dmc.*</c>, the launchers and <c>dmc play</c> start from: a copy of the toolkit's
+/// scripts in a temporary folder with a pin of the test's choosing, a release archive made from the published
+/// <c>dmc</c>, the shells to run the scripts with, and a fake <c>claude</c> that prints where it was started and
+/// with what.
+/// </summary>
+public static class Bootstrap
+{
+    /// <summary>The shells the scripts are run with: bash everywhere, PowerShell 7 everywhere, Windows PowerShell 5.1 on Windows.</summary>
+    public static IEnumerable<object[]> Shells { get; } =
+        OperatingSystem.IsWindows() ? [["bash"], ["pwsh"], ["powershell"]] : [["bash"], ["pwsh"]];
+
+    /// <summary>The runtime identifier of this computer, as get-dmc picks it.</summary>
+    public static string Rid { get; } =
+        (OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux") + "-"
+        + (RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64");
+
+    public static string ExeName { get; } = OperatingSystem.IsWindows() ? "dmc.exe" : "dmc";
+
+    /// <summary>The name of the archive of a release for a runtime identifier, as the release workflow names it.</summary>
+    public static string Asset(string tag, string rid) => $"{tag}-{rid}.{(rid.StartsWith("win-", StringComparison.Ordinal) ? "zip" : "tar.gz")}";
+
+    /// <summary>A file the test archive holds next to dmc, standing in for its native libraries.</summary>
+    public const string NativeStandIn = "native-library-stand-in.txt";
+
+    /// <summary>
+    /// A fresh folder holding <c>play.ps1</c>, <c>play.sh</c> and <c>tools/get-dmc.*</c> from the repository, and a
+    /// pin of the given tag and hashes (one key per line, as the release workflow writes it). Deleted on dispose.
+    /// </summary>
+    public sealed class ToolkitCopy : IDisposable
+    {
+        public string Root { get; } = Path.Combine(Path.GetTempPath(), "dmc-bootstrap-" + Guid.NewGuid().ToString("N"));
+
+        public ToolkitCopy(string tag, IReadOnlyDictionary<string, string> sha256)
+        {
+            Directory.CreateDirectory(Path.Combine(Root, "tools"));
+            foreach (string file in new[] { "play.ps1", "play.sh", "tools/get-dmc.ps1", "tools/get-dmc.sh" })
+                File.Copy(Path.Combine(TestEnv.Root, file), Path.Combine(Root, file));
+            string entries = string.Join(",\n", sha256.Select(e => $"    \"{e.Key}\": \"{e.Value}\""));
+            File.WriteAllText(Path.Combine(Root, "tools", "dmc-release.json"),
+                $"{{\n  \"about\": \"test pin\",\n  \"tag\": \"{tag}\",\n  \"sha256\": {{\n{entries}\n  }}\n}}\n");
+        }
+
+        public string Bin => Path.Combine(Root, "bin");
+
+        public string Exe => Path.Combine(Bin, ExeName);
+
+        public void Dispose()
+        {
+            try
+            {
+                Directory.Delete(Root, recursive: true);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    /// <summary>A release of the published dmc: its tag and a folder holding its archive for this computer.</summary>
+    public sealed record Release(string Tag, string Version, string Assets, string Sha256);
+
+    /// <summary>
+    /// The published <c>dmc</c> packed the way the release workflow packs it (a zip on Windows, a tar.gz elsewhere,
+    /// the files at the top), with <see cref="NativeStandIn"/> in place of the native libraries. Made once.
+    /// </summary>
+    public static Release PublishedRelease() => _release.Value;
+
+    static readonly Lazy<Release> _release = new(() =>
+    {
+        string binary = DmcRunner.Binary();
+        var answer = TestEnv.Run(binary, ["--version"]);
+        Assert.AreEqual(0, answer.ExitCode, answer.ToString());
+        string version = answer.Stdout.Trim()["dmc ".Length..];
+        string tag = "dmc-v" + version;
+
+        string assets = Path.Combine(Path.GetTempPath(), "dmc-release-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(assets);
+        string archive = Path.Combine(assets, Asset(tag, Rid));
+        byte[] standIn = "not a library"u8.ToArray();
+        if (OperatingSystem.IsWindows())
+        {
+            using var zip = ZipFile.Open(archive, ZipArchiveMode.Create);
+            zip.CreateEntryFromFile(binary, ExeName, CompressionLevel.NoCompression);
+            using var entry = zip.CreateEntry(NativeStandIn).Open();
+            entry.Write(standIn);
+        }
+        else
+        {
+            using var file = File.Create(archive);
+            using var gzip = new GZipStream(file, CompressionLevel.Fastest);
+            using var tar = new TarWriter(gzip);
+            tar.WriteEntry(binary, ExeName);
+            tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, NativeStandIn) { DataStream = new MemoryStream(standIn) });
+        }
+        return new Release(tag, version, assets, Sha256(archive));
+    });
+
+    public static string Sha256(string file)
+    {
+        using var stream = File.OpenRead(file);
+        return Convert.ToHexStringLower(SHA256.HashData(stream));
+    }
+
+    /// <summary>
+    /// A folder with a fake <c>claude</c> in it, to put first on the PATH. It prints the folder it runs in and each
+    /// argument on its own line, and exits with 7. On Windows there are two: <c>claude.cmd</c>, which dmc and
+    /// PowerShell run, and a <c>claude</c> shell script, which Git Bash runs.
+    /// </summary>
+    public static string FakeClaude()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-fake-claude-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        string script = Path.Combine(folder, "claude");
+        File.WriteAllText(script, "#!/bin/sh\necho \"fake claude in $(pwd)\"\nfor a in \"$@\"; do echo \"arg: $a\"; done\nexit 7\n");
+        if (OperatingSystem.IsWindows())
+        {
+            File.WriteAllText(Path.Combine(folder, "claude.cmd"),
+                "@echo off\r\necho fake claude in %CD%\r\n:next\r\nif \"%~1\"==\"\" goto done\r\necho arg: %~1\r\nshift\r\ngoto next\r\n:done\r\nexit /b 7\r\n");
+        }
+        else
+        {
+            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+        return folder;
+    }
+
+    /// <summary>The PATH with <paramref name="folder"/> first.</summary>
+    public static string PathWith(string folder) => folder + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+
+    /// <summary>What the fake claude printed: the folder it ran in, and its arguments.</summary>
+    public static (string Folder, string[] Args) ClaudeSaw(ProcessResult result)
+    {
+        string[] lines = result.StdoutLines;
+        string? folder = lines.FirstOrDefault(l => l.StartsWith("fake claude in ", StringComparison.Ordinal));
+        Assert.IsNotNull(folder, $"claude did not start:\n{result}");
+        return (folder["fake claude in ".Length..], lines.Where(l => l.StartsWith("arg: ", StringComparison.Ordinal)).Select(l => l["arg: ".Length..]).ToArray());
+    }
+
+    /// <summary>What claude must be started with: the launchers' arguments, then the player's.</summary>
+    public static string[] ClaudeArgs(params string[] players) => [.. PlayCommand.FixedArguments, .. players];
+
+    /// <summary>
+    /// Run a script of the toolkit copy with a shell. <paramref name="script"/> is relative to the toolkit root, with
+    /// forward slashes and no extension (<c>tools/get-dmc</c>, <c>play</c>); the shell picks <c>.sh</c> or <c>.ps1</c>.
+    /// <paramref name="pathFirst"/> is a folder to put first on the PATH. For bash that is done inside bash, because
+    /// Git Bash puts its own folders (with its uname) before the PATH it is given.
+    /// </summary>
+    public static ProcessResult RunScript(string shell, ToolkitCopy toolkit, string script, string[]? args = null,
+        IReadOnlyDictionary<string, string?>? environment = null, string? pathFirst = null)
+    {
+        string program = Shell(shell);
+        var env = new Dictionary<string, string?>(environment ?? new Dictionary<string, string?>());
+        string[] arguments;
+        if (shell == "bash")
+        {
+            string file = Path.Combine(toolkit.Root, script + ".sh").Replace('\\', '/');
+            arguments = pathFirst is null
+                ? [file]
+                : ["-c", "PATH=\"$(cygpath -u \"$0\" 2>/dev/null || printf '%s' \"$0\"):$PATH\"; exec bash \"$@\"", pathFirst, file];
+        }
+        else
+        {
+            arguments = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(toolkit.Root, script + ".ps1")];
+            if (pathFirst is not null)
+                env["PATH"] = PathWith(pathFirst);
+        }
+        return TestEnv.Run(program, [.. arguments, .. args ?? []], cwd: Path.GetTempPath(), timeoutSeconds: 180,
+            environment: env);
+    }
+
+    /// <summary>The full path of a shell, after checking it is there (a skip locally, a failure on CI).</summary>
+    public static string Shell(string name)
+    {
+        string? found = name == "bash" ? Bash.Value : Find(name);
+        TestEnv.Need(found is not null, name);
+        return found!;
+    }
+
+    static string? Find(string name) =>
+        PlayCommand.FindOnPath(name, Environment.GetEnvironmentVariable("PATH"), ".EXE", OperatingSystem.IsWindows());
+
+    /// <summary>
+    /// On Windows, Git Bash: a bare "bash" can be the WSL launcher in the Windows folder, so Git's own bash is taken,
+    /// found from <c>git</c> or Program Files.
+    /// </summary>
+    static readonly Lazy<string?> Bash = new(() =>
+    {
+        if (!OperatingSystem.IsWindows())
+            return Find("bash");
+        var candidates = new List<string>();
+        if (Find("git") is { } git)
+            candidates.Add(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(git))!, "bin", "bash.exe"));
+        if (Environment.GetEnvironmentVariable("ProgramFiles") is { } programFiles)
+            candidates.Add(Path.Combine(programFiles, "Git", "bin", "bash.exe"));
+        return candidates.FirstOrDefault(File.Exists);
+    });
+}

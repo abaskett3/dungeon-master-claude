@@ -152,6 +152,25 @@ public sealed partial class ErrorPathTests
     }
 
     [TestMethod]
+    public void PlayWithoutClaudePrintsOneLine()
+    {
+        string empty = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(empty);
+        try
+        {
+            var result = TestEnv.Run(DmcRunner.Binary(), ["play", "--continue"],
+                environment: new Dictionary<string, string?> { ["PATH"] = empty });
+            AssertOneLine(result, "dmc play with no claude on the PATH");
+            Assert.AreEqual(127, result.ExitCode, "the shell's code for a command that is not found");
+            StringAssert.StartsWith(result.Stderr, "dmc play: Claude Code (claude) is not on the PATH");
+        }
+        finally
+        {
+            Directory.Delete(empty, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public void TheHookNeverPrintsAnErrorOrAStackTrace()
     {
         string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));

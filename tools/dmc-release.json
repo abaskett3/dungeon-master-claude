@@ -1,0 +1,6 @@
+{
+  "about": "The dmc release that tools/get-dmc.ps1 and tools/get-dmc.sh install into bin/. Written by .github/workflows/release.yml, one key per line (get-dmc.sh reads it without a JSON parser). An empty tag means no release yet: the launchers then start Claude Code themselves.",
+  "tag": "",
+  "sha256": {
+  }
+}

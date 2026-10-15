@@ -69,7 +69,7 @@ public sealed partial class PdfParityTests
         TestEnv.Need(python is not null, "Python 3");
         TestEnv.Need(Legacy.HasPyMuPdf(), "PyMuPDF");
         return TestEnv.Run(python!, [Legacy.Script("pdf_extract.py"), .. args], stdin, work,
-            environment: new Dictionary<string, string> { ["PYTHONIOENCODING"] = "utf-8" });
+            environment: new Dictionary<string, string?> { ["PYTHONIOENCODING"] = "utf-8" });
     }
 
     static readonly ParityTool Same = new("pdf_extract.py", "pdf", RunScript,

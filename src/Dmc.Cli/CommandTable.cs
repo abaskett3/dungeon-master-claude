@@ -2,7 +2,7 @@ using Dmc.Commands;
 
 namespace Dmc;
 
-/// <summary>The command table. A later phase adds <c>play</c> here.</summary>
+/// <summary>The command table.</summary>
 public static class CommandTable
 {
     public static IReadOnlyList<ICommand> All { get; } =
@@ -12,5 +12,6 @@ public static class CommandTable
         new MapCommand(),
         new PdfCommand(),
         new DigestCommand(),
+        new PlayCommand(),
     ];
 }

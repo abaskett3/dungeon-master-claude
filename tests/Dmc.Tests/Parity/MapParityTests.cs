@@ -35,7 +35,7 @@ public sealed partial class MapParityTests
             string? python = Legacy.Python();
             TestEnv.Need(python is not null, "Python 3");
             return TestEnv.Run(python!, [Legacy.Script("map_render.py"), .. args], stdin, work,
-                environment: new Dictionary<string, string> { ["PYTHONIOENCODING"] = "utf-8" });
+                environment: new Dictionary<string, string?> { ["PYTHONIOENCODING"] = "utf-8" });
         },
         Normalize: text =>
         {

@@ -1,0 +1,189 @@
+using Dmc.Maps;
+
+namespace Dmc.Digest;
+
+/// <summary>What <c>dmc digest</c> was asked to do.</summary>
+/// <param name="Command">list or digest.</param>
+/// <param name="Campaign">Only sessions that touched this campaign; null or empty for all.</param>
+/// <param name="After">Only sessions that ended on or after this date (text, compared with the first 10 characters of the end time).</param>
+/// <param name="Logs">The folder of session logs; null or empty for this toolkit's Claude Code logs.</param>
+/// <param name="Out">The output folder of <c>digest</c>; null or empty for <c>adventures/.transcript-review</c>.</param>
+/// <param name="Sessions">The starts of session ids <c>digest</c> was given; none means every session.</param>
+internal sealed record DigestRequest(string Command, string? Campaign, string? After, string? Logs, string? Out,
+    IReadOnlyList<string> Sessions);
+
+/// <summary>
+/// Reads the command line the way <c>transcript_digest.py</c>'s <c>argparse</c> does, with its messages (apart from the
+/// usage text, which dmc leaves out: an error is one line and exit code 2). argparse has two levels here, and so has
+/// this: the command is picked first, and everything after it belongs to the command's own parser. The order argparse
+/// follows is kept: every argument is sorted as an option, a plain argument or the "--" marker before any is read; the
+/// session ids are the plain arguments up to the first option after them (a later one is "unrecognized"); an option
+/// takes the one argument after it, or the text after "="; a repeated option is overridden by its last use; and the
+/// unrecognized arguments are reported last, after every other mistake.
+/// </summary>
+internal static class DigestArguments
+{
+    static readonly string[] Commands = ["list", "digest"];
+
+    static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs"];
+
+    static readonly string[] DigestOptions = [.. ListOptions, "--out"];
+
+    /// <summary>Read the arguments after <c>dmc digest</c>. Null means "--help".</summary>
+    public static DigestRequest? Parse(string[] args)
+    {
+        // The parser above the commands knows only --help, so an option before the command is unknown, and a lone
+        // plain argument is the command; all that follows it is the command's.
+        var (kinds, classified) = Sort(args, ["--help"]);
+        var extras = new List<string>();
+        int at = 0;
+        for (; at < args.Length; at++)
+        {
+            if (kinds[at] == 'O')
+            {
+                if (classified[at]!.Option == "--help")
+                    return Help(classified[at]!);
+                extras.Add(args[at]);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // "--" before the command is taken for the command itself, which is not one.
+        if (at == args.Length || (kinds[at] == '-' && at + 1 == args.Length))
+            throw Argparse.Usage("the following arguments are required: command");
+        string command = args[at];
+        if (!Commands.Contains(command))
+            throw Argparse.Usage($"argument command: invalid choice: {Py.Repr(command)} (choose from {string.Join(", ", Commands)})");
+
+        var request = ParseCommand(command, args[(at + 1)..], extras);
+        if (request is null)
+            return null;
+        if (extras.Count > 0)
+            throw Argparse.Usage("unrecognized arguments: " + string.Join(' ', extras));
+        return request;
+    }
+
+    static DigestRequest? Help(Argparse.Classified option) =>
+        option.Explicit is null
+            ? null
+            : throw Argparse.Usage($"argument -h/--help: ignored explicit argument {Py.Repr(option.Explicit)}");
+
+    /// <summary>
+    /// Sort every argument as <c>O</c> (an option, known or not), <c>A</c> (a plain argument) or <c>-</c> (the first
+    /// "--", after which every argument is a plain one), as argparse's <c>arg_strings_pattern</c> does.
+    /// </summary>
+    static (char[] Kinds, Argparse.Classified?[] Classified) Sort(string[] args, string[] options)
+    {
+        var kinds = new char[args.Length];
+        var classified = new Argparse.Classified?[args.Length];
+        bool onlyPlain = false;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (onlyPlain)
+            {
+                kinds[i] = 'A';
+            }
+            else if (args[i] == "--")
+            {
+                kinds[i] = '-';
+                onlyPlain = true;
+            }
+            else
+            {
+                classified[i] = Argparse.Classify(args[i], options);
+                kinds[i] = classified[i]!.IsOption ? 'O' : 'A';
+            }
+        }
+        return (kinds, classified);
+    }
+
+    /// <summary>The command's own parser. Arguments it does not recognize are added to <paramref name="extras"/>.</summary>
+    static DigestRequest? ParseCommand(string command, string[] args, List<string> extras)
+    {
+        bool digest = command == "digest";
+        var (kinds, classified) = Sort(args, digest ? DigestOptions : ListOptions);
+        string? campaign = null, after = null, logs = null, output = null;
+        var sessions = new List<string>();
+        bool sessionsOpen = digest; // the session ids are taken once
+
+        // The plain arguments from here, up to the next option: the session ids, if still open.
+        int TakePlain(int from)
+        {
+            if (!sessionsOpen)
+                return from;
+            sessionsOpen = false;
+            int end = from;
+            while (end < args.Length && kinds[end] is 'A' or '-')
+                end++;
+            var taken = args[from..end].ToList();
+            taken.Remove("--"); // only the first "--" goes
+            sessions.AddRange(taken);
+            return end;
+        }
+
+        int lastOption = Array.FindLastIndex(kinds, k => k == 'O');
+        int start = 0;
+        while (start <= lastOption)
+        {
+            int next = Array.IndexOf(kinds, 'O', start);
+            if (start != next)
+            {
+                int end = TakePlain(start);
+                if (end > start)
+                {
+                    start = end;
+                    continue;
+                }
+            }
+            if (kinds[start] != 'O')
+            {
+                extras.AddRange(args[start..next]);
+                start = next;
+            }
+
+            var option = classified[start]!;
+            if (option.Option is null)
+            {
+                extras.Add(args[start]); // an option that does not exist
+                start++;
+                continue;
+            }
+            if (option.Option == "--help")
+                return Help(option);
+
+            string value;
+            if (option.Explicit is not null)
+            {
+                value = option.Explicit;
+                start++;
+            }
+            else
+            {
+                // One argument, which may have the "--" marker before or after it.
+                int j = start + 1;
+                if (j < args.Length && kinds[j] == '-')
+                    j++;
+                if (j >= args.Length || kinds[j] != 'A')
+                    throw Argparse.Usage($"argument {option.Option}: expected one argument");
+                value = args[j++];
+                if (j < args.Length && kinds[j] == '-')
+                    j++;
+                start = j;
+            }
+            switch (option.Option)
+            {
+                case "--campaign": campaign = value; break;
+                case "--after": after = value; break;
+                case "--logs": logs = value; break;
+                default: output = value; break;
+            }
+        }
+
+        int rest = TakePlain(start);
+        extras.AddRange(args[rest..]);
+        return new DigestRequest(command, campaign, after, logs, output, sessions);
+    }
+}

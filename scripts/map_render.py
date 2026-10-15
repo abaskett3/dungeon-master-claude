@@ -1,85 +1,12 @@
 #!/usr/bin/env python3
 """Draw a campaign map as a picture the player watches in a browser tab.
 
-DMC describes a place as a small JSON file (a grid of symbols, a legend and
-the creatures standing on it). This script checks the file, draws it, and
-prints the distances between the creatures so they are read, not guessed.
-
 Usage:
   python scripts/map_render.py <map.json> [--png] [--open]
   python scripts/map_render.py <map.json> --measure E4 H9
 
-Output, written next to the map file:
-  live.html      the page the player keeps open; it updates itself
-  live-data.js   the current picture (rewritten on every run)
-  live.png       with --png: the same picture, for DMC to look at with Read
-
-  --open     also open live.html in the default browser
-  --measure  only print the distance between two cells, draw nothing
-
-A place file holds the layout and no creatures:
-  {
-    "title": "Goblin hall",
-    "cell_ft": 5,
-    "grid": ["##########",
-             "#........#",
-             "+...o...>#",
-             "##########"],
-    "legend": {"o": "pillar"},
-    "labels": [{"at": "I3", "text": "to the cellar"}]
-  }
-
-A scene file puts creatures on a place ("base" is the place file's name,
-without .json, in the same folder). A scene may hold its own "grid" instead.
-  {
-    "base": "goblin-hall",
-    "tokens": [
-      {"id": "@", "name": "Thorin",      "kind": "pc",    "at": "E3"},
-      {"id": "1", "name": "Goblin boss", "kind": "enemy", "at": "H2"},
-      {"id": "O", "name": "Ogre", "kind": "enemy", "at": "B2", "size": 2,
-       "note": "prone", "down": false}
-    ]
-  }
-
-Grid: one character per cell, every row the same length, no spaces between
-cells. A space is empty (nothing there). Columns are lettered A, B, C from
-the left and rows numbered 1, 2, 3 from the top, so "E3" is the fifth cell
-of the third row. A token's "at" is its top-left cell; "size" is its width
-in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan). Above 5 ft (30
-ft and the mile scales) every creature fits in one square, so "size" counts
-as 1 for footprint, blocking and distance, and is only shown in the legend.
-
-Built-in symbols:
-  #  wall        .  floor       +  door        =  window      ~  water
-  ^  hazard      >  stairs down <  stairs up   T  tree        o  pillar
-  _  low cover   ,  difficult terrain          ?  not yet seen
-
-"legend" renames a built-in symbol or defines a new one. A value is a name,
-or {"name": ..., "as": <terrain>, "color": "#rrggbb"}. Terrain names: wall,
-floor, door, window, water, hazard, stairs_down, stairs_up, tree, pillar,
-cover, difficult, unknown, feature. A new symbol with only a name is drawn
-as floor with the symbol written on it.
-
-Every map is drawn to scale: one square is the same distance everywhere.
-"cell_ft" is the feet in one square and must be 5 (the default; a fight or
-close quarters), 30 (a larger place: one turn of movement at speed 30) or,
-for overland maps, 5280, 31680 or 316800 (1, 6 or 60 miles; shown as miles).
-Anything else, including null, is rejected. Any kind of token may sit on any
-map. At 5 ft two tokens cannot share a cell; above 5 ft several can (a melee),
-drawn small inside the cell: the first three, then a "+N" badge whose tooltip
-lists the rest. A scene with a "base" cannot change its scale.
-
-Other keys, all optional: "scale_note" (a line after the scale), "north"
-("up", "down", "left", "right" or null when no direction is established),
-"edges" ({"top"|"bottom"|"left"|"right": text}), "notes" (a line under the
-title).
-
-Distances are between the nearest cells of two creatures, in a straight
-line; walls are not taken into account. At 5 and 30 ft they count squares
-the 5e way (a diagonal step costs the same as a straight one). Above 5 ft they
-are approximate ("about", and "same square" for one cell). On a mile-scale
-map they are the true straight-line distance between cell centres, to the
-nearest mile ("about").
+The map file format (places, scenes, grid, legend, scales, distances) is described in
+.claude/skills/draw-map/map-format.md.
 """
 import argparse
 import datetime

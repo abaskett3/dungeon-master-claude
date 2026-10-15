@@ -56,5 +56,15 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang zlib1g-dev
       - name: Publish dmc with Native AOT
         run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o bin -p:PublishAot=true
+      - name: Install PyMuPDF (the parity check runs map_render.py --png)
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Build the tests
+        run: dotnet build tests/Dmc.Tests -c Release
+      # The map page tests drive Chromium. The runner images have PowerShell (pwsh), which Playwright's installer needs.
+      - name: Install Playwright's Chromium
+        shell: pwsh
+        run: |
+          $extra = @(); if ($IsLinux) { $extra = @("--with-deps") }
+          pwsh tests/Dmc.Tests/bin/Release/net10.0/playwright.ps1 install @extra chromium
       - name: Run the tests
-        run: dotnet test -c Release
+        run: dotnet test -c Release --no-build

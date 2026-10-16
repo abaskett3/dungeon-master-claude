@@ -3,7 +3,7 @@ using Dmc.Maps;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc map &lt;map.json&gt; [--png] [--open] [--measure FROM TO]</c>: replaces <c>scripts/map_render.py</c>. It checks a
+/// <c>dmc map &lt;map.json&gt; [--png] [--open] [--measure FROM TO]</c>: replaced <c>scripts/map_render.py</c>. It checks a
 /// map file, draws it as <c>live.html</c> and <c>live-data.js</c> next to it, and prints the distances between the
 /// creatures. The format of a map file is in <c>.claude/skills/draw-map/map-format.md</c>.
 /// </summary>

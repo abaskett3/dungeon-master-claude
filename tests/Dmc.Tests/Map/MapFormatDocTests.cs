@@ -37,15 +37,6 @@ public sealed class MapFormatDocTests
     }
 
     [TestMethod]
-    public void TheScriptCommentIsOnlyAPointer()
-    {
-        string script = File.ReadAllText(Path.Combine(TestEnv.Root, "scripts", "map_render.py"));
-        string comment = script[..script.IndexOf("import argparse", StringComparison.Ordinal)];
-        StringAssert.Contains(comment, "map-format.md");
-        Assert.IsLessThan(15, comment.Split('\n').Length);
-    }
-
-    [TestMethod]
     public void HelpPointsToTheFormatFile()
     {
         foreach (var result in new[] { DmcRunner.InProcess(["map", "--help"]), DmcRunner.InProcess(["map", "x.json", "-h"]), DmcRunner.BlackBox(["map", "--help"]) })

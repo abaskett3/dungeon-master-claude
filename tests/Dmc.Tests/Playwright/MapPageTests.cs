@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Dmc.Tests.Parity;
+using Dmc.Tests.Map;
 using Dmc.Tests.Support;
 using Microsoft.Playwright;
 using Microsoft.Playwright.MSTest;
@@ -133,10 +133,10 @@ public sealed class MapPageTests : PageTest
         var box = await Page.Locator("#map svg").BoundingBoxAsync();
         Assert.IsNotNull(box);
 
-        var (width, height) = MapParityTests.PngSizeOf(Path.Combine(_folder, "live.png"));
+        var (width, height) = MapCases.PngSizeOf(Path.Combine(_folder, "live.png"));
         // The page shows the SVG at its own size when the window is big enough.
         Assert.AreEqual(width, (int)Math.Round(box.Width));
         Assert.AreEqual(height, (int)Math.Round(box.Height));
-        Assert.AreEqual(MapParityTests.SvgSizeOf(_folder), (width, height));
+        Assert.AreEqual(MapCases.SvgSizeOf(_folder), (width, height));
     }
 }

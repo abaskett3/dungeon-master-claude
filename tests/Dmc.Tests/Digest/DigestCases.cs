@@ -1,70 +1,21 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Dmc.Digest;
-using Dmc.Tests.Digest;
 using Dmc.Tests.Support;
 using static Dmc.Tests.Digest.DigestFixtures;
 
-namespace Dmc.Tests.Parity;
+namespace Dmc.Tests.Digest;
 
 /// <summary>
-/// <c>dmc digest</c> against <c>scripts/transcript_digest.py</c> on the same session logs: stdout, stderr, the exit code
-/// and every file written, case by case. The two must agree to the byte, apart from what is meant to differ:
-/// <list type="bullet">
-/// <item>The "Generated 2026-10-15 by ..." line of <c>stats.md</c> and of the printed report holds today's date and the
-///   name of the program, so it is compared as "Generated &lt;date&gt; by &lt;tool&gt;." (the timestamps rule of issue #3).
-///   Nothing else in the output depends on the time: every time shown comes from the log.</item>
-/// <item>Error messages, exit codes and the files written (or not) on a failure are compared exactly, apart from the
-///   prefix: the script's <c>sys.exit</c> messages have none, and dmc says "dmc digest: " first, as the dispatcher does for
-///   every command; argparse's usage text before an argument error is left out by dmc (one line only).</item>
-/// <item>The files are compared with their line ends as LF: the script writes CRLF on Windows, dmc LF everywhere.</item>
-/// </list>
-/// Every case names its folders as relative paths ("logs", "out"), so nothing in the output depends on where the test runs.
-/// The default folder (<c>adventures/.transcript-review</c>) is never used here: it is inside the repository.
+/// The session logs <c>dmc digest</c> was compared on against <c>transcript_digest.py</c> until the script was deleted
+/// (Phase 6 of #3): odd records, text outside the BMP, ties, ids and token counts of every JSON type, and every error.
+/// <see cref="ErrorCases"/> and <see cref="DmcOnlyErrorCases"/> feed the one-line error guard (<c>ErrorPathTests</c>), and
+/// <see cref="DigestCaseTests"/> checks that every other input still digests. Every case names its folders as relative
+/// paths ("logs", "out"); the default folder (<c>adventures/.transcript-review</c>) is never used, as it is inside the
+/// repository.
 /// </summary>
-[TestClass]
-public sealed partial class DigestParityTests
+public static class DigestCases
 {
-    [GeneratedRegex(@"^usage: transcript_digest\.py .*\n( {5,}.*\n)*", RegexOptions.Multiline)]
-    private static partial Regex ArgparseUsage();
-
-    [GeneratedRegex(@"^(No session logs found|No matching sessions)", RegexOptions.Multiline)]
-    private static partial Regex ExitMessage();
-
-    [GeneratedRegex(@"Generated \d{4}-\d\d-\d\d by (scripts/transcript_digest\.py|dmc digest)\.")]
-    private static partial Regex Generated();
-
-    static string Normalize(string text)
-    {
-        // Python 3.12.something and later list the choices bare; 3.11 and the first 3.12s quote each one. dmc writes them bare.
-        text = ArgparseUsage().Replace(text, "")
-            .Replace("transcript_digest.py digest: error: ", "dmc digest: ", StringComparison.Ordinal)
-            .Replace("transcript_digest.py list: error: ", "dmc digest: ", StringComparison.Ordinal)
-            .Replace("transcript_digest.py: error: ", "dmc digest: ", StringComparison.Ordinal)
-            .Replace("(choose from 'list', 'digest')", "(choose from list, digest)", StringComparison.Ordinal);
-        return Generated().Replace(ExitMessage().Replace(text, "dmc digest: $1"), "Generated <date> by <tool>.");
-    }
-
-    static ProcessResult RunScript(string work, string[] args, string? stdin)
-    {
-        string? python = Legacy.Python();
-        TestEnv.Need(python is not null, "Python 3");
-        var result = TestEnv.Run(python!, [Legacy.Script("transcript_digest.py"), .. args], stdin, work,
-            environment: new Dictionary<string, string?> { ["PYTHONIOENCODING"] = "utf-8" });
-        // The one deliberate difference in what is printed: "list" prints the heading of its table before it looks for the
-        // logs, so with no log folder the script prints the heading and then the error. dmc looks first and prints the
-        // error alone (the one-line rule). So on a failure the heading is taken off the script's output.
-        return result.ExitCode != 0 ? result with { Stdout = ListHeading().Replace(result.Stdout, "") } : result;
-    }
-
-    [GeneratedRegex(@"^id +start \(UTC\) +end \(UTC\) .*\r?\n")]
-    private static partial Regex ListHeading();
-
-    static readonly ParityTool Tool = new("transcript_digest.py", "digest", RunScript,
-        Normalize: Normalize,
-        NormalizeFile: (_, text) => Normalize(text.Replace("\r\n", "\n", StringComparison.Ordinal)));
-
     // ---------- building cases ----------
 
     /// <summary>
@@ -91,9 +42,9 @@ public sealed partial class DigestParityTests
 
     static readonly Action<string> StandardLogs = Logs(WriteLogFolder);
 
-    static ParityCase Case(string name, Action<string> seed, params string[] args) => new(name, _ => args, null, seed);
+    static CommandCase Case(string name, Action<string> seed, params string[] args) => new(name, _ => args, null, seed);
 
-    // ---------- the cases: same output ----------
+    // ---------- the cases that digest ----------
 
     /// <summary>Records of an odd kind, as a log can hold them: the script must treat each as it does and so must dmc.</summary>
     static void OddLog(string logs)
@@ -252,7 +203,7 @@ public sealed partial class DigestParityTests
         File.WriteAllText(Path.Combine(logs, "0000bbbb-numbers.jsonl"), string.Join("\n", lines) + "\n", new UTF8Encoding(false));
     }
 
-    static IEnumerable<ParityCase> SameOutput()
+    static IEnumerable<CommandCase> SameOutput()
     {
         yield return Case("list", StandardLogs, "list", "--logs", "logs");
         yield return Case("list with shortened options and an equals sign", StandardLogs, "list", "--logs=logs", "--camp=silver-egg", "--af", "2026-01-01");
@@ -274,7 +225,7 @@ public sealed partial class DigestParityTests
     // ---------- the cases: errors ----------
 
     /// <summary>Every way a run fails that the script reports, or argparse does: exit code, message, and nothing written.</summary>
-    public static IEnumerable<ParityCase> ErrorCases()
+    public static IEnumerable<CommandCase> ErrorCases()
     {
         yield return Case("no arguments", StandardLogs);
         yield return Case("a command that does not exist", StandardLogs, "extract");
@@ -296,9 +247,9 @@ public sealed partial class DigestParityTests
     /// record that is not an object, a log that is not UTF-8, an output path that is a file). They are in the one-line guard
     /// of <c>ErrorPathTests</c>, with <see cref="ErrorCases"/>.
     /// </summary>
-    public static IEnumerable<ParityCase> DmcOnlyErrorCases()
+    public static IEnumerable<CommandCase> DmcOnlyErrorCases()
     {
-        ParityCase Bad(string name, string fileName, byte[] content, params string[] extra) => new(name,
+        CommandCase Bad(string name, string fileName, byte[] content, params string[] extra) => new(name,
             _ => ["digest", "--logs", "logs", "--out", "out", .. extra], null,
             Logs(logs => File.WriteAllBytes(Path.Combine(logs, fileName), content)));
 
@@ -312,44 +263,112 @@ public sealed partial class DigestParityTests
             Encoding.UTF8.GetBytes("{\"type\": \"user\", \"message\": {\"content\": \"hi\"}}\n{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": 5, \"input\": {}}]}}\n"));
         yield return Bad("a tool call whose input is a list", "input.jsonl",
             "{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Bash\", \"input\": [1]}]}}\n"u8.ToArray());
-        yield return new ParityCase("an output path that is a file", _ => ["digest", "--logs", "logs", "--out", "out"], null, work =>
+        yield return new CommandCase("an output path that is a file", _ => ["digest", "--logs", "logs", "--out", "out"], null, work =>
         {
             StandardLogs(work);
             File.WriteAllText(Path.Combine(work, "out"), "in the way");
         });
     }
 
-    public static IEnumerable<object[]> SameData => SameOutput().Select(c => new object[] { c });
+    /// <summary>Every input that must digest or list without an error.</summary>
+    public static IEnumerable<CommandCase> Succeeding => SameOutput();
 
-    public static IEnumerable<object[]> ErrorData => ErrorCases().Select(c => new object[] { c });
+    /// <summary>The logs of <see cref="KeysLog"/> and <see cref="NumbersLog"/>, for <see cref="DigestCaseTests"/>.</summary>
+    internal static readonly Action<string> KeysLogs = Logs(KeysLog), NumbersLogs = Logs(NumbersLog);
+}
 
-    public static string CaseName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
-
+/// <summary>
+/// The inputs of <see cref="DigestCases"/> that must work, run through the published binary, and what only the
+/// comparison with the script used to pin down: Python's rules for keys and numbers in the statistics, and the default
+/// log folder.
+/// </summary>
+[TestClass]
+public sealed class DigestCaseTests
+{
     [TestMethod]
-    [DynamicData(nameof(SameData), DynamicDataDisplayName = nameof(CaseName))]
-    public void DigestMatchesTranscriptDigestPy(ParityCase test) => ParityCheck.Run(Tool, test);
+    public void EveryLogThatShouldDigestDigests() => CommandCase.RunAll(DigestCases.Succeeding, "digest", (test, result, folder) =>
+    {
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("", result.Stderr);
+        string[] args = test.Args(folder);
+        if (args[0] == "digest")
+            Assert.IsTrue(File.Exists(Path.Combine(folder, args[Array.IndexOf(args, "--out") + 1], "stats.md")), "stats.md");
+        else
+            StringAssert.StartsWith(result.Stdout, "id ");
+    });
 
-    [TestMethod]
-    [DynamicData(nameof(ErrorData), DynamicDataDisplayName = nameof(CaseName))]
-    public void DigestFailsLikeTranscriptDigestPy(ParityCase test) => ParityCheck.Run(Tool, test);
+    static string Stats(Action<string> seed)
+    {
+        string stats = "";
+        new CommandCase("stats", "digest", "--logs", "logs", "--out", "out") { Seed = seed }.Run("digest", (result, folder) =>
+        {
+            Assert.AreEqual(0, result.ExitCode, result.ToString());
+            stats = File.ReadAllText(Path.Combine(folder, "out", "stats.md")).Replace("\r\n", "\n");
+        });
+        return stats;
+    }
 
     /// <summary>
-    /// With no <c>--logs</c>, both look in <c>$CLAUDE_CONFIG_DIR/projects/&lt;this folder, with every character outside
-    /// A-Za-z0-9 turned into "-"&gt;</c>: the error that names the folder when it is missing, and the table when it is there.
-    /// The environment variable is the test process's own, which both programs inherit.
+    /// The lines of <see cref="DigestCases"/>' keys log, as <c>transcript_digest.py</c> wrote them: <c>None</c>, <c>""</c>,
+    /// <c>1</c> and <c>"1"</c> are different keys, <c>true</c>, <c>1</c> and <c>1.0</c> are one, and a null where text is
+    /// expected is "None" or a key of its own.
     /// </summary>
     [TestMethod]
-    public void TheDefaultLogFolderIsTheOneTheScriptUses()
+    public void IdsModelsAndSkillsAreKeyedAsPythonKeysThem()
+    {
+        string stats = Stats(DigestCases.KeysLogs);
+        foreach (string line in new[]
+                 {
+                     "- **Models**: 1 x4, ? x2, 1 x2, ? x1, claude-test x1",
+                     "- **Player messages**: 1 (0 marked \"!\", 0 interrupted). **API calls**: 10.",
+                     "- **Tool calls**: Skill x4, ? x1, Read x1, Bash x1, Edit x1",
+                     "- **Skills run**: ? x1, ? x1, 1 x1, ? x1",
+                     "- **Files written** (calls, chars sent): None x1 (2 chars)",
+                     "- **Files read** (calls, chars returned): 5 x1 (4 chars)",
+                     "  - 10:01:00 None None: boom",
+                 })
+            StringAssert.Contains(stats, line + "\n");
+    }
+
+    /// <summary>
+    /// The lines of the numbers log, as the script wrote them: token counts that are floats are added as floats and shown
+    /// cut towards zero, a bool counts as 0 or 1, and a missing count is 0.
+    /// </summary>
+    [TestMethod]
+    public void TokenCountsThatAreFloatsOrBoolsAreAddedAsPythonAddsThem()
+    {
+        string stats = Stats(DigestCases.NumbersLogs);
+        foreach (string line in new[]
+                 {
+                     "- **Context**: starts at 5 tokens, ends at 1503, peak 1503. About 499 tokens added per player message. Compactions: 0.",
+                     "- **Tokens**: output 3; input read from cache 1501, written to cache 2, uncached 1010.",
+                     "- **Context read by third and later calls of a message**: 0.1% of all context read (2 of 2514).",
+                 })
+            StringAssert.Contains(stats, line + "\n");
+    }
+
+    /// <summary>
+    /// With no <c>--logs</c>, <c>dmc digest</c> looks in <c>$CLAUDE_CONFIG_DIR/projects/&lt;this folder, with every character
+    /// outside A-Za-z0-9 turned into "-"&gt;</c>: the error names that folder when it is missing, and the table lists its logs
+    /// when it is there. The variable is set in the test process, which the binary inherits.
+    /// </summary>
+    [TestMethod]
+    public void TheDefaultLogFolderIsClaudeCodesFolderForThisToolkit()
     {
         using var config = new TempFolder();
         string project = Path.Combine(config.Path, "projects", LogFolder.ProjectName(TestEnv.Root));
         Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", config.Path);
         try
         {
-            ParityCheck.Run(Tool, new ParityCase("the folder is missing", "list"));
+            var missing = DmcRunner.BlackBox(["digest", "list"]);
+            Assert.AreEqual(1, missing.ExitCode, missing.ToString());
+            Assert.AreEqual($"dmc digest: No session logs found at {project}. Pass --logs DIR.\n", missing.Stderr);
+
             WriteLogFolder(Directory.CreateDirectory(project).FullName);
-            AgeInReverseNameOrder(project);
-            ParityCheck.Run(Tool, new ParityCase("the folder is there", "list"));
+            var found = DmcRunner.BlackBox(["digest", "list"]);
+            Assert.AreEqual(0, found.ExitCode, found.ToString());
+            StringAssert.StartsWith(found.Stdout, "id ");
+            StringAssert.Contains(found.Stdout, SessionId[..8]);
         }
         finally
         {

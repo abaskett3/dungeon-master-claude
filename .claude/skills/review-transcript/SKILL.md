@@ -12,7 +12,7 @@ The aim is to improve the prompts for every future campaign and player. A findin
 ## 1. Pick the sessions
 
 ```
-python scripts/transcript_digest.py list --campaign <folder>
+./bin/dmc digest list --campaign <folder>
 ```
 
 Use the campaign and sessions the user named. Otherwise take the sessions for the active campaign that are not yet listed in `adventures/.reviewed-sessions`. The newest session in the list is usually this review itself; leave it out. Sessions with only a message or two are rarely worth reading.
@@ -22,7 +22,7 @@ A transcript that did not come from Claude Code (for example a chat export in a 
 ## 2. Build the digest
 
 ```
-python scripts/transcript_digest.py digest <id> [<id> ...]
+./bin/dmc digest digest <id> [<id> ...]
 ```
 
 This writes to `adventures/.transcript-review/`:

@@ -5,14 +5,9 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 ## What you need
 
 - [Claude Code](https://claude.com/claude-code), signed in.
-- This folder. The dice roller runs on PowerShell (Windows) or bash (macOS, Linux).
-- Python 3 (3.8 or later), on your PATH as `python`. Four scripts use it:
-  - the maps (`map_render.py`): no extra libraries. Without Python, DMC falls back to text maps.
-  - the break reminder (`context_check.py`), which the launcher runs before each of your messages: no extra libraries. Without Python, play still works, but DMC cannot tell when to offer a break.
-  - reading PDF modules and rulebooks (`pdf_extract.py`): needs the PyMuPDF library, which DMC installs into `scripts/.pylib/` the first time, not system-wide.
-  - reviewing your sessions (`transcript_digest.py`, used by `/review-transcript`): no extra libraries.
+- This folder, on Windows (x64 or Arm), Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04) or macOS on Apple Silicon.
 
-  Play itself, saving and the dice roller do not need Python.
+Nothing else needs installing. The dice roller, the maps, PDF reading, the break reminder and the session review are one small program, `dmc`, which the launcher downloads into `bin/` the first time (checking it against the checksum committed in `tools/dmc-release.json`) and keeps up to date. If you start Claude Code some other way and `bin/dmc` is missing, DMC fetches it itself with `./tools/get-dmc.ps1` (PowerShell) or `bash tools/get-dmc.sh`. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
 
 No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 
@@ -64,13 +59,13 @@ DMC will not act for your character or end your turn without asking.
 
 ### Dice
 
-By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC asks in dice notation with your modifiers and the target included, and asks for rolls that go together in one message to keep combat quick: "Roll 1d20+6 to hit (AC 13), then roll 1d4+1 for damage." Then it waits. Answer with your final totals ("18 and 4") or show your working ("12+6=18 and 3+1=4"). Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice script, not from the model's imagination.
+By default you roll for your own character and for party checks, and DMC rolls for NPCs, monsters and the world. DMC asks in dice notation with your modifiers and the target included, and asks for rolls that go together in one message to keep combat quick: "Roll 1d20+6 to hit (AC 13), then roll 1d4+1 for damage." Then it waits. Answer with your final totals ("18 and 4") or show your working ("12+6=18 and 3+1=4"). Say "roll it for me" any time you would rather it rolled. DMC's own rolls come from a real dice roller, not from the model's imagination.
 
 ### Maps
 
 When positions matter (a fight, a complicated room, or whenever you ask), DMC opens a map in your web browser: a grid with walls, terrain and a token for everyone in the scene. Keep that tab beside the terminal. It redraws itself within a couple of seconds whenever someone moves, with no reloading. Squares are named like a chessboard (`E4`), so you can say "I move to F4", and hovering over a token shows who it is.
 
-The map is a local file (`adventures/<campaign>/maps/live.html`); nothing is uploaded. It needs Python 3, and nothing else. If you would rather have plain text maps in the terminal, tell DMC.
+The map is a local file (`adventures/<campaign>/maps/live.html`); nothing is uploaded. `dmc` draws it, so it needs nothing else. If you would rather have plain text maps in the terminal, tell DMC.
 
 ### Your player options
 
@@ -118,7 +113,7 @@ Claude Code can still compact a conversation on its own. That loses nothing eith
 DMC can run a published adventure from your own copy instead of an original story.
 
 1. Type `/ingest-module` and give the path to the file. PDF (including scanned books), Markdown, text, HTML and EPUB work. For content that only exists in an app or on a website, export or paste it into a file first.
-2. For a PDF, DMC first runs `scripts/pdf_extract.py`, which writes the text of every page and a picture of every page next to your file, so it can read books of any size and study the maps and illustrations as well as the words. This needs Python 3 and the PyMuPDF library; DMC installs the library into `scripts/.pylib/` the first time (`python -m pip install --target scripts/.pylib -r scripts/requirements.txt`), not system-wide.
+2. For a PDF, DMC first runs `dmc pdf`, which writes the text of every page and a picture of every page next to your file, so it can read books of any size and study the maps and illustrations as well as the words. Password-protected PDFs cannot be read; print-restricted ones can. On Linux, an encrypted PDF also needs the system's OpenSSL library (`libssl`), which most distributions have.
 3. DMC reads the book and writes an index, a DM digest of each chapter and reference lists into `modules/<module>/`, keeping page references back to your original. A long book takes a while and is best done in its own session; the opening chapters are enough to start, and the rest can be ingested later.
 4. Type `/new-campaign` and say you want to play that module.
 
@@ -149,20 +144,22 @@ DMC runs at `high` effort. Its reasoning fills the conversation faster than the 
 
 Claude Code keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and reports where DMC's instructions let the game down: context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches and wasteful bookkeeping. It proposes changes to `CLAUDE.md`, the skills and the templates, and makes them once you say which you want. Your own preferences stay in your player options; they are not written into the toolkit.
 
-It needs Python 3 and nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The review reads DMC's side of the game, so its report can contain spoilers.
+`dmc` condenses the logs, so it needs nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The review reads DMC's side of the game, so its report can contain spoilers.
 
 ## Folder layout
 
 ```
 CLAUDE.md            DMC's instructions
 README.md            this file
-play.ps1, play.sh    start a play session: Sonnet, high effort, play settings
+play.ps1, play.sh    start a play session: fetch dmc, then Sonnet, high effort, play settings
 .claude/skills/      the commands above
-.claude/settings.json  permissions for saving and dice, compaction reminders
+.claude/settings.json  permissions for saving and dmc, compaction reminders
 .claude/play-settings.json  settings for play only
-scripts/             dice roller (roll.ps1, roll.sh), map drawer (map_render.py), PDF extractor (pdf_extract.py), session log digest (transcript_digest.py), break reminder (context_check.py)
+bin/                 dmc, the toolkit's program: dice, maps, PDF reading, session digest, break reminder (not in git)
+tools/               get-dmc.ps1 and get-dmc.sh, which download dmc; dmc-release.json, the release they install
+src/Dmc.Cli/         dmc's source code (C#, .NET 10)
+tests/Dmc.Tests/     checks that dmc, the skills and the settings still work
 templates/           blank campaign files and character sheets
-tests/               checks that the scripts, skills and settings still work
 adventures/          your campaigns (not in git)
 modules/             ingested published modules (not in git)
 rules/               optional local rules reference (not in git)
@@ -172,13 +169,16 @@ The toolkit is a git repository. Your campaigns, modules and rules files are ign
 
 ### Tests
 
-After changing a script, a skill or the settings, run the tests from the toolkit folder:
+Playing needs none of this. After changing `dmc`, a skill or the settings, run the tests from the toolkit folder. They need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). Publish `dmc` into `bin/` first, because some tests run the program itself, then run them:
 
 ```
-python -m unittest discover -s tests
+dotnet publish src/Dmc.Cli -r win-x64 -o bin
+dotnet test
 ```
 
-They need Python 3 and nothing else, never touch `adventures/`, and take about twenty seconds. Tests for something you do not have (bash, PowerShell, PyMuPDF) are skipped. On GitHub the same tests run on Linux and Windows for every push to `main` and every pull request (`.github/workflows/tests.yml`).
+Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64`, `linux-arm64` or `osx-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. The tests never touch `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows, Linux and macOS for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
+
+A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds it for every system, publishes it and opens a pull request that pins it in `tools/dmc-release.json`.
 
 ## Tips
 

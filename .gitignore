@@ -10,10 +10,6 @@ modules/*
 rules/*
 !rules/.gitkeep
 
-# Python libraries installed locally for scripts/pdf_extract.py (until the scripts go in Phase 6 of issue #3)
-scripts/.pylib/
-__pycache__/
-
 # .NET build output. bin/ at the root is where "dotnet publish src/Dmc.Cli -r <rid> -o bin" puts dmc.
 bin/
 obj/

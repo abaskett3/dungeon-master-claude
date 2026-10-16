@@ -22,7 +22,7 @@ Open each file with the Read tool, one call per file (several calls can go in on
 5. Every `character-sheets/pc-*.md`, and the sheets of any companions and NPCs present in the current scene.
 6. The most recent file in `story/sessions/`, for the texture of the last few scenes.
 7. `story/canon.md`: read it all. If it is too long for one read, read it in parts, and at the next full save move what can no longer come up to `story/canon-archive.md` (see `campaign-full-save`, step 4).
-8. Any map in `maps/` for the current location. If a fight is running or the scene names a map, run `python scripts/map_render.py adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
+8. Any map in `maps/` for the current location. If a fight is running or the scene names a map, run `./bin/dmc map adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
 9. If `module-progress.md` exists, this is a published-module campaign: read it, then the module's `index.md`, then the section of the chapter digest it names under "Digest to read before continuing". If that chapter has not been ingested, say so and ingest it before play. If its chapter status shows the module finished, read neither `index.md` nor the digest.
 
 Read other NPC sheets and older session logs only when they become relevant. Do not read `story/canon-archive.md` or `story/dm-notes-archive.md`: they hold what can no longer come up, and are searched when a subject returns.

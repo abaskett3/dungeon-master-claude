@@ -95,6 +95,17 @@ public sealed class ContextCheckEdgeTests
         Assert.AreEqual(240000, TranscriptReader.LastContext(Write(
             Assistant(240000), "{\"type\": \"system\", \"subtype\": \"other\"}", User())));
 
+    // A BOM on stdin is not skipped (the script read it as a character and rejected the JSON), so the hook says nothing.
+    [TestMethod]
+    public void AByteOrderMarkOnStdinMakesTheInputUnreadable()
+    {
+        string input = new System.Text.Json.Nodes.JsonObject { ["transcript_path"] = Write(Assistant(180000)) }.ToJsonString();
+        Assert.AreNotEqual("", DmcRunner.BlackBox(["context-check"], input).Stdout, "the same input without a BOM gives the reminder");
+        var result = DmcRunner.BlackBox(["context-check"], "﻿" + input);
+        Assert.AreEqual(0, result.ExitCode);
+        Assert.AreEqual("", result.Stdout + result.Stderr);
+    }
+
     [TestMethod]
     public void AnEmptyFileHasNoContext() =>
         Assert.AreEqual(0, TranscriptReader.LastContext(WriteBytes([])));

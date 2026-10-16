@@ -16,7 +16,7 @@ public static class TestEnv
 
     /// <summary>
     /// Skip the test when an optional tool is missing; on CI, fail instead. A tool that may be missing on a
-    /// player's machine (bash, PowerShell, Python, a published <c>dmc</c>) is installed on CI on purpose.
+    /// player's machine (bash, PowerShell, Playwright's Chromium, a published <c>dmc</c>) is installed on CI on purpose.
     /// </summary>
     public static void Need(bool found, string what)
     {

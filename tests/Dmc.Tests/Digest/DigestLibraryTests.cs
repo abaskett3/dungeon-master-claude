@@ -311,6 +311,12 @@ public sealed class DigestCallsPerMessageTests
         Assert.AreEqual("roll", DigestText.CallKind("Bash", Obj(("command", RollLine))));
         Assert.AreEqual("roll", DigestText.CallKind("PowerShell", Obj(("command", ".\\scripts\\roll.ps1 1d6"))));
         Assert.AreEqual("other", DigestText.CallKind("Bash", Obj(("command", "python scripts/map_render.py x"))));
+        // dmc roll, in the forms DMC writes it in each shell; the dice scripts above are the logs of older sessions.
+        foreach (string command in new[] { "./bin/dmc roll 1d20+5", "bin/dmc.exe roll 2d20kh1", ".\\bin\\dmc roll 1d6", ".\\bin\\dmc.exe roll 1d6",
+                     "& \"D:\\dmc\\bin\\dmc.exe\" roll 1d8", "cd x && ./bin/dmc  roll 4d6kh3", "dmc roll d6" })
+            Assert.AreEqual("roll", DigestText.CallKind("PowerShell", Obj(("command", command))), command);
+        foreach (string command in new[] { "./bin/dmc map live.json", "./bin/dmc --version", "./bin/admc roll 1d6", "./bin/dmc rolls", "echo roll" })
+            Assert.AreEqual("other", DigestText.CallKind("Bash", Obj(("command", command))), command);
         Assert.AreEqual("write", DigestText.CallKind("Edit", Obj()));
         Assert.AreEqual("write", DigestText.CallKind("Write", Obj()));
         foreach (string name in new[] { "Read", "Grep", "Glob" })

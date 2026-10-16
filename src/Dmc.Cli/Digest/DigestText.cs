@@ -85,10 +85,11 @@ internal static partial class DigestText
 
     /// <summary>
     /// <c>dmc roll</c> as a shell runs it: <c>./bin/dmc roll</c>, <c>bin/dmc.exe roll</c>, <c>&amp; "D:/x/bin/dmc.exe" roll</c>
-    /// or a bare <c>dmc roll</c>, once backslashes are made forward slashes. The program is the whole word <c>dmc</c>, at the
-    /// start of the command or after a space, a quote, <c>&amp;</c>, <c>;</c>, <c>|</c> or <c>(</c>.
+    /// or a bare <c>dmc roll</c>, once backslashes are made forward slashes. <c>dmc</c> must be the program being run: at the
+    /// start of the command or after <c>;</c>, <c>&amp;&amp;</c>, <c>||</c>, <c>|</c> or <c>(</c>, perhaps after PowerShell's
+    /// call operator <c>&amp;</c> and an opening quote. So <c>grep "dmc roll" CLAUDE.md</c> or <c>echo "use dmc roll"</c> is not a roll.
     /// </summary>
-    [GeneratedRegex(@"(?:^|[\s;&|(""'])(?:[^\s""']*/)?dmc(?:\.exe)?[""']?\s+roll(?![\w-])")]
+    [GeneratedRegex(@"(?:^|[;&|(])\s*(?:&\s*)?[""']?(?:[^\s""']*/)?dmc(?:\.exe)?[""']?\s+roll(?![\w-])")]
     private static partial Regex DmcRoll();
 
     /// <summary>

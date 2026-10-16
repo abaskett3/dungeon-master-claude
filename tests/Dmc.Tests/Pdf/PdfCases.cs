@@ -196,29 +196,75 @@ public static class PdfCases
 [TestClass]
 public sealed class PdfCaseTests
 {
+    /// <summary>
+    /// Every input the old parity check read is still read: exit 0, nothing on stderr, and the files of its command in
+    /// the folder it names (<c>--out DIR</c>, <c>--out DIR/</c>, or <c>extracted/</c> next to the PDF): <c>text/page-NNN.txt</c>
+    /// for each page asked for, <c>all-text.txt</c> when that is every page, and a <c>pages/page-NNN.jpg</c> for each page.
+    /// </summary>
     [TestMethod]
-    public void EveryPdfThatShouldBeReadIsRead() => CommandCase.RunAll(PdfCases.Succeeding, "pdf", (_, result, _) =>
+    public void EveryPdfThatShouldBeReadIsRead() => CommandCase.RunAll(PdfCases.Succeeding, "pdf", (test, result, folder) =>
     {
         Assert.AreEqual(0, result.ExitCode, result.ToString());
         Assert.AreEqual("", result.Stderr);
         Assert.IsGreaterThan(0, result.StdoutLines.Length, result.ToString());
+        AssertFilesWritten(test.Args(folder), folder);
     });
+
+    /// <summary>The files a successful run writes, from its arguments read the way <c>dmc pdf</c> reads them.</summary>
+    static void AssertFilesWritten(string[] args, string folder)
+    {
+        var positional = new List<string>();
+        var values = new Dictionary<string, string>();
+        bool options = true;
+        for (int i = 0; i < args.Length; i++)
+        {
+            string arg = args[i];
+            if (options && arg == "--")
+                options = false;
+            else if (options && arg.StartsWith("--", StringComparison.Ordinal))
+            {
+                // Every option of these cases takes a value, written after "=" or as the next argument, and may be shortened.
+                string name = arg.Split('=')[0];
+                string option = new[] { "--out", "--pages", "--dpi" }.Single(o => o.StartsWith(name, StringComparison.Ordinal));
+                values[option] = arg.Contains('=') ? arg[(arg.IndexOf('=') + 1)..] : args[++i];
+            }
+            else
+                positional.Add(arg);
+        }
+        string command = positional[0], pdf = Path.Combine(folder, positional[1]);
+        string output = values.TryGetValue("--out", out string? o) ? Path.Combine(folder, o) : Path.Combine(Path.GetDirectoryName(pdf)!, "extracted");
+        if (command == "info")
+        {
+            Assert.IsFalse(Directory.Exists(output), "info writes nothing");
+            return;
+        }
+
+        int count;
+        using (var document = Dmc.Pdf.PdfFile.Open(pdf))
+            count = document.NumberOfPages;
+        var pages = Dmc.Pdf.PageRanges.Parse(values.GetValueOrDefault("--pages"), count);
+        bool text = command is "text" or "all", pictures = command is "render" or "all";
+        foreach (int n in pages)
+        {
+            // A page with no text has an empty text file, so only the file's existence is checked.
+            Assert.AreEqual(text, File.Exists(Path.Combine(output, "text", $"page-{n:000}.txt")), $"text/page-{n:000}.txt in {output}");
+            string jpg = Path.Combine(output, "pages", $"page-{n:000}.jpg");
+            Assert.AreEqual(pictures, File.Exists(jpg) && new FileInfo(jpg).Length > 0, $"pages/page-{n:000}.jpg in {output}");
+        }
+        string all = Path.Combine(output, "all-text.txt");
+        Assert.AreEqual(text && pages.Count == count, File.Exists(all) && new FileInfo(all).Length > 0, $"all-text.txt in {output}");
+    }
 
     static string Info(byte[] pdf)
     {
-        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
-        try
-        {
-            File.WriteAllBytes(Path.Combine(folder, "module.pdf"), pdf);
-            var result = DmcRunner.BlackBox(["pdf", "info", "module.pdf"], cwd: folder);
-            Assert.AreEqual(0, result.ExitCode, result.ToString());
-            return string.Join("\n", result.StdoutLines);
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
+        string info = "";
+        new CommandCase("info", "info", "module.pdf") { Seed = work => File.WriteAllBytes(Path.Combine(work, "module.pdf"), pdf) }
+            .Run("pdf", (result, _) =>
+            {
+                Assert.AreEqual(0, result.ExitCode, result.ToString());
+                info = string.Join("\n", result.StdoutLines);
+            });
+        return info;
     }
 
     [TestMethod]

@@ -132,7 +132,7 @@ When a roll belongs to the player (attacks, damage, checks, saves, initiative, d
 When a roll is yours:
 
 - Roll every die with `dmc`, never in your head: `./bin/dmc roll 1d20+5`, the same in PowerShell and bash. Several expressions can go in one call.
-- If `bin/dmc` is missing or says it is out of date, run `./tools/get-dmc.ps1` (PowerShell) or `bash tools/get-dmc.sh` once, then carry on. `dmc` also draws the maps and reads PDFs.
+- If `bin/dmc` is missing or says it is out of date, run `bash tools/get-dmc.sh` (in PowerShell, `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`) once, then carry on. `dmc` also draws the maps and reads PDFs.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
 - Show results the way the player options ask. The default shows the dice, the modifier, the total and the target.
 - Decide what a creature does before you roll for it: whether it attacks, whom, or whether it has had enough and runs. Never roll an attack and then choose whether to use it.

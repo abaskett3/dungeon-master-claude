@@ -31,16 +31,18 @@ public sealed partial class ToolkitTests
             .Select(f => Path.GetRelativePath(TestEnv.Root, f).Replace('\\', '/')).Order(StringComparer.Ordinal),
     ];
 
-    static IEnumerable<(string Tool, string Pattern)> AllowRules() =>
-        Settings("settings.json")["permissions"]!["allow"]!.AsArray().Select(r => (string)r!)
-            .Select(r => Rule().Match(r)).Where(m => m.Success).Select(m => (m.Groups[1].Value, m.Groups[2].Value));
+    /// <summary>The <c>Tool(pattern)</c> rules of the allow list in settings.json, each with its pattern as a regex.</summary>
+    static readonly (string Tool, string Pattern, Regex Matches)[] AllowRules =
+        Settings("settings.json")["permissions"]!["allow"]!.AsArray().Select(r => Rule().Match((string)r!)).Where(m => m.Success)
+            .Select(m => (m.Groups[1].Value, m.Groups[2].Value,
+                new Regex("^" + Regex.Escape(m.Groups[2].Value).Replace(@"\*", ".*") + "$", RegexOptions.Singleline)))
+            .ToArray();
 
     [GeneratedRegex(@"^(\w+)\((.*)\)$")]
     private static partial Regex Rule();
 
     /// <summary>Whether a rule's pattern, where <c>*</c> stands for anything, takes the whole command.</summary>
-    static bool Allowed(string tool, string command) =>
-        AllowRules().Any(r => r.Tool == tool && Regex.IsMatch(command, "^" + Regex.Escape(r.Pattern).Replace(@"\*", ".*") + "$", RegexOptions.Singleline));
+    static bool Allowed(string tool, string command) => AllowRules.Any(r => r.Tool == tool && r.Matches.IsMatch(command));
 
     /// <summary>A command the prompts tell DMC to run: <c>./bin/dmc</c> and what follows, up to the end of the code span or line.</summary>
     [GeneratedRegex(@"\./bin/dmc(?: [^`\n]*)?")]
@@ -74,12 +76,13 @@ public sealed partial class ToolkitTests
         }
         CollectionAssert.IsSubsetOf(new[] { "roll", "map", "pdf", "digest" }, used.ToArray(), "the prompts name every subcommand DMC runs");
 
-        // The way to fetch a missing dmc, which CLAUDE.md gives in both forms.
+        // The way to fetch a missing dmc, which CLAUDE.md gives in two forms that work whatever PowerShell's execution policy.
+        const string bash = "bash tools/get-dmc.sh", powershell = "powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1";
         string claude = Read("CLAUDE.md");
-        StringAssert.Contains(claude, "`./tools/get-dmc.ps1`");
-        StringAssert.Contains(claude, "`bash tools/get-dmc.sh`");
-        Assert.IsTrue(Allowed("PowerShell", "./tools/get-dmc.ps1"));
-        Assert.IsTrue(Allowed("Bash", "bash tools/get-dmc.sh"));
+        StringAssert.Contains(claude, $"`{bash}`");
+        StringAssert.Contains(claude, $"`{powershell}`");
+        Assert.IsTrue(Allowed("Bash", bash));
+        Assert.IsTrue(Allowed("PowerShell", powershell));
         // Windows names: dmc.exe, and PowerShell's backslashes.
         foreach (string command in new[] { "./bin/dmc.exe roll 1d20", ".\\bin\\dmc roll 1d20", ".\\bin\\dmc.exe roll 1d20" })
             Assert.IsTrue(Allowed("PowerShell", command), command);
@@ -89,7 +92,7 @@ public sealed partial class ToolkitTests
     [TestMethod]
     public void TheAllowListNamesOnlyDmcAndGetDmc()
     {
-        foreach (var (tool, pattern) in AllowRules().Where(r => r.Tool is "Bash" or "PowerShell"))
+        foreach (var (tool, pattern, _) in AllowRules.Where(r => r.Tool is "Bash" or "PowerShell"))
         {
             string path = pattern.Replace('\\', '/');
             Assert.IsTrue(path.StartsWith("./bin/dmc", StringComparison.Ordinal) || path.Contains("tools/get-dmc.", StringComparison.Ordinal),
@@ -115,40 +118,60 @@ public sealed partial class ToolkitTests
         }
     }
 
-    /// <summary>Run a hook's command the way Claude Code does, with bash, for the toolkit at <paramref name="project"/>.</summary>
-    static ProcessResult RunHook(string command, string project, string? stdin = null) =>
-        TestEnv.Run(Bootstrap.Shell("bash"), ["-c", command], stdin, cwd: project,
-            environment: new Dictionary<string, string?> { ["CLAUDE_PROJECT_DIR"] = project });
-
-    [TestMethod]
-    public void WithoutBinDmcASessionIsToldOnceHowToGetIt()
+    /// <summary>
+    /// Run a hook's command the way Claude Code does, with bash, in a fresh toolkit folder. Its <c>bin/</c> holds a copy of
+    /// the published <c>dmc</c> (<see cref="DmcRunner.Binary"/>, so <c>DMC_BIN</c> is honoured), or a file that is not a
+    /// program, or nothing.
+    /// </summary>
+    static ProcessResult RunHook(string command, BinDmc dmc, Func<string, string>? stdin = null, Action<string>? seed = null)
     {
-        string[] commands = Settings("settings.json")["hooks"]!["SessionStart"]!.AsArray()
-            .Where(g => g!["matcher"] is null).SelectMany(g => g!["hooks"]!.AsArray()).Select(h => (string)h!["command"]!)
-            .Where(c => c.Contains("get-dmc", StringComparison.Ordinal)).ToArray();
-        Assert.HasCount(1, commands, "one SessionStart hook, for every kind of start, checks for bin/dmc");
-
         string project = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(project);
         try
         {
-            var missing = RunHook(commands[0], project);
-            Assert.AreEqual(0, missing.ExitCode, missing.ToString());
-            Assert.HasCount(1, missing.StdoutLines, missing.ToString());
-            StringAssert.Contains(missing.Stdout, "./tools/get-dmc.ps1");
-            StringAssert.Contains(missing.Stdout, "bash tools/get-dmc.sh");
-            Assert.AreEqual("", missing.Stderr);
-
-            Directory.CreateDirectory(Path.Combine(project, "bin"));
-            File.WriteAllText(Path.Combine(project, "bin", Bootstrap.ExeName), "");
-            var present = RunHook(commands[0], project);
-            Assert.AreEqual(0, present.ExitCode, present.ToString());
-            Assert.AreEqual("", present.Stdout + present.Stderr, "silent when bin/dmc is there");
+            string exe = Path.Combine(project, "bin", Bootstrap.ExeName);
+            if (dmc != BinDmc.Missing)
+                Directory.CreateDirectory(Path.GetDirectoryName(exe)!);
+            if (dmc == BinDmc.Published)
+                File.Copy(DmcRunner.Binary(), exe);
+            if (dmc == BinDmc.Junk)
+            {
+                File.WriteAllText(exe, "not a program\n");
+                if (!OperatingSystem.IsWindows())
+                    File.SetUnixFileMode(exe, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+            seed?.Invoke(project);
+            return TestEnv.Run(Bootstrap.Shell("bash"), ["-c", command], stdin?.Invoke(project), cwd: project,
+                environment: new Dictionary<string, string?> { ["CLAUDE_PROJECT_DIR"] = project });
         }
         finally
         {
             Directory.Delete(project, recursive: true);
         }
+    }
+
+    enum BinDmc { Missing, Junk, Published }
+
+    [TestMethod]
+    public void WithoutAWorkingBinDmcASessionIsToldOnceHowToGetIt()
+    {
+        string[] commands = Settings("settings.json")["hooks"]!["SessionStart"]!.AsArray()
+            .Where(g => g!["matcher"] is null).SelectMany(g => g!["hooks"]!.AsArray()).Select(h => (string)h!["command"]!)
+            .Where(c => c.Contains("get-dmc", StringComparison.Ordinal)).ToArray();
+        Assert.HasCount(1, commands, "one SessionStart hook, for every kind of start, checks bin/dmc");
+
+        foreach (var dmc in new[] { BinDmc.Missing, BinDmc.Junk })
+        {
+            var told = RunHook(commands[0], dmc);
+            Assert.AreEqual(0, told.ExitCode, told.ToString());
+            Assert.HasCount(1, told.StdoutLines, $"{dmc}: {told}");
+            StringAssert.Contains(told.Stdout, "bash tools/get-dmc.sh");
+            StringAssert.Contains(told.Stdout, "powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1");
+            Assert.AreEqual("", told.Stderr, dmc.ToString());
+        }
+        var working = RunHook(commands[0], BinDmc.Published);
+        Assert.AreEqual(0, working.ExitCode, working.ToString());
+        Assert.AreEqual("", working.Stdout + working.Stderr, "silent when bin/dmc runs");
     }
 
     [TestMethod]
@@ -163,26 +186,15 @@ public sealed partial class ToolkitTests
         Assert.IsTrue(hook.TrimEnd().EndsWith("|| true", StringComparison.Ordinal), hook);
 
         // Without bin/dmc: no output at all, and exit 0.
-        string project = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(project);
-        try
-        {
-            var missing = RunHook(hook, project, "{}");
-            Assert.AreEqual(0, missing.ExitCode, missing.ToString());
-            Assert.AreEqual("", missing.Stdout + missing.Stderr, "a missing bin/dmc must not show in every prompt");
+        var missing = RunHook(hook, BinDmc.Missing, _ => "{}");
+        Assert.AreEqual(0, missing.ExitCode, missing.ToString());
+        Assert.AreEqual("", missing.Stdout + missing.Stderr, "a missing bin/dmc must not show in every prompt");
 
-            // With the published dmc in this repository: the reminder, from a log past the threshold.
-            DmcRunner.Binary();
-            string log = Path.Combine(project, "session.jsonl");
-            File.WriteAllText(log, ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n");
-            var due = RunHook(hook, TestEnv.Root, new JsonObject { ["transcript_path"] = log }.ToJsonString());
-            Assert.AreEqual(0, due.ExitCode, due.ToString());
-            StringAssert.StartsWith(due.Stdout, "Context 163k, break due since 150k", due.ToString());
-        }
-        finally
-        {
-            Directory.Delete(project, recursive: true);
-        }
+        // With the published dmc: the reminder, from a log past the threshold.
+        var due = RunHook(hook, BinDmc.Published, project => new JsonObject { ["transcript_path"] = Path.Combine(project, "session.jsonl") }.ToJsonString(),
+            project => File.WriteAllText(Path.Combine(project, "session.jsonl"), ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n"));
+        Assert.AreEqual(0, due.ExitCode, due.ToString());
+        StringAssert.StartsWith(due.Stdout, "Context 163k, break due since 150k", due.ToString());
     }
 
     [TestMethod]
@@ -319,11 +331,14 @@ public sealed partial class ToolkitTests
     {
         string[] files = [.. PromptFiles(), ".claude/settings.json", ".claude/play-settings.json", "play.ps1", "play.sh",
                           ".gitignore", ".github/workflows/tests.yml", ".github/workflows/release.yml"];
-        var old = new Regex(@"scripts/|python|pymupdf|\.pylib|roll\.sh|roll\.ps1|map_render|pdf_extract|transcript_digest|context_check",
+        // The deleted files, and the library and installer they needed. The one mention allowed is the .gitignore rule for
+        // the scripts/.pylib/ folder an older checkout may still hold.
+        var old = new Regex(@"map_render|pdf_extract|transcript_digest|context_check\.py|roll\.ps1|roll\.sh|requirements\.txt|test_\w+\.py|pymupdf|\.pylib|pip install",
             RegexOptions.IgnoreCase);
         foreach (string file in files)
         {
-            var hit = old.Match(Read(file));
+            string text = file == ".gitignore" ? Read(file).Replace("\nscripts/.pylib/\n", "\n") : Read(file);
+            var hit = old.Match(text);
             Assert.IsFalse(hit.Success, $"{file} still names {hit.Value}");
         }
     }

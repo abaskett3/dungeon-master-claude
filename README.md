@@ -7,7 +7,9 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 - [Claude Code](https://claude.com/claude-code), signed in.
 - This folder, on Windows (x64 or Arm), Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04) or macOS on Apple Silicon.
 
-Nothing else needs installing. The dice roller, the maps, PDF reading, the break reminder and the session review are one small program, `dmc`, which the launcher downloads into `bin/` the first time (checking it against the checksum committed in `tools/dmc-release.json`) and keeps up to date. If you start Claude Code some other way and `bin/dmc` is missing, DMC fetches it itself with `./tools/get-dmc.ps1` (PowerShell) or `bash tools/get-dmc.sh`. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
+Nothing else needs installing. The dice roller, the maps, PDF reading, the break reminder and the session review are one small program, `dmc`, which the launcher downloads into `bin/` the first time (checking it against the checksum committed in `tools/dmc-release.json`) and keeps up to date. If you start Claude Code some other way and `bin/dmc` is missing, DMC fetches it itself with `bash tools/get-dmc.sh`, or in PowerShell `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`, which works whatever the execution policy. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
+
+Python is no longer needed. If an older copy of this folder has a `scripts/` folder, you can delete it: it only holds the libraries the old Python scripts used.
 
 No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 

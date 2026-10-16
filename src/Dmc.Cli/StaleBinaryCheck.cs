@@ -40,7 +40,7 @@ public static class StaleBinaryCheck
         string? tag = PinnedTag(pin);
         if (tag is null || !tag.StartsWith(TagPrefix, StringComparison.Ordinal) || tag[TagPrefix.Length..] == version)
             return null;
-        return $"dmc: this is dmc {version}, but the toolkit pins {tag}: run ./tools/get-dmc.ps1 (PowerShell) or bash tools/get-dmc.sh to update it";
+        return $"dmc: this is dmc {version}, but the toolkit pins {tag}: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it";
     }
 
     /// <summary>The <c>tag</c> of a pin file; null when the text is not a pin, or the tag is empty.</summary>

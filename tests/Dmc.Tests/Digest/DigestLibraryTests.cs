@@ -315,7 +315,8 @@ public sealed class DigestCallsPerMessageTests
         foreach (string command in new[] { "./bin/dmc roll 1d20+5", "bin/dmc.exe roll 2d20kh1", ".\\bin\\dmc roll 1d6", ".\\bin\\dmc.exe roll 1d6",
                      "& \"D:\\dmc\\bin\\dmc.exe\" roll 1d8", "cd x && ./bin/dmc  roll 4d6kh3", "dmc roll d6" })
             Assert.AreEqual("roll", DigestText.CallKind("PowerShell", Obj(("command", command))), command);
-        foreach (string command in new[] { "./bin/dmc map live.json", "./bin/dmc --version", "./bin/admc roll 1d6", "./bin/dmc rolls", "echo roll" })
+        foreach (string command in new[] { "./bin/dmc map live.json", "./bin/dmc --version", "./bin/admc roll 1d6", "./bin/dmc rolls", "echo roll",
+                     "grep -n \"dmc roll\" CLAUDE.md", "echo \"use dmc roll\"", "git commit -m \"Class dmc roll\"" })
             Assert.AreEqual("other", DigestText.CallKind("Bash", Obj(("command", command))), command);
         Assert.AreEqual("write", DigestText.CallKind("Edit", Obj()));
         Assert.AreEqual("write", DigestText.CallKind("Write", Obj()));

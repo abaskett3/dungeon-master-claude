@@ -10,7 +10,12 @@ try { $pinned = [bool] (Get-Content -Raw -LiteralPath tools/dmc-release.json -Er
 if ($pinned) {
     & ./tools/get-dmc.ps1
     $dmc = if ($PSVersionTable.PSEdition -ne 'Core' -or $IsWindows) { './bin/dmc.exe' } else { './bin/dmc' }
+    # Only a dmc that runs here (not blocked, not damaged) gets the session.
+    $runs = $false
     if (Test-Path -LiteralPath $dmc -PathType Leaf) {
+        try { & $dmc --version *> $null; $runs = $LASTEXITCODE -eq 0 } catch { }
+    }
+    if ($runs) {
         & $dmc play @args
         exit $LASTEXITCODE
     }

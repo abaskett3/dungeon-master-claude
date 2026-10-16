@@ -24,29 +24,52 @@ public sealed class PlayCommand : ICommand
     internal static IReadOnlyList<string> FixedArguments { get; } =
         ["--model", "sonnet", "--effort", "high", "--settings", ".claude/play-settings.json"];
 
-    public int Run(string[] args, Io io)
-    {
-        string? claude = FindOnPath("claude", Environment.GetEnvironmentVariable("PATH"),
-            Environment.GetEnvironmentVariable("PATHEXT"), OperatingSystem.IsWindows());
-        return Run(args, claude, StartAndWait);
-    }
+    public int Run(string[] args, Io io) =>
+        Run(args, FindClaude(Environment.GetEnvironmentVariable("PATH"), OperatingSystem.IsWindows()), StartAndWait);
 
-    /// <summary>The command with its two seams: where <c>claude</c> is, and what starts it.</summary>
-    internal static int Run(string[] args, string? claude, Func<ProcessStartInfo, int> start)
-    {
-        if (claude is null)
-            throw new DmcException("Claude Code (claude) is not on the PATH: install it, then run this again", 127);
+    /// <summary>How to start Claude Code: a program, and the arguments that go before Claude Code's own.</summary>
+    internal sealed record Launch(string File, IReadOnlyList<string> Prefix);
 
-        var info = new ProcessStartInfo(claude) { WorkingDirectory = Toolkit.Root, UseShellExecute = false };
-        foreach (string arg in FixedArguments.Concat(args))
+    /// <summary>The command with its two seams: how <c>claude</c> is started, and what starts it.</summary>
+    internal static int Run(string[] args, Launch claude, Func<ProcessStartInfo, int> start)
+    {
+        var info = new ProcessStartInfo(claude.File) { WorkingDirectory = Toolkit.Root, UseShellExecute = false };
+        foreach (string arg in claude.Prefix.Concat(FixedArguments).Concat(args))
             info.ArgumentList.Add(arg);
         return start(info);
     }
 
     /// <summary>
+    /// How to start Claude Code from the PATH. Elsewhere than Windows, the executable <c>claude</c>. On Windows,
+    /// <c>claude.exe</c> (the native installer's) wherever it is on the PATH. Failing that, npm's shims: never its
+    /// <c>claude.cmd</c>, which would run through <c>cmd.exe</c> (which re-parses the arguments, and asks "Terminate
+    /// batch job (Y/N)?" after Ctrl+C), but the <c>claude.ps1</c> next to it, through PowerShell, which is what a
+    /// PowerShell prompt runs for <c>claude</c>.
+    /// </summary>
+    internal static Launch FindClaude(string? path, bool windows)
+    {
+        const string notFound = "Claude Code (claude) is not on the PATH: install it, then run this again";
+        if (!windows)
+            return FindOnPath("claude", path, null, windows: false) is { } claude ? new Launch(claude, []) : throw new DmcException(notFound, 127);
+
+        if (FindOnPath("claude", path, ".exe", windows: true) is { } exe)
+            return new Launch(exe, []);
+        string? shim = FindOnPath("claude", path, ".cmd;.bat", windows: true);
+        if (shim is null)
+            throw new DmcException(notFound, 127);
+        string script = Path.Combine(Path.GetDirectoryName(shim)!, "claude.ps1");
+        if (!File.Exists(script))
+            throw new DmcException($"only {shim} was found, and dmc does not start Claude Code through cmd.exe: install Claude Code's claude.exe, or start play with ./play.ps1");
+        string powerShell = FindOnPath("pwsh", path, ".exe", windows: true)
+            ?? FindOnPath("powershell", path, ".exe", windows: true)
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
+        return new Launch(powerShell, ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script]);
+    }
+
+    /// <summary>
     /// The full path of <paramref name="name"/> on the PATH, found the way a shell finds it; null if it is not there.
-    /// On Windows each extension of PATHEXT is tried, so the <c>claude.exe</c> of the native installer and the
-    /// <c>claude.cmd</c> of npm are both found. Elsewhere the file must be executable.
+    /// On Windows each extension of <paramref name="pathExt"/> (PATHEXT's form, <c>.EXE;.CMD</c>) is tried in each
+    /// folder. Elsewhere the file must be executable.
     /// </summary>
     internal static string? FindOnPath(string name, string? path, string? pathExt, bool windows)
     {

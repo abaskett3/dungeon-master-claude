@@ -73,11 +73,25 @@ public sealed class LauncherTests
 
     [TestMethod]
     [DynamicData(nameof(Shells), typeof(Bootstrap))]
-    public void WhenDmcCannotBeHadTheLauncherStartsClaudeItself(string shell)
+    public void WhenDmcCannotBeHadTheLauncherStartsClaudeItself(string shell) => StartsClaudeWithoutDmc(shell, brokenDmc: false);
+
+    /// <summary>A bin/dmc that cannot run (blocked, damaged, its executable bit lost) does not get the session either.</summary>
+    [TestMethod]
+    [DynamicData(nameof(Shells), typeof(Bootstrap))]
+    public void WhenBinDmcDoesNotRunTheLauncherStartsClaudeItself(string shell) => StartsClaudeWithoutDmc(shell, brokenDmc: true);
+
+    static void StartsClaudeWithoutDmc(string shell, bool brokenDmc)
     {
         string claude = FakeClaude();
         // A release is pinned, but its archive cannot be had (no network, say): here, it is not in the folder.
         using var toolkit = new ToolkitCopy("dmc-v9.8.7", new Dictionary<string, string> { [Rid] = new string('a', 64) });
+        if (brokenDmc)
+        {
+            Directory.CreateDirectory(toolkit.Bin);
+            File.WriteAllText(toolkit.Exe, "not a program\n");
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(toolkit.Exe, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
         try
         {
             var result = Launch(shell, toolkit, claude, Path.GetTempPath());
@@ -85,7 +99,7 @@ public sealed class LauncherTests
             Assert.HasCount(2, result.StderrLines, result.ToString());
             StringAssert.StartsWith(result.StderrLines[0], $"get-dmc: {Asset("dmc-v9.8.7", Rid)} is not in ");
             Assert.AreEqual("play: dmc is not available, so Claude Code starts without it.", result.StderrLines[1]);
-            Assert.IsFalse(File.Exists(toolkit.Exe));
+            Assert.AreEqual(brokenDmc, File.Exists(toolkit.Exe));
         }
         finally
         {

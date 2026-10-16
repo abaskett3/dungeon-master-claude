@@ -21,9 +21,22 @@ fail() {
     exit 1
 }
 
+pin="$root/tools/dmc-release.json"
+pinned_tag() {
+    sed -n 's/^[[:space:]]*"tag"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$pin" 2>/dev/null | head -n 1
+}
+
 system="$(uname -s 2>/dev/null)"
 case "$system" in
     MINGW* | MSYS* | CYGWIN*)
+        # Most launches find bin/dmc.exe current: say nothing and do not start PowerShell for that. Old copies of a
+        # dmc.exe that was running when it was replaced go too (one still running stays until next time).
+        tag="$(pinned_tag)"
+        rm -f "$root"/bin/*.old 2>/dev/null
+        if [ -n "$tag" ] && [ -f "$root/bin/dmc.exe" ] \
+            && [ "$("$root/bin/dmc.exe" --version 2>/dev/null | tr -d '\r')" = "dmc ${tag#dmc-v}" ]; then
+            exit 0
+        fi
         exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$root/tools/get-dmc.ps1")"
         ;;
     Linux) os=linux ;;
@@ -46,9 +59,8 @@ if [ "$rid" = osx-x64 ]; then
     fail "dmc is not built for Intel Macs: on macOS it needs Apple Silicon"
 fi
 
-pin="$root/tools/dmc-release.json"
 [ -f "$pin" ] || fail "tools/dmc-release.json is missing"
-tag="$(sed -n 's/^[[:space:]]*"tag"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$pin" | head -n 1)"
+tag="$(pinned_tag)"
 if [ -z "$tag" ]; then
     fail "no dmc release is pinned yet (tools/dmc-release.json); a developer can build one with: dotnet publish src/Dmc.Cli -r $rid -o bin"
 fi
@@ -72,7 +84,11 @@ if [ -n "${DMC_GET_TEST_ASSETS:-}" ]; then
 else
     command -v curl >/dev/null 2>&1 || fail "curl is needed to download dmc"
     url="https://github.com/$repo/releases/download/$tag/$asset"
-    curl -fsSL --proto '=https' --tlsv1.2 --retry 2 -o "$work/$asset" "$url" 2>/dev/null || fail "could not download $url"
+    # No network, or one that drops the connection, gives up within seconds so that the launcher can start Claude Code
+    # without dmc: 10 s to connect, and under 1 KB/s for 30 s ends a stalled download. A slow one that keeps going
+    # may take up to 10 minutes.
+    curl -fsSL --proto '=https' --tlsv1.2 --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 \
+        -o "$work/$asset" "$url" 2>/dev/null || fail "could not download $url"
 fi
 
 # The hash is read from standard input, so the file's name cannot change how it is printed.

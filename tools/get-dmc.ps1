@@ -91,12 +91,14 @@ try {
     $bin = Join-Path $root 'bin'
     $exeName = if ($windows) { 'dmc.exe' } else { 'dmc' }
     $exe = Join-Path $bin $exeName
+    # Left over from replacing a dmc.exe that was running (see below): deleted on any run once nothing runs it.
+    if (Test-Path -LiteralPath $bin -PathType Container) {
+        Get-ChildItem -LiteralPath $bin -Filter '*.old' -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
     if ((Test-Path -LiteralPath $exe -PathType Leaf) -and (Get-Version $exe) -eq "dmc $version") { exit 0 }
 
     $asset = if ($windows) { "$tag-$rid.zip" } else { "$tag-$rid.tar.gz" }
     New-Item -ItemType Directory -Force -Path $bin | Out-Null
-    # Left over from replacing a dmc.exe that was running (see below); deleted once nothing runs it.
-    Get-ChildItem -LiteralPath $bin -Filter '*.old' -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
     $work = Join-Path $bin ('.get-dmc.' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $work | Out-Null
     try {
@@ -109,8 +111,19 @@ try {
             $url = "https://github.com/$repo/releases/download/$tag/$asset"
             # Windows PowerShell 5.1 may not offer TLS 1.2 by itself, and GitHub requires it.
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+            # No network, or one that drops the connection, gives up within seconds so that the launcher can start
+            # Claude Code without dmc. The timeouts limit the wait for an answer and for each read, not a slow
+            # download that keeps going. PowerShell 7.4 and later have a separate limit for reads; before that,
+            # PowerShell 7's -TimeoutSec covers the whole download, so it gets 10 minutes.
+            $limits = @{ TimeoutSec = 30 }
+            $command = Get-Command Invoke-WebRequest
+            if ($command.Parameters.ContainsKey('OperationTimeoutSeconds')) {
+                $limits = @{ ConnectionTimeoutSeconds = 15; OperationTimeoutSeconds = 30 }
+            } elseif ($PSVersionTable.PSEdition -eq 'Core') {
+                $limits = @{ TimeoutSec = 600 }
+            }
             try {
-                Invoke-WebRequest -Uri $url -OutFile $file -UseBasicParsing
+                Invoke-WebRequest -Uri $url -OutFile $file -UseBasicParsing @limits
             } catch {
                 Fail "could not download ${url}: $($_.Exception.Message)"
             }

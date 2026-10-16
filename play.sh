@@ -8,8 +8,8 @@
 cd "$(dirname "$0")" || exit 1
 if grep -Eq '^[[:space:]]*"tag"[[:space:]]*:[[:space:]]*"dmc-v' tools/dmc-release.json 2>/dev/null; then
     bash tools/get-dmc.sh
-    # Git Bash runs bin/dmc.exe as ./bin/dmc.
-    if [ -f bin/dmc ] || [ -f bin/dmc.exe ]; then
+    # Only a dmc that runs here (not blocked, not damaged) gets the session. Git Bash runs bin/dmc.exe as ./bin/dmc.
+    if { [ -f bin/dmc ] || [ -f bin/dmc.exe ]; } && ./bin/dmc --version >/dev/null 2>&1; then
         exec ./bin/dmc play "$@"
     fi
     echo "play: dmc is not available, so Claude Code starts without it." >&2

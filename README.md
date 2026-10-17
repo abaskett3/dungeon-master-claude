@@ -153,6 +153,7 @@ Claude Code keeps a log of every session on your machine. `/review-transcript` r
 ```
 CLAUDE.md            DMC's instructions
 README.md            this file
+.docs/               product documents: guide, architecture, dmc reference, decisions, roadmap (start at .docs/README.md)
 play.ps1, play.sh    start a play session: fetch dmc, then Sonnet, high effort, play settings
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dmc, compaction reminders

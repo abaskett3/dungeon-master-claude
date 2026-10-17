@@ -223,7 +223,9 @@ text: 1 pages -> <folder>/extracted/text
 render: 1 pages at 110 dpi -> <folder>/extracted/pages
 ```
 
-A PDF with only an owner password (print or copy restrictions) is read. A page that cannot be read gets a placeholder line and the others carry on. Errors, each one line:
+A PDF with only an owner password (print or copy restrictions) is read. A page that cannot be read gets a placeholder line and the others carry on.
+
+**All or nothing.** `text`, `render` and `all` either finish or leave the output folder as it was. The run first makes the output folder, which fails at once if the path is a file or cannot be written to, and writes into a temporary folder inside it, `<out>/.dmc-partial-<random>`. Only when every page is done does it move the files into place, replacing files of the same name and leaving the others, and print its report lines. A page whose picture would be more than 65,500 pixels on a side at the `--dpi` asked for (the most a JPEG can hold) is refused before anything is drawn or made. If a run fails after that (a full disk, a page that will not encode, or something found at the end: a file where a folder must go, or a folder where a file must go, such as `out/text` being a file), it deletes the temporary folder and any folder it made, and prints only the error: no new files, and nothing already in the output folder replaced or deleted. The move into place is a series of renames, not one step, so a failure part way through it (a full disk, a read-only file in the way) can leave some files moved; the obstacles that can be seen coming are checked before the first rename. A `.dmc-partial-<random>` folder stays in the output folder, safe to delete, only if the process is killed (Ctrl+C, a power cut) or another program holds a file in it open so that it cannot be deleted; when cleaning up fails, one line on stderr (`dmc pdf: could not delete <folder>; it is safe to delete.`, before the error if the run failed, or `dmc pdf: done, but could not delete <folder>; ...` after the report if it succeeded) says where. The cost of all this is disk space: a run keeps its new files in the temporary folder while old ones are still in place, so a re-run needs room for both sets for a moment. `info` writes nothing. Errors, each one line:
 
 | Message | Exit |
 |---|---|
@@ -232,6 +234,8 @@ A PDF with only an owner password (print or copy restrictions) is read. A page t
 | `dmc pdf: No such file: <path>` | 1 |
 | `dmc pdf: Page range '9-12' is outside 1-4.` | 1 |
 | `dmc pdf: --dpi must be a whole number from 1 to 1200.` | 1 |
+| `dmc pdf: Page 2 could not be saved as a JPEG at 1200 dpi; try a lower --dpi.` (the page's picture would be over 65,500 pixels on a side, or would not encode; the output folder is untouched) | 1 |
+| `dmc pdf: <out>/text is a file, so page-001.txt cannot be written into it. Move it away, then run this again. Nothing was written.` (or `... is a folder, so the file of that name cannot be written there ...`) | 1 |
 | `dmc pdf: argument command: invalid choice: 'bogus' (choose from info, text, render, all)` | 2 |
 | `dmc pdf: the following arguments are required: pdf` | 2 |
 

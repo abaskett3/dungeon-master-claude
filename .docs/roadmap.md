@@ -19,6 +19,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. The first play test's findings became issue #35. |
 | Break alert relative to the resume, issue #35 part 1 | Done, in the next release | `dmc context-check` starts its bands at the larger of 150,000 and the post-resume baseline plus 40,000; wording says the context is large. Changes the binary, so it ships in the release after 0.1.2. |
 | Lighter resume, issue #35 part 2 | Next | Prompts only: search a large `canon.md`, read the tail of the session log, sheets of those present only. |
+| `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -50,6 +51,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
 
 ## Next: issue #6
 

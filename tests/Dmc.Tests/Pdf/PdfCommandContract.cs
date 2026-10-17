@@ -376,6 +376,104 @@ public abstract partial class PdfCommandContract
         Assert.AreEqual(before, Read("all-text.txt"));
     }
 
+    /// <summary>
+    /// A page too big for a JPEG is refused before anything is drawn or made. The PDF has a small first page and a second
+    /// 4000 points wide: at 1200 dpi page 2 is 66,667 pixels across, more than the 65,500 a JPEG can hold, so
+    /// <c>dmc pdf</c> reports "could not be saved as a JPEG" for page 2 although page 1 would have drawn. Checked for
+    /// <c>all</c> and <c>render</c>, with an output folder that does not exist, one with its parents missing, and one that
+    /// already holds files, which must come out byte for byte as they were. The refused run is silent on stdout, and
+    /// makes no folder at all, not the output folder, its parents or a <c>.dmc-partial-</c> folder.
+    /// </summary>
+    [TestMethod]
+    public void APageTooBigForAJpegIsRefusedBeforeAnythingIsWritten()
+    {
+        string wide = Path.Combine(_folder, "wide.pdf");
+        File.WriteAllBytes(wide, Build([new Page(Line(2, 10, "a", height: 20, size: 5), 20, 20), new Page("", 4000, 10)]));
+        string deep = Path.Combine(_folder, "deep", "er", "out");
+        string[] before = Directory.GetFileSystemEntries(_folder).Order(StringComparer.Ordinal).ToArray();
+
+        foreach (string command in new[] { "all", "render" })
+        {
+            foreach (string output in new[] { _out, deep })
+            {
+                var result = Pdf(command, wide, "--dpi", "1200", "--out", output);
+                Assert.AreEqual(1, result.ExitCode, result.ToString());
+                StringAssert.Contains(result.Stderr, "dmc pdf: Page 2 could not be saved as a JPEG at 1200 dpi");
+                Assert.AreEqual("", result.Stdout, "nothing is reported for a run that did not finish");
+                CollectionAssert.AreEqual(before, Directory.GetFileSystemEntries(_folder).Order(StringComparer.Ordinal).ToArray(),
+                    $"{command} into {Path.GetFileName(output)}: no output folder, parent or .partial- folder is left");
+            }
+        }
+
+        // Files already in the output folder are neither replaced nor deleted by the failed run.
+        Directory.CreateDirectory(Path.Combine(_out, "pages"));
+        Directory.CreateDirectory(Path.Combine(_out, "text"));
+        var old = new Dictionary<string, string>
+        {
+            [Path.Combine(_out, "pages", "page-001.jpg")] = "an old picture",
+            [Path.Combine(_out, "text", "page-001.txt")] = "old text",
+            [Path.Combine(_out, "all-text.txt")] = "old combined text",
+            [Path.Combine(_out, "notes.md")] = "the player's own file",
+        };
+        foreach (var (path, content) in old)
+            File.WriteAllText(path, content);
+        Assert.AreEqual(1, Pdf("all", wide, "--dpi", "1200", "--out", _out).ExitCode);
+        CollectionAssert.AreEquivalent(old.Keys.ToArray(), Directory.GetFiles(_out, "*", SearchOption.AllDirectories));
+        foreach (var (path, content) in old)
+            Assert.AreEqual(content, File.ReadAllText(path), path);
+        CollectionAssert.AreEquivalent(new[] { "all-text.txt", "notes.md", "pages", "text" }, Listing());
+        Assert.AreEqual(before.Length + 1, Directory.GetFileSystemEntries(_folder).Length, "only the output folder is new: no .partial- folder");
+    }
+
+    /// <summary>
+    /// A failure after everything has been written and drawn leaves the output folder as it was. The honest way to get one
+    /// without a hook in the program is an obstacle that only shows when the files are moved into place: a file where a
+    /// folder must go (<c>out/text</c>, <c>out/pages</c>), or a folder where a file must go (<c>out/all-text.txt</c>).
+    /// The run has drawn and written every page in its temporary folder by then. It must fail in one line, move nothing
+    /// (not even the files that would have fitted), delete its temporary folder, and leave the obstacle and whatever is
+    /// in it as it was; and once the obstacle is removed the same command succeeds.
+    /// </summary>
+    [TestMethod]
+    public void AnObstacleFoundWhenTheFilesAreMovedInLeavesTheOutputFolderAsItWas()
+    {
+        var obstacles = new (string Command, string Name, bool IsFile, string Message)[]
+        {
+            ("all", "text", true, "text is a file"),
+            ("render", "pages", true, "pages is a file"),
+            ("all", "all-text.txt", false, "all-text.txt is a folder"),
+        };
+        foreach (var (command, name, isFile, message) in obstacles)
+        {
+            string obstacle = Path.Combine(_out, name);
+            string inner = Path.Combine(obstacle, "mine.txt");
+            Directory.CreateDirectory(_out);
+            if (isFile)
+                File.WriteAllText(obstacle, "in the way");
+            else
+            {
+                Directory.CreateDirectory(obstacle);
+                File.WriteAllText(inner, "in the way");
+            }
+
+            var result = Pdf(command, _pdf, "--dpi", "40", "--out", _out);
+            Assert.AreEqual(1, result.ExitCode, $"{command}, {name}: {result}");
+            StringAssert.Contains(result.Stderr, "dmc pdf: ");
+            StringAssert.Contains(result.Stderr, message);
+            Assert.AreEqual(1, result.StderrLines.Length, $"{command}, {name}: one line: {result.Stderr}");
+            Assert.AreEqual("", result.Stdout, $"{command}, {name}: nothing is reported for a run that did not finish");
+            CollectionAssert.AreEqual(new[] { name }, Listing(), $"{command}, {name}: nothing was moved in and no .dmc-partial- folder is left");
+            Assert.AreEqual("in the way", File.ReadAllText(isFile ? obstacle : inner), $"{command}, {name}");
+
+            if (isFile)
+                File.Delete(obstacle);
+            else
+                Directory.Delete(obstacle, recursive: true);
+            var again = Pdf(command, _pdf, "--dpi", "40", "--out", _out);
+            Assert.AreEqual(0, again.ExitCode, $"{command}, {name}, obstacle gone: {again}");
+            Directory.Delete(_out, recursive: true);
+        }
+    }
+
     [TestMethod]
     public void TheCombinedFileIsThePagesJoinedBySeparators()
     {

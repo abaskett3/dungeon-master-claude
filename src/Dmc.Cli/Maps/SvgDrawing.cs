@@ -22,6 +22,10 @@ public static class SvgDrawing
     const string GridLine = "#cbc4b3";
     const string WallColor = "#3b4149";
 
+    /// <summary>The plate behind the current turn in the turn order, and the colour of its outline and its "TURN" tag.</summary>
+    const string TurnPlate = "#2d3a4a";
+    const string TurnAccent = "#6fb1e0";
+
     /// <summary>Tokens sharing a cell: two across, so four fit in a 40 px cell.</summary>
     public const double SlotRadius = 8.5;
 
@@ -299,6 +303,11 @@ public static class SvgDrawing
 
     // ---------- the picture ----------
 
+    /// <summary>
+    /// The whole picture as SVG text: the grid and its creatures on the left, and the panel on the right with, in
+    /// this order, the turn order (only when the map has an <c>"initiative"</c>, the current turn on a highlighted
+    /// plate), the creatures and the key.
+    /// </summary>
     public static string Render(MapModel m)
     {
         int cols = m.Cols, rows = m.Rows;
@@ -450,6 +459,29 @@ public static class SvgDrawing
             for (int i = 0; i < lines.Count; i++)
                 @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink));
             py += Math.Max(lines.Count * rowH, 24) + 7;
+        }
+
+        if (m.Initiative is { Count: > 0 })
+        {
+            Heading("Turn order");
+            int place = 0;
+            foreach (var token in m.Initiative)
+            {
+                bool now = token.Name == m.Current;
+                var lines = Wrap($"{++place}. {token.Name}", now ? chars - 6 : chars);
+                if (now)
+                {
+                    int plateHeight = Math.Max(lines.Count * rowH, 24);
+                    @out.Add($"<rect x=\"{panelX - 6}\" y=\"{py - 2}\" width=\"{Panel - 4}\" height=\"{plateHeight + 4}\" rx=\"5\" "
+                             + $"fill=\"{TurnPlate}\" stroke=\"{TurnAccent}\" stroke-width=\"1.5\"/>");
+                    @out.Add(Text(panelX + Panel - 14, py + 16, "TURN", 11, TurnAccent, "end", "bold"));
+                }
+                @out.Add(DrawToken(token, panelX + 12, py + 12, legendScale: 9));
+                for (int i = 0; i < lines.Count; i++)
+                    @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink, weight: now ? "bold" : "normal"));
+                py += Math.Max(lines.Count * rowH, 24) + 7;
+            }
+            py += 16;
         }
 
         if (m.Tokens.Count > 0)

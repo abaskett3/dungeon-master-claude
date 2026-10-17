@@ -7,6 +7,7 @@ namespace Dmc.Tests.Roll;
 /// The 15 tests of <c>tests/test_roll.py</c>, ported one for one: <c>test_single_die_with_modifier</c> is
 /// <see cref="SingleDieWithModifier"/>, and so on. They run twice, through the two subclasses
 /// (<see cref="RollInProcessTests"/> and <see cref="RollBlackBoxTests"/>), as the Python ones run once per roller.
+/// After them come the tests of the label and target (<c>label:dice@AC14</c>, issue #6 finding 4) and of <c>--help</c>.
 /// </summary>
 public abstract partial class RollContract
 {
@@ -133,6 +134,83 @@ public abstract partial class RollContract
         // 200 d4s missing a face has odds of about 1 in 10^24.
         CollectionAssert.AreEquivalent(new[] { 1, 2, 3, 4 }, d4a.Concat(d4b).Distinct().ToArray());
         CollectionAssert.AreEquivalent(new[] { 1, 2 }, d2.Distinct().ToArray());
+    }
+
+    [GeneratedRegex(@"^(?<label>.*?): (?<plain>\S+: .*?) vs (?<kind>AC|DC) (?<target>\d+), (?<verdict>hit|miss|success|fail)(?: \(natural (?<nat>20|1)\))?$")]
+    private static partial Regex Labeled();
+
+    // Issue #6, finding 4: every labeled line is checked against its own numbers, so the rule for natural 20s and 1s is
+    // tested on real dice, over many rolls, in both the library and the binary.
+    [TestMethod]
+    public void LabeledRollsGetTheirOwnLineAndTheRightVerdict()
+    {
+        string[] one = ["Pip, shot:1d20+2@AC11", "Pip, shot:2d20kh1+2@AC11", "Pip, shot:2d20kl1+2@AC11", "Kole, Dex save:1d20+2@DC11", "Kole:2d6@DC7"];
+        var arguments = Enumerable.Repeat(one, 100).SelectMany(x => x).ToArray();
+        var result = Roll(arguments);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.HasCount(arguments.Length, result.StdoutLines, result.Stdout);
+        var natural = new HashSet<string>();
+        for (int i = 0; i < arguments.Length; i++)
+        {
+            string line = result.StdoutLines[i];
+            var m = Labeled().Match(line);
+            Assert.IsTrue(m.Success, line);
+            string argument = arguments[i];
+            Assert.AreEqual(argument[..argument.IndexOf(':')], m.Groups["label"].Value, line);
+            var r = Parse(m.Groups["plain"].Value);
+            Assert.AreEqual(argument[(argument.IndexOf(':') + 1)..argument.IndexOf('@')], r.Expr, line);
+            Assert.AreEqual(argument.Contains("@AC") ? "AC" : "DC", m.Groups["kind"].Value, line);
+            int target = int.Parse(m.Groups["target"].Value);
+
+            // The rule, worked out again from the dice in the line: a natural 20 hits and a natural 1 misses on an AC
+            // when one d20 counts; the total decides everything else.
+            int[] counted = r.Kept ?? r.Dice;
+            bool oneD20 = r.Expr.Contains("d20") && counted.Length == 1;
+            bool attack = m.Groups["kind"].Value == "AC";
+            bool met = attack && oneD20 && counted[0] == 20 ? true
+                : attack && oneD20 && counted[0] == 1 ? false
+                : r.Total >= target;
+            string expected = attack ? (met ? "hit" : "miss") : (met ? "success" : "fail");
+            Assert.AreEqual(expected, m.Groups["verdict"].Value, line);
+            // The note is on an attack's natural 20 or 1 and nowhere else.
+            Assert.AreEqual(attack && oneD20 && counted[0] is 20 or 1 ? counted[0].ToString() : "", m.Groups["nat"].Value, line);
+            if (m.Groups["nat"].Success)
+                natural.Add(m.Groups["nat"].Value);
+        }
+        // 300 attack rolls with a d20 that counts: a natural 20 and a natural 1 each turn up about 1 in 20, so missing
+        // either has odds of about 1 in 100000.
+        CollectionAssert.AreEquivalent(new[] { "1", "20" }, natural.ToArray());
+    }
+
+    [TestMethod]
+    public void TheLabelsOfSeveralExpressionsDoNotMixAndTheBareOnesAreUntouched()
+    {
+        var result = Roll("Pip, shot:1d20@AC10", "1d6", "Kole, Dex save:1d20@DC10");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.HasCount(3, result.StdoutLines, result.Stdout);
+        StringAssert.StartsWith(result.StdoutLines[0], "Pip, shot: 1d20: [");
+        StringAssert.Matches(result.StdoutLines[1], new Regex(@"^1d6: \[\d\] = \d$"));
+        StringAssert.StartsWith(result.StdoutLines[2], "Kole, Dex save: 1d20: [");
+    }
+
+    [TestMethod]
+    public void ABadLabelOrTargetIsOneLineAndTheOtherLinesAreStillRolled()
+    {
+        var result = Roll("Pip: 1d20@14", "Pip: 1d20@AC14");
+        Assert.AreEqual(1, result.ExitCode);
+        Assert.HasCount(2, result.StdoutLines, result.Stdout);
+        Assert.AreEqual("Pip: 1d20: target \"@14\" is not @AC<n> or @DC<n> (try @AC14, @DC13)", result.StdoutLines[0]);
+        StringAssert.StartsWith(result.StdoutLines[1], "Pip: 1d20: [");
+    }
+
+    [TestMethod]
+    public void HelpExplainsTheLabelTheTargetAndTheNaturalRule()
+    {
+        var result = Roll("--help");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        foreach (string text in new[] { "[label:]", "@AC", "@DC", "hit or miss", "success or fail", "natural 20", "natural 1" })
+            StringAssert.Contains(result.Stdout, text);
+        Assert.DoesNotContain("\r", result.Stdout);
     }
 
     [TestMethod]

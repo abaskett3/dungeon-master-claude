@@ -33,6 +33,18 @@ public sealed partial class MapPngTests
     }
 
     [TestMethod]
+    public void TheTurnOrderIsInThePngToo()
+    {
+        var scene = ("tokens", (object?)SceneTokens());
+        string plain = SvgDrawing.Render(Checked(scene));
+        string svg = SvgDrawing.Render(Checked(scene, ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")));
+        var (png, width, height) = MapPng.Render(svg);
+        var root = XElement.Parse(svg);
+        Assert.AreEqual((int.Parse((string)root.Attribute("width")!), int.Parse((string)root.Attribute("height")!)), (width, height));
+        CollectionAssert.AreNotEqual(MapPng.Render(plain).Png, png);
+    }
+
+    [TestMethod]
     public void TheTextIsDrawnWithTheEmbeddedFont()
     {
         string svg = SceneSvg();

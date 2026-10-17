@@ -75,6 +75,33 @@ public sealed class MapCheckingTests
 
     static (string, object?) One(params (string, object?)[] token) => ("tokens", Arr(Obj(token)));
 
+    // Issue #6, finding 5: the optional "initiative" and "current" keys of a fight.
+    [TestMethod]
+    public void TheTurnOrderIsCheckedAgainstTheTokens()
+    {
+        var tokens = WithTokens(SceneTokens());
+        var m = Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin"));
+        CollectionAssert.AreEqual(new[] { "Goblin boss", "Thorin" }, m.Initiative!.Select(t => t.Name).ToArray());
+        Assert.AreEqual("Thorin", m.Current);
+
+        // Neither key (or both null) is no turn order at all.
+        foreach (var none in new[] { Checked(tokens), Checked(tokens, ("initiative", null), ("current", null)) })
+        {
+            Assert.IsEmpty(none.Initiative!);
+            Assert.IsNull(none.Current);
+        }
+        // Between turns: an order and no one in particular.
+        Assert.IsNull(Checked(tokens, ("initiative", Arr("Thorin"))).Current);
+
+        Rejected("is not the name of any token", tokens, ("initiative", Arr("Thorin", "Zed")));
+        Rejected("lists \"Thorin\" twice", tokens, ("initiative", Arr("Thorin", "Thorin")));
+        Rejected("must be a list of creature names", tokens, ("initiative", Arr("Thorin", 5)));
+        Rejected("must be a list of creature names", tokens, ("initiative", "Thorin"));
+        Rejected("\"current\" is \"Goblin boss\", who is not in \"initiative\"", tokens, ("initiative", Arr("Thorin")), ("current", "Goblin boss"));
+        Rejected("who is not in \"initiative\"", tokens, ("current", "Thorin"));
+        Rejected("\"current\" must be the name", tokens, ("initiative", Arr("Thorin")), ("current", 3));
+    }
+
     [TestMethod]
     public void AValidMap()
     {
@@ -480,6 +507,27 @@ public sealed class MapDrawingTests
         string words = SvgText(SvgDrawing.Render(m));
         StringAssert.Contains(words, "altar");
         Assert.DoesNotContain("ON THE MAP", words);
+    }
+
+    [TestMethod]
+    public void TheTurnOrderIsDrawnBesideTheGridOnlyWhenTheMapHasOne()
+    {
+        var tokens = ("tokens", (object?)SceneTokens());
+        string plain = SvgDrawing.Render(Checked(tokens));
+        Assert.DoesNotContain("TURN", SvgText(plain));
+        // An empty order is no order: the picture is the same.
+        Assert.AreEqual(plain, SvgDrawing.Render(Checked(tokens, ("initiative", Arr()))));
+
+        string svg = SvgDrawing.Render(Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")));
+        string words = SvgText(svg);
+        StringAssert.Contains(words, "TURN ORDER");
+        Assert.IsLessThan(words.IndexOf("2. Thorin", StringComparison.Ordinal), words.IndexOf("1. Goblin boss", StringComparison.Ordinal));
+        Assert.AreEqual(1, System.Text.RegularExpressions.Regex.Matches(svg, ">TURN<").Count, "one current turn is marked");
+
+        // With no one's turn marked, there is a list and no mark.
+        string between = SvgDrawing.Render(Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin"))));
+        StringAssert.Contains(SvgText(between), "TURN ORDER");
+        Assert.DoesNotContain(">TURN<", between);
     }
 
     [TestMethod]

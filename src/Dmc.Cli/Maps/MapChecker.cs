@@ -292,7 +292,43 @@ public static class MapChecker
                 edgeText[pair.Key] = Py.Str(pair.Value);
         }
 
+        var (initiative, current) = CheckTurnOrder(data, tokens);
+
         return new MapModel(Py.Str(Get(data, "title", "Map")), Py.Str(Get(data, "notes", "")), grid, cols, rows, legend,
-            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText);
+            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText, initiative, current);
+    }
+
+    /// <summary>
+    /// Check the optional <c>"initiative"</c> (creature names in turn order) and <c>"current"</c> (whose turn it is).
+    /// Each name in the order must be the name of a token on the map, once; <c>"current"</c> must be one of them.
+    /// Null and an empty list mean there is no turn order. A fight that is over simply drops both keys.
+    /// </summary>
+    /// <returns>The tokens in turn order (empty with no turn order) and the current name, or null.</returns>
+    static (IReadOnlyList<Token> Initiative, string? Current) CheckTurnOrder(PyDict data, List<Token> tokens)
+    {
+        var order = new List<Token>();
+        object? initiative = Get(data, "initiative", null);
+        if (initiative is not null)
+        {
+            if (initiative is not List<object?> names || names.Any(n => n is not string { Length: > 0 }))
+                throw Fail("\"initiative\" must be a list of creature names, in turn order.");
+            foreach (string name in names.Cast<string>())
+            {
+                if (order.Any(t => t.Name == name))
+                    throw Fail($"\"initiative\" lists \"{name}\" twice.");
+                var token = tokens.FirstOrDefault(t => t.Name == name)
+                    ?? throw Fail($"\"initiative\" names \"{name}\", which is not the name of any token on the map.");
+                order.Add(token);
+            }
+        }
+
+        object? current = Get(data, "current", null);
+        if (current is null)
+            return (order, null);
+        if (current is not string { Length: > 0 } currentName)
+            throw Fail("\"current\" must be the name of the creature whose turn it is.");
+        if (order.All(t => t.Name != currentName))
+            throw Fail($"\"current\" is \"{currentName}\", who is not in \"initiative\".");
+        return (order, currentName);
     }
 }

@@ -55,6 +55,12 @@ public sealed partial class ErrorPathTests
         [new[] { "roll", "a\nb" }], // a line break in the echoed expression is written out, not printed
         [new[] { "roll", "a\r\nb" }],
         [new[] { "roll", "1d20\n" }],
+        [new[] { "roll", "Pip: 1d20@14" }], // a label and a target (finding 4 of issue #6)
+        [new[] { "roll", "Pip: 1d20@AC" }],
+        [new[] { "roll", "Pip: 2d20kh3@AC14" }],
+        [new[] { "roll", ": 1d20" }],
+        [new[] { "roll", "Pip\nX: 1d20" }], // a line break in a label is written out too
+        [new[] { "roll", "Pip: banana\n@DC13" }],
     ];
 
     public static string Name(System.Reflection.MethodInfo method, object[] data) =>

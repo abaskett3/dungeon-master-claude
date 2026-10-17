@@ -24,7 +24,7 @@ public sealed class MapFormatDocTests
             StringAssert.Contains(doc, $"`{terrain}`");
         foreach (var (kind, _) in MapRules.Kinds)
             StringAssert.Contains(doc, $"`{kind}`");
-        foreach (string key in new[] { "scale_note", "north", "edges", "notes", "labels", "base", "legend", "cell_ft", "grid", "tokens" })
+        foreach (string key in new[] { "scale_note", "north", "edges", "notes", "labels", "base", "legend", "cell_ft", "grid", "tokens", "initiative", "current" })
             StringAssert.Contains(doc, $"\"{key}\"");
     }
 

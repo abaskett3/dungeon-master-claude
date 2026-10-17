@@ -293,6 +293,21 @@ public abstract partial class MapCommandContract
     }
 
     [TestMethod]
+    public void TheTurnOrderReachesThePageAndABadOneIsNotDrawn()
+    {
+        Assert.AreEqual(0, Map(_scene).ExitCode);
+        StringAssert.DoesNotMatch(Payload().GetProperty("svg").GetString()!, new Regex("TURN"));
+
+        Write("live.json", With(Scene(), ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")));
+        var result = Map(_scene);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        StringAssert.Contains(SvgText(Payload().GetProperty("svg").GetString()!), "TURN ORDER");
+
+        Write("live.json", With(Scene(), ("initiative", Arr("Thorin")), ("current", "Goblin boss")));
+        AssertFails("\"current\" is \"Goblin boss\", who is not in \"initiative\"", _scene);
+    }
+
+    [TestMethod]
     public void NonAsciiNamesSurvive()
     {
         // Written as UTF-8 text, not as \u escapes: the file is read as UTF-8 and the page gets it back whole.

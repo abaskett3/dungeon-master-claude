@@ -48,9 +48,13 @@ An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a 
     { "id": "1", "name": "Goblin boss",   "kind": "enemy", "at": "H2" },
     { "id": "2", "name": "Goblin archer", "kind": "enemy", "at": "I5", "note": "prone", "down": true },
     { "id": "O", "name": "Ogre",          "kind": "enemy", "at": "F2", "size": 2 }
-  ]
+  ],
+  "initiative": ["Goblin boss", "Thorin", "Ogre", "Kibil", "Goblin archer"],
+  "current": "Thorin"
 }
 ```
+
+In a fight, `"initiative"` is the turn order (token names, as in the tracker) and `"current"` is whose turn it is; `dmc map` lists them beside the grid with the current turn marked, so the player can see who acts when. Keep both in step with the tracker: set them when initiative is rolled, move `"current"` on at the end of each turn, take a creature out of `"initiative"` when it dies or leaves, and delete both keys when the fight ends. Every name must be a token's name and `"current"` must be in the list, or `dmc map` refuses the file.
 
 Rules for the grid:
 
@@ -97,9 +101,9 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## After drawing
 
-- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, edit `live.json` with the tracker and run `dmc map` after the narration, in the order CLAUDE.md § Maps gives, so the picture, the tracker and your description always agree.
+- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, or the turn passes to the next creature, edit `live.json` with the tracker (the cells, and `"current"`) and run `dmc map` after the narration, in the order CLAUDE.md § Maps gives, so the picture, the tracker and your description always agree.
 - If the place may be revisited, keep its `maps/<place-name>.json`, and put longer notes (ceiling heights, what lies beyond the edges, rulings about the terrain) in `maps/<place-name>.md` beside it.
-- When the fight ends or the party moves on, remove the tokens from `live.json` or point it at the new place.
+- When the fight ends or the party moves on, remove the tokens, `"initiative"` and `"current"` from `live.json` or point it at the new place.
 
 ## When there is no picture
 

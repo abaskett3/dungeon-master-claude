@@ -36,15 +36,30 @@ public static class PdfExtractor
     static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     /// <summary>
-    /// Runs one request. The checks that can fail come first (the file, the PDF, the page list, the resolution, the
-    /// pages' sizes), so a failed run writes nothing; then <c>info</c> prints, <c>text</c> writes the text files, and
-    /// <c>render</c> writes the pictures (<c>all</c> does both).
+    /// Runs one request. The checks come first, in this order: the file exists, the PDF opens, the page list parses,
+    /// the resolution is in range (for <c>render</c> and <c>all</c>), and PDFium's page sizes are read (also only for
+    /// those two). A failure in any of them writes nothing. Then <c>info</c> prints, <c>text</c> writes the text files,
+    /// and <c>render</c> writes the pictures one page at a time; <c>all</c> does the text and then the pictures.
     /// </summary>
+    /// <remarks>
+    /// "Writes nothing" holds only for the checks. A picture that cannot be encoded as a JPEG throws in the middle of
+    /// <c>render</c>, after the earlier pages' JPEGs have been written, and, for <c>all</c>, after the text files and
+    /// <c>all-text.txt</c> were written too; none of that is removed. A file system error while writing (a full disk, say)
+    /// is not a <see cref="DmcException"/>: it propagates and <see cref="CommandLine"/> reports it as an unexpected failure.
+    /// </remarks>
     /// <param name="request">What to do.</param>
     /// <param name="io">Standard output gets the report lines.</param>
     /// <param name="libsslAvailable">For a test: whether OpenSSL is available. See <see cref="PdfFile.Open"/>.</param>
     /// <returns>Always 0; a failure throws instead.</returns>
-    /// <exception cref="DmcException">The file is missing or unreadable, the page list is bad, or the resolution is out of range.</exception>
+    /// <exception cref="DmcException">
+    /// Every one of these has exit code 1. No such file. From <see cref="PdfFile.Open"/>: the PDF is password-protected,
+    /// is encrypted on Linux without OpenSSL, or is not a readable PDF. From <see cref="PageRanges.Parse"/>: a page range
+    /// that is not a number or range, or is outside the PDF's pages. A <c>--dpi</c> outside 1 to <see cref="MaxDpi"/>
+    /// (render and all). PDFium finds fewer pages than the text reader does: for render and all, before anything is
+    /// written; for <c>info</c>, only when PdfPig could not load a page, and then after the earlier pages' lines have been
+    /// printed. A page that cannot be saved
+    /// as a JPEG at that resolution (render and all, after earlier pages were written).
+    /// </exception>
     public static int Run(PdfRequest request, Io io, Func<bool>? libsslAvailable = null)
     {
         if (!File.Exists(request.Pdf))

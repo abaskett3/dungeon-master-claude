@@ -5,7 +5,7 @@ namespace Dmc.Dice;
 
 /// <summary>What became of one expression: the line to print, and whether it was rolled.</summary>
 /// <param name="Line">The line to print: the rolled result, or the error message.</param>
-/// <param name="Rolled">True when dice were rolled; false when the expression was rejected (and no randomness was used).</param>
+/// <param name="Rolled">True when dice were rolled; false when the expression was rejected. A rejection uses no randomness, except one: a total that overflows 64 bits is found only after the dice are drawn, so that case is not Rolled but did use random bytes.</param>
 public readonly record struct RollOutcome(string Line, bool Rolled);
 
 /// <summary>
@@ -28,9 +28,11 @@ public sealed partial class DiceRoller(IRandomBytes random)
 
     /// <summary>
     /// Rolls one expression such as <c>2d20kh1+5</c>. The expression is matched in lower case, but echoed as typed.
-    /// Everything that can be rejected is rejected before the first die is drawn: a bad shape, a count outside 1 to
-    /// 100, sides outside 2 to 1000, a modifier that does not fit 64 bits, and a keep count outside 1 to the number of
-    /// dice. A total that overflows 64 bits gets the same "modifier too large" message as an oversized modifier.
+    /// Almost everything that can be rejected is rejected before the first die is drawn, using no randomness: a bad
+    /// shape, a count outside 1 to 100, sides outside 2 to 1000, a modifier that does not fit 64 bits, and a keep count
+    /// outside 1 to the number of dice. The one exception is a total that overflows 64 bits (a modifier close to the
+    /// largest 64-bit number): it can only be found by adding up the dice, so it is rejected after they are drawn, and
+    /// random bytes have been used. It gets the same "modifier too large" message as an oversized modifier.
     /// </summary>
     /// <param name="expr">The expression, exactly as the user typed it.</param>
     /// <returns>

@@ -14,7 +14,18 @@ internal static class Digester
     /// <param name="request">What to do, from <see cref="DigestArguments.Parse"/>.</param>
     /// <param name="io">Standard output gets the table or the statistics.</param>
     /// <returns>Always 0; a failure throws instead.</returns>
-    /// <exception cref="DmcException">The log folder is missing, or <c>show</c> matched no session that has a player message.</exception>
+    /// <exception cref="DmcException">
+    /// Every one has exit code 1. The log folder is missing; <c>show</c> matched no session that has a player message; or
+    /// <see cref="Session"/> could not read a log: it is not valid UTF-8 (<c>name: not valid UTF-8</c>), or a record has a
+    /// shape the digest cannot read (<c>name line N: ...</c>). A log is read when the sessions are loaded, before anything
+    /// is printed or written, so none of these leaves output behind.
+    /// </exception>
+    /// <exception cref="LogShapeException">
+    /// A token count that is not a finite number (NaN or Infinity, which the log can spell) is found only while the
+    /// statistics are being written, after <see cref="Session"/> has finished. It is not turned into a
+    /// <see cref="DmcException"/> here: <see cref="CommandLine"/> reports it as an unexpected failure, exit code 1, naming
+    /// the type. For <c>show</c> the turn and transcript files of earlier sessions have been written by then.
+    /// </exception>
     /// <exception cref="InvalidOperationException">The request names a subcommand that does not exist (a programming error).</exception>
     public static int Run(DigestRequest request, Io io)
     {

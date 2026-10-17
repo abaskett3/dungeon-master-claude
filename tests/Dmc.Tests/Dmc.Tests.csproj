@@ -4,13 +4,18 @@
     <RootNamespace>Dmc.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- The documentation file is built here too (see Directory.Build.props), so the compiler checks that every comment
-         is well formed: a param tag for every parameter or none, a cref that resolves. CS1591 (no comment on a visible
-         member) is the one check switched off, and only here. MSTest needs a test class and every test method to be
-         public, and a test method whose name says what it proves needs no comment, so the check would flag several
-         hundred members that are meant to have none. Test classes, helpers and fixtures are documented all the same;
-         that is kept by review, not by the compiler. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- The documentation file is built here too (see Directory.Build.props). What the compiler enforces in this project:
+         - Every comment must be well formed, and that is an error here: CS1570 to CS1574 (bad XML, a param tag with no
+           parameter, a parameter with no param tag when others have one, a cref that does not resolve), CS1580, CS1584,
+           CS1587, CS1589 and CS1590 (a cref or tag that is malformed or misplaced). It applies to every file.
+         - Every visible type and member needs a comment (CS1591, an error here as well), except in the files that hold
+           MSTest test classes, where it is switched off by tests/Dmc.Tests/.editorconfig: files named *Tests.cs,
+           *Contract.cs and *Cases.cs. MSTest needs public test classes and methods, and a test whose name says what it
+           proves needs no comment, so the check would flag hundreds of members that are meant to have none.
+         What the compiler does not enforce: comments on the classes, helpers and stubs inside those files, and on
+         anything private or internal anywhere. Those are kept by review. Support/, the *Fixtures.cs files and
+         Bootstrap.cs are fully checked. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS1570;CS1571;CS1572;CS1573;CS1574;CS1580;CS1584;CS1587;CS1589;CS1590</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

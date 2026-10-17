@@ -9,7 +9,8 @@ name: Release
 # and uploads it all as workflow artifacts. A dry run creates no release, pushes nothing and opens no pull request.
 #
 # Triggers: a pushed tag dmc-v*, which releases; a pull request that touches this file, .github/release/, tools/,
-# src/Dmc.Cli/Dmc.Cli.csproj or Directory.Packages.props, and a manual run (workflow_dispatch), both dry runs.
+# src/Dmc.Cli/Dmc.Cli.csproj, or one of the build settings every release build uses (Directory.Build.props,
+# Directory.Packages.props, global.json), and a manual run (workflow_dispatch), both dry runs.
 #
 # An archive holds exactly dmc and its native libraries: the pack step copies only the program and the *.dll, *.so and
 # *.dylib files of the publish folder, so neither symbols nor the XML documentation file could get into it, and it fails
@@ -24,7 +25,9 @@ on:
       - .github/release/**
       - tools/**
       - src/Dmc.Cli/Dmc.Cli.csproj
+      - Directory.Build.props
       - Directory.Packages.props
+      - global.json
   workflow_dispatch:
 
 permissions:

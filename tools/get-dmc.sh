@@ -22,8 +22,9 @@
 #            On Windows the exit code is that of get-dmc.ps1.
 #
 # It never installs an archive whose hash does not match the pin, never unpacks or runs anything from an archive before
-# the hash has matched, never downloads over plain HTTP, and never touches what is in bin/ until the new dmc has run.
-# It prints nothing when there is nothing to do.
+# the hash has matched, never downloads over plain HTTP, and never replaces a file already in bin/ until the new dmc has
+# run. Before that it does create bin/ and its temporary folder, and on Windows it deletes the bin/*.old files left by
+# an earlier update. It prints nothing when there is nothing to do.
 
 set -u
 

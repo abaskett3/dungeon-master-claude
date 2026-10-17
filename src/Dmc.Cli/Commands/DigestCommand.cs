@@ -51,7 +51,11 @@ Times are UTC. "ctx" is the number of tokens sent to the model on that call.
     /// <summary>Parses the arguments with <see cref="DigestArguments.Parse"/> and hands the request to <see cref="Digester.Run"/>; <c>--help</c> prints <see cref="Help"/> instead.</summary>
     /// <param name="args">The arguments after <c>digest</c>.</param>
     /// <param name="io">Standard output gets the report, or the help text.</param>
-    /// <returns>0 on success or <c>--help</c>; 2 for a usage mistake (through <see cref="DmcException"/>).</returns>
+    /// <returns>
+    /// 0 on success or <c>--help</c>. A usage mistake throws <see cref="DmcException"/> with exit code 2. The other
+    /// failures exit 1: a missing log folder, no matching session with a player message, a log that is not valid UTF-8,
+    /// a record of a shape the digest cannot read (see <see cref="Digester.Run"/>, which lists them).
+    /// </returns>
     public int Run(string[] args, Io io)
     {
         var request = DigestArguments.Parse(args);

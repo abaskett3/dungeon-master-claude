@@ -9,7 +9,9 @@
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub (the
 # SHA-256 check still applies), and DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64).
 #
-# Usage:     powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1   (no arguments; the working folder does not matter)
+# Usage:     no arguments; the working folder does not matter.
+#              Windows:        powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1
+#              Linux, macOS:   pwsh -File tools/get-dmc.ps1
 # Inputs:    tools/dmc-release.json (the tag, and one SHA-256 for each platform); bin/dmc or bin/dmc.exe, to see which
 #            version is there. On Linux and macOS it needs tar.
 # Outputs:   bin/dmc.exe (or bin/dmc) and the native libraries from the archive, beside it. Nothing is written outside

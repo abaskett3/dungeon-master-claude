@@ -2,8 +2,15 @@ using System.Text;
 
 namespace Dmc;
 
+/// <summary>The process entry point of <c>dmc</c>: wires the real standard streams to <see cref="CommandLine"/>.</summary>
 public static class Program
 {
+    /// <summary>
+    /// Runs <c>dmc</c> with the arguments after the program name, on the real standard input, output and error.
+    /// Standard output is flushed on the way out, and a closed pipe at that point is ignored.
+    /// </summary>
+    /// <param name="args">The command line, without the program name.</param>
+    /// <returns>The exit code <see cref="CommandLine.Run"/> chose.</returns>
     public static int Main(string[] args)
     {
         // No byte-order mark, and "\n" on every OS: what dmc prints lands in DMC's context, so it stays plain.

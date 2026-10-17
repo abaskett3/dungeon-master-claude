@@ -14,11 +14,16 @@ namespace Dmc.Tests.TokenCost;
 [TestClass]
 public sealed partial class ErrorPathTests
 {
+    /// <summary>What a stack trace looks like: a <c>   at ...</c> line, the words .NET prints for an unhandled exception, or a source line number.</summary>
     [GeneratedRegex(@"^\s+at \S+|Unhandled exception|Stack trace|\.cs:line \d+", RegexOptions.Multiline)]
     private static partial Regex StackTrace();
 
+    /// <summary>The non-empty lines of stdout and stderr together.</summary>
     static string[] AllLines(ProcessResult result) => result.StdoutLines.Concat(result.StderrLines).ToArray();
 
+    /// <summary>Asserts that a failed command printed exactly one line in all, no stack trace, and a non-zero exit code.</summary>
+    /// <param name="result">What the command did.</param>
+    /// <param name="what">The command line, for the failure message.</param>
     static void AssertOneLine(ProcessResult result, string what)
     {
         string[] lines = AllLines(result);
@@ -27,12 +32,14 @@ public sealed partial class ErrorPathTests
         Assert.AreNotEqual(0, result.ExitCode, what);
     }
 
+    /// <summary>Asserts exit code 0 and nothing at all on stdout or stderr: how the hook command must behave even when it fails.</summary>
     static void AssertSilentSuccess(ProcessResult result, string what)
     {
         Assert.AreEqual(0, result.ExitCode, $"{what}: {result}");
         Assert.AreEqual("", result.Stdout + result.Stderr, what);
     }
 
+    /// <summary>Command lines of <c>dmc</c> itself (not of a subcommand's input) that must fail with one line, each as one argument list.</summary>
     public static IEnumerable<object[]> RollErrors { get; } =
     [
         [Array.Empty<string>()], // no command at all
@@ -57,6 +64,7 @@ public sealed partial class ErrorPathTests
         [new[] { "roll", "1d20\n" }],
     ];
 
+    /// <summary>The test's display name: its method and the command line, with line breaks written out.</summary>
     public static string Name(System.Reflection.MethodInfo method, object[] data) =>
         $"{method.Name}: dmc {string.Join(' ', ((string[])data[0]).Select(a => a.Replace("\n", "\\n")))}";
 
@@ -69,8 +77,10 @@ public sealed partial class ErrorPathTests
         AssertOneLine(DmcRunner.InProcess(args), $"dmc {string.Join(' ', args)} (in-process)");
     }
 
+    /// <summary>The map cases that must fail, as test data.</summary>
     public static IEnumerable<object[]> MapErrors { get; } = MapCases.ErrorCases.Select(c => new object[] { c }).ToArray();
 
+    /// <summary>The display name of a test that runs a <see cref="CommandCase"/>: its method and the case's name.</summary>
     public static string CaseName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
 
     /// <summary>
@@ -82,6 +92,7 @@ public sealed partial class ErrorPathTests
     public void EveryErrorOfMapPrintsOneLine(CommandCase test) =>
         test.Run("map", (result, _) => AssertOneLine(result, test.Describe("map"))); // which also needs a non-zero exit code
 
+    /// <summary>The PDF cases that must fail, as test data.</summary>
     public static IEnumerable<object[]> PdfErrors { get; } =
         PdfCases.ErrorCases().Concat(PdfCases.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
 
@@ -98,6 +109,7 @@ public sealed partial class ErrorPathTests
             "a failed run must not write anything");
     });
 
+    /// <summary>The digest cases that must fail, as test data.</summary>
     public static IEnumerable<object[]> DigestErrors { get; } =
         DigestCases.ErrorCases().Concat(DigestCases.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
 
@@ -160,12 +172,19 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    /// <summary>A command named <c>boom</c> that throws the exception it was given, to test the wrapper that every command runs inside.</summary>
+    /// <param name="exception">What <see cref="Run"/> throws.</param>
     // Failures the real commands cannot be made to produce on demand (a disk that fails, an exception from a
     // library) are made here by a command that throws, to test the wrapper that every command runs inside.
     sealed class Throws(Exception exception) : ICommand
     {
+        /// <inheritdoc />
         public string Name => "boom";
+
+        /// <inheritdoc />
         public string Summary => "";
+
+        /// <summary>Throws the exception; never returns.</summary>
         public int Run(string[] args, Io io) => throw exception;
     }
 

@@ -10,6 +10,9 @@ public static class DmcRunner
     /// Run <c>dmc</c> in this process, with the real command table and an in-memory stdin, stdout and stderr.
     /// Output is always LF, as the real program writes it.
     /// </summary>
+    /// <param name="args">The command line, without the program name.</param>
+    /// <param name="stdin">What the command reads from standard input; empty when null.</param>
+    /// <param name="commands">The commands to choose from, so a test can add a fake one; the real table when null.</param>
     public static ProcessResult InProcess(string[] args, string? stdin = null, IReadOnlyList<ICommand>? commands = null)
     {
         using var output = new StringWriter { NewLine = "\n" };
@@ -24,12 +27,16 @@ public static class DmcRunner
     /// <c>dotnet publish src/Dmc.Cli -r &lt;rid&gt; -o artifacts/bin</c> (not into <c>bin/</c>, which is the player's install
     /// that <c>get-dmc</c> owns). Set <c>DMC_BIN</c> to test a binary somewhere else.
     /// </summary>
+    /// <param name="args">The command line, without the program name.</param>
+    /// <param name="stdin">What the process reads from standard input; empty when null.</param>
+    /// <param name="cwd">The working folder; the repository root when null.</param>
     public static ProcessResult BlackBox(string[] args, string? stdin = null, string? cwd = null) =>
         TestEnv.Run(Binary(), args, stdin, cwd);
 
     /// <summary>The version every build that is not a release prints.</summary>
     public const string DevVersion = "0.0.0-dev";
 
+    /// <summary>The command that makes the binary the black-box tests need, quoted in the failure messages.</summary>
     const string Publish = "dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin";
 
     /// <summary>
@@ -37,6 +44,7 @@ public static class DmcRunner
     /// which must be there, not older than the sources, and a development build (a release there would be tests of the
     /// wrong program).
     /// </summary>
+    /// <remarks>The tests are skipped, or fail on CI, when the binary is missing (see <see cref="TestEnv.Need"/>).</remarks>
     public static string Binary()
     {
         string? fromEnvironment = Environment.GetEnvironmentVariable("DMC_BIN");
@@ -60,9 +68,11 @@ public static class DmcRunner
         return binary;
     }
 
+    /// <summary>What <c>artifacts/bin/dmc --version</c> prints, asked once for the whole run.</summary>
     static readonly Lazy<string> _printed = new(() =>
         TestEnv.Run(Path.Combine(TestEnv.Root, "artifacts", "bin", OperatingSystem.IsWindows() ? "dmc.exe" : "dmc"), ["--version"]).Stdout.Trim());
 
+    /// <summary>The most recently changed source file of the CLI project (<c>.cs</c>, <c>.csproj</c> and the shared <c>Directory.*.props</c>; not <c>obj/</c> or <c>bin/</c>), with its time.</summary>
     static (DateTime Time, string Path) NewestSource()
     {
         string[] extensions = [".cs", ".csproj", ".props"];

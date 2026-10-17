@@ -14,6 +14,10 @@
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <!-- Directory.Build.props builds dmc.xml, the XML comments, so that a missing comment is reported (CS1591, an error
+         here, because warnings are errors). It is not part of what is published: artifacts/bin and the release archives
+         hold the program and its native libraries, as they did before. -->
+    <PublishDocumentationFile>false</PublishDocumentationFile>
   </PropertyGroup>
 
   <!--

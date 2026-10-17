@@ -12,9 +12,11 @@ namespace Dmc.Tests.Map;
 [TestClass]
 public sealed partial class MapPngTests
 {
+    /// <summary>One <c>&lt;text&gt;</c> element of the SVG, line breaks included.</summary>
     [GeneratedRegex("<text[^>]*>.*?</text>", RegexOptions.Singleline)]
     private static partial Regex TextElement();
 
+    /// <summary>The picture of the standard scene's creatures on the goblin hall at this scale.</summary>
     static string SceneSvg(int cellFt = 5) => SvgDrawing.Render(Checked(("cell_ft", cellFt), ("tokens", SceneTokens())));
 
     [TestMethod]

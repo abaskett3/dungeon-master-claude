@@ -10,6 +10,7 @@ namespace Dmc.Tests.Map;
 [TestClass]
 public sealed class MapFormatDocTests
 {
+    /// <summary>A file of the draw-map skill's folder, as text.</summary>
     static string Skill(string name) => File.ReadAllText(Path.Combine(TestEnv.Root, ".claude", "skills", "draw-map", name));
 
     [TestMethod]

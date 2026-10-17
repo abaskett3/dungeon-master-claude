@@ -17,6 +17,9 @@ public static class ImageCounter
     /// <summary>How far up the page tree to look for /Resources the page does not have itself.</summary>
     const int MaxAncestors = 64;
 
+    /// <summary>The count for a page PdfPig loaded.</summary>
+    /// <param name="document">The PDF the page belongs to, for following references.</param>
+    /// <param name="page">The page.</param>
     public static int Count(PdfDocument document, Page page) => Count(document, page.Dictionary);
 
     /// <summary>
@@ -31,6 +34,7 @@ public static class ImageCounter
             : 0;
     }
 
+    /// <summary>The count for a page's dictionary: its resources (its own, or inherited), with a fresh set of forms already visited.</summary>
     static int Count(PdfDocument document, DictionaryToken page)
     {
         var resources = FindResources(document, page);
@@ -57,6 +61,10 @@ public static class ImageCounter
         return null;
     }
 
+    /// <summary>The images listed in one resource dictionary, plus those in the resources of each form listed there.</summary>
+    /// <param name="document">The PDF, for following references.</param>
+    /// <param name="resources">A /Resources dictionary; null counts as none.</param>
+    /// <param name="seenForms">The forms (by indirect reference) already counted on this page, so a form that refers back to itself or to a sibling is read once.</param>
     static int CountIn(PdfDocument document, DictionaryToken? resources, HashSet<IndirectReference> seenForms)
     {
         if (resources is null || !TryGetDictionary(document, resources, "XObject", out var xobjects))
@@ -97,6 +105,7 @@ public static class ImageCounter
         return null;
     }
 
+    /// <summary>The dictionary under <paramref name="key"/> of <paramref name="owner"/>, following a reference; false if there is none or it is not a dictionary.</summary>
     static bool TryGetDictionary(PdfDocument document, DictionaryToken owner, string key, out DictionaryToken dictionary)
     {
         dictionary = null!;

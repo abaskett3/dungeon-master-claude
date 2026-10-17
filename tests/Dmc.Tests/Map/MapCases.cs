@@ -19,6 +19,7 @@ public static partial class MapCases
     /// <summary>A surrogate with no partner: JSON can spell it, and no text encoding can write it.</summary>
     static readonly string Lone = ((char)0xD800).ToString();
 
+    /// <summary>The text to write to a file: a string as it is, anything else as JSON.</summary>
     static string Text(object? value) => value as string ?? Json(value);
 
     /// <summary>A case with these files in the working folder and these arguments (file names are relative to it).</summary>
@@ -40,6 +41,7 @@ public static partial class MapCases
     /// <summary>One file, live.json, a map of its own.</summary>
     static CommandCase Alone(string name, PyDict map, params string[] args) => Files(name, [("live.json", map)], ["live.json", .. args]);
 
+    /// <summary>The goblin hall place file with these keys replaced; a whole number is made a <c>long</c>, as the JSON reader makes it.</summary>
     static PyDict Hall(params (string, object?)[] changes)
     {
         var map = Place();
@@ -48,6 +50,7 @@ public static partial class MapCases
         return map;
     }
 
+    /// <summary>The standard scene (<see cref="MapFixtures.Scene"/>) with these keys replaced.</summary>
     static PyDict OnHall(params (string, object?)[] changes)
     {
         var scene = Scene_();
@@ -56,17 +59,21 @@ public static partial class MapCases
         return scene;
     }
 
+    /// <summary>The standard scene, under a name that does not clash with <see cref="Scene"/>, the case builder.</summary>
     static PyDict Scene_() => MapFixtures.Scene();
 
+    /// <summary>Two creatures: Thorin, a player character on B2, and a goblin boss, an enemy on E2.</summary>
     static object?[] Pair => [Obj(("id", "@"), ("name", "Thorin"), ("kind", "pc"), ("at", "B2")),
                               Obj(("id", "1"), ("name", "Goblin boss"), ("kind", "enemy"), ("at", "E2"))];
 
+    /// <summary>A number of creatures all in one cell, alternating enemy and ally, to crowd it.</summary>
     static List<object?> Crowd(int count, string at = "B2") =>
         Enumerable.Range(0, count).Select(n => (object?)Obj(("id", n.ToString()), ("name", $"Orc{n}"),
             ("kind", n % 2 == 0 ? "enemy" : "ally"), ("at", at))).ToList();
 
     // ---------- the cases ----------
 
+    /// <summary>The maps that must draw: places and scenes at every scale, shared cells, merging with a base, and <c>--png</c>.</summary>
     static IEnumerable<CommandCase> Drawn()
     {
         yield return Scene("a scene on its base", Scene_());
@@ -183,6 +190,7 @@ public static partial class MapCases
         yield return Scene("png abbreviated", Scene_(), "--pn");
     }
 
+    /// <summary><c>--measure</c> between cells at every scale, plus its edge cases (the same cell, a big map, an option as a value).</summary>
     static IEnumerable<CommandCase> Measured()
     {
         foreach (int cellFt in MapRules.Scales)
@@ -215,6 +223,7 @@ public static partial class MapCases
         yield return Scene("measure after a scale error", Obj(("base", "goblin-hall"), ("cell_ft", 7)), "--measure", "B2", "C3");
     }
 
+    /// <summary>Map files and bases that the checker rejects, one case for each message, plus a few that are accepted (listed in <see cref="Fine"/>).</summary>
     static IEnumerable<CommandCase> Rejected()
     {
         // The messages the Python tests look for, one by one.
@@ -332,6 +341,7 @@ public static partial class MapCases
             yield return Files($"broken json #{n}", [("live.json", texts[n])], "live.json");
     }
 
+    /// <summary>Command lines argparse would reject or accept: unknown and abbreviated options, missing values, a double dash.</summary>
     static IEnumerable<CommandCase> Arguments()
     {
         CommandCase Args(string name, params string[] args) => Files(name, [("goblin-hall.json", Place()), ("live.json", Scene_())], args);
@@ -392,6 +402,7 @@ public static partial class MapCases
         "a double dash", "the options between", "a repeated flag",
     ];
 
+    /// <summary>True for a case that is not an error: one named in <see cref="Fine"/>, or a <c>--measure</c> case at some scale.</summary>
     static bool IsFine(CommandCase test) =>
         Fine.Contains(test.Name) || Regex.IsMatch(test.Name, @"^measure .* to .* at \d+ ft$");
 
@@ -475,6 +486,7 @@ public sealed class MapCaseTests
 
 }
 
+/// <summary>Variations of a <see cref="CommandCase"/>: the same case with a file added or replaced in its working folder.</summary>
 static class CommandCaseExtensions
 {
     /// <summary>The same case with a different place file (goblin-hall.json).</summary>

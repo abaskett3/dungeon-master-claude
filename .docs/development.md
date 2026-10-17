@@ -93,7 +93,7 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 4. builds the tests and installs Playwright's Chromium through `pwsh`;
 5. runs `dotnet test` with `DMC_TEST_RELEASE_DIR` set.
 
-`.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Packages.props`). On a pull request it is a dry run: it builds, packs and installs every platform's archive with `get-dmc` and publishes nothing. See [releases.md](releases.md).
+`.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Build.props`, `Directory.Packages.props`, `global.json`). On a pull request it is a dry run: it builds, packs and installs every platform's archive with `get-dmc` and publishes nothing. See [releases.md](releases.md).
 
 ## Git and pull requests
 
@@ -111,11 +111,22 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull requests" bullets) requires every change to update its documentation in the same PR; a PR that leaves it stale is not finished:
 
-- **in code**, an XML doc comment on every type and member the change adds or changes, private ones included (the build catches only missing public ones, from PR #24), and a header comment on every script and workflow it adds or changes;
+- **in code**, an XML doc comment on every type and member the change adds or changes, private ones included (the build catches only missing visible ones, see below), and a header comment on every script and workflow it adds or changes;
 - **in `.docs/`**, the documents that describe what changed, including [roadmap.md](roadmap.md) for status and [decisions.md](decisions.md) for any decision and its reason. A change to `CLAUDE.md`, a skill or a template changes how the product behaves, so it counts;
 - **in the PR description**, which documents changed, or why none needed to.
 
 `CLAUDE.md` is the rule's home; this section only describes it. The toolkit tests check that the `.docs/` paths the prompts name exist.
+
+#### What the build checks (PR #24)
+
+`Directory.Build.props` sets `GenerateDocumentationFile`, which makes the compiler report CS1591 (no XML comment on a visible type or member) and check that every comment is well formed. What is enforced, as of PR #24:
+
+- **`src/Dmc.Cli`:** a missing comment on a public (or otherwise visible) member is a build error, because the project treats warnings as errors. A malformed comment (a `param` tag for some parameters but not all, a `cref` that does not resolve) is an error for the same reason.
+- **`tests/Dmc.Tests`, comment correctness, every file:** CS1570 to CS1574, CS1580, CS1584, CS1587, CS1589 and CS1590 are errors (`WarningsAsErrors` in `Dmc.Tests.csproj`).
+- **`tests/Dmc.Tests`, a comment on every visible member:** CS1591 is an error everywhere except in the files that hold MSTest test classes, `*Tests.cs`, `*Contract.cs` and `*Cases.cs`, where `tests/Dmc.Tests/.editorconfig` turns it off. Those files need public test methods, which go without a comment when their name says what they prove. `Support/`, the `*Fixtures.cs` files and `Bootstrap.cs` are fully checked.
+- **Not checked by the compiler, but required by the rule above:** private and internal members anywhere, and the classes, helpers and stubs inside the exempt test files. Keep these documented, and check them in review.
+- **Generated code** (`[GeneratedRegex]` output) is skipped by the compiler and needs no comments.
+- **Release output:** `PublishDocumentationFile` is false in `Dmc.Cli.csproj`, so `dmc.xml` is not published, and the release archives stay at four files.
 
 ## Writing prompts
 

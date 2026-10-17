@@ -11,10 +11,12 @@ public static class PdfFile
     /// Open the PDF with PdfPig. A PDF with a user password is refused with the script's message; one with only an
     /// owner password (print or copy restrictions, as commercial modules often have) opens, as it does in PyMuPDF.
     /// </summary>
+    /// <param name="path">The PDF file.</param>
     /// <param name="libsslAvailable">
     /// Whether OpenSSL can be loaded, for a test to say so on any OS. Null: on Linux ask the system, elsewhere never
     /// check (Windows and macOS do not use OpenSSL).
     /// </param>
+    /// <exception cref="DmcException">The PDF needs a password, is encrypted on a machine without libssl, or cannot be read.</exception>
     public static PdfDocument Open(string path, Func<bool>? libsslAvailable = null)
     {
         // PdfPig decrypts with System.Security.Cryptography, which on Linux is OpenSSL. Where libssl is missing the
@@ -35,6 +37,7 @@ public static class PdfFile
         }
     }
 
+    /// <summary>True when one of the OpenSSL libraries (<c>libssl.so.3</c>, <c>libssl.so.1.1</c>, <c>libssl.so</c>) can be loaded. Only meaningful on Linux.</summary>
     public static bool HasLibssl()
     {
         foreach (string name in new[] { "libssl.so.3", "libssl.so.1.1", "libssl.so" })
@@ -54,6 +57,8 @@ public static class PdfFile
     /// cross-reference stream sits, however much compressed data follows it. A guess in the safe direction: a false "yes"
     /// only matters when libssl is missing.
     /// </summary>
+    /// <param name="path">The PDF file.</param>
+    /// <returns>True when the marker is found in those places.</returns>
     public static bool LooksEncrypted(string path)
     {
         using var file = File.OpenRead(path);

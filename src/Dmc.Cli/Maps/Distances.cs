@@ -7,6 +7,12 @@ namespace Dmc.Maps;
 /// </summary>
 public static class Distances
 {
+    /// <summary>
+    /// Squares between the nearest pair of cells of two creatures, counted the 5e way: the larger of the column and
+    /// row differences. A creature that covers several cells is as near as its nearest cell.
+    /// </summary>
+    /// <param name="a">The cells of one creature. Must not be empty.</param>
+    /// <param name="b">The cells of the other. Must not be empty.</param>
     public static int SquaresBetween(IEnumerable<(int Col, int Row)> a, IEnumerable<(int Col, int Row)> b)
     {
         var bList = b.ToList();
@@ -25,6 +31,9 @@ public static class Distances
     }
 
     /// <summary>A distance in squares as text: feet on a foot-scale map, whole miles on an overland one.</summary>
+    /// <param name="squares">The distance in squares.</param>
+    /// <param name="cellFt">Feet in one square, from <see cref="MapRules.Scales"/>.</param>
+    /// <returns>For example "30 ft", or "1 mile" / "6 miles" (miles round half to even).</returns>
     public static string FormatDistance(double squares, int cellFt)
     {
         if (MapRules.IsOverland(cellFt))
@@ -49,6 +58,10 @@ public static class Distances
         return "about " + FormatDistance(squares, cellFt);
     }
 
+    /// <summary>The distance between two creatures as text: <see cref="SquaresApart"/> run through <see cref="DistanceText"/>.</summary>
+    /// <param name="a">The cells of one creature.</param>
+    /// <param name="b">The cells of the other.</param>
+    /// <param name="cellFt">Feet in one square.</param>
     public static string Distance(IReadOnlyList<(int Col, int Row)> a, IReadOnlyList<(int Col, int Row)> b, int cellFt) =>
         DistanceText(SquaresApart(a, b, cellFt), cellFt);
 

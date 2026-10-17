@@ -9,8 +9,10 @@ namespace Dmc.Tests.Map;
 [TestClass]
 public sealed class BrowserTests
 {
+    /// <summary>The test's temporary working folder, holding the goblin hall and the standard scene.</summary>
     string _folder = "";
 
+    /// <summary>Creates the working folder and writes the map files into it.</summary>
     [TestInitialize]
     public void MakeFolder()
     {

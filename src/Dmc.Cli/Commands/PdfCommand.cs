@@ -15,10 +15,13 @@ namespace Dmc.Commands;
 /// </remarks>
 public sealed class PdfCommand : ICommand
 {
+    /// <inheritdoc />
     public string Name => "pdf";
 
+    /// <inheritdoc />
     public string Summary => "text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]";
 
+    /// <summary>The text <c>--help</c> prints: usage, the files written and what each option means.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
 usage: dmc pdf info   <pdf> [--pages 1-20,35]
@@ -37,10 +40,16 @@ Page numbers are PDF page numbers, starting at 1.
   --out    output folder
 """.Replace("\r\n", "\n");
 
+    /// <summary>The options <see cref="Argparse"/> recognises, and may be given as a unique prefix of.</summary>
     static readonly string[] Options = ["--help", "--pages", "--dpi", "--out"];
 
+    /// <summary>The words allowed as the first plain argument, and what each does (see <see cref="PdfExtractor"/>).</summary>
     internal static readonly string[] Commands = ["info", "text", "render", "all"];
 
+    /// <summary>Reads the arguments and hands the request to <see cref="PdfExtractor.Run"/>; <c>--help</c> prints <see cref="Help"/> instead.</summary>
+    /// <param name="args">The arguments after <c>pdf</c>.</param>
+    /// <param name="io">Standard output gets the report, or the help text.</param>
+    /// <returns>0 on success or <c>--help</c>. A usage mistake throws <see cref="DmcException"/> with exit code 2.</returns>
     public int Run(string[] args, Io io)
     {
         var request = Parse(args);
@@ -53,6 +62,16 @@ Page numbers are PDF page numbers, starting at 1.
     }
 
     /// <summary>Read the arguments as <c>argparse</c> does, in order, with its messages. Null means "--help".</summary>
+    /// <param name="args">The arguments after <c>pdf</c>.</param>
+    /// <returns>
+    /// The request, with <c>--dpi</c> clamped into 0 to one above <see cref="PdfExtractor.MaxDpi"/> (the extractor
+    /// rejects anything outside 1 to the maximum, so the clamp only keeps a huge number in range); null for
+    /// <c>--help</c>.
+    /// </returns>
+    /// <exception cref="DmcException">
+    /// A usage mistake, exit code 2: a bad command word, a missing or extra argument, an option with no value or an
+    /// unknown one, a <c>--dpi</c> that is not an integer, or an explicit value given to <c>--help</c>.
+    /// </exception>
     static PdfRequest? Parse(string[] args)
     {
         string? command = null, pdf = null, pages = null, output = null;

@@ -10,6 +10,7 @@ namespace Dmc.Tests.Distribution;
 [TestClass]
 public sealed class GetDmcTests
 {
+    /// <summary>The environment that points get-dmc at a local folder of archives, plus any further variables (a null value removes one).</summary>
     static Dictionary<string, string?> From(string assets, params (string Name, string? Value)[] more)
     {
         var environment = new Dictionary<string, string?> { ["DMC_GET_TEST_ASSETS"] = assets };
@@ -18,6 +19,10 @@ public sealed class GetDmcTests
         return environment;
     }
 
+    /// <summary>
+    /// Asserts that get-dmc refused: exit code 1, nothing on stdout, one stderr line starting "get-dmc: " and holding
+    /// <paramref name="message"/>, and nothing installed or left in <c>bin/</c>.
+    /// </summary>
     static void AssertRefused(Dmc.Tests.Support.ProcessResult result, ToolkitCopy toolkit, string message)
     {
         Assert.AreEqual(1, result.ExitCode, result.ToString());
@@ -144,6 +149,7 @@ public sealed class GetDmcTests
         }
     }
 
+    /// <summary>The tag of the made-up release of <see cref="JunkReleases"/>.</summary>
     const string JunkTag = "dmc-v9.8.7";
 
     /// <summary>A toolkit pinning every runtime identifier to a hash that its archive, which is junk, does not have.</summary>

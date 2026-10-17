@@ -15,16 +15,23 @@ namespace Dmc.Tests.Pdf;
 /// </summary>
 public abstract partial class PdfCommandContract
 {
+    /// <summary>The test's temporary working folder.</summary>
     string _folder = "";
+
+    /// <summary>The path of <c>module.pdf</c>, the four-page PDF written into the working folder for every test.</summary>
     string _pdf = "";
+
+    /// <summary>The output folder, <c>out</c> in the working folder; created by the command.</summary>
     string _out = "";
 
     /// <summary>Run <c>dmc pdf</c> with these arguments.</summary>
     protected abstract ProcessResult Pdf(params string[] args);
 
+    /// <summary>The <c>info</c> line of the made-up PDF's first page: 17 characters, no images, letter size.</summary>
     [GeneratedRegex(@"^p1: 17 chars, 0 images, 8\.5 x 11\.0 in$")]
     private static partial Regex FirstPageLine();
 
+    /// <summary>Creates the working folder and writes the four-page PDF into it.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
@@ -35,6 +42,7 @@ public abstract partial class PdfCommandContract
         File.WriteAllBytes(_pdf, SilverEgg());
     }
 
+    /// <summary>Deletes the working folder.</summary>
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
@@ -42,6 +50,7 @@ public abstract partial class PdfCommandContract
     ProcessResult Extract(string command, string[] args, string? pdf = null, bool outFolder = true) =>
         Pdf([command, pdf ?? _pdf, .. args, .. outFolder ? new[] { "--out", _out } : []]);
 
+    /// <summary><see cref="Extract(string, string[], string?, bool)"/> on the standard PDF, with <c>--out</c>.</summary>
     ProcessResult Extract(string command, params string[] args) => Extract(command, args, pdf: null);
 
     /// <summary>The sorted names in a folder of the output, or null if it is not there.</summary>
@@ -53,8 +62,10 @@ public abstract partial class PdfCommandContract
             : null;
     }
 
+    /// <summary>A file of the output folder (its path given in parts) as text, with LF line endings.</summary>
     string Read(params string[] parts) => File.ReadAllText(Path.Combine([_out, .. parts]), Encoding.UTF8).Replace("\r\n", "\n");
 
+    /// <summary>Asserts that the run failed with this exit code and an error line that starts "dmc pdf: " and holds <paramref name="expected"/>, and that nothing was written.</summary>
     void AssertFails(ProcessResult result, string expected, int exitCode = 1)
     {
         Assert.AreEqual(exitCode, result.ExitCode, result.ToString());
@@ -378,6 +389,7 @@ public abstract partial class PdfCommandContract
 [TestClass]
 public sealed class PdfInProcessTests : PdfCommandContract
 {
+    /// <summary>Runs <c>dmc pdf</c> in this process.</summary>
     protected override ProcessResult Pdf(params string[] args) => DmcRunner.InProcess(["pdf", .. args]);
 }
 
@@ -385,5 +397,6 @@ public sealed class PdfInProcessTests : PdfCommandContract
 [TestClass]
 public sealed class PdfBlackBoxTests : PdfCommandContract
 {
+    /// <summary>Runs <c>dmc pdf</c> as the published binary, in a subprocess.</summary>
     protected override ProcessResult Pdf(params string[] args) => DmcRunner.BlackBox(["pdf", .. args]);
 }

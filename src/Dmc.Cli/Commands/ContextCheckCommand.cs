@@ -15,12 +15,22 @@ namespace Dmc.Commands;
 /// </summary>
 public sealed class ContextCheckCommand : ICommand
 {
+    /// <inheritdoc />
     public string Name => "context-check";
 
+    /// <inheritdoc />
     public string Summary => "read the hook's JSON on stdin; print a line when the context is large (never fails)";
 
+    /// <summary>True: this runs in a hook, so it prints nothing and exits 0 on any failure, and skips the stale-binary check.</summary>
     public bool NeverFails => true;
 
+    /// <summary>
+    /// Reads the hook's JSON from standard input and prints the <see cref="BreakReminder"/> line for the session's
+    /// current context size, or nothing when the size is below the threshold or cannot be found.
+    /// </summary>
+    /// <param name="args">Ignored: the hook passes everything on standard input.</param>
+    /// <param name="io">Standard input is the hook's JSON; standard output gets the line.</param>
+    /// <returns>Always 0.</returns>
     // No catch here: a failure anywhere in this method is swallowed by CommandLine, which is the one place that
     // enforces "never fails" (see NeverFails). The line is written last, so a failure leaves no partial output.
     public int Run(string[] args, Io io)
@@ -32,6 +42,12 @@ public sealed class ContextCheckCommand : ICommand
     }
 
     /// <summary>The context size the hook's input points at; 0 when it points at nothing usable.</summary>
+    /// <param name="input">The hook's JSON; empty text counts as <c>{}</c>.</param>
+    /// <returns>
+    /// The last context size in the log that <c>transcript_path</c> names (a leading <c>~</c> is expanded), or 0 when
+    /// the JSON is not an object or has no non-empty string <c>transcript_path</c>.
+    /// </returns>
+    /// <exception cref="System.Text.Json.JsonException">The input is not valid JSON. The caller lets it through; <see cref="CommandLine"/> turns it into silence.</exception>
     internal static long ContextOfHook(string input)
     {
         using var hook = JsonDocument.Parse(string.IsNullOrEmpty(input) ? "{}" : input);
@@ -48,6 +64,9 @@ public sealed class ContextCheckCommand : ICommand
     /// only on Windows, where <c>ntpath</c> takes both separators. On Linux and macOS (<c>posixpath</c>) a
     /// backslash is an ordinary character, so <c>~\x</c> is a file name in the current folder.
     /// </summary>
+    /// <param name="path">A file path, possibly starting with <c>~</c>. Other forms (<c>~user</c>) are left as they are.</param>
+    /// <param name="windows">True to treat <c>~\</c> as the home folder too (the real program passes <see cref="OperatingSystem.IsWindows"/>).</param>
+    /// <returns>The path with a leading <c>~</c> replaced by the user's profile folder.</returns>
     internal static string ExpandUser(string path, bool windows)
     {
         bool home = path == "~" || path.StartsWith("~/", StringComparison.Ordinal)

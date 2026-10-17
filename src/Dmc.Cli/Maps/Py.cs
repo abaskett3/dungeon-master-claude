@@ -45,6 +45,7 @@ public static class Py
     public static string FromCodePoint(int codePoint) =>
         codePoint is >= 0xD800 and <= 0xDFFF ? ((char)codePoint).ToString() : char.ConvertFromUtf32(codePoint);
 
+    /// <summary>The text of a run of code points, each as <see cref="FromCodePoint"/> gives it.</summary>
     public static string FromCodePoints(IEnumerable<int> codePoints)
     {
         var builder = new StringBuilder();
@@ -168,10 +169,12 @@ public static class Py
     public static string HtmlEscape(string text) =>
         text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#x27;");
 
+    /// <summary>Python's <c>str.isalpha</c> for one code point: a letter of any script (Unicode categories Lu, Ll, Lt, Lm and Lo).</summary>
     public static bool IsAlpha(int cp) =>
         CharUnicodeInfo.GetUnicodeCategory(cp) is UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
             or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter or UnicodeCategory.OtherLetter;
 
+    /// <summary>A decimal digit of any script (Unicode category Nd), which Python's <c>int()</c> accepts and <c>[0-9]</c> does not.</summary>
     public static bool IsDigit(int cp) => CharUnicodeInfo.GetUnicodeCategory(cp) == UnicodeCategory.DecimalDigitNumber;
 
     // ---------- values ----------
@@ -207,6 +210,7 @@ public static class Py
         _ => value.ToString() ?? "",
     };
 
+    /// <summary>Python's <c>repr(str)</c>: quoted, with the quote character chosen and the non-printable characters escaped as Python does.</summary>
     static string StringRepr(string text)
     {
         // Python picks single quotes unless the text has a single quote and no double quote.
@@ -236,6 +240,7 @@ public static class Py
         return builder.Append(quote).ToString();
     }
 
+    /// <summary>Python's <c>str.isprintable</c> for one code point above ASCII: false for control, format, surrogate, private-use, unassigned and separator characters.</summary>
     static bool IsPrintable(int cp) =>
         cp is not (>= 0xD800 and <= 0xDFFF)
         && CharUnicodeInfo.GetUnicodeCategory(cp) is not (UnicodeCategory.Control or UnicodeCategory.Format
@@ -330,6 +335,9 @@ public static class Py
     /// <summary>Python's <c>f"{value:.0f}"</c>.</summary>
     public static string F0(double value) => Fixed(value, 0);
 
+    /// <summary>A number with a fixed count of decimals, as Python's <c>format(value, ".Nf")</c> writes it. See <see cref="F1"/> for why it is not .NET's "F".</summary>
+    /// <param name="value">The number; NaN and the infinities print as Python's <c>nan</c>, <c>inf</c> and <c>-inf</c>.</param>
+    /// <param name="digits">Digits after the decimal point.</param>
     static string Fixed(double value, int digits)
     {
         if (double.IsNaN(value))

@@ -15,16 +15,23 @@ namespace Dmc.Tests.Map;
 /// </summary>
 public abstract partial class MapCommandContract
 {
+    /// <summary>The test's temporary working folder, holding the map files.</summary>
     string _folder = "";
+
+    /// <summary>The path of <c>goblin-hall.json</c>, the place file written for every test.</summary>
     string _place = "";
+
+    /// <summary>The path of <c>live.json</c>, the scene file written for every test.</summary>
     string _scene = "";
 
     /// <summary>Run <c>dmc map</c> with these arguments.</summary>
     protected abstract ProcessResult Map(params string[] args);
 
+    /// <summary>A marker such as <c>@BG@</c> that <see cref="MapPage"/> should have replaced; finding one in the page is a bug.</summary>
     [GeneratedRegex(@"@[A-Z]+@")]
     private static partial Regex Placeholder();
 
+    /// <summary>Creates the working folder and writes the goblin hall and the standard scene into it.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
@@ -34,9 +41,11 @@ public abstract partial class MapCommandContract
         _scene = Write("live.json", Scene());
     }
 
+    /// <summary>Deletes the working folder.</summary>
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Write a map file (JSON, or the text itself if given as a string) in the working folder and return its path.</summary>
     string Write(string name, object data)
     {
         WriteFile(_folder, name, data);
@@ -51,6 +60,7 @@ public abstract partial class MapCommandContract
         return map;
     }
 
+    /// <summary>The files in the working folder other than the input maps: what a run wrote (<c>live.html</c>, <c>live-data.js</c>, <c>live.png</c>).</summary>
     string[] Outputs() => Directory.GetFileSystemEntries(_folder).Select(Path.GetFileName).OfType<string>()
         .Except(["goblin-hall.json", "live.json", "overland.json", "old.json"]).Order(StringComparer.Ordinal).ToArray();
 
@@ -62,6 +72,7 @@ public abstract partial class MapCommandContract
         return _scene;
     }
 
+    /// <summary>Asserts that <c>dmc map</c> with these arguments fails: exit code 1, an error line that holds <paramref name="expected"/>, and no output file written.</summary>
     void AssertFails(string expected, params string[] args)
     {
         var before = Outputs();
@@ -72,8 +83,10 @@ public abstract partial class MapCommandContract
         CollectionAssert.AreEqual(before, Outputs(), "a rejected map must not be drawn");
     }
 
+    /// <summary>A file of the working folder as text, with LF line endings.</summary>
     string ReadFile(string name) => File.ReadAllText(Path.Combine(_folder, name), Encoding.UTF8).Replace("\r\n", "\n");
 
+    /// <summary>The object inside the <c>dmcMap(...);</c> call of <c>live-data.js</c>, after checking that the file is exactly that call.</summary>
     JsonElement Payload()
     {
         string script = ReadFile("live-data.js");
@@ -328,6 +341,7 @@ public abstract partial class MapCommandContract
 [TestClass]
 public sealed class MapInProcessTests : MapCommandContract
 {
+    /// <summary>Runs <c>dmc map</c> in this process.</summary>
     protected override ProcessResult Map(params string[] args) => DmcRunner.InProcess(["map", .. args]);
 }
 
@@ -335,5 +349,6 @@ public sealed class MapInProcessTests : MapCommandContract
 [TestClass]
 public sealed class MapBlackBoxTests : MapCommandContract
 {
+    /// <summary>Runs <c>dmc map</c> as the published binary, in a subprocess.</summary>
     protected override ProcessResult Map(params string[] args) => DmcRunner.BlackBox(["map", .. args]);
 }

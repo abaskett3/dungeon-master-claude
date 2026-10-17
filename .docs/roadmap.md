@@ -1,0 +1,70 @@
+# Roadmap
+
+This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-10-17; the PRs and issues named are on GitHub.
+
+## Status by area
+
+| Area | Status | Notes |
+|---|---|---|
+| Move the tooling to one .NET 10 program, `dmc` (issue #3) | Done | Closed by PR #16. Phases below. |
+| Releases 0.1.0 and 0.1.1 | Done | Published and pinned (PR #17, PR #21). See [releases.md](releases.md). |
+| `dmc digest show` (PR #18) | Done | Shipped in 0.1.1. |
+| Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
+| Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
+| Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
+| Product documents in `.docs/` (PR #23) | Done | This folder. |
+| Code documentation: XML doc comments, script and workflow headers (PR #24) | In review | Due to merge straight after PR #23; it turns on the build's check for missing public doc comments. Mark this row done when it merges. |
+| `dmc roll "label:expr@target"`, issue #6 Phase 2a | Next | |
+| Turn order drawn on the map, issue #6 Phase 2b | Next | |
+| Release 0.1.2 | Next | Ships Phase 2a and 2b. |
+| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
+| Split the combat tracker into `combat.md` | Not planned unless needed | |
+| A Stop hook that warns about unshown rolls | Not planned unless needed | |
+| Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
+
+## Done
+
+### Issue #3: one native CLI
+
+| Phase | What | PRs |
+|---|---|---|
+| Phase 0 | Spike: Native AOT works on Windows, Linux and macOS with the chosen libraries; decision to ship AOT everywhere, Linux on Ubuntu 22.04 | Decision comment on issue #3 |
+| Maps to scale | Every map drawn to a standard scale, in the Python renderer before the port | #5, #7 |
+| Phase 1 | Skeleton: `dmc` with `roll` and `context-check`, the test project, the parity check, CI on three systems | #8 |
+| Phase 2 | `dmc map`, the map format moved to `map-format.md`, Playwright tests | #9 |
+| Phase 3 | `dmc pdf` | #11, #12 |
+| Phase 4 | `dmc digest` | #13 |
+| Phase 5 | `dmc play`, `get-dmc`, the release pin, the bootstrap launchers and the release workflow | #14, #15 |
+| Phase 6 | Switch-over: prompts, settings and README point at `dmc`; the Python scripts, Python tests and parity check deleted | #16 (closes #3) |
+
+### Since issue #3
+
+- **0.1.0** published and pinned (PR #17), which let the switch-over merge.
+- **PR #18:** `dmc digest digest` renamed to `dmc digest show`.
+- **PR #19:** issue #6 Phase 1, the combat-procedure rules in `CLAUDE.md`, the skills and the templates.
+- **PR #20:** developer builds report `0.0.0-dev` and publish to `artifacts/bin`, so `get-dmc` replaces any stray build in `bin/`.
+- **0.1.1** published and pinned (PR #21).
+- **PR #22:** the rule that every change updates its documentation.
+- **PR #23:** these product documents.
+- **PR #24** (in review): XML doc comments throughout the code, and header comments on scripts and workflows.
+
+## Next: issue #6
+
+Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase 1 is done. What remains:
+
+1. **Phase 2a, labelled rolls.** `dmc roll "label:expr@target"` prints a line ready to paste, with the label, the dice, the total, the target and whether it hits, for example `Goblin, shortbow: 1d20+4 [11] +4 = 15 vs AC 14, hit`. The bare syntax keeps working. Today `CLAUDE.md` § Dice has DMC add the label and target around `dmc`'s line by hand; this removes the retyping.
+2. **Phase 2b, turn order on the map.** `live.json` gains `"initiative"` (the order) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked, so the player can plan who acts when.
+3. **Release 0.1.2**, so players get both. The prompts that use them should merge with the release, as in [releases.md](releases.md).
+4. **Phase 3, check it worked.** Play one fight, run `/review-transcript` on that session, and check that the map never ran ahead of the narration, every enemy option was stated, readied actions were said back, every roll was shown and movement stayed consistent.
+5. **Close issue #6.**
+
+Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](campaign-files.md) (for `live.json`) and this roadmap, under the documentation rule.
+
+## Not planned unless needed
+
+- **A separate `combat.md`.** Moving the combat tracker out of `game-state.md` into its own small file, rewritten whole once per reply, would make fight bookkeeping cheaper and immune to stale edits. Issue #6 lists it as an option; Phase 1 instead asked for one edit per reply that replaces the tracker block. Revisit if Phase 3 shows bookkeeping still costs too much.
+- **A Stop hook for unshown rolls.** A hook that warns when a reply leaves out the rolls made in that turn. Issue #6 makes it optional, only if the rule in `CLAUDE.md` § Dice and the labelled rolls of Phase 2a are not enough.
+
+## Skipped
+
+- **Gatekeeper and SmartScreen checks.** Testing the unsigned `dmc` on a fresh Mac and a fresh Windows PC was left open through issue #3 and skipped by the user's decision; problems will be handled if they are reported.

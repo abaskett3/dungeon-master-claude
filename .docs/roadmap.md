@@ -7,16 +7,16 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Area | Status | Notes |
 |---|---|---|
 | Move the tooling to one .NET 10 program, `dmc` (issue #3) | Done | Closed by PR #16. Phases below. |
-| Releases 0.1.0 and 0.1.1 | Done | Published and pinned (PR #17, PR #21). See [releases.md](releases.md). |
+| Releases 0.1.0, 0.1.1 and 0.1.2 | Done | Published and pinned (PR #17, PR #21, PR #26). See [releases.md](releases.md). |
 | `dmc digest show` (PR #18) | Done | Shipped in 0.1.1. |
 | Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
-| `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | In review | Done in the code and prompts; needs release 0.1.2. |
-| Turn order drawn on the map, issue #6 Phase 2b (PR #25) | In review | Same PR. |
-| Release 0.1.2 | Next | Ships Phase 2a and 2b. After PR #25 merges: tag `dmc-v0.1.2`, then merge the pin PR; the prompts do not work with the pinned 0.1.1 until then. |
+| `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
+| Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
+| Release 0.1.2 | Done | Ships Phase 2a and 2b; pinned by PR #26. |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
@@ -47,15 +47,16 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #22:** the rule that every change updates its documentation.
 - **PR #23:** these product documents.
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
-- **PR #25** (in review): issue #6 Phase 2, labelled rolls and the turn order on the map.
+- **PR #25**: issue #6 Phase 2, labelled rolls and the turn order on the map.
+- **0.1.2** published and pinned (PR #26).
 
 ## Next: issue #6
 
 Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase 1 is done. What remains:
 
-1. **Phase 2a, labelled rolls (PR #25, in review).** `dmc roll "label:expr@target"` prints a line ready to paste, for example `Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit`, with a natural 20 or 1 deciding an attack. The bare syntax keeps working, and `dmc roll --help` is new. `CLAUDE.md` § Dice now has DMC call it and paste the line unchanged. Described in [dmc-reference.md](dmc-reference.md#label-and-target).
-2. **Phase 2b, turn order on the map (PR #25, in review).** `live.json` gains `"initiative"` (the order, by token id) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked, so the player can plan who acts when. Described in [campaign-files.md](campaign-files.md#the-map-files).
-3. **Release 0.1.2**, so players get both. The prompts that use them should merge with the release, as in [releases.md](releases.md).
+1. **Phase 2a, labelled rolls (PR #25, done).** `dmc roll "label:expr@target"` prints a line ready to paste, for example `Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit`, with a natural 20 or 1 deciding an attack. The bare syntax keeps working, and `dmc roll --help` is new. `CLAUDE.md` § Dice now has DMC call it and paste the line unchanged. Described in [dmc-reference.md](dmc-reference.md#label-and-target).
+2. **Phase 2b, turn order on the map (PR #25, done).** `live.json` gains `"initiative"` (the order, by token id) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked, so the player can plan who acts when. Described in [campaign-files.md](campaign-files.md#the-map-files).
+3. **Release 0.1.2** (done, PR #26), so players get both.
 4. **Phase 3, check it worked.** Play one fight, run `/review-transcript` on that session, and check that the map never ran ahead of the narration, every enemy option was stated, readied actions were said back, every roll was shown and movement stayed consistent.
 5. **Close issue #6.**
 

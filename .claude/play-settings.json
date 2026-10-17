@@ -41,6 +41,17 @@
     ]
   },
   "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(\"$CLAUDE_PROJECT_DIR/bin/dmc\" redraw 2>&1); s=$?; if [ \"$s\" = 2 ]; then printf '%s\\n' \"$out\" >&2; exit 2; fi; exit 0",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

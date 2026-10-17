@@ -17,7 +17,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
 | `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
-| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
+| Play fights and review them, issue #6 Phase 3 | Done | Two sparring bouts reviewed. Readied actions, shown rolls, enemy options and movement held; the map was drawn before the narration in all 6 updates. |
+| Redraw the map after the reply with a Stop hook, `dmc redraw`, issue #6 (PR #37) | Done (PR #37), not yet verified in play | Changes the binary and the play settings; it works only from release 0.1.3, once that is pinned. Prompt wording alone had failed 6 times out of 6. |
+| Check the hook and the plan / standing-orders rule in play, then close issue #6 | Next | See [Next](#next-issue-6). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -49,6 +51,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #37:** issue #6 Phase 3 fix, not yet verified in play. `dmc redraw` and a `Stop` hook in the play settings draw the map after DMC's reply instead of DMC running `dmc map` before it; `dmc map` records the file it drew in `maps/live-source.txt`. `CLAUDE.md` § Maps is shorter, and the remote-player picture rule is in the `draw-map` skill. Part of issue #6.
 - **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
 
 ## Next: issue #6
@@ -58,17 +61,24 @@ Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase
 - **Labelled rolls (PR #25).** `dmc roll "label:expr@target"` prints a line ready to paste, for example `Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit`, with a natural 20 or 1 deciding an attack. The bare syntax keeps working, and `dmc roll --help` is new. Described in [dmc-reference.md](dmc-reference.md#label-and-target).
 - **Turn order on the map (PR #25).** `live.json` gains `"initiative"` (the order, by token id) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked. Described in [campaign-files.md](campaign-files.md#the-map-files).
 
+What the Phase 3 play test (two sparring bouts) found, and what remains:
+
+- **Held:** readied actions said back with the blocking rules first, every DMC roll shown as `dmc`'s labelled line, enemy options stated with nothing used off the map, movement consistent, the turn order on the map.
+- **Failed:** the map was redrawn and the picture sent before the narration in all 6 map updates, because reply text written after a tool call appears after it and DMC wrote none before `dmc map`. Rewording `CLAUDE.md` could not be relied on, so PR #37 moves the redraw into a `Stop` hook (`dmc redraw`), which runs after the reply. It is **not yet verified**.
+- **Not exercised:** the plan and standing-orders rule.
+
 What remains:
 
-1. **Phase 3, check it worked.** Play one fight, run `/review-transcript` on that session, and check that the map never ran ahead of the narration, every enemy option was stated, readied actions were said back, every roll was shown and movement stayed consistent.
-2. **Close issue #6.**
+1. **Release 0.1.3 and its pin.** PR #33 (`dmc pdf` output all or nothing) and PR #37 (`dmc redraw`) change the binary. The Stop hook does nothing until the pinned `dmc` is 0.1.3 or later, and with an older one it stays silent and play carries on.
+2. **Play test, then close issue #6.** In a fight, check that every map update appears after the text that describes it, that a refused map file is reported and corrected, that a fight kept in a file other than `live.json` is followed, and, for a remote player, that `live.png` is sent after the text; and exercise the plan and standing-orders rule. Review the session with `/review-transcript`.
+3. **Follow-ups from the same review, tracked separately:** issue #35 (the break alert fires right after a resume; make it relative and make the resume cheaper) and issue #36 (DMC deleted campaign files; PR #38 addresses it).
 
 Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](campaign-files.md) (for `live.json`) and this roadmap, under the documentation rule.
 
 ## Not planned unless needed
 
-- **A separate `combat.md`.** Moving the combat tracker out of `game-state.md` into its own small file, rewritten whole once per reply, would make fight bookkeeping cheaper and immune to stale edits. Issue #6 lists it as an option; Phase 1 instead asked for one edit per reply that replaces the tracker block. Revisit if Phase 3 shows bookkeeping still costs too much.
-- **A Stop hook for unshown rolls.** A hook that warns when a reply leaves out the rolls made in that turn. Issue #6 makes it optional, only if the rule in `CLAUDE.md` § Dice and the labelled rolls of Phase 2a are not enough.
+- **A separate `combat.md`.** Moving the combat tracker out of `game-state.md` into its own small file, rewritten whole once per reply, would make fight bookkeeping cheaper and immune to stale edits. Issue #6 lists it as an option; Phase 1 instead asked for one edit per reply that replaces the tracker block. The Phase 3 play test showed the bookkeeping holding, so it is not needed yet; revisit if a later test shows it still costs too much.
+- **A Stop hook for unshown rolls.** A hook that warns when a reply leaves out the rolls made in that turn. The Phase 3 play test showed every roll shown, so the rule in `CLAUDE.md` § Dice and the labelled rolls of Phase 2a are enough and no hook is needed for rolls. (The `Stop` hook that exists, `dmc redraw`, is for the map.)
 
 ## Skipped
 

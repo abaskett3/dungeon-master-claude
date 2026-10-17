@@ -94,14 +94,14 @@ Against an armor class, a natural 20 hits and a natural 1 misses whatever the to
 When positions matter, DMC opens a map in your web browser: a grid with walls, terrain and a token for everyone in the scene. Keep the tab beside the terminal; it checks for changes every two seconds and redraws itself, with no reloading.
 
 - Squares are named by column letter and row number, as printed along the edges: `E4` is the fifth column of the fourth row, counting rows from the top. You can answer the same way: "I move to F4".
-- In a fight DMC describes what happened first and redraws the map after, so the map never shows a move you have not read about. If it ever does, tell DMC.
+- In a fight DMC changes the map file and finishes its reply, and the map redraws after the reply, so the picture normally changes only after the text that describes it. This is done by a hook in the play settings (`dmc redraw`), so it needs the launcher and a `dmc` of release 0.1.3 or later, and it does not apply to text maps. If a move ever shows before you have read about it, or the map does not change, tell DMC.
 - Hovering over a token shows who it is.
 - In a fight, a "Turn order" list beside the grid shows who acts when, numbered, with whose turn it is highlighted, so you can plan ahead.
 - Every map is to scale. Fights use 5 ft squares, or 30 ft squares for very large places; overland maps use 1, 6 or 60 miles a square.
 - The map shows only what your character has seen.
 - The map is a local file, `adventures/<campaign>/maps/live.html`. Nothing is uploaded.
 
-If you prefer text maps in the terminal, tell DMC.
+If you prefer text maps in the terminal, tell DMC. If you play away from the computer's screen (so you cannot keep the browser tab open), tell DMC that too: it sends you the picture, `live.png`, after its reply text instead.
 
 ## Saving and breaks
 
@@ -147,7 +147,7 @@ Settings you can change:
 | Who rolls | you roll for your character and party checks, or DMC rolls everything |
 | How DMC's rolls are shown | dice, modifier, total and target; total only; narrated with no numbers |
 | Talking in character | free; or `strict`, where long speech in a fight costs what the rules say |
-| Maps | a picture in the browser (`browser`) or ASCII in the terminal (`text`) |
+| Maps | a picture in the browser (`browser`), ASCII in the terminal (`text`), or a picture sent to you (`remote`) |
 | Also | DCs announced or not, secret rolls hidden or shown, suggested actions, rules explanations, recap length, narration length, content to avoid |
 
 ## Published modules

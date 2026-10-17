@@ -225,6 +225,106 @@ public sealed partial class ToolkitTests
         StringAssert.StartsWith(due.Stdout, "Context 163k, break due since 150k", due.ToString());
     }
 
+    /// <summary>The Stop hook's command in play-settings.json; fails unless there is exactly one.</summary>
+    static string StopHook()
+    {
+        string[] commands = (Settings("play-settings.json")["hooks"]?["Stop"]?.AsArray() ?? [])
+            .SelectMany(g => g!["hooks"]!.AsArray()).Select(h => (string)h!["command"]!).ToArray();
+        Assert.HasCount(1, commands, "play-settings.json needs one Stop hook: " + string.Join("\n", commands));
+        return commands[0];
+    }
+
+    /// <summary>
+    /// Seeds a toolkit folder for a Stop-hook test: an active campaign <c>test</c> whose <c>maps/live.json</c> holds
+    /// <paramref name="title"/>, drawn once with the published <c>dmc</c> when <paramref name="drawn"/> is true, as
+    /// <c>dmc map</c> does when DMC first shows a map.
+    /// </summary>
+    static Action<string> Campaign(string title, bool drawn = true) => project =>
+    {
+        string maps = Path.Combine(project, "adventures", "test", "maps");
+        Directory.CreateDirectory(maps);
+        File.WriteAllText(Path.Combine(project, "adventures", ".active-campaign"), "test\n");
+        File.WriteAllText(Path.Combine(maps, "live.json"), PlaceJson(title));
+        if (drawn)
+        {
+            var map = TestEnv.Run(DmcRunner.Binary(), ["map", Path.Combine(maps, "live.json")]);
+            Assert.AreEqual(0, map.ExitCode, map.ToString());
+        }
+    };
+
+    /// <summary>A small valid map file with this title; with <paramref name="refused"/>, one that <c>dmc map</c> refuses (rows of different lengths).</summary>
+    static string PlaceJson(string title, bool refused = false) =>
+        new JsonObject { ["title"] = title, ["grid"] = new JsonArray("#####", refused ? "#..#" : "#...#", "#####") }.ToJsonString();
+
+    /// <summary>Edits <c>maps/live.json</c> after the drawing: the picture is dated ten seconds back, then the file gets new text.</summary>
+    static Action<string> Edited(string title, bool refused = false) => project =>
+    {
+        Campaign("first")(project);
+        string live = Path.Combine(project, "adventures", "test", "maps", "live.json");
+        File.SetLastWriteTimeUtc(Path.Combine(Path.GetDirectoryName(live)!, "live-data.js"), DateTime.UtcNow.AddSeconds(-10));
+        File.WriteAllText(live, PlaceJson(title, refused));
+    };
+
+    /// <summary>Hook input as Claude Code sends it to a Stop hook.</summary>
+    static string StopInput(bool active) => new JsonObject { ["hook_event_name"] = "Stop", ["stop_hook_active"] = active }.ToJsonString();
+
+    [TestMethod]
+    public void PlayRedrawsTheMapAfterEachReplyAndOnlyRefusalsAreHeard()
+    {
+        string hook = StopHook();
+        StringAssert.Contains(hook, "\"$CLAUDE_PROJECT_DIR/bin/dmc\" redraw");
+
+        // Nothing changed, and nothing to draw: no output, exit 0.
+        foreach (var seed in new Action<string>?[] { Campaign("same"), null, Campaign("not drawn", drawn: false) })
+        {
+            var quiet = RunHook(hook, BinDmc.Published, _ => StopInput(false), seed);
+            Assert.AreEqual(0, quiet.ExitCode, quiet.ToString());
+            Assert.AreEqual("", quiet.Stdout + quiet.Stderr);
+        }
+
+        // A changed file is drawn again, silently; the hook runs in a subshell so that the picture can be read after it.
+        string showPicture = "(" + hook + "); echo \"hook exit $?\"; cat \"$CLAUDE_PROJECT_DIR/adventures/test/maps/live-data.js\"";
+        var drawn = RunHook(showPicture, BinDmc.Published, _ => StopInput(false), Edited("After the reply"));
+        Assert.AreEqual(0, drawn.ExitCode, drawn.ToString());
+        StringAssert.StartsWith(drawn.Stdout, "hook exit 0");
+        StringAssert.Contains(drawn.Stdout, "After the reply");
+        Assert.AreEqual("", drawn.Stderr);
+
+        // A refused file: one line on stderr and exit 2, which makes Claude Code hand it to DMC.
+        var refused = RunHook(hook, BinDmc.Published, _ => StopInput(false), Edited("Broken", refused: true));
+        Assert.AreEqual(2, refused.ExitCode, refused.ToString());
+        Assert.AreEqual("", refused.Stdout);
+        Assert.HasCount(1, refused.StderrLines, refused.ToString());
+        StringAssert.StartsWith(refused.Stderr, "dmc redraw: live.json was not drawn");
+
+        // With a Stop hook already active this turn, a refusal is not reported again.
+        var again = RunHook(hook, BinDmc.Published, _ => StopInput(true), Edited("Broken", refused: true));
+        Assert.AreEqual(0, again.ExitCode, again.ToString());
+        Assert.AreEqual("", again.Stdout + again.Stderr);
+    }
+
+    [TestMethod]
+    public void TheStopHookIsSilentWithoutADmcThatKnowsRedraw()
+    {
+        string hook = StopHook();
+        // A 0.1.2 dmc exits 1 with "unknown command"; no binary or one that is not a program exits 126 or 127. None may block or print.
+        Action<string> oldDmc = project =>
+        {
+            Campaign("same")(project);
+            string exe = Path.Combine(project, "bin", "dmc");
+            Directory.CreateDirectory(Path.GetDirectoryName(exe)!);
+            File.WriteAllText(exe, "#!/bin/sh\necho 'dmc: unknown command \"redraw\" (try roll, context-check, map, pdf, digest, play, --version)' >&2\nexit 1\n");
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(exe, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        };
+        foreach (var (dmc, seed) in new (BinDmc, Action<string>?)[] { (BinDmc.Missing, oldDmc), (BinDmc.Missing, Campaign("same", drawn: false)), (BinDmc.Junk, Campaign("same", drawn: false)) })
+        {
+            var result = RunHook(hook, dmc, _ => StopInput(false), seed);
+            Assert.AreEqual(0, result.ExitCode, $"{dmc}: {result}");
+            Assert.AreEqual("", result.Stdout + result.Stderr, dmc.ToString());
+        }
+    }
+
     [TestMethod]
     public void ThePlaySettingsKeepEverythingPlayNeeds()
     {

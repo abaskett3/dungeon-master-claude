@@ -5,7 +5,8 @@ namespace Dmc.Commands;
 /// <summary>
 /// <c>dmc map &lt;map.json&gt; [--png] [--open] [--measure FROM TO]</c>: replaced <c>scripts/map_render.py</c>. It checks a
 /// map file, draws it as <c>live.html</c> and <c>live-data.js</c> next to it, and prints the distances between the
-/// creatures. The format of a map file is in <c>.claude/skills/draw-map/map-format.md</c>.
+/// creatures, and records the file's name in <c>live-source.txt</c> so that <c>dmc redraw</c> knows which file the page shows.
+/// The format of a map file is in <c>.claude/skills/draw-map/map-format.md</c>.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (an option may be shortened to a unique prefix, and
@@ -67,31 +68,23 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         }
 
         string mapPath = parsed.Map!;
-        // --measure draws nothing, so a stale turn order must not stop it.
-        var model = MapChecker.Check(MapChecker.LoadMap(mapPath), turnOrder: parsed.Measure is null);
 
         if (parsed.Measure is not null)
         {
-            var a = Cells.Parse(parsed.Measure[0], model.Cols, model.Rows, "--measure");
-            var b = Cells.Parse(parsed.Measure[1], model.Cols, model.Rows, "--measure");
-            io.Out.WriteLine(Distances.MeasureText(a, b, model.CellFt));
+            // --measure draws nothing, so a stale turn order must not stop it.
+            var measured = MapChecker.Check(MapChecker.LoadMap(mapPath), turnOrder: false);
+            var a = Cells.Parse(parsed.Measure[0], measured.Cols, measured.Rows, "--measure");
+            var b = Cells.Parse(parsed.Measure[1], measured.Cols, measured.Rows, "--measure");
+            io.Out.WriteLine(Distances.MeasureText(a, b, measured.CellFt));
             return 0;
         }
 
-        string svg = SvgDrawing.Render(model);
-        string folder = Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "";
-        MapPage.WriteText(Path.Combine(folder, "live-data.js"), MapPage.Data(DateTime.Now, model.Title, svg));
-        string page = Path.Combine(folder, "live.html");
-        MapPage.WriteText(page, MapPage.Html);
-
+        // The drawing also records which file the page shows (maps/live-source.txt), for dmc redraw.
+        var (model, page, png) = MapRedraw.Draw(mapPath, parsed.Png);
         io.Out.WriteLine($"Drew \"{model.Title}\": {model.Cols} x {model.Rows} cells, {model.Tokens.Count} creatures.");
         io.Out.WriteLine($"Player's page: {page}");
-        if (parsed.Png)
-        {
-            string png = Path.Combine(folder, "live.png");
-            MapPng.Write(svg, png);
+        if (png is not null)
             io.Out.WriteLine($"Picture to check: {png}");
-        }
         foreach (string line in Distances.DistanceLines(model))
             io.Out.WriteLine(line);
         if (parsed.Open)

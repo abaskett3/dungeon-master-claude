@@ -14,6 +14,7 @@ public static class CommandTable
         new RollCommand(),
         new ContextCheckCommand(),
         new MapCommand(),
+        new RedrawCommand(),
         new PdfCommand(),
         new DigestCommand(),
         new PlayCommand(),

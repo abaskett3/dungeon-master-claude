@@ -24,14 +24,14 @@ public sealed record Label(int Col, int Row, string Text);
 /// <param name="North">"up", "right", "down", "left", or null when no direction is established.</param>
 /// <param name="Edges">Captions for the top, bottom, left and right, only the ones that say something.</param>
 /// <param name="Initiative">
-/// The turn order of a fight: the tokens, in the order they act, each one found by the name the file gave it.
+/// The turn order of a fight: the tokens, in the order they act, each found by the id or name the file gave it.
 /// Empty when the file has no <c>"initiative"</c>, and then nothing is drawn for it.
 /// </param>
-/// <param name="Current">The name of the creature whose turn it is, one of <paramref name="Initiative"/>, or null.</param>
+/// <param name="Current">The creature whose turn it is, one of <paramref name="Initiative"/>, or null.</param>
 public sealed record MapModel(string Title, string Notes, int[][] Grid, int Cols, int Rows,
     SortedDictionary<int, LegendEntry> Legend, int CellFt, string ScaleNote, string? North,
     IReadOnlyList<Token> Tokens, IReadOnlyList<Label> Labels, IReadOnlyDictionary<string, string> Edges,
-    IReadOnlyList<Token>? Initiative = null, string? Current = null);
+    IReadOnlyList<Token>? Initiative = null, Token? Current = null);
 
 /// <summary>The fixed rules of the map format: scales, symbols, terrains and kinds of creature.</summary>
 public static class MapRules

@@ -306,6 +306,12 @@ public abstract partial class MapCommandContract
 
         Write("live.json", With(Scene(), ("initiative", Arr("Thorin")), ("current", "Goblin boss")));
         AssertFails("\"current\" is \"Goblin boss\", who is not in \"initiative\"", _scene);
+
+        // A stale order never blocks a distance: --measure draws nothing and does not check it.
+        Write("live.json", With(Scene(), ("initiative", Arr("Gone")), ("current", "Gone")));
+        var measured = Map(_scene, "--measure", "B2", "E2");
+        Assert.AreEqual(0, measured.ExitCode, measured.ToString());
+        StringAssert.Contains(measured.Stdout, "B2 to E2");
     }
 
     [TestMethod]

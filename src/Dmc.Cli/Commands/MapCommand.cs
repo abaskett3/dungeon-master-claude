@@ -36,6 +36,10 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
 
     sealed record Arguments(string? Map, bool Png, bool Open, string[]? Measure, bool Help);
 
+    /// <summary>
+    /// Check the map and draw it (or, with <c>--measure</c>, print one distance and draw nothing). The turn order
+    /// (<c>"initiative"</c> and <c>"current"</c>) is checked and drawn only when drawing.
+    /// </summary>
     public int Run(string[] args, Io io)
     {
         var parsed = Parse(args);
@@ -46,7 +50,8 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         }
 
         string mapPath = parsed.Map!;
-        var model = MapChecker.Check(MapChecker.LoadMap(mapPath));
+        // --measure draws nothing, so a stale turn order must not stop it.
+        var model = MapChecker.Check(MapChecker.LoadMap(mapPath), turnOrder: parsed.Measure is null);
 
         if (parsed.Measure is not null)
         {

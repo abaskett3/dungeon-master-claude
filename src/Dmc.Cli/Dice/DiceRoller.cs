@@ -154,22 +154,21 @@ exactly as it always was.
         }
         string expr = rest.Trim(' ', '\t');
 
-        Match target = Match.Empty;
+        (bool Attack, int Number)? target = null;
         if (targetText is not null)
         {
-            target = Target().Match(targetText);
-            if (!target.Success || !int.TryParse(target.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out _))
+            var match = Target().Match(targetText);
+            if (!match.Success || !int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int wanted))
                 return Failed($"{prefix}{Printable(expr)}: target \"@{Printable(targetText)}\" is not @AC<n> or @DC<n> (try @AC14, @DC13)");
+            target = (string.Equals(match.Groups[1].Value, "ac", StringComparison.OrdinalIgnoreCase), wanted);
         }
 
         var outcome = Roll(expr);
         if (!outcome.Rolled)
             return Failed(prefix + outcome.Line);
-        if (targetText is null)
+        if (target is not (bool attack, int number))
             return outcome with { Line = prefix + outcome.Line };
 
-        bool attack = string.Equals(target.Groups[1].Value, "ac", StringComparison.OrdinalIgnoreCase);
-        int number = int.Parse(target.Groups[2].Value, CultureInfo.InvariantCulture);
         bool met = outcome.Total >= number;
         string note = "";
         if (attack && outcome.Natural == 20)

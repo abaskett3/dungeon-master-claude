@@ -33,6 +33,7 @@ public sealed partial class ErrorPathTests
         Assert.AreEqual("", result.Stdout + result.Stderr, what);
     }
 
+    /// <summary>Command lines of <c>dmc roll</c> that must fail with one line, labels and targets included.</summary>
     public static IEnumerable<object[]> RollErrors { get; } =
     [
         [Array.Empty<string>()], // no command at all

@@ -77,15 +77,15 @@ public sealed class MapCheckingTests
 
     /// <summary>
     /// Issue #6, finding 5: the optional <c>"initiative"</c> and <c>"current"</c> keys of a fight are checked against the
-    /// tokens, with one-line errors.
+    /// tokens, with one-line errors. An entry is a token's id, or the name of exactly one token.
     /// </summary>
     [TestMethod]
     public void TheTurnOrderIsCheckedAgainstTheTokens()
     {
         var tokens = WithTokens(SceneTokens());
-        var m = Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin"));
+        var m = Checked(tokens, ("initiative", Arr("Goblin boss", "@")), ("current", "Thorin"));
         CollectionAssert.AreEqual(new[] { "Goblin boss", "Thorin" }, m.Initiative!.Select(t => t.Name).ToArray());
-        Assert.AreEqual("Thorin", m.Current);
+        Assert.AreEqual("Thorin", m.Current!.Name);
 
         // Neither key (or both null) is no turn order at all.
         foreach (var none in new[] { Checked(tokens), Checked(tokens, ("initiative", null), ("current", null)) })
@@ -96,13 +96,61 @@ public sealed class MapCheckingTests
         // Between turns: an order and no one in particular.
         Assert.IsNull(Checked(tokens, ("initiative", Arr("Thorin"))).Current);
 
-        Rejected("is not the name of any token", tokens, ("initiative", Arr("Thorin", "Zed")));
-        Rejected("lists \"Thorin\" twice", tokens, ("initiative", Arr("Thorin", "Thorin")));
-        Rejected("must be a list of creature names", tokens, ("initiative", Arr("Thorin", 5)));
-        Rejected("must be a list of creature names", tokens, ("initiative", "Thorin"));
+        Rejected("neither the id nor the name of any token", tokens, ("initiative", Arr("Thorin", "Zed")));
+        Rejected("lists \"@\" twice", tokens, ("initiative", Arr("Thorin", "@")));
+        Rejected("must be a list of creatures", tokens, ("initiative", Arr("Thorin", 5)));
+        Rejected("must be a list of creatures", tokens, ("initiative", "Thorin"));
         Rejected("\"current\" is \"Goblin boss\", who is not in \"initiative\"", tokens, ("initiative", Arr("Thorin")), ("current", "Goblin boss"));
         Rejected("who is not in \"initiative\"", tokens, ("current", "Thorin"));
-        Rejected("\"current\" must be the name", tokens, ("initiative", Arr("Thorin")), ("current", 3));
+        Rejected("\"current\" must be the id or name", tokens, ("initiative", Arr("Thorin")), ("current", 3));
+    }
+
+    /// <summary>A name shared by several tokens is refused with their ids; the ids themselves always work.</summary>
+    [TestMethod]
+    public void ANameSharedByTokensIsRefusedAndTheirIdsAreUsed()
+    {
+        var goblins = WithTokens(Arr(
+            Obj(("id", "@"), ("name", "Thorin"), ("kind", "pc"), ("at", "B2")),
+            Obj(("id", "1"), ("name", "Goblin"), ("kind", "enemy"), ("at", "E2")),
+            Obj(("id", "2"), ("name", "Goblin"), ("kind", "enemy"), ("at", "F2"))));
+        Rejected("the name of 2 tokens: use their ids (1, 2)", goblins, ("initiative", Arr("Thorin", "Goblin")));
+        Rejected("\"current\" names \"Goblin\", the name of 2 tokens", goblins, ("initiative", Arr("1")), ("current", "Goblin"));
+        var m = Checked(goblins, ("initiative", Arr("2", "@", "1")), ("current", "1"));
+        CollectionAssert.AreEqual(new[] { "2", "@", "1" }, m.Initiative!.Select(t => t.Id).ToArray());
+        Assert.AreEqual("1", m.Current!.Id);
+    }
+
+    /// <summary>The turn order is not checked when measuring, and a scene does not inherit one from its base place.</summary>
+    [TestMethod]
+    public void TheTurnOrderIsCheckedOnlyWhenDrawingAndIsNotInheritedFromABase()
+    {
+        var stale = Place();
+        stale["tokens"] = SceneTokens();
+        stale["initiative"] = Arr("Gone");
+        Assert.ThrowsExactly<DmcException>(() => MapChecker.Check(stale));
+        Assert.IsEmpty(MapChecker.Check(stale, turnOrder: false).Initiative!);
+
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string live = Path.Combine(folder, "live.json");
+            var place = Place();
+            place["initiative"] = Arr("Gone");
+            place["current"] = "Gone";
+            File.WriteAllText(Path.Combine(folder, "hall.json"), Json(place));
+            File.WriteAllText(live, Json(Obj(("base", "hall"), ("tokens", SceneTokens()))));
+            var model = MapChecker.Check(MapChecker.LoadMap(live));
+            Assert.IsEmpty(model.Initiative!);
+            Assert.IsNull(model.Current);
+            // A scene's own turn order is its own.
+            File.WriteAllText(live, Json(Obj(("base", "hall"), ("tokens", SceneTokens()), ("initiative", Arr("Thorin")), ("current", "Thorin"))));
+            Assert.AreEqual("Thorin", MapChecker.Check(MapChecker.LoadMap(live)).Current!.Name);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [TestMethod]

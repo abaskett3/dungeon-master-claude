@@ -24,6 +24,10 @@ public sealed class RollCommand : ICommand
         return Run(args, io, random);
     }
 
+    /// <summary>
+    /// Print the usage line (no arguments, exit 1), the help (<c>--help</c> or <c>-h</c> anywhere, exit 0), or roll each
+    /// argument with <paramref name="random"/>, one line each, exit 1 if any was bad. Tests pass a scripted source.
+    /// </summary>
     internal static int Run(string[] args, Io io, IRandomBytes random)
     {
         if (args.Length == 0)

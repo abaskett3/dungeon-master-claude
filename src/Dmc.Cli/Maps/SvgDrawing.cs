@@ -456,11 +456,15 @@ public static class SvgDrawing
             py += 10;
         }
 
-        void EntryText(List<string> lines)
+        // Height of an entry of this many lines of text (never less than a token sample).
+        int EntryHeight(int lineCount) => Math.Max(lineCount * rowH, 24);
+
+        // The text of one panel entry, then the cursor moves down past it.
+        void EntryText(List<string> lines, string weight = "normal")
         {
             for (int i = 0; i < lines.Count; i++)
-                @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink));
-            py += Math.Max(lines.Count * rowH, 24) + 7;
+                @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink, weight: weight));
+            py += EntryHeight(lines.Count) + 7;
         }
 
         if (m.Initiative is { Count: > 0 })
@@ -469,19 +473,16 @@ public static class SvgDrawing
             int place = 0;
             foreach (var token in m.Initiative)
             {
-                bool now = token.Name == m.Current;
+                bool now = token == m.Current;
                 var lines = Wrap($"{++place}. {token.Name}", now ? chars - 6 : chars);
                 if (now)
                 {
-                    int plateHeight = Math.Max(lines.Count * rowH, 24);
-                    @out.Add($"<rect x=\"{panelX - 6}\" y=\"{py - 2}\" width=\"{Panel - 4}\" height=\"{plateHeight + 4}\" rx=\"5\" "
+                    @out.Add($"<rect x=\"{panelX - 6}\" y=\"{py - 2}\" width=\"{Panel - 4}\" height=\"{EntryHeight(lines.Count) + 4}\" rx=\"5\" "
                              + $"fill=\"{TurnPlate}\" stroke=\"{TurnAccent}\" stroke-width=\"1.5\"/>");
                     @out.Add(Text(panelX + Panel - 14, py + 16, "TURN", 11, TurnAccent, "end", "bold"));
                 }
                 @out.Add(DrawToken(token, panelX + 12, py + 12, legendScale: 9));
-                for (int i = 0; i < lines.Count; i++)
-                    @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink, weight: now ? "bold" : "normal"));
-                py += Math.Max(lines.Count * rowH, 24) + 7;
+                EntryText(lines, now ? "bold" : "normal");
             }
             py += 16;
         }

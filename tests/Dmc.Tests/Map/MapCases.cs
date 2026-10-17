@@ -67,6 +67,7 @@ public static partial class MapCases
 
     // ---------- the cases ----------
 
+    /// <summary>Inputs that draw: scenes, places, every scale, shared cells and the turn order of a fight.</summary>
     static IEnumerable<CommandCase> Drawn()
     {
         yield return Scene("a scene on its base", Scene_());
@@ -216,6 +217,7 @@ public static partial class MapCases
         yield return Scene("measure after a scale error", Obj(("base", "goblin-hall"), ("cell_ft", 7)), "--measure", "B2", "C3");
     }
 
+    /// <summary>Bad map files, one mistake each, including the turn order keys (<c>initiative</c> and <c>current</c>).</summary>
     static IEnumerable<CommandCase> Rejected()
     {
         // The messages the Python tests look for, one by one.

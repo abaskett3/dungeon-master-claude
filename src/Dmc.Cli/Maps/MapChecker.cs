@@ -73,7 +73,10 @@ public static class MapChecker
                                + $"not {PyJson.Dumps(cellFt)}: every map is drawn to scale.");
     }
 
-    /// <summary>Read a place or scene file; a scene's "base" is merged underneath it.</summary>
+    /// <summary>
+    /// Read a place or scene file; a scene's "base" is merged underneath it, except that the base's "initiative" and
+    /// "current" are dropped: a turn order belongs to the scene that holds it.
+    /// </summary>
     public static PyDict LoadMap(string path)
     {
         var data = LoadJson(path);
@@ -100,6 +103,9 @@ public static class MapChecker
                                            + $"is drawn at {PyJson.Dumps(baseFt)}: a scene cannot change its place's scale.");
                 }
             }
+            // A fight's turn order belongs to the scene that holds it, never to the place it stands on.
+            merged.Remove("initiative");
+            merged.Remove("current");
             foreach (var pair in data)
             {
                 if (pair.Key != "base")
@@ -180,8 +186,11 @@ public static class MapChecker
         return legend;
     }
 
-    /// <summary>Validate the map and return it in the form the drawing code uses.</summary>
-    public static MapModel Check(PyDict data)
+    /// <summary>
+    /// Validate the map and return it in the form the drawing code uses. The turn order is checked only when
+    /// <paramref name="turnOrder"/> is true (drawing): measuring a distance does not depend on it.
+    /// </summary>
+    public static MapModel Check(PyDict data, bool turnOrder = true)
     {
         if (!data.TryGetValue("grid", out var gridValue))
             throw Fail("the map has no \"grid\".");
@@ -292,32 +301,32 @@ public static class MapChecker
                 edgeText[pair.Key] = Py.Str(pair.Value);
         }
 
-        var (initiative, current) = CheckTurnOrder(data, tokens);
+        var (initiative, current) = turnOrder ? CheckTurnOrder(data, tokens) : ([], null);
 
         return new MapModel(Py.Str(Get(data, "title", "Map")), Py.Str(Get(data, "notes", "")), grid, cols, rows, legend,
             cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText, initiative, current);
     }
 
     /// <summary>
-    /// Check the optional <c>"initiative"</c> (creature names in turn order) and <c>"current"</c> (whose turn it is).
-    /// Each name in the order must be the name of a token on the map, once; <c>"current"</c> must be one of them.
-    /// Null and an empty list mean there is no turn order. A fight that is over simply drops both keys.
+    /// Check the optional <c>"initiative"</c> (the creatures in turn order) and <c>"current"</c> (whose turn it is).
+    /// Each entry is a token's id or, if no token has that id, the name of exactly one token; a name shared by several
+    /// tokens is refused, with their ids. A creature appears once, and <c>"current"</c> must be in the order. Null and
+    /// an empty list mean there is no turn order. A fight that is over simply drops both keys.
     /// </summary>
-    /// <returns>The tokens in turn order (empty with no turn order) and the current name, or null.</returns>
-    static (IReadOnlyList<Token> Initiative, string? Current) CheckTurnOrder(PyDict data, List<Token> tokens)
+    /// <returns>The tokens in turn order (empty with no turn order) and the token whose turn it is, or null.</returns>
+    static (IReadOnlyList<Token> Initiative, Token? Current) CheckTurnOrder(PyDict data, List<Token> tokens)
     {
         var order = new List<Token>();
         object? initiative = Get(data, "initiative", null);
         if (initiative is not null)
         {
-            if (initiative is not List<object?> names || names.Any(n => n is not string { Length: > 0 }))
-                throw Fail("\"initiative\" must be a list of creature names, in turn order.");
-            foreach (string name in names.Cast<string>())
+            if (initiative is not List<object?> entries || entries.Any(n => n is not string { Length: > 0 }))
+                throw Fail("\"initiative\" must be a list of creatures (token ids or names), in turn order.");
+            foreach (string entry in entries.Cast<string>())
             {
-                if (order.Any(t => t.Name == name))
-                    throw Fail($"\"initiative\" lists \"{name}\" twice.");
-                var token = tokens.FirstOrDefault(t => t.Name == name)
-                    ?? throw Fail($"\"initiative\" names \"{name}\", which is not the name of any token on the map.");
+                var token = ResolveCreature("initiative", entry, tokens);
+                if (order.Contains(token))
+                    throw Fail($"\"initiative\" lists \"{entry}\" twice.");
                 order.Add(token);
             }
         }
@@ -325,10 +334,29 @@ public static class MapChecker
         object? current = Get(data, "current", null);
         if (current is null)
             return (order, null);
-        if (current is not string { Length: > 0 } currentName)
-            throw Fail("\"current\" must be the name of the creature whose turn it is.");
-        if (order.All(t => t.Name != currentName))
-            throw Fail($"\"current\" is \"{currentName}\", who is not in \"initiative\".");
-        return (order, currentName);
+        if (current is not string { Length: > 0 } currentText)
+            throw Fail("\"current\" must be the id or name of the creature whose turn it is.");
+        var now = ResolveCreature("current", currentText, tokens);
+        if (!order.Contains(now))
+            throw Fail($"\"current\" is \"{currentText}\", who is not in \"initiative\".");
+        return (order, now);
+    }
+
+    /// <summary>
+    /// The token an <c>"initiative"</c> or <c>"current"</c> entry means: the one whose id it is, else the only one
+    /// whose name it is. <paramref name="key"/> names the key in the error.
+    /// </summary>
+    static Token ResolveCreature(string key, string text, List<Token> tokens)
+    {
+        var byId = tokens.FirstOrDefault(t => t.Id == text);
+        if (byId is not null)
+            return byId;
+        var named = tokens.Where(t => t.Name == text).ToList();
+        if (named.Count == 1)
+            return named[0];
+        if (named.Count == 0)
+            throw Fail($"\"{key}\" names \"{text}\", which is neither the id nor the name of any token on the map.");
+        throw Fail($"\"{key}\" names \"{text}\", the name of {named.Count} tokens: use their ids "
+                   + $"({string.Join(", ", named.Select(t => t.Id))}).");
     }
 }

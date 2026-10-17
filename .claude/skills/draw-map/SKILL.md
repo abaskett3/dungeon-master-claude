@@ -49,12 +49,12 @@ An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a 
     { "id": "2", "name": "Goblin archer", "kind": "enemy", "at": "I5", "note": "prone", "down": true },
     { "id": "O", "name": "Ogre",          "kind": "enemy", "at": "F2", "size": 2 }
   ],
-  "initiative": ["Goblin boss", "Thorin", "Ogre", "Kibil", "Goblin archer"],
-  "current": "Thorin"
+  "initiative": ["1", "@", "O", "K", "2"],
+  "current": "@"
 }
 ```
 
-In a fight, `"initiative"` is the turn order (token names, as in the tracker) and `"current"` is whose turn it is; `dmc map` lists them beside the grid with the current turn marked, so the player can see who acts when. Keep both in step with the tracker: set them when initiative is rolled, move `"current"` on at the end of each turn, take a creature out of `"initiative"` when it dies or leaves, and delete both keys when the fight ends. Every name must be a token's name and `"current"` must be in the list, or `dmc map` refuses the file.
+In a fight, `"initiative"` is the turn order and `"current"` is whose turn it is; `dmc map` lists them beside the grid with the current turn marked, so the player can see who acts when. Write each as a token's `id` (preferred: names need not be unique, and a name shared by several tokens is refused), and keep both in step with the tracker: set them when initiative is rolled, set `"current"` to whoever acts next once per reply, in the same edit as any moves, take a creature out of `"initiative"` when it dies or leaves, and delete both keys when the fight ends. `"current"` must be in the list, or `dmc map` refuses the file. A scene does not inherit these keys from its base place.
 
 Rules for the grid:
 
@@ -101,7 +101,7 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## After drawing
 
-- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, or the turn passes to the next creature, edit `live.json` with the tracker (the cells, and `"current"`) and run `dmc map` after the narration, in the order CLAUDE.md § Maps gives, so the picture, the tracker and your description always agree.
+- In combat, record each combatant's cell in the tracker in `game-state.md`. Once per reply, edit `live.json` with the tracker (the cells that changed, and `"current"`) and, if anything on the map changed, run `dmc map` once after the narration, in the order CLAUDE.md § Maps gives, never once per monster turn, so the picture, the tracker and your description always agree.
 - If the place may be revisited, keep its `maps/<place-name>.json`, and put longer notes (ceiling heights, what lies beyond the edges, rulings about the terrain) in `maps/<place-name>.md` beside it.
 - When the fight ends or the party moves on, remove the tokens, `"initiative"` and `"current"` from `live.json` or point it at the new place.
 

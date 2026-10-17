@@ -17,14 +17,10 @@ internal static class Digester
     /// <exception cref="DmcException">
     /// Every one has exit code 1. The log folder is missing; <c>show</c> matched no session that has a player message; or
     /// <see cref="Session"/> could not read a log: it is not valid UTF-8 (<c>name: not valid UTF-8</c>), or a record has a
-    /// shape the digest cannot read (<c>name line N: ...</c>). A log is read when the sessions are loaded, before anything
-    /// is printed or written, so none of these leaves output behind.
-    /// </exception>
-    /// <exception cref="LogShapeException">
-    /// A token count that is not a finite number (NaN or Infinity, which the log can spell) is found only while the
-    /// statistics are being written, after <see cref="Session"/> has finished. It is not turned into a
-    /// <see cref="DmcException"/> here: <see cref="CommandLine"/> reports it as an unexpected failure, exit code 1, naming
-    /// the type. For <c>show</c> the turn and transcript files of earlier sessions have been written by then.
+    /// shape the digest cannot read (<c>name line N: ...</c>), which includes a token count that is not a finite number
+    /// (NaN or Infinity, which a log can spell) or an <c>output_tokens</c> that is not a number. Every session the request
+    /// loads is read when the sessions are loaded, before anything is printed or written, so none of these leaves output
+    /// behind, and <c>list</c> and <c>show</c> refuse exactly the same logs.
     /// </exception>
     /// <exception cref="InvalidOperationException">The request names a subcommand that does not exist (a programming error).</exception>
     public static int Run(DigestRequest request, Io io)
@@ -106,8 +102,15 @@ internal static class Digester
     /// <summary>
     /// <c>show</c>: for each session that has player messages, writes <c>&lt;id&gt;-turns.txt</c> and
     /// <c>&lt;id&gt;-transcript.md</c> to the output folder, then <c>stats.md</c> with every session's statistics,
-    /// which it also prints. Files from an earlier run with the same names are overwritten.
+    /// which it also prints. Files from an earlier run with the same names are overwritten. Every log is read first (in
+    /// <see cref="Load"/>), so a bad log stops the run before the output folder is made.
     /// </summary>
+    /// <exception cref="DmcException">The log folder is missing, a log cannot be read (see <see cref="Run"/>), or no session matched.</exception>
+    /// <exception cref="IOException">
+    /// The output folder or a file in it cannot be made or written (the output path is a file, a full disk). Not a
+    /// <see cref="DmcException"/>: <see cref="CommandLine"/> reports it as an unexpected failure, and files already
+    /// written stay. The same holds for <see cref="UnauthorizedAccessException"/>.
+    /// </exception>
     static void Show(DigestRequest request, Io io)
     {
         var sessions = Load(request).Where(s => s.Turns.Count > 0).ToList();

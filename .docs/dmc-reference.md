@@ -49,7 +49,7 @@ dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, play, --v
 | 0 | Success. `context-check` always exits 0. |
 | 1 | A failure the user can fix: a bad dice expression, a map with a mistake in it, a missing or unreadable file, no command or an unknown command. |
 | 2 | A mistake in the arguments (missing, unknown or malformed), and `roll` when the operating system's random source cannot be read. |
-| 127 | `play`: Claude Code is not on the PATH. |
+| 127 | `play`: Claude Code is not on the PATH. The launchers `play.ps1` and `play.sh` exit 127 for the same reason. |
 | other | `play` passes on Claude Code's own exit code. |
 
 **Output.** UTF-8 with no byte-order mark, and LF line ends on every system. A character that cannot be encoded prints as `?`.
@@ -297,7 +297,7 @@ id        start (UTC)       end (UTC)             KB  msgs peak ctx  campaign   
 | `DIR/<id>-turns.txt` | One line per player message: time, context size, the message, then the size and tool calls of the reply. Lines marked `!` may show friction. |
 | `DIR/<id>-transcript.md` | The whole session in order, with tool calls and results cut to a line each. |
 
-Times are UTC; "ctx" is the number of tokens sent to the model on that call. Errors include `dmc digest: No session logs found at <folder>. Pass --logs DIR.` and `dmc digest: No matching sessions with player messages.` (exit 1), and `dmc digest: argument command: invalid choice: 'digest' (choose from list, show)` (exit 2). The subcommand `show` was called `digest` in 0.1.0.
+Times are UTC; "ctx" is the number of tokens sent to the model on that call. Errors include `dmc digest: No session logs found at <folder>. Pass --logs DIR.` and `dmc digest: No matching sessions with player messages.` (exit 1), and `dmc digest: argument command: invalid choice: 'digest' (choose from list, show)` (exit 2). A log `dmc` cannot read is reported with its file name, exit 1: `dmc digest: <file>.jsonl: not valid UTF-8`, or `dmc digest: <file>.jsonl line N: <what is wrong>` for the first record of the wrong shape. That includes an assistant record with a token count (`input_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` or `output_tokens`) of `NaN` or `Infinity` (`a token count that is not a finite number`), an `output_tokens` that is not a number (`"output_tokens" is not a number`), or input and cache counts whose sum overflows. Every log the request loads is read before anything is printed or written, so one bad log stops `list` and `show` alike, with no heading, rows or files from the sessions before it. The session ids rule logs out by file name before they are read, but `--campaign` and `--after` are applied only after a log has been read, so a bad log is refused even if those would have left it out. (Before 0.1.3 a non-finite count ended in `(LogShapeException)`, after `show` had written the earlier sessions' files.) The subcommand `show` was called `digest` in 0.1.0.
 
 ## context-check
 
@@ -305,12 +305,24 @@ Times are UTC; "ctx" is the number of tokens sent to the model on that call. Err
 dmc context-check < hook-input.json
 ```
 
-The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. Below 150,000 tokens it prints nothing. From there on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 40,000 tokens, so a declined break is offered again at the next band.
+The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. A break is due when the context is large, and "large" is relative to what the session loaded: the first band starts at the larger of 150,000 tokens and the **baseline** plus 40,000, and a band follows every 40,000 tokens after that. Below the first band it prints nothing. From it on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 40,000 tokens, so a declined break is offered again at the next band.
+
+**The baseline** is where the context settled after the session loaded its files. `dmc` finds it from the log alone, in the part after the latest compaction boundary (`/clear` starts a new log, so it needs no rule). It is the context of the last assistant call before the first player message in that part: after `/clear` and `/resume-campaign`, the end of the recap; after a compaction, the end of the reload that follows it, if that comes before the player's next message. If no call comes before that message, it is the context of the first reply to it. If no player message has come yet, it is the latest context.
+
+A player message is a user record with a text block that is typed text: not a tool result, a meta record, a compaction summary, a sub-agent's message, a slash-command echo, a shell-command record (`<bash-input>`), a task notice, an interruption marker (`[Request interrupted`) or another injection. Any text block of the message may be the typed text. `dmc digest` shares the injection test.
+
+This needs no marker for the resume, so it holds however the files were loaded: the slash command, DMC's `Skill` call or reads one by one. A resume the player runs later in the session comes after a player message, so it cannot move the baseline up and hide that the context has grown. Limit: after an automatic compaction, DMC reloads after the player's next message, so the baseline is the small first reply and the 150,000 floor applies.
+
+A resume that settles at 142,000 tokens therefore puts the first band at 182,000, not 150,000. A session that never loads much keeps the 150,000 floor. The size is found by reading the log from the end and stopping at the first call. The baseline is found by reading from the start and parsing only the records up to the first player message (and, past it, only lines that could be a compaction boundary), so the cost is mostly one pass of reading: on the largest local log, 18.3 MB, the command took about 72 ms against 51 ms for a run with no log, and on a 1.3 MB log about 60 ms.
 
 ```
 $ echo '{"transcript_path":"<folder>/session.jsonl"}' | dmc context-check
-Context 197k, break due since 190k: at the next break point, offer a full save and a fresh session, unless the player has declined since 190k.
+Context 197k is large, break due since 190k: at the next break point, offer a full save and a fresh session, unless the player has declined since 190k.
 ```
+
+The bands are counted from the first band, so a break the player declined is offered again after another 40,000 tokens. A compaction, which restarts the search for the baseline, starts the count again.
+
+This changed after release 0.1.2, so it reaches players with the next release. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
 It never fails: on any error (input that is not JSON, a missing or unreadable log) it prints nothing and exits 0. It also skips the stale-binary warning, so the hook stays silent.
 
@@ -326,7 +338,7 @@ Starts Claude Code for a play session from the toolkit root, as
 claude --model sonnet --effort high --settings .claude/play-settings.json [args...]
 ```
 
-with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned.
+with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned. When no `dmc` can be had they start Claude Code themselves, and if `claude` is not on the PATH then, `play.sh` exits 127 (its shell's own message) and `play.ps1` prints `play: Claude Code (claude) is not on the PATH: install it, then run this again` and exits 127; if `claude` is found but cannot be started (blocked, damaged, a shim that throws) it prints `play: Claude Code could not be started: <reason>` and exits 1. Either way a script that checks the exit code sees the failure.
 
 On Windows it starts `claude.exe` from the PATH, or failing that npm's `claude.ps1` through PowerShell. It never starts npm's `claude.cmd` through `cmd.exe`, which would re-parse the arguments.
 

@@ -9,7 +9,7 @@ A map exists to remove confusion. You describe the place as a small data file; `
 
 ## Before drawing
 
-Check `maps/` in the active campaign folder for an existing map of this place and start from it. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
+Check `maps/` in the active campaign folder for an existing map of this place and start from it, unless Pending in `game-state.md` lists it as "from the undone stretch" of a rewind: never load or draw that one. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
 
 An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which `dmc map` rejects. Read its notes and any spoiler warning, then redraw it as a `.json` at 5 or 30 ft (a local place) or a mile scale (an overland map), whichever fits in about 30 cells, agreeing with the distances in `canon.md`, and keep the `.md` for its notes.
 

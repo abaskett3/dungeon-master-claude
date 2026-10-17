@@ -29,7 +29,9 @@ Go back over the session for facts you established and did not log: names, place
 
 Then prune. Merge lines that say the same thing, replace a superseded fact instead of keeping both versions, and delete anything struck through or marked void. Every line left should be true now.
 
-`canon.md` is read whole at every resume. If it has passed about 230 lines, move the lines whose subject can no longer come up (a person dead and done with, a place left for good, a promise kept) to `story/canon-archive.md`, under the same headings; create it if missing. Split by whether the subject is still live, not by age: anyone or anything that can still come up stays. Rulings never move.
+Then split. Keep each line to one fact in a sentence or two. A line that has grown into a paragraph is split into one line per fact, or its detail goes on the sheet it belongs to, so that the line count means something. Do this before counting.
+
+Then archive, every full save, not only when it seems worth it. Count the lines of `canon.md` now (Grep, pattern `^`, count mode). Resume reads canon whole only while it is under about 230 lines; past that it reads the always-read sections and a search for the scene's names, so a long canon is searched rather than read. If the count is over about 230, move the lines whose subject can no longer come up (a person dead and done with, a place left for good) to `story/canon-archive.md`, under the same headings; create it if missing. Keep moving until the count is under about 200, so the next session's additions do not push it back over. Split by whether the subject is still live, not by age: anyone or anything that can still come up stays. Never move lines out of the always-read sections, **Rulings** and **Prices, debts and promises**: settle those by pruning (a debt paid or a promise kept is deleted, or reduced to a clause on the person's line if it still matters). If nothing more can be moved because every remaining subject is live, leave the file as it is: a long canon is legitimate, and resume searches it. Say so in the step 8 report.
 
 ## 5. DM notes
 
@@ -53,12 +55,13 @@ Read every file this save changed again, and the sheets of the PCs and of every 
 - Location and time agree between `game-state.md` and the end of the session log.
 - Every quest in `game-state.md` appears in the summary or session log, and none is marked both active and complete.
 - No name is spelled two ways. No new canon line contradicts an older one (search for the subject).
+- `canon.md` is under about 230 lines (count them again with Grep, after both the split and the archive in step 4), or every subject left in it is live and you have said so in the step 8 report.
 
 Fix what you find. If two sources disagree and you cannot tell which is right, ask the player.
 
 ## 8. Stamp and report
 
-Set the "Last full save" line in `game-state.md` to the real-world date and time and the session number.
+Set the "Last full save" line in `game-state.md` to the real-world date and time, the session number and the last scene of the session log this save covers, for example `2026-10-17 18:40, session 8, through scene 33`. Resume uses the scene to tell whether the log has scenes that were never saved.
 
 If this save is a planned break (the player accepted a break offer and will start a fresh session), also add this line under Pending in `game-state.md`: `Planned break: restate the immediate situation only.`
 

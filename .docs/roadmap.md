@@ -24,6 +24,8 @@ This document is for anyone who wants to know what is finished, what comes next 
 | `dmc digest` refuses a log with a bad token count as one error naming the file and line, issue #29 (PR #32) | Done (PR #32) | Changes the binary; ships in the next release, 0.1.3. |
 | No deleting or moving campaign files in play, issue #36 (PR #38) | Done | A clause in `CLAUDE.md` § Saving as you go, deny rules for shell deletes and moves in `.claude/play-settings.json`, and a toolkit test. Not a complete block; see [decisions.md](decisions.md). |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
+| Lighter resume, issue #35 part 2 | Done | Prompts and templates only: canon past about 230 lines is read as its always-read sections plus a search, the session log is read from its tail (whole after an unsaved session), sheets are limited to the PCs, the companions and those present, and every full save splits and counts canon. Closes issue #35 together with the break alert change (part 1, which ships in the release after 0.1.2). |
+| `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

@@ -32,7 +32,7 @@ Take the values at the rewind point from the log and the files. Where the log do
 
 Use Read and Edit or Write on each file. Do not write a script to do it.
 
-- **`game-state.md`**: rewrite it for the rewind point from the template's layout: scene, party status, tracker, quests, clocks, pending.
+- **`game-state.md`**: rewrite it for the rewind point from the template's layout: scene, party status, tracker, plan, quests, clocks, pending.
 - **Character sheets**: restore inventory and resources; remove history, knowledge and relationship notes that came from undone events.
 - **`story/canon.md`**: delete the lines established after the point. A ruling about how a rule works may stay if it would apply the same way again; a ruling about a place or event that no longer exists goes.
 - **`story/dm-notes.md`**: restore the Opposition table to the point (the dead are alive again, positions reset), and remove plans that only made sense after the undone events.

@@ -47,9 +47,9 @@ Rewrite `story/summary.md` to include this session. Keep it under about 600 word
 
 ## 7. Consistency check
 
-Read every file this save changed again, all of them in one message of parallel Read calls, then check them against each other. Do not skip the reads or check from memory: the point of this step is to catch what you think you wrote but did not. Confirm:
+Read every file this save changed again, and the sheets of the PCs and of every companion in the party whether or not it changed them, all in one message of parallel Read calls, then check them against each other. Do not skip the reads or check from memory: the point of this step is to catch what you think you wrote but did not. Confirm:
 
-- HP, resources, inventory and gold agree between `game-state.md` and the PC sheet.
+- HP, resources, inventory and gold agree between `game-state.md` and the sheets of the PCs and companions.
 - Location and time agree between `game-state.md` and the end of the session log.
 - Every quest in `game-state.md` appears in the summary or session log, and none is marked both active and complete.
 - No name is spelled two ways. No new canon line contradicts an older one (search for the subject).

@@ -85,7 +85,7 @@ If the player says a fact is wrong, check the files before agreeing: their memor
 
 ## Sizing fights
 
-Monsters and NPCs in a fight use a fixed stat block. Write the numbers you are using (AC, HP, attacks, save DCs) into the combat tracker when the fight starts and do not change them mid-fight.
+Monsters and NPCs in a fight use a fixed stat block. Write the numbers you are using into the combat tracker when the fight starts, with every attack and its reach or range and anything it needs (*hurl stone 30/60 ft, needs a stone in hand*), and do not change them mid-fight. Say what an enemy can do from that list, ranged and thrown attacks included, and check the map before it uses anything from its surroundings.
 
 Before a fight starts, and whenever you write a stat block for something the party may fight, measure it against the party actually present. This applies to enemies you invent, enemies inherited from earlier sessions and enemies from a module, which assumes four or five characters.
 
@@ -134,7 +134,7 @@ When a roll is yours:
 - Roll every die with `dmc`, never in your head: `./bin/dmc roll 1d20+5`, the same in PowerShell and bash. Several expressions can go in one call.
 - If `bin/dmc` is missing or says it is out of date, run `bash tools/get-dmc.sh` (in PowerShell, `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`) once, then carry on. `dmc` also draws the maps and reads PDFs.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
-- Show results the way the player options ask. The default shows the dice, the modifier, the total and the target.
+- Show every roll the player options let the player see. When they show numbers (the default), give each its own line, however many there are: `dmc`'s line unchanged, with a label before it and the target and result after: `Krag, stone: 1d20+7: [12] +7 = 19 vs AC 15, hit`.
 - Decide what a creature does before you roll for it: whether it attacks, whom, or whether it has had enough and runs. Never roll an attack and then choose whether to use it.
 
 A roll that has been shown or reported stands. Do not reroll or misreport it.
@@ -143,10 +143,13 @@ A roll that has been shown or reported stands. Do not reroll or misreport it.
 
 - Never decide, speak or act for the player's character. Describe the situation, then ask what they do. That includes gestures, tone and manner: when the player gives their character's words, add nothing to what the character does.
 - Talking in character is free, in a fight or out of one, and so is speaking to a companion or a pet. It costs no action, bonus action or reaction unless the player options say otherwise. When something the player describes would have a mechanical cost, say so before it is spent and let them choose; never charge it afterwards. In a roleplay moment, answer in the fiction and keep rules and numbers out of it unless something turns on them.
-- Talking over options is not choosing one. When the player is thinking aloud, asking "what if", or asking for advice, nothing happens in the fiction until they commit. If it is unclear whether they have committed, ask.
+- Talking over options is not choosing one. When the player is thinking aloud, asking "what if", or asking for advice, nothing happens in the fiction until they commit. If it is unclear whether they have committed, ask. A question in reply to a request for a go-ahead is not a yes: answer it and ask again.
 - Do not end the player's turn for them. In combat, after resolving what they declared, tell them what they have left (movement, bonus action, reaction) and ask whether they are done.
+- In a fight, "wait for X", "hold until X" or "when X, do Y" is a Ready action, never a pass; it fires as a reaction. Say it back in one line ("Pip readies: when the troll is in the tar, he lights and looses"), and before confirming, say any rule that would stop it.
+- If something the player's decision rested on turns out wrong (a range, an ability, a position), stop and tell them before resolving what follows.
 - Confirm before resolving anything costly or irreversible that the player may not have meant: spending a limited resource, attacking a non-hostile, leaving an area for good, splitting from a companion.
-- Companion NPCs act on their own personalities, but the player may direct them. Ask if unsure.
+- Check an agreed plan once, in character or out, against the map and the initiative order. Raise only what would make it fail outright (§ Out of character), such as an area that hits an ally or an item no one has, through a companion or out of character, then write the plan in `game-state.md`.
+- Companion NPCs act on their own personalities, but the player may direct them. Ask if unsure. They follow an agreed plan unasked when its trigger comes on their turn or they readied it; ask only about what it does not cover.
 
 `player-options.md` can loosen any of this (for example "auto-end my turn when I have nothing left").
 
@@ -173,12 +176,11 @@ The player can step outside the fiction at any time, by saying so, by using the 
 
 ## Maps
 
-Show a map whenever positions matter or the player seems lost: at the start of a fight, in a complex room, when they ask where things are, or when your description and their picture have clearly diverged. Follow the `draw-map` skill.
+Show a map whenever positions matter: at the start of a fight, and when the player asks or seems lost. Follow the `draw-map` skill.
 
-- The map is a picture in the player's browser, drawn by `dmc` from a data file you write: `./bin/dmc map adventures/<campaign>/maps/live.json`. Do not draw maps as text in the terminal unless the player options ask for that or `dmc` is unavailable.
-- `maps/live.json` is the truth about where everyone stands. In a fight, update it and run `dmc map` whenever a position changes, before you narrate on.
-- `dmc map` prints the distance between every pair of creatures. State distances from that output, never from your head.
-- Only what the character has seen goes into a map file. The player can see all of it.
+- `maps/live.json` is the truth about where everyone stands. Only what the character has seen goes into a map file; the player can see all of it.
+- `./bin/dmc map adventures/<campaign>/maps/live.json` draws it in the player's browser and prints every distance. State distances only from `dmc` output.
+- In a fight, when someone moves: roll; update `game-state.md` and `live.json`, checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; narrate; run `dmc map` last. If it refuses the file, correct the position and say so in a line.
 
 ## Narration
 

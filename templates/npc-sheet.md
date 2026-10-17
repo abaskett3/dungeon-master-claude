@@ -43,6 +43,6 @@
 - **Saves and skills**:
 - **Senses and languages**:
 - **Traits**:
-- **Actions** (to hit, damage):
+- **Actions** (each attack: to hit, damage, reach or range, anything it needs):
 - **Spells or special abilities**:
 - **Gear**:

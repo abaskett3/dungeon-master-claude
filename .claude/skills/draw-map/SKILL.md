@@ -97,7 +97,7 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## After drawing
 
-- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, edit `live.json` and run `dmc map` before narrating on, so the picture, the tracker and your description always agree.
+- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, edit `live.json` with the tracker and run `dmc map` after the narration, in the order CLAUDE.md § Maps gives, so the picture, the tracker and your description always agree.
 - If the place may be revisited, keep its `maps/<place-name>.json`, and put longer notes (ceiling heights, what lies beyond the edges, rulings about the terrain) in `maps/<place-name>.md` beside it.
 - When the fight ends or the party moves on, remove the tokens from `live.json` or point it at the new place.
 

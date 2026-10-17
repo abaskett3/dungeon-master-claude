@@ -19,7 +19,7 @@ Open each file with the Read tool, one call per file (several calls can go in on
 2. `game-state.md`: where things stand right now.
 3. `story/summary.md`: the story so far.
 4. `story/dm-notes.md`: your plans, secrets and open threads.
-5. Every `character-sheets/pc-*.md`, and the sheets of any companions and NPCs present in the current scene.
+5. Every `character-sheets/pc-*.md`, the sheets of the companions in the party, and those of any NPCs present in the current scene.
 6. The most recent file in `story/sessions/`, for the texture of the last few scenes.
 7. `story/canon.md`: read it all. If it is too long for one read, read it in parts, and at the next full save move what can no longer come up to `story/canon-archive.md` (see `campaign-full-save`, step 4).
 8. Any map in `maps/` for the current location. If a fight is running or the scene names a map, run `./bin/dmc map adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
@@ -29,7 +29,7 @@ Read other NPC sheets and older session logs only when they become relevant. Do 
 
 ## 3. Check the state
 
-Compare `game-state.md` against the PC sheet and the end of the last session log. Look for disagreements: HP or slots that do not match, an item in one place but not the other, a location that differs, a fight the log says ended but the tracker still shows.
+Compare `game-state.md` against the sheets of the PCs and of the companions in the party, and the end of the last session log. Look for disagreements: HP or slots that do not match, an item in one place but not the other, a location that differs, a fight the log says ended but the tracker still shows.
 
 If you find any, tell the player out of character what disagrees, propose the most likely truth, and fix the files once they confirm. Do not silently pick one.
 

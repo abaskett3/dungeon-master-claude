@@ -15,10 +15,18 @@ namespace Dmc;
 /// </remarks>
 public static partial class StaleBinaryCheck
 {
+    /// <summary>The pin file, <c>tools/dmc-release.json</c> under the toolkit root (<see cref="Toolkit.Root"/>).</summary>
     public static string ReleaseFile { get; } = Path.Combine(Toolkit.Root, "tools", "dmc-release.json");
 
+    /// <summary>What every release tag starts with, before the version number: <c>dmc-v0.1.1</c> is the tag of dmc 0.1.1.</summary>
     public const string TagPrefix = "dmc-v";
 
+    /// <summary>
+    /// Reads <see cref="ReleaseFile"/> and, if this <c>dmc</c> is not the pinned release, writes the one-line warning
+    /// from <see cref="Warning"/> to <paramref name="err"/>. Never throws for a file that cannot be read (missing,
+    /// locked, no permission): that prints nothing. Malformed JSON also prints nothing.
+    /// </summary>
+    /// <param name="err">Where the warning goes: standard error, so it never mixes into a command's real output.</param>
     public static void Run(TextWriter err)
     {
         string? pin;
@@ -41,6 +49,8 @@ public static partial class StaleBinaryCheck
     /// computer says <c>0.0.0-dev</c>, is not a release, and is left alone: whoever built it did so on purpose (and it
     /// does not live in <c>bin/</c>, which the launchers own).
     /// </summary>
+    /// <param name="pin">The text of <c>tools/dmc-release.json</c>.</param>
+    /// <param name="version">This program's version, as <see cref="CommandLine.Version"/> gives it.</param>
     internal static string? Warning(string pin, string version)
     {
         string? tag = PinnedTag(pin);
@@ -56,6 +66,7 @@ public static partial class StaleBinaryCheck
     private static partial Regex ReleaseVersion();
 
     /// <summary>The <c>tag</c> of a pin file; null when the text is not a pin, or the tag is empty.</summary>
+    /// <param name="pin">The text of a pin file. Text that is not JSON, not an object, or has no string <c>tag</c> gives null; it is never an error.</param>
     internal static string? PinnedTag(string pin)
     {
         try

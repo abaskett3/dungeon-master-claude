@@ -16,21 +16,34 @@ namespace Dmc.Commands;
 /// </remarks>
 public sealed class PlayCommand : ICommand
 {
+    /// <inheritdoc />
     public string Name => "play";
 
+    /// <inheritdoc />
     public string Summary => "start a play session: claude --model sonnet --effort high --settings .claude/play-settings.json [args]";
 
     /// <summary>What comes before the player's arguments, the same as in the launchers.</summary>
     internal static IReadOnlyList<string> FixedArguments { get; } =
         ["--model", "sonnet", "--effort", "high", "--settings", ".claude/play-settings.json"];
 
+    /// <summary>Finds <c>claude</c> on the PATH and runs it, in the toolkit root, with <see cref="FixedArguments"/> and then <paramref name="args"/>.</summary>
+    /// <param name="args">Everything after <c>play</c>, passed to Claude Code unchanged.</param>
+    /// <param name="io">Not used: Claude Code takes over the terminal itself.</param>
+    /// <returns>Claude Code's exit code.</returns>
+    /// <exception cref="DmcException">Claude Code is not on the PATH (exit code 127), or only its <c>claude.cmd</c> shim is (see <see cref="FindClaude"/>).</exception>
     public int Run(string[] args, Io io) =>
         Run(args, FindClaude(Environment.GetEnvironmentVariable("PATH"), OperatingSystem.IsWindows()), StartAndWait);
 
     /// <summary>How to start Claude Code: a program, and the arguments that go before Claude Code's own.</summary>
+    /// <param name="File">The program to start: <c>claude</c> itself, or PowerShell when Claude Code is only a <c>claude.ps1</c> shim.</param>
+    /// <param name="Prefix">The arguments that go before <see cref="FixedArguments"/>: empty for <c>claude</c>, the <c>-File</c> arguments for PowerShell.</param>
     internal sealed record Launch(string File, IReadOnlyList<string> Prefix);
 
     /// <summary>The command with its two seams: how <c>claude</c> is started, and what starts it.</summary>
+    /// <param name="args">The player's arguments, passed on unchanged and last.</param>
+    /// <param name="claude">The program and its leading arguments.</param>
+    /// <param name="start">Starts the process and waits for it, returning its exit code. A test passes a function that only records what it was given.</param>
+    /// <returns>Whatever <paramref name="start"/> returns.</returns>
     internal static int Run(string[] args, Launch claude, Func<ProcessStartInfo, int> start)
     {
         var info = new ProcessStartInfo(claude.File) { WorkingDirectory = Toolkit.Root, UseShellExecute = false };
@@ -46,6 +59,12 @@ public sealed class PlayCommand : ICommand
     /// batch job (Y/N)?" after Ctrl+C), but the <c>claude.ps1</c> next to it, through PowerShell, which is what a
     /// PowerShell prompt runs for <c>claude</c>.
     /// </summary>
+    /// <param name="path">The PATH variable's value, or null if unset.</param>
+    /// <param name="windows">True for the Windows rules (see the summary); false for Linux and macOS.</param>
+    /// <exception cref="DmcException">
+    /// Nothing named <c>claude</c> is on the PATH (exit code 127); or only a <c>claude.cmd</c> or <c>.bat</c> is, with no
+    /// <c>claude.ps1</c> beside it (exit code 1).
+    /// </exception>
     internal static Launch FindClaude(string? path, bool windows)
     {
         const string notFound = "Claude Code (claude) is not on the PATH: install it, then run this again";
@@ -71,6 +90,10 @@ public sealed class PlayCommand : ICommand
     /// On Windows each extension of <paramref name="pathExt"/> (PATHEXT's form, <c>.EXE;.CMD</c>) is tried in each
     /// folder. Elsewhere the file must be executable.
     /// </summary>
+    /// <param name="name">The program name without an extension.</param>
+    /// <param name="path">The PATH variable's value, or null if unset; entries are split on the platform's separator and may be quoted.</param>
+    /// <param name="pathExt">The extensions to try on Windows, separated by ";". Null or empty means <c>.COM;.EXE;.BAT;.CMD</c>. Ignored elsewhere.</param>
+    /// <param name="windows">True to try extensions and skip the executable-bit check.</param>
     internal static string? FindOnPath(string name, string? path, string? pathExt, bool windows)
     {
         string[] extensions = windows
@@ -96,6 +119,7 @@ public sealed class PlayCommand : ICommand
         return null;
     }
 
+    /// <summary>True when any execute permission bit is set on the file. Always true on Windows, which has none.</summary>
     static bool IsExecutable(string file)
     {
         if (OperatingSystem.IsWindows())
@@ -109,6 +133,9 @@ public sealed class PlayCommand : ICommand
     /// to quit), and the terminal sends it to dmc as well; dmc ignores it while Claude Code runs, so that it neither
     /// dies and leaves Claude Code behind without a terminal, nor ends the session early.
     /// </summary>
+    /// <param name="info">The process to start.</param>
+    /// <returns>Its exit code.</returns>
+    /// <exception cref="DmcException"><see cref="Process.Start(ProcessStartInfo)"/> returned no process (exit code 1). When it throws instead (the program cannot be run), <see cref="CommandLine"/> reports that as an unexpected failure, also exit code 1.</exception>
     static int StartAndWait(ProcessStartInfo info)
     {
         using var interrupt = PosixSignalRegistration.Create(PosixSignal.SIGINT, context => context.Cancel = true);

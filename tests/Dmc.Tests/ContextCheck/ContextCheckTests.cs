@@ -9,6 +9,7 @@ namespace Dmc.Tests.ContextCheck;
 [TestClass]
 public sealed class ContextCheckInProcessTests : ContextCheckContract
 {
+    /// <summary>Runs the command in this process, with <paramref name="stdin"/> as the hook's input.</summary>
     protected override ProcessResult ContextCheck(string stdin) => DmcRunner.InProcess(["context-check"], stdin);
 }
 
@@ -16,6 +17,7 @@ public sealed class ContextCheckInProcessTests : ContextCheckContract
 [TestClass]
 public sealed class ContextCheckBlackBoxTests : ContextCheckContract
 {
+    /// <summary>Runs the published binary, with <paramref name="stdin"/> as the hook's input.</summary>
     protected override ProcessResult ContextCheck(string stdin) => DmcRunner.BlackBox(["context-check"], stdin);
 }
 
@@ -23,8 +25,10 @@ public sealed class ContextCheckBlackBoxTests : ContextCheckContract
 [TestClass]
 public sealed class ContextCheckEdgeTests
 {
+    /// <summary>A fresh temporary folder for each test, holding the session log it writes.</summary>
     string _folder = "";
 
+    /// <summary>Creates this test's temporary folder.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
@@ -32,9 +36,11 @@ public sealed class ContextCheckEdgeTests
         Directory.CreateDirectory(_folder);
     }
 
+    /// <summary>Deletes this test's temporary folder.</summary>
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Write exactly these bytes as the session log and return its path.</summary>
     string WriteBytes(byte[] bytes)
     {
         string path = Path.Combine(_folder, "session.jsonl");
@@ -42,10 +48,13 @@ public sealed class ContextCheckEdgeTests
         return path;
     }
 
+    /// <summary>Write these lines as the session log, each ended by a newline, and return its path.</summary>
     string Write(params string[] lines) => WriteBytes(Encoding.UTF8.GetBytes(string.Join("\n", lines) + "\n"));
 
+    /// <summary>An assistant record's JSON line for a context of this many tokens.</summary>
     static string Assistant(int context) => ContextCheckContract.Assistant(context).ToJsonString();
 
+    /// <summary>A user record's JSON line.</summary>
     static string User() => ContextCheckContract.User("go on").ToJsonString();
 
     [TestMethod]
@@ -286,6 +295,7 @@ public sealed class ContextCheckEdgeTests
         Assert.AreEqual("", output.ToString() + errors);
     }
 
+    /// <summary>A standard input whose every read fails, as a pipe does when the other end breaks.</summary>
     sealed class ThrowingReader : TextReader
     {
         public override string ReadToEnd() => throw new IOException("the pipe broke");
@@ -314,6 +324,7 @@ public sealed class ContextCheckEdgeTests
         Assert.AreEqual("", result.Stdout + result.Stderr);
     }
 
+    /// <summary>A command that claims it never fails and then throws, to prove <see cref="CommandLine"/> contains it.</summary>
     sealed class ExplodingHook : ICommand
     {
         public string Name => "boom";

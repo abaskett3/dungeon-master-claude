@@ -11,16 +11,25 @@ namespace Dmc.Tests.Roll;
 /// </summary>
 public abstract partial class RollContract
 {
+    /// <summary>A rolled line, <c>expr: [dice] keep [kept] +mod = total</c>. Groups: the expression, the dice, the kept dice (optional), the modifier (optional), the total.</summary>
     [GeneratedRegex(@"^(\S+): \[([\d, ]+)\](?: keep \[([\d, ]+)\])?(?: ([+-]\d+))? = (-?\d+)$")]
     private static partial Regex Line();
 
     /// <summary>Run <c>dmc roll</c> with these arguments.</summary>
     protected abstract ProcessResult Roll(params string[] exprs);
 
+    /// <summary>A rolled line taken apart.</summary>
+    /// <param name="Expr">The expression as echoed.</param>
+    /// <param name="Dice">Every die rolled.</param>
+    /// <param name="Kept">The dice kept, or null when the expression keeps none out.</param>
+    /// <param name="Mod">The modifier; 0 when there is none.</param>
+    /// <param name="Total">The total printed.</param>
     sealed record Parsed(string Expr, int[] Dice, int[]? Kept, int Mod, int Total);
 
+    /// <summary>The numbers of a "3, 5, 2" list.</summary>
     static int[] Numbers(string text) => text.Split(", ").Select(int.Parse).ToArray();
 
+    /// <summary>Takes a rolled line apart, failing the test if the line has any other shape.</summary>
     static Parsed Parse(string line)
     {
         var match = Line().Match(line);
@@ -30,6 +39,7 @@ public abstract partial class RollContract
             g[4].Success ? int.Parse(g[4].Value) : 0, int.Parse(g[5].Value));
     }
 
+    /// <summary>Rolls one expression, which must succeed with exactly one output line, and parses that line.</summary>
     Parsed One(string expr)
     {
         var result = Roll(expr);

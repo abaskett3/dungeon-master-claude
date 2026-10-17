@@ -52,7 +52,7 @@ A prompt change that needs the new `dmc` (a new subcommand, say) should merge on
 
 ### Dry runs
 
-A pull request that changes the release files, or a manual run from the Actions tab (`workflow_dispatch`), runs the same workflow as a dry run with version `0.0.0`: it builds, packs, hashes and installs every archive and uploads the pin it would propose as an artifact, but publishes no release, pushes nothing and opens no pull request.
+A pull request that changes the release files or the build settings every release build uses (`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `Dmc.Cli.csproj`), or a manual run from the Actions tab (`workflow_dispatch`), runs the same workflow as a dry run with version `0.0.0`: it builds, packs, hashes and installs every archive and uploads the pin it would propose as an artifact, but publishes no release, pushes nothing and opens no pull request.
 
 ## How `get-dmc` installs and verifies
 

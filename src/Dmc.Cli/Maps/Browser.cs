@@ -11,6 +11,7 @@ public static class Browser
     /// <c>/dev/null</c>: it must not write into the pipes of the program that started it (whose reader may be gone by
     /// then, and a write to a closed pipe kills the writer), and it must not leave anything on this program's output.
     /// </remarks>
+    /// <param name="address">What to open: the <c>file:///</c> address of the page.</param>
     public static ProcessStartInfo StartInfo(string address)
     {
         if (OperatingSystem.IsWindows())
@@ -23,7 +24,11 @@ public static class Browser
         return start;
     }
 
-    /// <summary>Open the address. Like the script, it says nothing if there is no browser to open.</summary>
+    /// <summary>
+    /// Open the address. Like the script, it says nothing if there is no browser to open: a failure to start the
+    /// opener (no <c>xdg-open</c>, no shell association) is swallowed, and so the exit code stays 0.
+    /// </summary>
+    /// <param name="address">What to open.</param>
     public static void Open(string address)
     {
         try

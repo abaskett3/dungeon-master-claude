@@ -111,6 +111,7 @@ public sealed class PlayTests
         }
     }
 
+    /// <summary>A pin file with a <c>TAG</c> placeholder, which the tests below replace with the tag they want.</summary>
     const string Pin = """{ "about": "x", "tag": "TAG", "sha256": { } }""";
 
     [TestMethod]

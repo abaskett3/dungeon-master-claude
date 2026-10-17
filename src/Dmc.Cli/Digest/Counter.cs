@@ -8,17 +8,22 @@ namespace Dmc.Digest;
 /// </summary>
 internal sealed class Counter
 {
+    /// <summary>The counts in the order their keys were first added. Each entry keeps the key as first used, because equal keys (<c>1</c> and <c>True</c>) can be spelled differently.</summary>
     readonly OrderedDictionary<PyKey, (PyKey Key, long Count)> _counts = [];
 
+    /// <summary>The count of a key: 0 when it was never added.</summary>
     public long this[PyKey key] => _counts.TryGetValue(key, out var entry) ? entry.Count : 0;
 
+    /// <summary>The number of distinct keys.</summary>
     public int Count => _counts.Count;
 
+    /// <summary>True when nothing was added.</summary>
     public bool IsEmpty => _counts.Count == 0;
 
     /// <summary>The keys as first used, with their counts.</summary>
     public IEnumerable<KeyValuePair<PyKey, long>> Items => _counts.Values.Select(e => KeyValuePair.Create(e.Key, e.Count));
 
+    /// <summary>Adds <paramref name="amount"/> to a key's count. A key seen before keeps the spelling and the place it first had.</summary>
     public void Add(PyKey key, long amount = 1) =>
         _counts[key] = (_counts.TryGetValue(key, out var entry) ? entry.Key : key, this[key] + amount);
 

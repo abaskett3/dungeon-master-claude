@@ -8,6 +8,22 @@
 #
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub (the
 # SHA-256 check still applies), and DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64).
+#
+# Usage:     no arguments; the working folder does not matter.
+#              Windows:        powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1
+#              Linux, macOS:   pwsh -File tools/get-dmc.ps1
+# Inputs:    tools/dmc-release.json (the tag, and one SHA-256 for each platform); bin/dmc or bin/dmc.exe, to see which
+#            version is there. On Linux and macOS it needs tar.
+# Outputs:   bin/dmc.exe (or bin/dmc) and the native libraries from the archive, beside it. Nothing is written outside
+#            bin/, and the temporary folder it works in (bin/.get-dmc.*) is removed on every exit. On Windows a dmc.exe that
+#            is running cannot be deleted, so it is renamed to *.old and deleted on a later run.
+# Exit code: 0 when bin/dmc is the pinned release already, or has just been installed. 1 on any failure, with one line
+#            "get-dmc: <what went wrong>" on stderr (an unsupported system or processor, no pin, a download that fails
+#            or stalls, a hash that does not match, an archive that cannot be unpacked or whose dmc does not run).
+#
+# It never installs an archive whose hash does not match the pin, never unpacks or runs anything from an archive before
+# the hash has matched, and never replaces what is in bin/ until the new dmc has run. It prints nothing when there is
+# nothing to do.
 
 $ErrorActionPreference = 'Stop'
 # The progress bar makes Invoke-WebRequest very slow in Windows PowerShell 5.1.

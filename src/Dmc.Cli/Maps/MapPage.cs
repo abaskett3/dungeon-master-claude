@@ -16,6 +16,9 @@ public static class MapPage
         .Replace("@MUTED@", SvgDrawing.Muted).Replace("@FONT@", SvgDrawing.Font);
 
     /// <summary>The data file: one <c>dmcMap({...});</c> call with the stamp, the clock time, the title and the picture.</summary>
+    /// <param name="now">The time of the redraw. The page redraws only when the stamp differs from the one it shows, so each run needs a new one.</param>
+    /// <param name="title">The map's title, shown in the tab's title.</param>
+    /// <param name="svg">The picture, from <see cref="SvgDrawing.Render"/>.</param>
     public static string Data(DateTime now, string title, string svg)
     {
         // now.isoformat(): the microseconds are left out when they are zero.
@@ -36,9 +39,12 @@ public static class MapPage
     /// Write a text file the way Python's text mode does: UTF-8 with no byte-order mark, and the platform's line
     /// ending for each "\n".
     /// </summary>
+    /// <param name="path">The file to write, replacing it if it exists.</param>
+    /// <param name="text">The text, with "\n" line breaks.</param>
     public static void WriteText(string path, string text) =>
         File.WriteAllBytes(path, new UTF8Encoding(false).GetBytes(text.Replace("\n", Environment.NewLine)));
 
+    /// <summary>The page before <see cref="Html"/> fills in its colours and font: the <c>@BG@</c>, <c>@INK@</c>, <c>@MUTED@</c> and <c>@FONT@</c> markers stand for the values in <see cref="SvgDrawing"/>.</summary>
     const string Shell = """
 <!doctype html>
 <html lang="en">

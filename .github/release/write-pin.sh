@@ -7,6 +7,18 @@
 # The release workflow runs it twice: in each build job, with that job's one archive, to install it with get-dmc;
 # and in the pin job, with all of them, for the pull request. It keeps the "about" line of the pin file as it is
 # and writes one key per line, which tools/get-dmc.sh relies on (it reads the file without a JSON parser).
+#
+# Inputs:    <tag> (dmc-vX.Y.Z); <folder> holding one *.sha256 file for each archive of that tag (the platforms it
+#            knows are win-x64, win-arm64, linux-x64, linux-arm64, osx-arm64 and osx-x64); the existing pin file, whose
+#            "about" line is kept. <pin file> defaults to tools/dmc-release.json, relative to the working folder.
+# Outputs:   the pin file, rewritten with the tag and the hashes of the archives found. Nothing is printed on success.
+# Exit code: 0 when the pin was written. 1 with one line "write-pin: <what went wrong>" on stderr when the tag is not a
+#            release tag, the pin file or its "about" line is missing, a .sha256 file does not start with a SHA-256, a
+#            platform has two archives, or the folder holds a .sha256 file that is not an archive of the tag (or none).
+#
+# It never writes a partial pin file (it writes <pin file>.new and moves it into place only at the end, so a failure
+# leaves the old one as it was), never reads or writes anything beyond the pin file and the .sha256 files, and never
+# uses the network.
 set -euo pipefail
 
 tag="$1"

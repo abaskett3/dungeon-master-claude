@@ -1,0 +1,9 @@
+# A missing XML comment on a visible type or member (CS1591) is an error in this project, except in the files that hold
+# MSTest test classes (and the abstract contracts and case lists that sit beside them): those need public test methods,
+# which are meant to go without a comment when their name says what they prove. Support/, the *Fixtures.cs files and
+# Bootstrap.cs keep the check. See Dmc.Tests.csproj.
+[*.cs]
+dotnet_diagnostic.CS1591.severity = error
+
+[*{Tests,Contract,Cases}.cs]
+dotnet_diagnostic.CS1591.severity = none

@@ -15,18 +15,25 @@ namespace Dmc.Tests.Pdf;
 /// </summary>
 public static class PdfFixtures
 {
+    /// <summary>The number of pages of <see cref="SilverEgg"/>.</summary>
     public const int Pages = 4;
 
     /// <summary>The line the Python tests put eight times on page 2.</summary>
     public const string Long = "The goblins of the Silver Egg keep watch from the gallery. ";
 
+    /// <summary>The folder of the two committed PDFs, <c>tests/Dmc.Tests/Pdf/Fixtures</c>.</summary>
     public static string FixturesFolder { get; } = Path.Combine(TestEnv.Root, "tests", "Dmc.Tests", "Pdf", "Fixtures");
 
+    /// <summary>The bytes of <c>locked.pdf</c>, which needs the user password "mellon".</summary>
     public static byte[] Locked() => File.ReadAllBytes(Path.Combine(FixturesFolder, "locked.pdf"));
 
+    /// <summary>The bytes of <c>owner-only.pdf</c>, which has print restrictions but opens with no password.</summary>
     public static byte[] OwnerOnly() => File.ReadAllBytes(Path.Combine(FixturesFolder, "owner-only.pdf"));
 
     /// <summary>One page: its size in points and what is drawn, as PDF content.</summary>
+    /// <param name="Content">The page's content stream, as PDF operators (see <see cref="Line"/>).</param>
+    /// <param name="Width">The media box width, in points.</param>
+    /// <param name="Height">The media box height, in points.</param>
     /// <param name="Rotate">The page's /Rotate, a multiple of 90.</param>
     /// <param name="CropBox">The visible part as left, bottom, right, top; null for the whole page.</param>
     /// <param name="Image">Draw a small grey image on the page.</param>
@@ -134,5 +141,6 @@ public static class PdfFixtures
     /// <summary>Text with numbers in it, formatted with a decimal point whatever the culture.</summary>
     static string Inv(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>Escapes the backslash and parentheses of a PDF string literal.</summary>
     static string Escape(string text) => text.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
 }

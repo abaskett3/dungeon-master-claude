@@ -27,6 +27,9 @@ public static class PageText
     /// <summary>A jump to the left of more than this many point sizes starts a new line.</summary>
     const double BackwardJumpInPointSizes = 2;
 
+    /// <summary>The text of one page: its letters in drawing order, with spaces and line breaks added where PdfPig's rules (and the first change above) say.</summary>
+    /// <param name="page">A page PdfPig loaded.</param>
+    /// <returns>The text with LF line breaks, and no space or line break at the end.</returns>
     public static string Of(Page page)
     {
         var letters = page.Letters;
@@ -86,6 +89,7 @@ public static class PageText
         return builder.ToString();
     }
 
+    /// <summary>The nearest letter before <paramref name="index"/> that is not blank; null if there is none.</summary>
     static Letter? NonWhitespacePrevious(IReadOnlyList<Letter> letters, int index)
     {
         for (int i = index - 1; i >= 0; i--)
@@ -96,6 +100,13 @@ public static class PageText
         return null;
     }
 
+    /// <summary>
+    /// Whether a line break belongs between two letters: the baseline moved by nearly a line of type (PdfPig's rule), or
+    /// the text jumped back to the left by more than <see cref="BackwardJumpInPointSizes"/> point sizes (the added rule).
+    /// </summary>
+    /// <param name="previous">The earlier letter.</param>
+    /// <param name="letter">The later letter.</param>
+    /// <param name="isParagraph">True when the break is also a paragraph break: a drop of more than a line and two thirds, downwards.</param>
     static bool IsNewline(Letter previous, Letter letter, out bool isParagraph)
     {
         isParagraph = false;

@@ -11,6 +11,8 @@ namespace Dmc.Maps;
 public static class MapPng
 {
     /// <summary>Render the SVG and return the PNG, with its size in pixels.</summary>
+    /// <param name="svgText">The map's SVG.</param>
+    /// <exception cref="DmcException">The SVG could not be parsed.</exception>
     public static (byte[] Png, int Width, int Height) Render(string svgText)
     {
         using var svg = new SKSvg();
@@ -31,6 +33,10 @@ public static class MapPng
         return (data.ToArray(), width, height);
     }
 
+    /// <summary>Renders the SVG with <see cref="Render"/> and writes the PNG to a file, replacing it if it exists.</summary>
+    /// <param name="svgText">The map's SVG, from <see cref="SvgDrawing.Render"/>.</param>
+    /// <param name="path">The PNG file to write.</param>
+    /// <exception cref="DmcException">The SVG could not be drawn.</exception>
     public static void Write(string svgText, string path) => File.WriteAllBytes(path, Render(svgText).Png);
 
     /// <summary>
@@ -40,15 +46,21 @@ public static class MapPng
     /// </summary>
     sealed class EmbeddedFonts : ITypefaceProvider
     {
+        /// <summary>The regular face, loaded on first use.</summary>
         static readonly Lazy<SKTypeface?> Regular = new(() => Load("LiberationSans-Regular.ttf"));
+
+        /// <summary>The bold face, loaded on first use.</summary>
         static readonly Lazy<SKTypeface?> Bold = new(() => Load("LiberationSans-Bold.ttf"));
 
+        /// <summary>Reads one font from the assembly's embedded resources (see <c>Dmc.Cli.csproj</c>); null if it is not there.</summary>
+        /// <param name="name">The font's file name.</param>
         static SKTypeface? Load(string name)
         {
             using var stream = typeof(EmbeddedFonts).Assembly.GetManifestResourceStream("Dmc.Maps.Fonts." + name);
             return stream is null ? null : SKTypeface.FromStream(stream);
         }
 
+        /// <summary>Whatever family the SVG asks for, the answer is Liberation Sans: bold for a semi-bold or heavier weight, regular otherwise.</summary>
         public SKTypeface? FromFamilyName(string fontFamily, SKFontStyleWeight fontWeight, SKFontStyleWidth fontWidth,
             SKFontStyleSlant fontStyle) =>
             fontWeight >= SKFontStyleWeight.SemiBold ? Bold.Value : Regular.Value;

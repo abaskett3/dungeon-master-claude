@@ -18,8 +18,10 @@ public static class MapFixtures
         return dict;
     }
 
+    /// <summary>A JSON array. Whole numbers become <c>long</c> and a <c>string[]</c> becomes a list of strings, as for <see cref="Obj"/>.</summary>
     public static List<object?> Arr(params object?[] items) => items.Select(Normalize).ToList();
 
+    /// <summary>Puts a test's value into the form the JSON reader would give: an <c>int</c> as a <c>long</c>, a <c>string[]</c> as a list; anything else as it is.</summary>
     static object? Normalize(object? value) => value switch
     {
         int i => (long)i,
@@ -42,6 +44,7 @@ public static class MapFixtures
         ("base", "goblin-hall"),
         ("tokens", SceneTokens()));
 
+    /// <summary>The two creatures of <see cref="Scene"/>: Thorin, a player character on B2, and a goblin boss, an enemy on E2.</summary>
     public static List<object?> SceneTokens() => Arr(
         Obj(("id", "@"), ("name", "Thorin"), ("kind", "pc"), ("at", "B2")),
         Obj(("id", "1"), ("name", "Goblin boss"), ("kind", "enemy"), ("at", "E2")));
@@ -69,6 +72,7 @@ public static class MapFixtures
             return (object?)token;
         }).ToList();
 
+    /// <summary>One creature for <see cref="Tokens"/>: its cell, and any keys besides the id and cell.</summary>
     public static (string, (string, object?)[]) Spec(string at, params (string, object?)[] extra) => (at, extra);
 
     /// <summary>The text in the SVG, with the tags gone: parsing it also proves that the picture is well formed.</summary>
@@ -78,6 +82,7 @@ public static class MapFixtures
     /// <summary>The same JSON as text, for a file on disk.</summary>
     public static string Json(object? value) => PyJson.Dumps(value);
 
+    /// <summary>Write a map file as UTF-8 with no byte-order mark: the data as JSON, or a string as the text itself.</summary>
     public static void WriteFile(string folder, string name, object? data) =>
         File.WriteAllText(Path.Combine(folder, name), data as string ?? Json(data), new UTF8Encoding(false));
 }

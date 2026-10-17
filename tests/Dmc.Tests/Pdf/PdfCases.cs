@@ -20,12 +20,14 @@ public static class PdfCases
             File.WriteAllBytes(Path.Combine(work, name), bytes);
     };
 
+    /// <summary>The four-page <c>module.pdf</c> most cases start from (<see cref="PdfFixtures.SilverEgg"/>).</summary>
     static readonly (string, byte[])[] SilverEggFile = [("module.pdf", SilverEgg())];
 
     /// <summary>These PDFs in the working folder, then the command, the first PDF and these arguments, and <c>--out</c> there.</summary>
     static CommandCase Pdf(string name, (string Name, byte[] Bytes)[] files, string command, params string[] args) =>
         new(name, work => [command, Path.Combine(work, files[0].Name), .. args, "--out", Path.Combine(work, "out")], null, Seed(files));
 
+    /// <summary>A case on <see cref="SilverEggFile"/> with this command and these arguments.</summary>
     static CommandCase Egg(string name, string command, params string[] args) => Pdf(name, SilverEggFile, command, args);
 
     /// <summary>Lines of x, one under the other, of these lengths: a page whose text is as long as the lengths and line breaks make it.</summary>
@@ -34,6 +36,7 @@ public static class PdfCases
 
     // ---------- the cases that are read: simple pages (once compared with PyMuPDF line for line) ----------
 
+    /// <summary>The cases on simple pages: <c>info</c>, <c>text</c>, <c>render</c> and <c>all</c> with page lists, resolutions and option spellings.</summary>
     static IEnumerable<CommandCase> SameText()
     {
         yield return Egg("info", "info");
@@ -100,6 +103,7 @@ public static class PdfCases
 
     // ---------- the cases that are read: layouts PyMuPDF spaced differently (once compared character for character) ----------
 
+    /// <summary>The cases on page layouts whose spacing and line breaks are the hard part: dot-leader tables, jumps back, rotations, crop boxes and odd fonts.</summary>
     static IEnumerable<CommandCase> SameCharacters()
     {
         string[] rows =
@@ -255,6 +259,7 @@ public sealed class PdfCaseTests
         Assert.AreEqual(text && pages.Count == count, File.Exists(all) && new FileInfo(all).Length > 0, $"all-text.txt in {output}");
     }
 
+    /// <summary>The output of <c>dmc pdf info module.pdf</c> on this PDF, run through the published binary. The run must exit 0.</summary>
     static string Info(byte[] pdf)
     {
         string info = "";

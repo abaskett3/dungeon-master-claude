@@ -12,6 +12,8 @@ internal static class LogFolder
     /// outside the BMP is two "-": that is how Claude Code names the folder (JavaScript's <c>replace(/[^a-zA-Z0-9]/g, "-")</c>
     /// works on UTF-16 units), so that dmc finds the folder where the script, which counts code points, does not.
     /// </summary>
+    /// <param name="root">The toolkit root (<see cref="Toolkit.Root"/> in the real program).</param>
+    /// <param name="environment">Reads an environment variable; null for one that is not set. A test passes its own.</param>
     public static string Of(string root, Func<string, string?> environment)
     {
         string? configured = environment("CLAUDE_CONFIG_DIR");
@@ -19,8 +21,11 @@ internal static class LogFolder
         return Path.Combine(baseFolder, "projects", ProjectName(root));
     }
 
+    /// <summary>The log folder of this toolkit, from the real environment.</summary>
     public static string Default() => Of(Toolkit.Root, Environment.GetEnvironmentVariable);
 
+    /// <summary>The folder name Claude Code gives a project: its path with every character outside <c>A-Za-z0-9</c> replaced by "-".</summary>
+    /// <param name="root">The project's path.</param>
     public static string ProjectName(string root)
     {
         var name = new StringBuilder(root.Length);
@@ -33,6 +38,7 @@ internal static class LogFolder
     /// Python's <c>os.path.expanduser("~")</c>: <c>USERPROFILE</c> on Windows (else <c>HOMEDRIVE</c> and <c>HOMEPATH</c>) and
     /// <c>HOME</c> elsewhere, so that a test or a launcher can point it somewhere; the account's folder if those are unset.
     /// </summary>
+    /// <param name="environment">Reads an environment variable; null for one that is not set.</param>
     static string HomeFolder(Func<string, string?> environment)
     {
         if (OperatingSystem.IsWindows())

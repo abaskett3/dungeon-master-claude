@@ -12,6 +12,8 @@ public static class MapChecker
     // ---------- reading ----------
 
     /// <summary>Read a JSON object from a file. A scale in it must be a standard one; the error names the file.</summary>
+    /// <param name="path">The file to read: UTF-8 text, which must hold a JSON object.</param>
+    /// <exception cref="DmcException">The file is missing, unreadable, not valid UTF-8 or JSON, not an object, or has a <c>cell_ft</c> that is not a standard scale.</exception>
     public static PyDict LoadJson(string path)
     {
         byte[] bytes;
@@ -57,6 +59,10 @@ public static class MapChecker
     }
 
     /// <summary>Reject a scale that is not standard. <paramref name="where"/> names the file that holds it.</summary>
+    /// <param name="cellFt">The <c>cell_ft</c> value from the file, of any JSON type. Any number equal to a standard scale counts, so <c>5.0</c> is 5; <c>true</c> is not accepted.</param>
+    /// <param name="where">What to call the source in the error message.</param>
+    /// <returns>The scale, one of <see cref="MapRules.Scales"/>.</returns>
+    /// <exception cref="DmcException">The value is not a standard scale; the message lists them.</exception>
     public static int CheckScale(object? cellFt, string where = "the map")
     {
         if (Py.TryExactInt(cellFt, out var number) && cellFt is not bool)
@@ -74,9 +80,15 @@ public static class MapChecker
     }
 
     /// <summary>
-    /// Read a place or scene file; a scene's "base" is merged underneath it, except that the base's "initiative" and
-    /// "current" are dropped: a turn order belongs to the scene that holds it.
+    /// Read a place or scene file; a scene's "base" is merged underneath it. A scene is a file with a <c>base</c>, the
+    /// name of a place file in the same folder (without <c>.json</c>): every key of the scene replaces the place's key of
+    /// the same name, except that the place's <c>initiative</c> and <c>current</c> are dropped, because a turn order
+    /// belongs to the scene that holds it. A scene may repeat its place's scale but not change it, and a place cannot
+    /// itself have a base.
     /// </summary>
+    /// <param name="path">The place or scene file.</param>
+    /// <returns>The merged object, which has a <c>grid</c>. Nothing else about it is checked yet: see <see cref="Check"/>.</returns>
+    /// <exception cref="DmcException">The file or its base cannot be read, the base is itself a scene or does not exist, the scale disagrees, or there is no grid.</exception>
     public static PyDict LoadMap(string path)
     {
         var data = LoadJson(path);
@@ -120,9 +132,13 @@ public static class MapChecker
 
     // ---------- checking ----------
 
+    /// <summary>The error for a map that does not pass the check: a plain <see cref="DmcException"/> with exit code 1.</summary>
     static DmcException Fail(string message) => new(message);
 
     /// <summary>What <c>for x in value</c> gives in Python for a value that came from JSON.</summary>
+    /// <param name="value">A list (its items), an object (its keys) or a string (its characters). Anything else is an error.</param>
+    /// <param name="what">The field's name, for the error message.</param>
+    /// <exception cref="DmcException">The value cannot be looped over.</exception>
     static IEnumerable<object?> Items(object? value, string what) => value switch
     {
         List<object?> list => list,
@@ -131,9 +147,17 @@ public static class MapChecker
         _ => throw Fail($"\"{what}\" must be a list."),
     };
 
+    /// <summary>Python's <c>dict.get(key, fallback)</c>. A key whose value is a JSON null gives null, not the fallback.</summary>
     static object? Get(PyDict dict, string key, object? fallback) => dict.TryGetValue(key, out var value) ? value : fallback;
 
-    /// <summary>Resolve every symbol used in the grid to its terrain, name and colour.</summary>
+    /// <summary>
+    /// Resolve every symbol used in the grid to its terrain, name and colour: the built-in meaning (<see cref="MapRules.Builtin"/>),
+    /// overridden by the file's <c>legend</c>, whose entry is a name or an object with <c>name</c>, <c>as</c> and <c>color</c>.
+    /// A symbol that is neither built in nor in the legend is an error, and a legend entry with no terrain is a <c>feature</c>.
+    /// </summary>
+    /// <param name="data">The map object.</param>
+    /// <param name="grid">The rows as code points. Spaces are empty space and need no entry.</param>
+    /// <exception cref="DmcException">The legend is malformed or lacks a symbol the grid uses.</exception>
     static SortedDictionary<int, LegendEntry> BuildLegend(PyDict data, int[][] grid)
     {
         object? custom = Get(data, "legend", new PyDict());
@@ -187,9 +211,18 @@ public static class MapChecker
     }
 
     /// <summary>
-    /// Validate the map and return it in the form the drawing code uses. The turn order is checked only when
-    /// <paramref name="turnOrder"/> is true (drawing): measuring a distance does not depend on it.
+    /// Validate the map and return it in the form the drawing code uses. Checks the grid (rectangular, every symbol
+    /// known), the scale and the <c>north</c> direction; each creature (id of one or two characters and unique, a
+    /// known kind, a size from 1 to 4, a cell on the map and not in a wall or empty space, and, at 5 ft, a cell of its
+    /// own); each label; that <c>edges</c> has only top, bottom, left and right; and, when drawing, the turn order
+    /// (<c>initiative</c> and <c>current</c>).
     /// </summary>
+    /// <param name="data">The object from <see cref="LoadMap"/>.</param>
+    /// <param name="turnOrder">
+    /// Whether to check the turn order. Drawing does; measuring a distance does not depend on it, so a stale order
+    /// never blocks <c>--measure</c>.
+    /// </param>
+    /// <exception cref="DmcException">The first thing found wrong, worded as <c>map_render.py</c> worded it.</exception>
     public static MapModel Check(PyDict data, bool turnOrder = true)
     {
         if (!data.TryGetValue("grid", out var gridValue))

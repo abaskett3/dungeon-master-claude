@@ -5,10 +5,25 @@ namespace Dmc;
 /// <summary>Finds the subcommand, runs it, and turns every failure into one line. Never prints a stack trace.</summary>
 public static class CommandLine
 {
+    /// <summary>
+    /// The version <c>dmc --version</c> prints: the assembly's informational version, which is <c>0.0.0-dev</c> for a
+    /// build made here and the tag's number for a release (see <c>release.yml</c>). "unknown" if the assembly has none.
+    /// </summary>
     public static string Version { get; } =
         typeof(CommandLine).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? "unknown";
 
+    /// <summary>
+    /// Runs one <c>dmc</c> invocation. <c>--version</c> and <c>-h</c>/<c>--help</c>/<c>help</c> are answered here; any
+    /// other first argument must name a command. Unless the command is <see cref="ICommand.NeverFails"/>, the
+    /// stale-binary warning is checked first. A <see cref="DmcException"/> prints as <c>dmc &lt;command&gt;: message</c>
+    /// and exits with its own code; any other exception prints the same way with the exception's type name added, and
+    /// exits 1. A never-fails command swallows every exception and exits 0 with nothing printed.
+    /// </summary>
+    /// <param name="args">The command line, without the program name.</param>
+    /// <param name="io">The streams to read and write.</param>
+    /// <param name="commands">The commands to choose from (<see cref="CommandTable.All"/> in the real program).</param>
+    /// <returns>The process exit code: 0 on success, 1 for no or an unknown command, or whatever the command or failure chose.</returns>
     public static int Run(string[] args, Io io, IReadOnlyList<ICommand> commands)
     {
         if (args.Length == 0)
@@ -61,6 +76,7 @@ public static class CommandLine
         }
     }
 
+    /// <summary>The command names as a comma-separated list, for the "no command" and "unknown command" messages.</summary>
     static string Names(IReadOnlyList<ICommand> commands) => string.Join(", ", commands.Select(c => c.Name));
 
     /// <summary>Collapse line breaks so a message is always one line.</summary>

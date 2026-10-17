@@ -1,11 +1,18 @@
 name: Tests
 
+# Builds and tests the toolkit's .NET code. It runs on every pull request, and on every push to main. For each of
+# Linux, Windows and macOS (Apple Silicon) it publishes dmc with Native AOT twice (a development build, and one with a
+# release's version number), builds the tests, installs Playwright's Chromium and runs all the tests. It writes
+# nothing to the repository and publishes nothing. The build treats a missing XML comment on a public member of dmc as
+# an error (CS1591; see Directory.Build.props), so the first publish step fails on one.
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
+  # The only job: publish dmc for the runner's platform, then build and run the tests against it.
   # dmc is published for the runner with Native AOT, the way a release is built, and the tests then run it as a
   # subprocess. bash and PowerShell, which the launcher and get-dmc tests use, are on every runner image.
   dotnet:

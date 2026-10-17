@@ -12,8 +12,10 @@ namespace Dmc.Tests.ContextCheck;
 /// </summary>
 public abstract class ContextCheckContract
 {
+    /// <summary>A fresh temporary folder for each test, holding the session log it writes.</summary>
     string _folder = "";
 
+    /// <summary>Creates this test's temporary folder.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
@@ -21,12 +23,16 @@ public abstract class ContextCheckContract
         Directory.CreateDirectory(_folder);
     }
 
+    /// <summary>Deletes this test's temporary folder.</summary>
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
     /// <summary>Run <c>dmc context-check</c> with this on stdin.</summary>
     protected abstract ProcessResult ContextCheck(string stdin);
 
+    /// <summary>An assistant record of a log whose context size is <paramref name="context"/> tokens.</summary>
+    /// <param name="context">The total of input, cache-read and cache-creation tokens.</param>
+    /// <param name="sidechain">True for a record of a sub-agent's conversation, which does not count.</param>
     // Split the context the way the API reports it: a little fresh input, most of it from the cache.
     internal static JsonObject Assistant(int context, bool sidechain = false) => new()
     {
@@ -46,6 +52,7 @@ public abstract class ContextCheckContract
         },
     };
 
+    /// <summary>A user record holding a typed message.</summary>
     internal static JsonObject User(string text) => new()
     {
         ["type"] = "user",
@@ -64,6 +71,7 @@ public abstract class ContextCheckContract
         return path;
     }
 
+    /// <summary>Write a session log of these records and return its path.</summary>
     string Log(params JsonNode[] records) => LogWithTail("", records);
 
     /// <summary>What the hook prints when Claude Code passes it the log at <paramref name="path"/>.</summary>

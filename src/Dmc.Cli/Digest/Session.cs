@@ -6,40 +6,58 @@ using static Dmc.Digest.DigestText;
 namespace Dmc.Digest;
 
 /// <summary>One API call of a reply: the context it read, and what its tool calls did (see <c>Report.ExtraCalls</c>).</summary>
+/// <param name="ctx">The context size of the call: input tokens plus those read from and written to the cache.</param>
 internal sealed class Call(double ctx)
 {
+    /// <summary>The context size this call read.</summary>
     public double Ctx { get; } = ctx;
 
+    /// <summary>What its tool calls did, as <see cref="DigestText.CallKind"/> names them (<c>roll</c>, <c>write</c>, <c>lookup</c>, <c>other</c>).</summary>
     public HashSet<string> Kinds { get; } = [];
 }
 
 /// <summary>A message the player typed, with the reply that followed it.</summary>
+/// <param name="time">The time of day (HH:MM:SS, UTC) the message was written, cut from the record's timestamp.</param>
+/// <param name="ctx">The context size of the last API call before this message.</param>
+/// <param name="text">The message.</param>
+/// <param name="skills">The slash commands the message holds (the names in <c>&lt;command-name&gt;</c> tags).</param>
 internal sealed class Turn(string time, double ctx, string text, HashSet<PyKey> skills)
 {
+    /// <summary>The time of day the message was written (HH:MM:SS, UTC).</summary>
     public string Time { get; } = time;
 
     /// <summary>The context size of the last API call before this message.</summary>
     public double Ctx { get; } = ctx;
 
+    /// <summary>The message as the player typed it.</summary>
     public string Text { get; } = text;
 
+    /// <summary>The characters of text in the replies to this message, in code points.</summary>
     public long ReplyChars { get; set; }
 
+    /// <summary>The tool calls of the reply, each as the tool's name, with <c>:file</c> after it when the call names a file.</summary>
     public List<string> Tools { get; } = [];
 
+    /// <summary>The API calls of the reply, in order.</summary>
     public List<Call> Calls { get; } = [];
 
+    /// <summary>The skills run in this turn: those the message names, and those the reply called.</summary>
     public HashSet<PyKey> Skills { get; } = skills;
 
     /// <summary>The files read, edited or written in the reply, in order, with the kind of call.</summary>
     public List<(string Kind, string Target)> Files { get; } = [];
 
+    /// <summary>The characters sent in edits and writes of <c>game-state.md</c> in this turn.</summary>
     public long StateChars { get; set; }
 }
 
 /// <summary>
 /// The four token counts of an API call. Counts are numbers as Python adds them: whole numbers, unless the log writes a float.
 /// </summary>
+/// <param name="Input">Input tokens that were not cached.</param>
+/// <param name="Output">Output tokens.</param>
+/// <param name="CacheRead">Input tokens read from the cache.</param>
+/// <param name="CacheCreation">Input tokens written to the cache.</param>
 internal readonly record struct Usage(double Input, double Output, double CacheRead, double CacheCreation);
 
 /// <summary>
@@ -49,42 +67,92 @@ internal readonly record struct Usage(double Input, double Output, double CacheR
 /// </summary>
 internal sealed partial class Session
 {
+    /// <summary>The campaign a record mentions: the folder name after <c>adventures/</c>.</summary>
     [GeneratedRegex("adventures/([a-z0-9][a-z0-9-]*)/")]
     private static partial Regex CampaignPattern();
 
+    /// <summary>A slash command in a player message, as Claude Code writes it in <c>&lt;command-name&gt;</c> or <c>&lt;command-message&gt;</c> tags. Group 1 is the name, without its "/".</summary>
     [GeneratedRegex(@"<command-(?:name|message)>/?([\p{L}\p{Nd}\p{Nl}\p{No}_:-]+)")]
     private static partial Regex SlashSkill();
 
+    /// <summary>The file whose edits are counted separately in the statistics.</summary>
     public const string StateFile = "game-state.md";
+
+    /// <summary>The skill that marks a message as a full save.</summary>
     public const string SaveSkill = "campaign-full-save";
+
+    /// <summary>The skill that marks a message as a resume.</summary>
     public const string ResumeSkill = "resume-campaign";
 
+    /// <summary>The log file's path.</summary>
     public string Path { get; }
+
+    /// <summary>The session id: the log's file name without <c>.jsonl</c>.</summary>
     public string Id { get; }
+
+    /// <summary>The log's size in bytes.</summary>
     public long Size { get; }
+
+    /// <summary>The first timestamp in the log (an ISO 8601 text), or "" if no record has one.</summary>
     public string Start { get; private set; } = "";
+
+    /// <summary>The last timestamp in the log, or "".</summary>
     public string End { get; private set; } = "";
+
+    /// <summary>How often each campaign folder is mentioned in the log.</summary>
     public Counter Campaigns { get; } = new();
+
+    /// <summary>The model of each API call, counted once per message id.</summary>
     public Counter Models { get; } = new();
 
     /// <summary>The usage of each API call by message id, the last record of an id winning.</summary>
     public Dictionary<PyKey, PyDict> Calls { get; } = [];
 
+    /// <summary>The context size of each API call, in order, counted once per message id.</summary>
     public List<double> Ctx { get; } = [];
+
+    /// <summary>How many times the context was compacted.</summary>
     public int Compactions { get; private set; }
+
+    /// <summary>How many player messages say the request was interrupted.</summary>
     public int Interrupts { get; private set; }
+
+    /// <summary>The tool calls, by tool name.</summary>
     public Counter Tools { get; } = new();
+
+    /// <summary>The Skill tool calls, by skill name.</summary>
     public Counter Skills { get; } = new();
+
+    /// <summary>The Edit and Write calls, by file name.</summary>
     public Counter Writes { get; } = new();
+
+    /// <summary>The characters sent to Edit and Write, by file name.</summary>
     public Counter WriteChars { get; } = new();
+
+    /// <summary>The Read calls, by file name.</summary>
     public Counter Reads { get; } = new();
+
+    /// <summary>The characters Read returned, by file name.</summary>
     public Counter ReadChars { get; } = new();
+
+    /// <summary>The characters of every tool's result, by tool name.</summary>
     public Counter ResultChars { get; } = new();
+
+    /// <summary>One line for each tool result flagged as an error, in order.</summary>
     public List<string> Errors { get; } = [];
+
+    /// <summary>How many Edit calls ended in an error.</summary>
     public int FailedEdits { get; private set; }
+
+    /// <summary>The player's messages, in order.</summary>
     public List<Turn> Turns { get; } = [];
+
+    /// <summary>The lines of the readable transcript (<c>&lt;id&gt;-transcript.md</c>), in order. Some start with a line break, to leave a blank line before them.</summary>
     public List<string> Lines { get; } = [];
 
+    /// <summary>Reads the whole log at once, so every property is final when the constructor returns.</summary>
+    /// <param name="path">A session log, a <c>.jsonl</c> file.</param>
+    /// <exception cref="DmcException">The log is not valid UTF-8, or a record has a shape the digest cannot read (the message names the file and line).</exception>
     public Session(string path)
     {
         Path = path;
@@ -110,6 +178,7 @@ internal sealed partial class Session
         return new Usage(input, output, cacheRead, cacheCreation);
     }
 
+    /// <summary>Opens the log and reads it, turning the two ways it can be unreadable into a <see cref="DmcException"/>.</summary>
     void Parse()
     {
         // No byte-order mark is skipped: Python reads it as a character, and then the first line is not JSON. A byte
@@ -137,6 +206,12 @@ internal sealed partial class Session
     /// <summary>A tool call seen: what it was called (any JSON value), and the file it names (the empty string for none).</summary>
     readonly record struct ToolInfo(PyKey Name, string Target);
 
+    /// <summary>
+    /// Reads every record in order and hands it to <see cref="Assistant"/> or <see cref="User"/>; compaction
+    /// boundaries are counted here. Other record types are ignored.
+    /// </summary>
+    /// <param name="reader">The log, read line by line. A line that is not JSON is skipped.</param>
+    /// <param name="lineNumber">The number of the line being read, so a caller can say where a <see cref="LogShapeException"/> happened.</param>
     void ParseLines(StreamReader reader, ref int lineNumber)
     {
         var toolOf = new Dictionary<PyKey, ToolInfo>(); // tool_use id -> (name, file)
@@ -193,6 +268,16 @@ internal sealed partial class Session
         }
     }
 
+    /// <summary>
+    /// An assistant record: notes the API call (once per message id), writes the DM's text to the transcript and hands
+    /// each tool call to <see cref="ToolUse"/>.
+    /// </summary>
+    /// <param name="msg">The record's <c>message</c>.</param>
+    /// <param name="clock">The time of day of the record.</param>
+    /// <param name="toolOf">Tool calls seen so far, by id, for matching their results.</param>
+    /// <param name="callOf">The calls of the current turn, by message id.</param>
+    /// <param name="seenIds">The message ids already counted.</param>
+    /// <returns>The context size of this call, which the next player message is recorded with.</returns>
     double Assistant(PyDict msg, string clock, Dictionary<PyKey, ToolInfo> toolOf, Dictionary<PyKey, Call> callOf, HashSet<PyKey> seenIds)
     {
         PyDict usage = DictOrEmpty(msg, "usage");
@@ -230,6 +315,15 @@ internal sealed partial class Session
         return ctxNow;
     }
 
+    /// <summary>
+    /// A tool call: counts it by tool, skill and file, remembers it so its result can be matched, and, once a player
+    /// has spoken, adds it to the current turn.
+    /// </summary>
+    /// <param name="block">The <c>tool_use</c> content block.</param>
+    /// <param name="clock">The time of day of the record.</param>
+    /// <param name="mid">The id of the API message the call belongs to.</param>
+    /// <param name="toolOf">Tool calls by id; this adds the new one.</param>
+    /// <param name="callOf">The calls of the current turn, by message id.</param>
     void ToolUse(PyDict block, string clock, PyKey mid, Dictionary<PyKey, ToolInfo> toolOf, Dictionary<PyKey, Call> callOf)
     {
         // A tool's name, id and skill are whatever the log holds (a null is a key of its own, as in Python); only a name
@@ -271,8 +365,19 @@ internal sealed partial class Session
             turn.StateChars += CharsSent(args);
     }
 
+    /// <summary>The characters an Edit or Write call sent: the old and new text of an edit, or the content of a write.</summary>
     static long CharsSent(PyDict args) => Len(args, "old_string") + Len(args, "new_string") + Len(args, "content");
 
+    /// <summary>
+    /// A user record, which holds the player's messages and the results of tool calls. A result is counted against its
+    /// tool; a text block is a compaction summary, an injected message (hook, system reminder, slash-command echo) or
+    /// a real player message, which starts a new <see cref="Turn"/>.
+    /// </summary>
+    /// <param name="msg">The record's <c>message</c>.</param>
+    /// <param name="rec">The whole record.</param>
+    /// <param name="clock">The time of day of the record.</param>
+    /// <param name="ctxNow">The context size of the last API call so far.</param>
+    /// <param name="toolOf">Tool calls by id, to find what a result belongs to.</param>
     void User(PyDict msg, PyDict rec, string clock, double ctxNow, Dictionary<PyKey, ToolInfo> toolOf)
     {
         var content = Get(msg, "content");

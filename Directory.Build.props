@@ -11,6 +11,12 @@
     <!-- "dmc version" prints the plain version. Without this the SDK appends "+<commit sha>", which would make
          the binary's version differ from the release tag it is pinned against (Phase 5). -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!-- Keeps every type and member documented. Building the XML documentation file is what makes the compiler report
+         CS1591 (no XML comment on a visible type or member), so a new undocumented one shows up as a warning. In
+         src/Dmc.Cli, which treats warnings as errors, it is an error. In tests/Dmc.Tests it is an error too, except in
+         the files that hold MSTest test classes (see tests/Dmc.Tests/.editorconfig). The comments themselves cover
+         internal and private members too, but the compiler only checks the visible ones. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
 </Project>

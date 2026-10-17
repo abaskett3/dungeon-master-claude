@@ -50,6 +50,7 @@ internal static partial class DigestText
         return a % b != 0 && (a < 0) != (b < 0) ? q - 1 : q;
     }
 
+    /// <summary>A whole number as text, in the invariant culture (no thousands separators).</summary>
     public static string Num(long n) => n.ToString(CultureInfo.InvariantCulture);
 
     // ---------- the script's functions ----------
@@ -62,11 +63,19 @@ internal static partial class DigestText
         return length <= limit ? text : $"{Slice(text, 0, limit)} ...[+{length - limit} chars]";
     }
 
+    /// <summary>The text on one line, with each line break (a "\n") shown as " / ", then cut as <see cref="Cut"/> does.</summary>
     public static string OneLine(string text, int limit) => Cut(string.Join(" / ", text.Split('\n')), limit);
 
+    /// <summary>The last part of a path, whether it is written with "/" or "\".</summary>
     public static string BaseName(string path) => path.Replace('\\', '/').Split('/')[^1];
 
-    /// <summary>What a tool call is shown as in the transcript.</summary>
+    /// <summary>
+    /// What a tool call is shown as in the transcript: for Read, Write, Edit and NotebookEdit the file's name with a
+    /// size note (the characters written, the characters swapped, or "(part)" for a read with a limit or pages); for any
+    /// other tool, its arguments as JSON on one line, cut at 220 characters.
+    /// </summary>
+    /// <param name="name">The tool's name.</param>
+    /// <param name="args">The tool call's input.</param>
     public static string DescribeCall(string? name, PyDict args)
     {
         if (name is "Read" or "Write" or "Edit" or "NotebookEdit")
@@ -95,8 +104,12 @@ internal static partial class DigestText
     /// <summary>
     /// What a tool call did, for classing the calls of a message: roll, write, lookup or other. A roll is <c>dmc roll</c>,
     /// or one of the dice scripts that came before it (<c>scripts/roll.ps1</c>, <c>scripts/roll.sh</c>), so that the logs
-    /// of sessions played before the switch to <c>dmc</c> digest as they always did.
+    /// of sessions played before the switch to <c>dmc</c> digest as they always did. Only Bash and PowerShell calls can
+    /// be rolls.
     /// </summary>
+    /// <param name="name">The tool's name.</param>
+    /// <param name="args">The tool call's input.</param>
+    /// <returns><c>roll</c>, <c>write</c> (Edit, Write), <c>lookup</c> (Read, Grep, Glob) or <c>other</c>.</returns>
     public static string CallKind(string? name, PyDict args)
     {
         if (name is "Bash" or "PowerShell" && StrOf(args, "command").Replace('\\', '/') is var command
@@ -109,7 +122,12 @@ internal static partial class DigestText
         return "other";
     }
 
-    /// <summary>The text of a tool result, which Claude Code writes as a string or as a list of blocks.</summary>
+    /// <summary>
+    /// The text of a tool result, which Claude Code writes as a string or as a list of blocks. A list's text blocks
+    /// are joined with spaces, and a block with no text (an image) shows as its type in angle brackets.
+    /// </summary>
+    /// <param name="content">The result's <c>content</c> value.</param>
+    /// <exception cref="LogShapeException">A block has a <c>text</c> that is not text.</exception>
     public static string ResultText(object? content)
     {
         switch (content)
@@ -127,6 +145,10 @@ internal static partial class DigestText
     }
 
     /// <summary>The rows of a counter, biggest first, as <c>Read x3 (90 chars), Edit x1</c>.</summary>
+    /// <param name="counter">The counts to show.</param>
+    /// <param name="extra">A second counter with the same keys, shown as characters beside each row; none (or an empty one) shows no sizes.</param>
+    /// <param name="top">How many rows at most.</param>
+    /// <returns>The rows joined with ", ", with an empty key shown as "?"; "none" when the counter is empty.</returns>
     public static string Table(Counter counter, Counter? extra = null, int top = 8)
     {
         var rows = counter.MostCommon(top).Select(p =>
@@ -135,6 +157,7 @@ internal static partial class DigestText
         return text.Length == 0 ? "none" : text;
     }
 
+    /// <summary><paramref name="part"/> as a percentage of <paramref name="whole"/> with one decimal, such as "12.5%"; "0%" when the whole is 0.</summary>
     public static string Percent(double part, double whole) =>
         whole != 0 ? Py.F1(100.0 * part / whole) + "%" : "0%";
 
@@ -160,6 +183,7 @@ internal static partial class DigestText
         return Math.Floor(a / b);
     }
 
+    /// <summary>The median of whole numbers: the middle one, or the mean of the two in the middle. The values must not be empty (an empty list fails on an index).</summary>
     public static double Median(IEnumerable<long> values)
     {
         long[] sorted = values.Order().ToArray();
@@ -169,6 +193,7 @@ internal static partial class DigestText
 
     // ---------- reading a JSON record ----------
 
+    /// <summary>Python's <c>record.get(key)</c>: the value, or null when the key is missing (a JSON null is null too).</summary>
     public static object? Get(PyDict record, string key) => record.TryGetValue(key, out var value) ? value : null;
 
     /// <summary>Python's <c>record.get(key) or {}</c>.</summary>
@@ -187,6 +212,10 @@ internal static partial class DigestText
         _ => throw new LogShapeException($"\"{key}\" is not a list"),
     };
 
+    /// <summary>The value as a JSON object.</summary>
+    /// <param name="value">What the log holds there.</param>
+    /// <param name="what">What the value is, for the error message: "a message", for example.</param>
+    /// <exception cref="LogShapeException">The value is not an object.</exception>
     public static PyDict AsDict(object? value, string what) =>
         value as PyDict ?? throw new LogShapeException($"{what} is not an object");
 

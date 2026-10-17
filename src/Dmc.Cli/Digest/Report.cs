@@ -124,6 +124,12 @@ internal static partial class Report
     /// <summary>"2026-01-02T10:00:00.000Z" as "2026-01-02 10:00".</summary>
     public static string Minute(string stamp) => Slice(stamp, 0, 16).Replace("T", " ", StringComparison.Ordinal);
 
+    /// <summary>
+    /// The section of <c>stats.md</c> for one session, ending in a newline: when it ran, models, player messages and
+    /// API calls, context growth, token totals, reply lengths, tool, skill and file counts, the figures from
+    /// <see cref="CallFigures"/>, the five biggest context jumps and the first ten tool errors. A line is left out when
+    /// its data does not exist (no context readings, no replies).
+    /// </summary>
     public static string Stats(Session s)
     {
         var tok = s.Tokens();
@@ -168,6 +174,11 @@ internal static partial class Report
         return string.Join("\n", o) + "\n";
     }
 
+    /// <summary>
+    /// The contents of <c>&lt;id&gt;-turns.txt</c>: two lines for each player message. The first has a "!" if
+    /// <see cref="Friction"/> matches, the message's number and time, the context size in thousands of tokens, and the
+    /// message cut to 600 characters. The second has the reply's length and its tool calls.
+    /// </summary>
     public static string TurnIndex(Session s)
     {
         var o = new List<string>();

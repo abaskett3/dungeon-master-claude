@@ -31,11 +31,15 @@ internal static class DigestArguments
     /// <summary>The subcommands, in the order the invalid-choice message lists them.</summary>
     internal static readonly string[] Commands = [List, Show];
 
+    /// <summary>The options <c>list</c> accepts.</summary>
     static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs"];
 
+    /// <summary>The options <c>show</c> accepts: those of <c>list</c> and <c>--out</c>.</summary>
     static readonly string[] ShowOptions = [.. ListOptions, "--out"];
 
     /// <summary>Read the arguments after <c>dmc digest</c>. Null means "--help".</summary>
+    /// <param name="args">The arguments after <c>digest</c>.</param>
+    /// <exception cref="DmcException">A usage mistake, exit code 2: no or an invalid command, an option with no value, a value given to <c>--help</c>, or arguments no parser recognised.</exception>
     public static DigestRequest? Parse(string[] args)
     {
         // The parser above the commands knows only --help, so an option before the command is unknown, and a lone
@@ -72,6 +76,8 @@ internal static class DigestArguments
         return request;
     }
 
+    /// <summary>What <c>--help</c> does: null, which means "print the help text". A value written after "=" is an error, as in argparse.</summary>
+    /// <param name="option">The <c>--help</c> argument as classified.</param>
     static DigestRequest? Help(Argparse.Classified option) =>
         option.Explicit is null
             ? null
@@ -81,6 +87,9 @@ internal static class DigestArguments
     /// Sort every argument as <c>O</c> (an option, known or not), <c>A</c> (a plain argument) or <c>-</c> (the first
     /// "--", after which every argument is a plain one), as argparse's <c>arg_strings_pattern</c> does.
     /// </summary>
+    /// <param name="args">The arguments to sort.</param>
+    /// <param name="options">The options the parser knows.</param>
+    /// <returns>The letter of each argument, and, for each one that was classified (not after a "--"), its classification.</returns>
     static (char[] Kinds, Argparse.Classified?[] Classified) Sort(string[] args, string[] options)
     {
         var kinds = new char[args.Length];
@@ -107,6 +116,10 @@ internal static class DigestArguments
     }
 
     /// <summary>The command's own parser. Arguments it does not recognize are added to <paramref name="extras"/>.</summary>
+    /// <param name="command"><c>list</c> or <c>show</c>. Only <c>show</c> takes session ids and <c>--out</c>.</param>
+    /// <param name="args">The arguments after the command word.</param>
+    /// <param name="extras">The unrecognized arguments so far; this adds its own, for the caller to report.</param>
+    /// <returns>The request, or null for <c>--help</c>.</returns>
     static DigestRequest? ParseCommand(string command, string[] args, List<string> extras)
     {
         bool show = command == Show;

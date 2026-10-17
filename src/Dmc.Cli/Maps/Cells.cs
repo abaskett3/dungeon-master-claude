@@ -8,6 +8,7 @@ namespace Dmc.Maps;
 public static class Cells
 {
     /// <summary>0 -> A, 25 -> Z, 26 -> AA.</summary>
+    /// <param name="index">The column, counting from 0 at the left.</param>
     public static string ColName(int index)
     {
         var name = new StringBuilder();
@@ -21,13 +22,20 @@ public static class Cells
         return name.ToString();
     }
 
+    /// <summary>The name of a cell: (0, 0) is "A1", (2, 4) is "C5".</summary>
+    /// <param name="col">The column, from 0 at the left.</param>
+    /// <param name="row">The row, from 0 at the top.</param>
     public static string CellName(int col, int row) => $"{ColName(col)}{row + 1}";
 
     /// <summary>
     /// Turn "E3" into (col, row), both 0-based. Reads the text as Python does: case ignored, ends trimmed, every
     /// letter in it counted as a column letter, and what follows them all must be digits.
     /// </summary>
+    /// <param name="value">The cell name as it came from the file or the command line; a value that is not text is read as its Python <c>str</c>.</param>
+    /// <param name="cols">The map's width in cells.</param>
+    /// <param name="rows">The map's height in cells.</param>
     /// <param name="what">Names the thing the cell belongs to, for the error ("token 1 (Thorin)").</param>
+    /// <exception cref="DmcException">The text is not a cell name, or names a cell outside the map.</exception>
     public static (int Col, int Row) Parse(object? value, int cols, int rows, string what)
     {
         string text = Py.Upper(Py.Strip(Py.Str(value)));

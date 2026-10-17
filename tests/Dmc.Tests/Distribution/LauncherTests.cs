@@ -10,12 +10,15 @@ namespace Dmc.Tests.Distribution;
 [TestClass]
 public sealed class LauncherTests
 {
+    /// <summary>The arguments a player gives the launcher; one holds a space, to show it is passed on as one argument.</summary>
     static readonly string[] PlayersArgs = ["--continue", "two words"];
 
+    /// <summary>Runs the launcher with <see cref="PlayersArgs"/>, with the fake claude folder first on the PATH and the archives taken from <paramref name="assets"/>.</summary>
     static Dmc.Tests.Support.ProcessResult Launch(string shell, ToolkitCopy toolkit, string claude, string assets) =>
         RunScript(shell, toolkit, "play", PlayersArgs,
             new Dictionary<string, string?> { ["DMC_GET_TEST_ASSETS"] = assets, ["PATH"] = PathWith(claude) });
 
+    /// <summary>Asserts that claude ran with exit code 7 (which the launcher passes on), in the toolkit copy's folder, with the launchers' arguments and then the player's.</summary>
     static void AssertClaudeStarted(Dmc.Tests.Support.ProcessResult result, ToolkitCopy toolkit)
     {
         Assert.AreEqual(7, result.ExitCode, $"the launcher passes on claude's exit code:\n{result}");
@@ -80,6 +83,10 @@ public sealed class LauncherTests
     [DynamicData(nameof(Shells), typeof(Bootstrap))]
     public void WhenBinDmcDoesNotRunTheLauncherStartsClaudeItself(string shell) => StartsClaudeWithoutDmc(shell, brokenDmc: true);
 
+    /// <summary>
+    /// A release is pinned but its archive is not available. The launcher must still start claude, after two lines
+    /// on stderr that say what went wrong; with <paramref name="brokenDmc"/>, an existing <c>bin/dmc</c> that cannot run is there too.
+    /// </summary>
     static void StartsClaudeWithoutDmc(string shell, bool brokenDmc)
     {
         string claude = FakeClaude();

@@ -11,13 +11,16 @@ namespace Dmc.Commands;
 /// </summary>
 public sealed class RollCommand : ICommand
 {
-    /// <summary>The word typed after <c>dmc</c>.</summary>
+    /// <inheritdoc />
     public string Name => "roll";
 
-    /// <summary>One line for <c>dmc --help</c>.</summary>
+    /// <inheritdoc />
     public string Summary => "roll dice: dmc roll 1d20+5 4d6kh3, or with a label and target \"Pip, shot:2d20kl1+5@AC14\"";
 
-    /// <summary>Roll with the operating system's random bytes.</summary>
+    /// <summary>Rolls every argument in <paramref name="args"/> with the operating system's random bytes.</summary>
+    /// <param name="args">Dice expressions such as <c>1d20+5</c>, each with an optional label and target, or <c>--help</c>.</param>
+    /// <param name="io">Standard output gets one line per argument, or the help.</param>
+    /// <returns>0 when every argument was rolled or help was asked for, 1 when any was bad or none was given.</returns>
     public int Run(string[] args, Io io)
     {
         using var random = new OsRandomBytes();
@@ -25,9 +28,13 @@ public sealed class RollCommand : ICommand
     }
 
     /// <summary>
-    /// Print the usage line (no arguments, exit 1), the help (<c>--help</c> or <c>-h</c> anywhere, exit 0), or roll each
-    /// argument with <paramref name="random"/>, one line each, exit 1 if any was bad. Tests pass a scripted source.
+    /// The command with its random source passed in, so a test can roll known bytes: the usage line when there are no
+    /// arguments, the help when <c>--help</c> or <c>-h</c> is among them, otherwise one line per argument.
     /// </summary>
+    /// <param name="args">Dice expressions, each with an optional label and target.</param>
+    /// <param name="io">Standard output gets one line per argument, the help, or the usage line when there are none.</param>
+    /// <param name="random">Where the dice come from.</param>
+    /// <returns>0 when every argument was rolled or help was printed, otherwise 1.</returns>
     internal static int Run(string[] args, Io io, IRandomBytes random)
     {
         if (args.Length == 0)

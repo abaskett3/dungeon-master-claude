@@ -11,6 +11,7 @@ public static class Argparse
     public static DmcException Usage(string message) => new(message, exitCode: 2);
 
     /// <summary>How argparse sees one argument: a plain word, or an option (known or not) with a value written after "=".</summary>
+    /// <param name="IsOption">True when the argument is an option (known or not), false for a plain argument.</param>
     /// <param name="Option">The option it is, or null for an option that does not exist.</param>
     /// <param name="Explicit">The text after "=", or null if there was none.</param>
     public sealed record Classified(bool IsOption, string? Option = null, string? Explicit = null);
@@ -18,8 +19,12 @@ public static class Argparse
     /// <summary>
     /// <c>ArgumentParser._parse_optional</c>: an exact option, then <c>--option=value</c>, then a unique prefix of one,
     /// then a negative number or a word with a space (a plain argument), and anything else that starts with "-" is an
-    /// unknown option.
+    /// unknown option. The short form <c>-h</c> is read as <c>--help</c>.
     /// </summary>
+    /// <param name="arg">One command-line argument.</param>
+    /// <param name="options">The long options the command accepts, each with its leading "--".</param>
+    /// <returns>What kind of argument it is.</returns>
+    /// <exception cref="DmcException">A <c>--</c> option is a prefix of more than one of <paramref name="options"/> (exit code 2).</exception>
     public static Classified Classify(string arg, string[] options)
     {
         if (arg.Length == 0 || arg[0] != '-')
@@ -56,6 +61,9 @@ public static class Argparse
     /// Classify every argument before any is acted on, as argparse does: an ambiguous option is an error even after a
     /// "--help". After a "--" every argument is a plain one, and the "--" itself goes (its entry stays null).
     /// </summary>
+    /// <param name="args">The whole command line after the command's name.</param>
+    /// <param name="options">The long options the command accepts, each with its leading "--".</param>
+    /// <returns>One entry per argument, in order; null for the first "--" separator.</returns>
     public static Classified?[] ClassifyAll(string[] args, string[] options)
     {
         var kinds = new Classified?[args.Length];

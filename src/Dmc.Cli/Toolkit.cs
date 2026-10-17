@@ -13,6 +13,12 @@ public static class Toolkit
     /// </summary>
     public static string Root { get; } = FindRoot(AppContext.BaseDirectory);
 
+    /// <summary>The search behind <see cref="Root"/>, taking the executable's folder as a parameter so a test can aim it anywhere.</summary>
+    /// <param name="baseDirectory">The folder the executable runs from (<see cref="AppContext.BaseDirectory"/> in the real program).</param>
+    /// <returns>
+    /// The nearest folder among the parent of <paramref name="baseDirectory"/> and the two above it that holds
+    /// <c>tools/dmc-release.json</c>, or that parent when none does.
+    /// </returns>
     internal static string FindRoot(string baseDirectory)
     {
         string parent = Path.GetFullPath(Path.Combine(baseDirectory, ".."));

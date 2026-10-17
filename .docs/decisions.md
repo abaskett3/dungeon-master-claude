@@ -79,13 +79,6 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The repeated word read badly, and the user asked for it to go. It needed a new release (0.1.1), since the skill calls the new name.
 - **Source:** PR #18.
 
-## A log that cannot be reported on stops the whole digest, before any output
-
-- **Date:** 2026-10-17
-- **Decision:** In `dmc digest`, a log whose shape fails only when its figures are worked out (a token count that is `NaN` or infinite, or an `output_tokens` that is not a number) is reported as a `DmcException`, `<file>.jsonl: <message>`, exit 1, in the form of the "not valid UTF-8" error (no line number: the problem is in a sum, not on a line). It stops the whole run rather than skipping that session, and nothing is printed or written first: `list` builds every row before printing the heading, and `show` builds every file's text before creating the output folder.
-- **Reason:** `Session` already stops the run for a bad log it finds while reading, so a bad log meant the same thing whichever moment found it. Skipping a session instead would mean `stats.md` silently lacks it, and the `review-transcript` skill would read a review that looks complete. Building everything in memory first costs nothing (the transcripts are already in memory) and removes the other fault, the files of earlier sessions left behind by a run that then failed. Reporting at one place, `Digester.Reporting`, covers every route into the figures, where catching only the non-finite count in `DigestText.Whole` would have left the text `output_tokens` case, and `list`, as unexpected failures.
-- **Source:** Issue #29.
-
 ## Combat procedure rules from issue #6, Phase 1
 
 - **Date:** 2026-10-17
@@ -141,3 +134,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Decision:** `Directory.Build.props` turns on `GenerateDocumentationFile`, so the compiler reports CS1591 (no XML comment on a visible type or member) and checks that comments are well formed. In `src/Dmc.Cli` that is a build error, through its existing `TreatWarningsAsErrors`. In `tests/Dmc.Tests`, comment correctness (CS1570 to CS1574, CS1580, CS1584, CS1587, CS1589, CS1590) is an error in every file, and CS1591 is an error except in the files that hold MSTest test classes (`*Tests.cs`, `*Contract.cs`, `*Cases.cs`), where `tests/Dmc.Tests/.editorconfig` turns it off. `PublishDocumentationFile` is false, so `dmc.xml` stays out of the publish output and the release archives. Private and internal members are documented too, but the compiler cannot check them.
 - **Reason:** The user asked for everything to be documented in code, and for it to stay so; a check that fails the build is what keeps it. The test classes are the exception because MSTest needs public test methods, and a test whose name says what it proves needs no comment: checking them would have flagged 382 members meant to have none. Scoping the exemption by file, not switching CS1591 off for the whole test project, keeps `Support/`, the fixtures and `Bootstrap.cs` checked. The documentation file is kept out of publishing so the archives stay at the four files `release.yml` insists on.
 - **Source:** PR #24.
+
+## A bad token count is refused when the log is read, and stops the whole digest
+
+- **Date:** 2026-10-17
+- **Decision:** `Session` checks the token counts of every assistant record as it reads it: each of the four counts must be a number, and finite, and the context reading (input plus the two cache counts) must be finite. A record that fails is reported by the existing catch as `<file>.jsonl line N: <message>`, exit 1, like any other shape error. A bad log stops the whole run, `list` and `show` alike, before anything is printed or written; it is not skipped.
+- **Reason:** A non-finite count had been found only when the statistics were worked out, after `Session` had finished, so it escaped as an unexpected failure, with earlier sessions' files already written, and `list` and `show` could disagree about the same log. Checking where the record is read fixes all of it at the root: one place, one message form with the line number, and `list` and `show` refuse exactly the same logs. A first version caught the error in a wrapper around the reporting; it was dropped as treating the symptom. Stopping rather than skipping follows from how `Session` already treated every other bad log, and a skipped session would leave `stats.md` quietly short of one and the `review-transcript` skill reading it as complete. `show` already read every session before writing, so no build-ahead of the output was needed.
+- **Limits:** Sums across many calls are not checked: counts that are each finite but add up past about 1.8e308 would still fail in the statistics as an unexpected failure. No real log has such numbers.
+- **Source:** Issue #29; the review of PR #32.

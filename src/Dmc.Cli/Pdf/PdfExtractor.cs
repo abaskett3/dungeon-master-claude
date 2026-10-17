@@ -42,10 +42,14 @@ public static class PdfExtractor
     /// and <c>render</c> writes the pictures one page at a time; <c>all</c> does the text and then the pictures.
     /// </summary>
     /// <remarks>
-    /// "Writes nothing" holds only for the checks. A picture that cannot be encoded as a JPEG throws in the middle of
-    /// <c>render</c>, after the earlier pages' JPEGs have been written, and, for <c>all</c>, after the text files and
-    /// <c>all-text.txt</c> were written too; none of that is removed. A file system error while writing (a full disk, say)
-    /// is not a <see cref="DmcException"/>: it propagates and <see cref="CommandLine"/> reports it as an unexpected failure.
+    /// What <c>text</c>, <c>render</c> and <c>all</c> write is all or nothing. It is written into a temporary folder next to
+    /// the output folder (see <see cref="OutputStaging"/>), and moved into place, with the report lines printed, only when
+    /// every file has been written. A picture that cannot be encoded as a JPEG, even on the last page, or a file system
+    /// error while writing, deletes the temporary folder and leaves the output folder as it was: no new files, and none of
+    /// the files already there replaced or deleted. (Killing the process cannot run that cleanup, and leaves the temporary
+    /// folder, <c>&lt;out&gt;.partial-&lt;random&gt;</c>, behind for the user to delete.) A file system error while writing
+    /// (a full disk, say) is not a <see cref="DmcException"/>: it propagates and <see cref="CommandLine"/> reports it as an
+    /// unexpected failure. <c>info</c> writes nothing, and prints as it goes.
     /// </remarks>
     /// <param name="request">What to do.</param>
     /// <param name="io">Standard output gets the report lines.</param>
@@ -57,8 +61,8 @@ public static class PdfExtractor
     /// that is not a number or range, or is outside the PDF's pages. A <c>--dpi</c> outside 1 to <see cref="MaxDpi"/>
     /// (render and all). PDFium finds fewer pages than the text reader does: for render and all, before anything is
     /// written; for <c>info</c>, only when PdfPig could not load a page, and then after the earlier pages' lines have been
-    /// printed. A page that cannot be saved
-    /// as a JPEG at that resolution (render and all, after earlier pages were written).
+    /// printed. A page that cannot be saved as a JPEG at that resolution (render and all); nothing is left in the output
+    /// folder then, and nothing is printed.
     /// </exception>
     public static int Run(PdfRequest request, Io io, Func<bool>? libsslAvailable = null)
     {
@@ -79,11 +83,24 @@ public static class PdfExtractor
         SizeF[]? sizes = rendering ? PageSizes(request.Pdf, pages) : null;
 
         if (request.Command == "info")
+        {
             Info(request.Pdf, document, pages, io);
-        if (request.Command is "text" or "all")
-            Text(document, pages, output, io);
-        if (rendering)
-            Render(request, pages, sizes!, output, io);
+            return 0;
+        }
+
+        // Everything is written to a staging folder and the report lines are kept back: if any page fails, the output
+        // folder is as it was and the run has printed nothing but its error.
+        var report = new List<string>();
+        using (var staging = new OutputStaging(output))
+        {
+            if (request.Command is "text" or "all")
+                report.Add(Text(document, pages, staging.Path, output));
+            if (rendering)
+                report.Add(Render(request, pages, sizes!, staging.Path, output));
+            staging.Commit();
+        }
+        foreach (string line in report)
+            io.Out.WriteLine(line);
         return 0;
     }
 
@@ -167,36 +184,38 @@ public static class PdfExtractor
     /// </summary>
     /// <param name="document">The PDF.</param>
     /// <param name="pages">The pages to write, from 1.</param>
-    /// <param name="output">The output folder, created if needed.</param>
-    /// <param name="io">Standard output.</param>
-    static void Text(PdfDocument document, List<int> pages, string output, Io io)
+    /// <param name="staging">The folder the files are written into for now (see <see cref="OutputStaging"/>), laid out as the output folder will be.</param>
+    /// <param name="output">The output folder the files will be moved to; it is only named in the report line.</param>
+    /// <returns>The report line, <c>text: N pages -&gt; folder</c>, naming <paramref name="output"/>. The caller prints it once everything has been moved into place.</returns>
+    static string Text(PdfDocument document, List<int> pages, string staging, string output)
     {
         string textFolder = Path.Combine(output, "text");
-        Directory.CreateDirectory(textFolder);
+        Directory.CreateDirectory(Path.Combine(staging, "text"));
         bool whole = pages.Count == document.NumberOfPages;
         var combined = new List<string>();
         foreach (int n in pages)
         {
             string text = TextOf(document, n);
-            WriteText(Path.Combine(textFolder, $"page-{n:000}.txt"), text);
+            WriteText(Path.Combine(staging, "text", $"page-{n:000}.txt"), text);
             combined.Add($"===== PDF PAGE {n} =====\n{text}");
         }
         string all = Path.Combine(output, "all-text.txt");
         if (whole)
-            WriteText(all, string.Join("\n\n", combined));
-        io.Out.WriteLine($"text: {pages.Count} pages -> {textFolder}" + (whole ? $" and {all}" : ""));
+            WriteText(Path.Combine(staging, "all-text.txt"), string.Join("\n\n", combined));
+        return $"text: {pages.Count} pages -> {textFolder}" + (whole ? $" and {all}" : "");
     }
 
     /// <summary><c>render</c>: one JPEG per page in <c>pages/</c>, drawn by PDFium at the requested resolution.</summary>
     /// <param name="request">Gives the PDF's path and the resolution.</param>
     /// <param name="pages">The pages to draw, from 1.</param>
     /// <param name="sizes">PDFium's size of every page, in points, from <see cref="PageSizes"/>.</param>
-    /// <param name="output">The output folder, created if needed.</param>
-    /// <param name="io">Standard output.</param>
-    /// <exception cref="DmcException">A page could not be encoded as a JPEG.</exception>
-    static void Render(PdfRequest request, List<int> pages, SizeF[] sizes, string output, Io io)
+    /// <param name="staging">The folder the pictures are written into for now (see <see cref="OutputStaging"/>), laid out as the output folder will be.</param>
+    /// <param name="output">The output folder the pictures will be moved to; it is only named in the report line.</param>
+    /// <returns>The report line, <c>render: N pages at D dpi -&gt; folder</c>, naming <paramref name="output"/>. The caller prints it once everything has been moved into place.</returns>
+    /// <exception cref="DmcException">A page could not be encoded as a JPEG. The pictures of the earlier pages are in <paramref name="staging"/>, which the caller deletes.</exception>
+    static string Render(PdfRequest request, List<int> pages, SizeF[] sizes, string staging, string output)
     {
-        string pageFolder = Path.Combine(output, "pages");
+        string pageFolder = Path.Combine(staging, "pages");
         Directory.CreateDirectory(pageFolder);
         using var stream = File.OpenRead(request.Pdf);
 
@@ -225,7 +244,7 @@ public static class PdfExtractor
                 index++;
             }
         }
-        io.Out.WriteLine($"render: {pages.Count} pages at {request.Dpi} dpi -> {pageFolder}");
+        return $"render: {pages.Count} pages at {request.Dpi} dpi -> {Path.Combine(output, "pages")}";
     }
 
     /// <summary>

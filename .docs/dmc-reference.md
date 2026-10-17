@@ -223,7 +223,9 @@ text: 1 pages -> <folder>/extracted/text
 render: 1 pages at 110 dpi -> <folder>/extracted/pages
 ```
 
-A PDF with only an owner password (print or copy restrictions) is read. A page that cannot be read gets a placeholder line and the others carry on. Errors, each one line:
+A PDF with only an owner password (print or copy restrictions) is read. A page that cannot be read gets a placeholder line and the others carry on.
+
+**All or nothing.** `text`, `render` and `all` either finish or leave the output folder as it was. They write into a temporary folder beside it, `<out>.partial-<random>`, and move the files into place, and print their report lines, only when every page is done. If a run fails on any page (a page too big to save as a JPEG at that `--dpi`, a full disk), it deletes the temporary folder and the folders it had to make to hold it, and prints only the error: no new files, and no file already in the output folder replaced or deleted. When a run succeeds it replaces files of the same name and leaves the others, as before. Only killing the process (Ctrl+C, a power cut) can leave an `<out>.partial-<random>` folder behind; it is safe to delete. `info` writes nothing. Errors, each one line:
 
 | Message | Exit |
 |---|---|
@@ -232,6 +234,7 @@ A PDF with only an owner password (print or copy restrictions) is read. A page t
 | `dmc pdf: No such file: <path>` | 1 |
 | `dmc pdf: Page range '9-12' is outside 1-4.` | 1 |
 | `dmc pdf: --dpi must be a whole number from 1 to 1200.` | 1 |
+| `dmc pdf: Page 2 could not be saved as a JPEG at 1200 dpi; try a lower --dpi.` (the page's picture is too big to encode; nothing is left in the output folder) | 1 |
 | `dmc pdf: argument command: invalid choice: 'bogus' (choose from info, text, render, all)` | 2 |
 | `dmc pdf: the following arguments are required: pdf` | 2 |
 

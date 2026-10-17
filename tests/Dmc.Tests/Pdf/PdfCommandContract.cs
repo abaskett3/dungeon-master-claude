@@ -376,6 +376,55 @@ public abstract partial class PdfCommandContract
         Assert.AreEqual(before, Read("all-text.txt"));
     }
 
+    /// <summary>
+    /// A run that fails on a later page leaves nothing behind. The PDF has a small first page and a second 4000 points
+    /// wide: at 1200 dpi page 1 draws and is written, but page 2 is 66,667 pixels across, more than Skia encodes as a JPEG,
+    /// so <c>dmc pdf</c> reports "could not be saved as a JPEG". No test hook is needed. Checked for <c>all</c> (the text
+    /// files are written first) and <c>render</c>, with an output folder that does not exist, one with its parents
+    /// missing, and one that already holds files, which must come out byte for byte as they were. A failed run is also
+    /// silent on stdout, and leaves no <c>.partial-</c> folder beside the output.
+    /// </summary>
+    [TestMethod]
+    public void AFailureOnALaterPageLeavesNoNewFilesAndChangesNoOldOnes()
+    {
+        string wide = Path.Combine(_folder, "wide.pdf");
+        File.WriteAllBytes(wide, Build([new Page(Line(2, 10, "a", height: 20, size: 5), 20, 20), new Page("", 4000, 10)]));
+        string deep = Path.Combine(_folder, "deep", "er", "out");
+        string[] before = Directory.GetFileSystemEntries(_folder).Order(StringComparer.Ordinal).ToArray();
+
+        foreach (string command in new[] { "all", "render" })
+        {
+            foreach (string output in new[] { _out, deep })
+            {
+                var result = Pdf(command, wide, "--dpi", "1200", "--out", output);
+                Assert.AreEqual(1, result.ExitCode, result.ToString());
+                StringAssert.Contains(result.Stderr, "dmc pdf: Page 2 could not be saved as a JPEG at 1200 dpi");
+                Assert.AreEqual("", result.Stdout, "nothing is reported for a run that did not finish");
+                CollectionAssert.AreEqual(before, Directory.GetFileSystemEntries(_folder).Order(StringComparer.Ordinal).ToArray(),
+                    $"{command} into {Path.GetFileName(output)}: no output folder, parent or .partial- folder is left");
+            }
+        }
+
+        // Files already in the output folder are neither replaced nor deleted by the failed run.
+        Directory.CreateDirectory(Path.Combine(_out, "pages"));
+        Directory.CreateDirectory(Path.Combine(_out, "text"));
+        var old = new Dictionary<string, string>
+        {
+            [Path.Combine(_out, "pages", "page-001.jpg")] = "an old picture",
+            [Path.Combine(_out, "text", "page-001.txt")] = "old text",
+            [Path.Combine(_out, "all-text.txt")] = "old combined text",
+            [Path.Combine(_out, "notes.md")] = "the player's own file",
+        };
+        foreach (var (path, content) in old)
+            File.WriteAllText(path, content);
+        Assert.AreEqual(1, Pdf("all", wide, "--dpi", "1200", "--out", _out).ExitCode);
+        CollectionAssert.AreEquivalent(old.Keys.ToArray(), Directory.GetFiles(_out, "*", SearchOption.AllDirectories));
+        foreach (var (path, content) in old)
+            Assert.AreEqual(content, File.ReadAllText(path), path);
+        CollectionAssert.AreEquivalent(new[] { "all-text.txt", "notes.md", "pages", "text" }, Listing());
+        Assert.AreEqual(before.Length + 1, Directory.GetFileSystemEntries(_folder).Length, "only the output folder is new: no .partial- folder");
+    }
+
     [TestMethod]
     public void TheCombinedFileIsThePagesJoinedBySeparators()
     {

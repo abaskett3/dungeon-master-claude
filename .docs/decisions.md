@@ -128,6 +128,13 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The player lost track of whose turn it was and when each creature acts. Names need not be unique ("Goblin" twice), so matching by name alone drew the wrong token or none. An unmatched entry is an error so that a typo is caught instead of drawing silently; the cost is that a creature that is not a token (a lair action) cannot be listed. Redrawing once per reply, not once per monster turn, keeps the cost of a fight down.
 - **Source:** Issue #6 finding 5; PR #25 and its review.
 
+## `dmc pdf` output is all or nothing, through a temporary folder
+
+- **Date:** 2026-10-17
+- **Decision:** `text`, `render` and `all` write into a temporary folder next to the output folder, `<out>.partial-<random>`, and move every file into place only when the whole run has succeeded, printing the report lines then. A failed run deletes the temporary folder and any folder it had to make to hold it, and nothing already in the output folder is deleted or replaced. A successful run still replaces files of the same name and leaves other files alone, so extracting some pages after a full run keeps working. `info` is left as it was: it writes nothing. The code is `Pdf/OutputStaging.cs`, and no test hook was added to the binary: the test makes a PDF whose second page is too wide to encode as a JPEG at 1200 dpi.
+- **Reason:** A run that failed on page 40 left pages 1 to 39 and the text files in `extracted/`, which looks like a finished extraction missing its last pages, and `ingest-module` could digest a book with pages missing. The folder sits beside the output so that moving a file is a rename on the same volume, and the random suffix keeps two runs apart. Moving file by file, not swapping whole folders, is what keeps the old merge behaviour and the promise that existing files survive a failed run. The cost: the move is several steps, not one, so a failure in the middle of it (the disk fills while renaming) can still leave some files in place, and killing the process leaves the temporary folder behind; both were judged better than the old state and are documented in `dmc-reference.md`.
+- **Source:** Issue #30.
+
 ## The build checks that code is documented
 
 - **Date:** 2026-10-17

@@ -44,7 +44,7 @@ The player talks only to Claude Code. Claude Code, following `CLAUDE.md` and the
 2. If the pin names a tag, the launcher runs `get-dmc`, which does nothing when `bin/dmc --version` already prints the pinned version, and otherwise downloads `<tag>-<rid>.zip` or `.tar.gz` from the GitHub Release, checks its SHA-256, checks that the new program runs and prints that version, and only then moves it into `bin/`.
 3. Then, if `bin/dmc --version` runs, the launcher hands over to `bin/dmc play`, which starts that same `claude` command from the toolkit root and waits. If it does not run, the launcher prints one line saying `dmc` is not available and starts the `claude` command itself.
 4. Claude Code loads `CLAUDE.md`, `.claude/settings.json` and the play settings. The `SessionStart` hook runs `"$CLAUDE_PROJECT_DIR/bin/dmc" --version`; if that fails it prints one line telling DMC to run `get-dmc` before the first roll, and otherwise prints nothing.
-5. Following `CLAUDE.md` § Starting a session, DMC finds the active campaign (`adventures/.active-campaign`) and runs the `resume-campaign` skill: it reads the player options, `game-state.md`, the summary, the DM notes, the sheets of the PCs, the party and the NPCs present (no others), the tail of the latest session log (its last three scenes) and the canon (whole while it is under about 230 lines; past that, its Rulings plus the lines a search for the scene's names, places and threads finds), checks them against each other, and recaps.
+5. Following `CLAUDE.md` § Starting a session, DMC finds the active campaign (`adventures/.active-campaign`) and runs the `resume-campaign` skill: it reads the player options, `game-state.md`, the summary, the DM notes, the sheets of the PCs, the party and the NPCs present (no others), the latest session log (its last three scenes, or the whole log when the last session ended without a full save) and the canon (whole while it is under about 230 lines; past that, its Rulings, its Prices, debts and promises and the lines a search for the scene's names, places and threads finds), checks them against each other, and recaps.
 
 ## A turn of play
 
@@ -64,7 +64,7 @@ The player talks only to Claude Code. Claude Code, following `CLAUDE.md` and the
 | 1. Game state | `game-state.md` is brought to this exact moment, fight included (`update-game-state`). |
 | 2. Character sheets | Every character who appeared gets their sheet updated (`character-sheet-update`); bit parts go into `minor-npcs.md`. |
 | 3. Session log | Unwritten scenes are appended to the session log. |
-| 4. Canon | Missed facts go into `canon.md`, which is then pruned. The line count is checked every save: past about 230 lines, facts whose subject can no longer come up move to `canon-archive.md` until it is under about 200, because the resume only reads canon whole under about 230. |
+| 4. Canon | Missed facts go into `canon.md`, which is then pruned. The line count is checked every save: past about 230 lines, facts whose subject can no longer come up move to `canon-archive.md` until it is under about 200, because the resume only reads canon whole under about 230; if every subject is live it stays long and the resume searches it. The Last full save line records the last scene saved. |
 | 5. DM notes | `dm-notes.md` is updated, including the Opposition table; closed threads move to `dm-notes-archive.md`. |
 | 5a. Module progress | `module-progress.md`, if present, is brought up to date. |
 | 6. Summary | `summary.md` is rewritten, under about 600 words. |

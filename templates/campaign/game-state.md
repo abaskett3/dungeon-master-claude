@@ -4,7 +4,7 @@ The present moment only. History goes in `story/sessions/`.
 
 - **Campaign**:
 - **Current session**: 1
-- **Last full save**: never
+- **Last full save**: never <!-- A full save writes: date and time, session number, "through scene N" (the last scene of the session log it covers). -->
 
 ## Scene
 
@@ -17,7 +17,7 @@ The present moment only. History goes in `story/sessions/`.
 
 ## Party status
 
-<!-- One block per PC and companion. Full sheets are in character-sheets/. -->
+<!-- One block per PC and companion: everyone travelling with the party as one of its own. Full sheets are in character-sheets/. Resume reads a sheet for each block here. Someone with the party who is not a companion (a rescued NPC, a prisoner, a guest) goes under "With the party, not companions" below instead. -->
 
 ### (character name)
 
@@ -32,6 +32,12 @@ The present moment only. History goes in `story/sessions/`.
 - **Inspiration**: no
 - **Gold**: 0 gp
 - **Consumables**: none
+
+### With the party, not companions
+
+<!-- One line each: name, and what matters now (HP or condition). Their sheets are read at resume only when they are in the scene. -->
+
+- none
 
 ## Combat tracker
 

@@ -52,7 +52,7 @@ To carry on a campaign you played somewhere else, say so and give DMC the chat e
 
 ### Resuming
 
-Start DMC the same way and type `/resume-campaign`. DMC reads the campaign files, checks that they agree with each other, and gives a short recap: where you are, what just happened, your condition and open quests. To keep the resume small it reads your character's sheet, the party's and those of anyone in the scene (no other sheets), only the last few scenes of the latest session log, and, once the campaign's canon file is long, only its rulings plus what a search for this scene's names and places finds; the full save keeps canon from growing past that point by archiving what can no longer come up. To switch campaigns, add the campaign's name: `/resume-campaign <name>`.
+Start DMC the same way and type `/resume-campaign`. DMC reads the campaign files, checks that they agree with each other, and gives a short recap: where you are, what just happened, your condition and open quests. To keep the resume small it reads your character's sheet, the party's and those of anyone in the scene (no other sheets), only the last few scenes of the latest session log (the whole log if the last session ended without a full save), and, once the campaign's canon file is long, only its rulings plus what a search for this scene's names and places finds; the full save archives what can no longer come up, which keeps canon short where it can. To switch campaigns, add the campaign's name: `/resume-campaign <name>`.
 
 If the files disagree (HP on the sheet differs from the game state, say), DMC tells you what it found, proposes the likely truth and fixes the files once you confirm.
 

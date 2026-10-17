@@ -75,7 +75,10 @@ public sealed class MapCheckingTests
 
     static (string, object?) One(params (string, object?)[] token) => ("tokens", Arr(Obj(token)));
 
-    // Issue #6, finding 5: the optional "initiative" and "current" keys of a fight.
+    /// <summary>
+    /// Issue #6, finding 5: the optional <c>"initiative"</c> and <c>"current"</c> keys of a fight are checked against the
+    /// tokens, with one-line errors.
+    /// </summary>
     [TestMethod]
     public void TheTurnOrderIsCheckedAgainstTheTokens()
     {
@@ -509,6 +512,7 @@ public sealed class MapDrawingTests
         Assert.DoesNotContain("ON THE MAP", words);
     }
 
+    /// <summary>The list is in the panel only when the map has an initiative, the current turn is marked once, and nothing else changes.</summary>
     [TestMethod]
     public void TheTurnOrderIsDrawnBesideTheGridOnlyWhenTheMapHasOne()
     {

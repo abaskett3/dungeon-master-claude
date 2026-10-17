@@ -32,6 +32,7 @@ public sealed partial class MapPngTests
         }
     }
 
+    /// <summary>A map with a turn order draws a PNG of the SVG's size that differs from the one without it.</summary>
     [TestMethod]
     public void TheTurnOrderIsInThePngToo()
     {

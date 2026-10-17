@@ -35,9 +35,13 @@ public sealed class DiceRollerTests
 
     static RollOutcome Roll(string expr, params uint[] draws) => new DiceRoller(new Scripted(draws)).Roll(expr);
 
+    /// <summary>Roll one argument (<c>label:dice@target</c>) from scripted draws.</summary>
     static RollOutcome Arg(string argument, params uint[] draws) => new DiceRoller(new Scripted(draws)).RollArgument(argument);
 
-    // Issue #6, finding 4: label:dice@target. A d20 draw of n is the face n % 20 + 1 (0 is a 1, 19 is a 20).
+    /// <summary>
+    /// Issue #6, finding 4: the line for <c>label:dice@target</c> is the plain line with the label before it and the
+    /// verdict after, and meeting the target succeeds. A d20 draw of n is the face n % 20 + 1 (0 is a 1, 19 is a 20).
+    /// </summary>
     [TestMethod]
     public void ALabelAndATargetMakeTheLineReadyToPaste()
     {
@@ -50,6 +54,10 @@ public sealed class DiceRollerTests
         Assert.AreEqual("1d20+5: [1] +5 = 6 vs AC 10, miss (natural 1)", Arg("1d20+5@ac10", 0).Line);
     }
 
+    /// <summary>
+    /// The 5e rule: a natural 20 hits and a natural 1 misses against an AC, for a single d20 or the kept one; two d20s
+    /// added up have no natural roll, and checks and saves (a DC) have no automatic result.
+    /// </summary>
     [TestMethod]
     public void ANaturalTwentyOrOneDecidesAnAttackWhateverTheTotal()
     {
@@ -65,6 +73,7 @@ public sealed class DiceRollerTests
         Assert.AreEqual("1d20+30: [1] +30 = 31 vs DC 5, success", Arg("1d20+30@DC5", 0).Line);
     }
 
+    /// <summary>The bare syntax is untouched: <c>RollArgument</c> gives <c>Roll</c>'s line, good or bad, byte for byte.</summary>
     [TestMethod]
     public void WithoutALabelOrATargetTheLineIsExactlyTheOldOne()
     {
@@ -76,6 +85,7 @@ public sealed class DiceRollerTests
         }
     }
 
+    /// <summary>A bad label or target is one line that starts with the label, and no die is drawn (none are scripted).</summary>
     [TestMethod]
     public void ABadLabelOrTargetIsOneLineAndDrawsNoDice()
     {

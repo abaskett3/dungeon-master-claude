@@ -45,7 +45,7 @@ kept one under advantage or disadvantage) hits and a natural 1 misses whatever t
 exactly as it always was.
 """.Replace("\r\n", "\n");
 
-    // The target, after the last "@": AC or DC in any case, and a number.
+    /// <summary>The target after the last "@": AC or DC in any case, and a whole number (group 1 is the kind, group 2 the number).</summary>
     [GeneratedRegex(@"^(ac|dc)([0-9]+)\z", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex Target();
 

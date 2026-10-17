@@ -22,8 +22,10 @@ public static class SvgDrawing
     const string GridLine = "#cbc4b3";
     const string WallColor = "#3b4149";
 
-    /// <summary>The plate behind the current turn in the turn order, and the colour of its outline and its "TURN" tag.</summary>
+    /// <summary>The fill of the plate behind the current turn in the turn order.</summary>
     const string TurnPlate = "#2d3a4a";
+
+    /// <summary>The outline of that plate and the colour of its "TURN" tag.</summary>
     const string TurnAccent = "#6fb1e0";
 
     /// <summary>Tokens sharing a cell: two across, so four fit in a 40 px cell.</summary>

@@ -136,11 +136,14 @@ public abstract partial class RollContract
         CollectionAssert.AreEquivalent(new[] { 1, 2 }, d2.Distinct().ToArray());
     }
 
+    /// <summary>A labeled line with a target: the label, the plain line, the target and its verdict, and the natural-roll note.</summary>
     [GeneratedRegex(@"^(?<label>.*?): (?<plain>\S+: .*?) vs (?<kind>AC|DC) (?<target>\d+), (?<verdict>hit|miss|success|fail)(?: \(natural (?<nat>20|1)\))?$")]
     private static partial Regex Labeled();
 
-    // Issue #6, finding 4: every labeled line is checked against its own numbers, so the rule for natural 20s and 1s is
-    // tested on real dice, over many rolls, in both the library and the binary.
+    /// <summary>
+    /// Issue #6, finding 4: every labeled line is checked against its own numbers, so the rule for natural 20s and 1s
+    /// is tested on real dice, over many rolls, in both the library and the binary.
+    /// </summary>
     [TestMethod]
     public void LabeledRollsGetTheirOwnLineAndTheRightVerdict()
     {
@@ -182,6 +185,7 @@ public abstract partial class RollContract
         CollectionAssert.AreEquivalent(new[] { "1", "20" }, natural.ToArray());
     }
 
+    /// <summary>Several expressions in one call each get their own line, and a bare one among them is as it always was.</summary>
     [TestMethod]
     public void TheLabelsOfSeveralExpressionsDoNotMixAndTheBareOnesAreUntouched()
     {
@@ -193,6 +197,7 @@ public abstract partial class RollContract
         StringAssert.StartsWith(result.StdoutLines[2], "Kole, Dex save: 1d20: [");
     }
 
+    /// <summary>A bad target is one error line, the exit code is 1, and the other arguments are still rolled.</summary>
     [TestMethod]
     public void ABadLabelOrTargetIsOneLineAndTheOtherLinesAreStillRolled()
     {
@@ -203,6 +208,7 @@ public abstract partial class RollContract
         StringAssert.StartsWith(result.StdoutLines[1], "Pip: 1d20: [");
     }
 
+    /// <summary><c>dmc roll --help</c> explains the label, the target and the natural 20 and 1 rule, with LF line ends.</summary>
     [TestMethod]
     public void HelpExplainsTheLabelTheTargetAndTheNaturalRule()
     {

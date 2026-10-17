@@ -292,6 +292,7 @@ public abstract partial class MapCommandContract
         CollectionAssert.AreEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, png[..8]);
     }
 
+    /// <summary>The turn order is in the page data when the scene has one and not otherwise; a bad one draws nothing.</summary>
     [TestMethod]
     public void TheTurnOrderReachesThePageAndABadOneIsNotDrawn()
     {

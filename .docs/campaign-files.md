@@ -30,7 +30,7 @@ adventures/
       <place>.md             longer notes about a place, beside its map
       live.json              the scene on the player's screen: a place plus who stands where
       live.html, live-data.js, live.png   written by dmc map
-      live-source.txt        the map file the page last showed, written by dmc map; dmc redraw reads it
+      live-source.txt        what the page was last drawn from (the map file and its base place), written by dmc map; dmc redraw reads it
     module-progress.md       only for a published module (spoilers)
     import/                  only for a campaign imported from elsewhere: the export, kept as the record
 ```
@@ -88,7 +88,7 @@ A map is a small JSON file that `dmc map` checks, draws and measures. The full f
 - **The scale**, `cell_ft`, must be 5 (the default), 30, or 5280, 31680 or 316800 for overland maps (1, 6 or 60 miles a square). Anything else, including `null`, is refused.
 - **A token** has an `id` of one or two characters (`@` for the PC, letters for allies, numbers for enemies) and `at`, its top-left cell; optionally `name`, `kind` (`pc`, `ally`, `enemy` or `neutral`), `size` in cells, a short `note` the player can see, and `down` for a creature that is dead or unconscious. At 5 ft two tokens cannot share a cell; on larger squares several can.
 
-`dmc map` writes `live.html`, `live-data.js`, `live-source.txt` (the file's name, so that the Stop hook's `dmc redraw` knows which file the page shows) and, with `--png`, `live.png` next to the file; `dmc redraw` rewrites the first two when the file changes. The player can see everything in a map file, so only what the character has seen or knows goes in.
+`dmc map` writes `live.html`, `live-data.js`, `live-source.txt` (two lines: the file's name, and the path of its base place relative to `maps/`, so that the Stop hook's `dmc redraw` can tell from modification times alone whether anything changed) and, with `--png`, `live.png` next to the file; `dmc redraw` rewrites the first two when the file changes. The player can see everything in a map file, so only what the character has seen or knows goes in.
 
 ## Module folders
 

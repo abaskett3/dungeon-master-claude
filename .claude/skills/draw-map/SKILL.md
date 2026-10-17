@@ -101,13 +101,13 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## After drawing
 
-- In combat, record each combatant's cell in the tracker in `game-state.md`. Once per reply, edit the map file with the tracker (the cells that changed, and `"current"`), in the order CLAUDE.md § Maps gives. Do not run `dmc map` to redraw it: when you finish the reply, the Stop hook runs `dmc redraw`, which draws the file the page last showed if it has changed since, so the map never shows a move before the text. It tells you in one line if the file is refused; correct the file. It follows the file you last drew with `dmc map`, so when you switch to another map file, run `dmc map` on it once yourself. A session not started by the launcher has no hook: run `dmc map` after the reply text instead.
+- In combat, record each combatant's cell in the tracker in `game-state.md`. Once per reply, edit `maps/live.json` with the tracker (the cells that changed, and `"current"`), in the order CLAUDE.md § Maps gives. A fight always uses `live.json`, never another file. Do not run `dmc map` to redraw it: when you finish the reply, the Stop hook runs `dmc redraw`, which draws `live.json` again if it has changed since the last drawing (and refreshes `live.png` if one is beside the page), so the map never shows a move before the text. If the file is refused you are told in one line: fix it now; if it is still refused you are told again when your next reply ends. If the correction moves someone you already narrated, tell the player in a line. A session not started by the launcher has no hook: run `dmc map` after the reply text instead.
 - If the place may be revisited, keep its `maps/<place-name>.json`, and put longer notes (ceiling heights, what lies beyond the edges, rulings about the terrain) in `maps/<place-name>.md` beside it.
 - When the fight ends or the party moves on, remove the tokens, `"initiative"` and `"current"` from `live.json` or point it at the new place.
 
 ## A remote player
 
-When the player options say the player is remote (`Maps are shown as: remote`), they cannot open the browser tab, so the picture is sent to them. Write the reply text first. Then, as the last actions of the turn and only if something on the map changed: run `dmc map <file> --png` yourself (the hook then finds nothing left to draw), and send `maps/live.png` with the file-sending tool (SendUserFile). Never send a picture before the reply text, and send nothing after it.
+When the player options say the player is remote (`Maps are shown as: remote`), they cannot open the browser tab, so the picture is sent to them. The hook cannot send a picture, so for a remote player the order depends on you alone: it is not guaranteed by anything but your writing the reply text first. Write the text first. Then, as the last actions of the turn and only if something on the map changed: run `dmc map adventures/<campaign>/maps/live.json --png` yourself (the hook then finds nothing left to draw), and send `maps/live.png` with the file-sending tool (SendUserFile). Never send a picture before the reply text, and send nothing after it.
 
 ## When there is no picture
 

@@ -80,6 +80,25 @@ public static class MapChecker
     }
 
     /// <summary>
+    /// The place file a scene's <c>"base"</c> names: <paramref name="baseName"/> plus <c>.json</c>, in the scene's folder.
+    /// The name may include a subfolder (<c>places/hall</c>). The one place that resolves a base, for loading a map and
+    /// for <c>dmc redraw</c>'s record of what a drawing depended on.
+    /// </summary>
+    /// <param name="mapPath">The scene file.</param>
+    /// <param name="baseName">The value of its <c>"base"</c>, without <c>.json</c>.</param>
+    public static string BasePath(string mapPath, string baseName) =>
+        Path.Combine(Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "", baseName + ".json");
+
+    /// <summary>
+    /// The full path of the place file a scene names in <c>"base"</c>, or null when it names none. Only reads the scene;
+    /// it does not check that the place exists (<see cref="LoadMap"/> does).
+    /// </summary>
+    /// <param name="mapPath">The scene file.</param>
+    /// <exception cref="DmcException">The scene cannot be read as a JSON object (see <see cref="LoadJson"/>).</exception>
+    public static string? BaseFile(string mapPath) =>
+        LoadJson(mapPath).TryGetValue("base", out var value) && value is string name && Py.Truthy(value) ? BasePath(mapPath, name) : null;
+
+    /// <summary>
     /// Read a place or scene file; a scene's "base" is merged underneath it. A scene is a file with a <c>base</c>, the
     /// name of a place file in the same folder (without <c>.json</c>): every key of the scene replaces the place's key of
     /// the same name, except that the place's <c>initiative</c> and <c>current</c> are dropped, because a turn order
@@ -97,7 +116,7 @@ public static class MapChecker
         {
             if (baseValue is not string baseName)
                 throw new DmcException($"{path}: \"base\" must be the name of a place file, not {PyJson.Dumps(baseValue)}.");
-            string basePath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)) ?? "", baseName + ".json");
+            string basePath = BasePath(path, baseName);
             if (!File.Exists(basePath) && !Directory.Exists(basePath))
                 throw new DmcException($"\"base\": \"{baseName}\" names {basePath}, which does not exist.");
             var merged = LoadJson(basePath);

@@ -137,7 +137,7 @@ Checks a place or scene file, draws it, and prints the distance between every pa
 | `--open` | Also open `live.html` in the default browser. Used once per session; afterwards the open page updates itself. |
 | `--measure FROM TO` | Print only the distance between two cells, such as `B2 H4`, and draw nothing. The map is still loaded and checked, except for its turn order, which a stale `initiative` therefore cannot block. |
 
-It writes next to the map file: `live.html` (the page the player keeps open), `live-data.js` (the current picture, rewritten on every run; the page polls it every two seconds), `live-source.txt` (the name of the map file just drawn, which `dmc redraw` reads; from release 0.1.3) and, with `--png`, `live.png`.
+It writes next to the map file: `live.html` (the page the player keeps open), `live-data.js` (the current picture, rewritten on every run; the page polls it every two seconds), `live-source.txt` (the name of the map file just drawn and of its base place, which `dmc redraw` reads; from release 0.1.3) and, with `--png`, `live.png`.
 
 ```
 $ dmc map maps/live.json --png
@@ -181,20 +181,22 @@ Argument mistakes exit 2: `dmc map: the following arguments are required: map`, 
 dmc redraw < hook-input.json
 ```
 
-Added in release 0.1.3. The play settings' `Stop` hook runs this when DMC has finished a reply. Claude Code passes a JSON object on stdin; `dmc` reads `stop_hook_active` from it (see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks), "Stop"). It then:
+Added in release 0.1.3. The play settings' `Stop` hook runs this when DMC has finished a reply. Claude Code passes a JSON object on stdin; `dmc` reads `stop_hook_active` from it (see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks), "Stop"). Run by hand at a terminal it does not wait for input, and acts as if `stop_hook_active` were false. It then:
 
 1. finds the active campaign (`adventures/.active-campaign`) and its `maps/` folder, under the toolkit root;
-2. does nothing, silently, if there is no active campaign, no `live-data.js` yet (DMC has not shown a map) or no source file;
-3. takes the map file the page last showed from `maps/live-source.txt` (written by `dmc map`; `live.json` when the record is missing, as for a page drawn by dmc 0.1.2), so a fight kept in another file, such as `test-bout.json`, is followed;
-4. draws that file again, exactly as `dmc map` does (without `--png`), only if the file or its `"base"` place has a later modification time than `live-data.js`; otherwise it does nothing, silently. It prints nothing even when it draws. A file edited in the same clock tick as the last drawing is missed until its next edit.
+2. does nothing, silently, if there is no active campaign or no `live-data.js` yet (DMC has not shown a map);
+3. picks what to draw. A fight always uses `maps/live.json`, so if that is newer than `live-data.js` it is drawn, whatever the page showed before. Otherwise, if the record `maps/live-source.txt` (written by `dmc map`) names another file, such as a place DMC drew by hand for the player, that file is drawn again if it, or the base place the record gives, is newer than `live-data.js`. With no record (a page drawn by an older `dmc`) only `live.json` is checked, and a change to its base place alone is not noticed;
+4. draws it exactly as `dmc map` does, which also rewrites the record, and refreshes `live.png` too if one already sits beside `live.html`. It prints nothing even when it draws. If nothing is newer it does nothing, silently.
+
+"Newer" is a strictly later modification time. A file edited in the same clock tick as the last drawing is missed until its next edit. With nothing changed the cost is the reads of two tiny files (`.active-campaign` and the record) and a few `stat` calls; no map file is parsed.
 
 If `dmc map` would refuse the file, nothing is drawn and `dmc redraw` prints one line to stderr and exits 2, which for a Stop hook makes Claude Code give the line to DMC as feedback so that it corrects the file:
 
 ```
-dmc redraw: live.json was not drawn, so the player's map is out of date: token @ (Thorin) is on A1, which is a wall. Correct the file; it is drawn again after your next reply.
+dmc redraw: live.json was not drawn, so the player's map is out of date: token @ (Thorin) is on A1, which is a wall. Fix it now; if it is still refused it will be reported again when your next reply ends.
 ```
 
-When the input has `"stop_hook_active": true` (Claude Code is already continuing because a Stop hook asked it to), the file is still drawn if it is now fine, but a refusal is not reported again: it exits 0 with nothing printed, so a file DMC cannot fix cannot make it loop. The next reply starts a new turn and reports it again. On any other failure it prints nothing and exits 0, and it skips the stale-binary warning, like `context-check`.
+When the input has `"stop_hook_active": true` (Claude Code is already continuing because a Stop hook asked it to), the file is still drawn if it is now fine, but a refusal is not reported a second time: it exits 0 with nothing printed, so a file DMC cannot fix cannot make it loop. Nothing is lost by that silence: a file that is still refused stays newer than the picture, so the Stop hook of the next reply, a new turn, finds it again and exits 2 again. The message says this. On any other failure `dmc redraw` prints nothing and exits 0, and it skips the stale-binary warning, like `context-check`.
 
 The hook command in `.claude/play-settings.json` is `out=$("$CLAUDE_PROJECT_DIR/bin/dmc" redraw 2>&1); s=$?; if [ "$s" = 2 ]; then printf '%s\n' "$out" >&2; exit 2; fi; exit 0`. Only exit 2 gets through, so a `dmc` that does not know `redraw` (0.1.2 prints `dmc: unknown command "redraw"` and exits 1), a missing `bin/dmc` (exit 127) and a file that is not a program (exit 126) all end in a silent exit 0. A command-line option such as `dmc map --pending` would not have been safe: 0.1.2 treats it as a usage mistake, exit code 2, which would have blocked every reply.
 

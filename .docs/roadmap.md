@@ -51,7 +51,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
-- **PR #37:** issue #6 Phase 3 fix, not yet verified in play. `dmc redraw` and a `Stop` hook in the play settings draw the map after DMC's reply instead of DMC running `dmc map` before it; `dmc map` records the file it drew in `maps/live-source.txt`. `CLAUDE.md` § Maps is shorter, and the remote-player picture rule is in the `draw-map` skill. Part of issue #6.
+- **PR #37:** issue #6 Phase 3 fix, not yet verified in play. `dmc redraw` and a `Stop` hook in the play settings draw the map after DMC's reply instead of DMC running `dmc map` before it; `dmc map` records what it drew in `maps/live-source.txt`. `CLAUDE.md` § Maps is shorter, and the remote-player picture rule is in the `draw-map` skill (for a remote player the order still depends on DMC writing the text first). Part of issue #6.
 - **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
 
 ## Next: issue #6
@@ -70,7 +70,7 @@ What the Phase 3 play test (two sparring bouts) found, and what remains:
 What remains:
 
 1. **Release 0.1.3 and its pin.** PR #33 (`dmc pdf` output all or nothing) and PR #37 (`dmc redraw`) change the binary. The Stop hook does nothing until the pinned `dmc` is 0.1.3 or later, and with an older one it stays silent and play carries on.
-2. **Play test, then close issue #6.** In a fight, check that every map update appears after the text that describes it, that a refused map file is reported and corrected, that a fight kept in a file other than `live.json` is followed, and, for a remote player, that `live.png` is sent after the text; and exercise the plan and standing-orders rule. Review the session with `/review-transcript`.
+2. **Play test, then close issue #6.** In a fight, check that every map update appears after the text that describes it, that a refused map file is reported and corrected, and, for a remote player (where nothing but DMC's own ordering applies), that `live.png` is sent after the text; and exercise the plan and standing-orders rule. Review the session with `/review-transcript`.
 3. **Follow-ups from the same review, tracked separately:** issue #35 (the break alert fires right after a resume; make it relative and make the resume cheaper) and issue #36 (DMC deleted campaign files; PR #38 addresses it).
 
 Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](campaign-files.md) (for `live.json`) and this roadmap, under the documentation rule.

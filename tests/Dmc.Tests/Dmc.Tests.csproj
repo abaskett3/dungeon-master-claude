@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- The in-process layer calls the library code of the CLI project directly. The black-box layer runs the
-         published binary (bin/dmc), which "dotnet publish src/Dmc.Cli -r <rid> -o bin" produces. -->
+         published binary (artifacts/bin/dmc), which "dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin" produces. -->
     <ProjectReference Include="..\..\src\Dmc.Cli\Dmc.Cli.csproj" />
     <!-- The tests run on the same three OSes, so the platform analyzer accepts their calls into the CLI. -->
     <Compile Include="..\..\src\Dmc.Cli\SupportedPlatforms.cs" Link="SupportedPlatforms.cs" />

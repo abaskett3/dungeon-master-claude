@@ -171,14 +171,14 @@ The toolkit is a git repository. Your campaigns, modules and rules files are ign
 
 ### Tests
 
-Playing needs none of this. After changing `dmc`, a skill or the settings, run the tests from the toolkit folder. They need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). Publish `dmc` into `bin/` first, because some tests run the program itself, then run them:
+Playing needs none of this. After changing `dmc`, a skill or the settings, run the tests from the toolkit folder. They need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). Publish `dmc` into `artifacts/bin/` first, because some tests run the program itself, then run them:
 
 ```
-dotnet publish src/Dmc.Cli -r win-x64 -o bin
+dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
 dotnet test
 ```
 
-Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64`, `linux-arm64` or `osx-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. A build of your own reports itself as `dmc 0.0.0-dev`, which no release does, so `./play.ps1` and `./play.sh` (through `get-dmc`) replace it with the pinned release the next time they run, because players run the pinned release; publish again after that to test your build. A release gets its version from its tag, so the project file never holds one. The tests never touch `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows, Linux and macOS for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
+Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64`, `linux-arm64` or `osx-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. `bin/` is the player's install, which `get-dmc` owns, so publish your own builds to `artifacts/bin/` (the tests insist that program says `dmc 0.0.0-dev`, as every build that is not a release does, and no release does). A build of your own put in `bin/` is replaced by the pinned release the next time `./play.ps1` or `./play.sh` runs, because players run the pinned release. A release gets its version from its tag, so the project file never holds one. To test a different program, set `DMC_BIN` to its path and the tests run that, whatever version it prints. The tests never touch `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows, Linux and macOS for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
 
 A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds it for every system, publishes it and opens a pull request that pins it in `tools/dmc-release.json`.
 

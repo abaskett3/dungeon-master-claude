@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Dmc;
 
@@ -12,7 +13,7 @@ namespace Dmc;
 /// It says nothing when the file is missing, unreadable, or pins no release yet (an empty tag), as in a developer's
 /// checkout before the first release. Commands with <see cref="ICommand.NeverFails"/> (the hook) never reach it.
 /// </remarks>
-public static class StaleBinaryCheck
+public static partial class StaleBinaryCheck
 {
     public static string ReleaseFile { get; } = Path.Combine(Toolkit.Root, "tools", "dmc-release.json");
 
@@ -36,18 +37,23 @@ public static class StaleBinaryCheck
 
     /// <summary>
     /// The warning for a pin file's text and this program's version, or null when there is nothing to say. Only a
-    /// release (a version like 1.2.3) can be out of date. A build made on this computer says <c>0.0.0-dev</c>, is not a
-    /// release, and is left alone: whoever built it did so on purpose, and the launchers replace it with the release.
+    /// release (X.Y.Z, the form the release tags, get-dmc and write-pin.sh use) can be out of date. A build made on this
+    /// computer says <c>0.0.0-dev</c>, is not a release, and is left alone: whoever built it did so on purpose (and it
+    /// does not live in <c>bin/</c>, which the launchers own).
     /// </summary>
     internal static string? Warning(string pin, string version)
     {
         string? tag = PinnedTag(pin);
         if (tag is null || !tag.StartsWith(TagPrefix, StringComparison.Ordinal) || tag[TagPrefix.Length..] == version)
             return null;
-        if (!Version.TryParse(version, out _))
+        if (!ReleaseVersion().IsMatch(version))
             return null;
         return $"dmc: this is dmc {version}, but the toolkit pins {tag}: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it";
     }
+
+    /// <summary>A release version: three numbers, as in a release tag <c>dmc-vX.Y.Z</c>.</summary>
+    [GeneratedRegex(@"^[0-9]+\.[0-9]+\.[0-9]+$")]
+    private static partial Regex ReleaseVersion();
 
     /// <summary>The <c>tag</c> of a pin file; null when the text is not a pin, or the tag is empty.</summary>
     internal static string? PinnedTag(string pin)

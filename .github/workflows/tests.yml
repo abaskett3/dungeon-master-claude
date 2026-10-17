@@ -32,8 +32,13 @@ jobs:
       - name: Install the Native AOT toolchain (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang zlib1g-dev
+      # Not into bin/, which is the player's install. The black-box tests run this one, and insist that it says 0.0.0-dev.
       - name: Publish dmc with Native AOT
-        run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o bin -p:PublishAot=true
+        run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o artifacts/bin -p:PublishAot=true
+      # The get-dmc and launcher tests install a release, which says its version and not 0.0.0-dev: the same build, made
+      # as the release workflow makes it, with a version of its own. The tests find it through DMC_TEST_RELEASE_DIR.
+      - name: Publish a release-versioned dmc with Native AOT
+        run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o artifacts/release -p:PublishAot=true -p:Version=9.9.9
       - name: Build the tests
         run: dotnet build tests/Dmc.Tests -c Release
       # The map page tests drive Chromium. The runner images have PowerShell (pwsh), which Playwright's installer needs.
@@ -43,4 +48,6 @@ jobs:
           $extra = @(); if ($IsLinux) { $extra = @("--with-deps") }
           pwsh tests/Dmc.Tests/bin/Release/net10.0/playwright.ps1 install @extra chromium
       - name: Run the tests
+        env:
+          DMC_TEST_RELEASE_DIR: ${{ github.workspace }}/artifacts/release
         run: dotnet test -c Release --no-build

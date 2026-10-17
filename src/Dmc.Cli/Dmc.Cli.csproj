@@ -19,11 +19,11 @@
   <!--
     How dmc is built (issue #3, "Build and release"):
 
-      Local default   dotnet publish src/Dmc.Cli -r <rid> -o bin
+      Local default   dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin
                       A self-contained single-file build without AOT. It needs no C++ or clang toolchain and no
                       flags. It starts in about 160 ms on Windows.
 
-      Release and CI  dotnet publish src/Dmc.Cli -r <rid> -o bin -p:PublishAot=true
+      Release and CI  dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin -p:PublishAot=true
                       Native AOT: starts in under 30 ms, needs Visual Studio's C++ workload on Windows, clang and
                       zlib1g-dev on Linux, and the Xcode command line tools on macOS. Any test that measures time
                       must use this build.

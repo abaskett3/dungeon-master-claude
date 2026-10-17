@@ -76,18 +76,68 @@ public static class Bootstrap
     const string ReleaseVersion = "9.9.9";
 
     /// <summary>
+    /// A folder holding a dmc published with <c>-p:Version=9.9.9</c> as a release is (Native AOT, on CI). CI makes it
+    /// once and names it here; without it, <see cref="PublishedRelease"/> builds its own.
+    /// </summary>
+    const string ReleaseFolderVariable = "DMC_TEST_RELEASE_DIR";
+
+    /// <summary>
     /// A release of dmc packed the way the release workflow packs it (a zip on Windows, a tar.gz elsewhere, the files at
-    /// the top), with <see cref="NativeStandIn"/> in place of the native libraries. The program is published from the
-    /// sources with <c>-p:Version=</c>, as the workflow does, since the one in <c>bin/</c> reports the development
-    /// version. Made once.
+    /// the top), with <see cref="NativeStandIn"/> in place of the native libraries. The program is one published with
+    /// <c>-p:Version=</c>, as the workflow does, since a build of the sources says 0.0.0-dev: the one in the folder named
+    /// by <c>DMC_TEST_RELEASE_DIR</c>, or else one built here from a copy of the sources. Made once.
     /// </summary>
     public static Release PublishedRelease() => _release.Value;
 
-    static readonly Lazy<Release> _release = new(() =>
+    static readonly Lazy<Release> _release = new(MakeRelease);
+
+    static Release MakeRelease()
     {
         string work = Path.Combine(Path.GetTempPath(), "dmc-release-build-" + Guid.NewGuid().ToString("N"));
-        string output = Path.Combine(work, "out");
-        // Built from a copy of the sources, so that the build leaves src/Dmc.Cli/bin and obj as they were.
+        string assets = Path.Combine(Path.GetTempPath(), "dmc-release-" + Guid.NewGuid().ToString("N"));
+        bool made = false;
+        try
+        {
+            string? given = Environment.GetEnvironmentVariable(ReleaseFolderVariable);
+            string binary = string.IsNullOrEmpty(given) ? PublishFromCopy(work) : Path.Combine(given, ExeName);
+            Assert.IsTrue(File.Exists(binary), $"the release program {binary} (from {ReleaseFolderVariable}) is not there");
+            var answer = TestEnv.Run(binary, ["--version"]);
+            Assert.AreEqual(0, answer.ExitCode, answer.ToString());
+            Assert.AreEqual($"dmc {ReleaseVersion}\n", answer.Stdout, "a release gets its version from -p:Version, not from the project");
+
+            string tag = "dmc-v" + ReleaseVersion;
+            Directory.CreateDirectory(assets);
+            string archive = Path.Combine(assets, Asset(tag, Rid));
+            byte[] standIn = "not a library"u8.ToArray();
+            if (OperatingSystem.IsWindows())
+            {
+                using var zip = ZipFile.Open(archive, ZipArchiveMode.Create);
+                zip.CreateEntryFromFile(binary, ExeName, CompressionLevel.NoCompression);
+                using var entry = zip.CreateEntry(NativeStandIn).Open();
+                entry.Write(standIn);
+            }
+            else
+            {
+                using var file = File.Create(archive);
+                using var gzip = new GZipStream(file, CompressionLevel.Fastest);
+                using var tar = new TarWriter(gzip);
+                tar.WriteEntry(binary, ExeName);
+                tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, NativeStandIn) { DataStream = new MemoryStream(standIn) });
+            }
+            made = true;
+            return new Release(tag, ReleaseVersion, assets, Sha256(archive));
+        }
+        finally
+        {
+            DeleteQuietly(work);
+            if (!made)
+                DeleteQuietly(assets);
+        }
+    }
+
+    /// <summary>Publish dmc with <c>-p:Version=</c> from a copy of the sources in <paramref name="work"/>, so the build leaves src/Dmc.Cli/bin and obj as they were. Returns the program.</summary>
+    static string PublishFromCopy(string work)
+    {
         Directory.CreateDirectory(work);
         foreach (string file in new[] { "Directory.Build.props", "Directory.Packages.props", "global.json" })
             File.Copy(Path.Combine(TestEnv.Root, file), Path.Combine(work, file), overwrite: true);
@@ -102,40 +152,27 @@ public static class Bootstrap
             Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, relative))!);
             File.Copy(file, Path.Combine(copy, relative));
         }
+        string output = Path.Combine(work, "out");
         var published = TestEnv.Run(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet",
             ["publish", copy, "-c", "Release", "-r", Rid, "-o", output, $"-p:Version={ReleaseVersion}"],
             cwd: work, timeoutSeconds: 600, environment: new Dictionary<string, string?> { ["DOTNET_NOLOGO"] = "1", ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1" });
         Assert.AreEqual(0, published.ExitCode, published.ToString());
-        string binary = Path.Combine(output, ExeName);
-        var answer = TestEnv.Run(binary, ["--version"]);
-        Assert.AreEqual(0, answer.ExitCode, answer.ToString());
-        Assert.AreEqual($"dmc {ReleaseVersion}\n", answer.Stdout, "a release gets its version from -p:Version, not from the project");
-        string version = ReleaseVersion;
-        string tag = "dmc-v" + version;
+        return Path.Combine(output, ExeName);
+    }
 
-        string assets = Path.Combine(Path.GetTempPath(), "dmc-release-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(assets);
-        string archive = Path.Combine(assets, Asset(tag, Rid));
-        byte[] standIn = "not a library"u8.ToArray();
-        if (OperatingSystem.IsWindows())
+    static void DeleteQuietly(string folder)
+    {
+        try
         {
-            using var zip = ZipFile.Open(archive, ZipArchiveMode.Create);
-            zip.CreateEntryFromFile(binary, ExeName, CompressionLevel.NoCompression);
-            using var entry = zip.CreateEntry(NativeStandIn).Open();
-            entry.Write(standIn);
+            Directory.Delete(folder, recursive: true);
         }
-        else
+        catch (IOException)
         {
-            using var file = File.Create(archive);
-            using var gzip = new GZipStream(file, CompressionLevel.Fastest);
-            using var tar = new TarWriter(gzip);
-            tar.WriteEntry(binary, ExeName);
-            tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, NativeStandIn) { DataStream = new MemoryStream(standIn) });
         }
-        string sha256 = Sha256(archive);
-        Directory.Delete(work, recursive: true);
-        return new Release(tag, version, assets, sha256);
-    });
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
 
     public static string Sha256(string file)
     {

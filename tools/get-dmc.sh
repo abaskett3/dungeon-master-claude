@@ -62,7 +62,7 @@ fi
 [ -f "$pin" ] || fail "tools/dmc-release.json is missing"
 tag="$(pinned_tag)"
 if [ -z "$tag" ]; then
-    fail "no dmc release is pinned yet (tools/dmc-release.json); a developer can build one with: dotnet publish src/Dmc.Cli -r $rid -o bin"
+    fail "no dmc release is pinned yet (tools/dmc-release.json); a developer can build one with: dotnet publish src/Dmc.Cli -r $rid -o artifacts/bin"
 fi
 printf '%s\n' "$tag" | grep -Eq '^dmc-v[0-9]+\.[0-9]+\.[0-9]+$' || fail "tools/dmc-release.json: \"$tag\" is not a dmc release tag"
 sha="$(sed -n "s/^[[:space:]]*\"$rid\"[[:space:]]*:[[:space:]]*\"\([0-9a-fA-F]\{64\}\)\".*/\1/p" "$pin" | head -n 1 | tr 'A-F' 'a-f')"

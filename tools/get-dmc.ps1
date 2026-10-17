@@ -80,7 +80,7 @@ try {
     }
     $tag = [string] $pin.tag
     if (-not $tag) {
-        Fail "no dmc release is pinned yet (tools/dmc-release.json); a developer can build one with: dotnet publish src/Dmc.Cli -r $rid -o bin"
+        Fail "no dmc release is pinned yet (tools/dmc-release.json); a developer can build one with: dotnet publish src/Dmc.Cli -r $rid -o artifacts/bin"
     }
     if ($tag -notmatch '^dmc-v\d+\.\d+\.\d+$') { Fail "tools/dmc-release.json: `"$tag`" is not a dmc release tag" }
     $sha = [string] $pin.sha256.$rid

@@ -118,6 +118,7 @@ public sealed class PlayTests
     [DataRow("dmc-v0.1.0", "0.1.0", null, DisplayName = "the pinned version")]
     [DataRow("dmc-v0.2.0", "0.1.0", "dmc: this is dmc 0.1.0, but the toolkit pins dmc-v0.2.0: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it", DisplayName = "another version")]
     [DataRow("v0.2.0", "0.1.0", null, DisplayName = "not a dmc tag")]
+    [DataRow("dmc-v0.2.0", "0.0.0-dev", null, DisplayName = "a build made on this computer is not a release")]
     public void TheStaleBinaryWarningComparesTheVersionWithThePin(string tag, string version, string? expected)
     {
         Assert.AreEqual(expected, StaleBinaryCheck.Warning(Pin.Replace("TAG", tag), version));
@@ -131,14 +132,17 @@ public sealed class PlayTests
     }
 
     /// <summary>
-    /// The pin and the project's version agree once a release is pinned (the release workflow's pull request sets both),
-    /// so that a build from this checkout is not reported as stale. And the pin is in the form get-dmc.sh reads.
+    /// The pin is in the form get-dmc.sh reads. The project's version stays the development one, which no release has:
+    /// the release workflow gets a release's version from its tag and never writes it into the project, so a build
+    /// made here cannot pass for the pinned release.
     /// </summary>
     [TestMethod]
-    public void ThePinIsReadableAndMatchesTheProjectsVersion()
+    public void ThePinIsReadableAndTheProjectsVersionIsTheDevelopmentOne()
     {
         string text = File.ReadAllText(Path.Combine(TestEnv.Root, "tools", "dmc-release.json"));
         using var pin = JsonDocument.Parse(text);
+        string project = File.ReadAllText(Path.Combine(TestEnv.Root, "src", "Dmc.Cli", "Dmc.Cli.csproj"));
+        StringAssert.Contains(project, "<Version>0.0.0-dev</Version>");
         string tag = pin.RootElement.GetProperty("tag").GetString()!;
         var hashes = pin.RootElement.GetProperty("sha256").EnumerateObject().ToArray();
         if (tag.Length == 0)
@@ -147,8 +151,6 @@ public sealed class PlayTests
             return;
         }
         StringAssert.Matches(tag, new Regex(@"^dmc-v\d+\.\d+\.\d+$"));
-        string project = File.ReadAllText(Path.Combine(TestEnv.Root, "src", "Dmc.Cli", "Dmc.Cli.csproj"));
-        StringAssert.Contains(project, $"<Version>{tag["dmc-v".Length..]}</Version>");
         var lines = text.ReplaceLineEndings("\n").Split('\n');
         Assert.IsTrue(lines.Any(l => Regex.IsMatch(l, $"^\\s*\"tag\"\\s*:\\s*\"{tag}\"")), "the tag on a line of its own");
         foreach (var hash in hashes)

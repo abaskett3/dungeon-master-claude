@@ -14,7 +14,8 @@ rules/*
 scripts/.pylib/
 __pycache__/
 
-# .NET build output. bin/ at the root is where "dotnet publish src/Dmc.Cli -r <rid> -o bin" puts dmc.
+# .NET build output. bin/ at the root is the player's install of dmc, which tools/get-dmc owns (a build of your own
+# put there is replaced by the pinned release); a developer publishes to artifacts/bin.
 bin/
 obj/
 artifacts/

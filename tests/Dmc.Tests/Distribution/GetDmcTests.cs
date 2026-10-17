@@ -37,6 +37,12 @@ public sealed class GetDmcTests
         var release = PublishedRelease();
         using var toolkit = new ToolkitCopy(release.Tag, new Dictionary<string, string> { [Rid] = release.Sha256 });
 
+        // A build made on this computer is already in bin/. It says 0.0.0-dev, not the pinned version, so it is replaced.
+        Directory.CreateDirectory(toolkit.Bin);
+        File.Copy(Dmc.Tests.Support.DmcRunner.Binary(), toolkit.Exe);
+        var local = Dmc.Tests.Support.TestEnv.Run(toolkit.Exe, ["--version"]);
+        Assert.AreEqual("dmc 0.0.0-dev\n", local.Stdout, local.ToString());
+
         var first = RunScript(shell, toolkit, "tools/get-dmc", environment: From(release.Assets));
         Assert.AreEqual(0, first.ExitCode, first.ToString());
         Assert.AreEqual($"get-dmc: installed dmc {release.Version} ({Rid}) in bin/", string.Join("\n", first.StdoutLines), first.ToString());

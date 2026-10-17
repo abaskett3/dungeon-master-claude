@@ -21,12 +21,22 @@ public static class DmcRunner
 
     /// <summary>
     /// Run the published binary. It must exist: publish it first with
-    /// <c>dotnet publish src/Dmc.Cli -r &lt;rid&gt; -o bin</c>. Set <c>DMC_BIN</c> to test a binary somewhere else.
+    /// <c>dotnet publish src/Dmc.Cli -r &lt;rid&gt; -o artifacts/bin</c> (not into <c>bin/</c>, which is the player's install
+    /// that <c>get-dmc</c> owns). Set <c>DMC_BIN</c> to test a binary somewhere else.
     /// </summary>
     public static ProcessResult BlackBox(string[] args, string? stdin = null, string? cwd = null) =>
         TestEnv.Run(Binary(), args, stdin, cwd);
 
-    /// <summary>Full path of the published binary, after checking that it is there and not older than the sources.</summary>
+    /// <summary>The version every build that is not a release prints.</summary>
+    public const string DevVersion = "0.0.0-dev";
+
+    const string Publish = "dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin";
+
+    /// <summary>
+    /// Full path of the published binary: <c>DMC_BIN</c> if set, whatever it prints; otherwise <c>artifacts/bin/dmc</c>,
+    /// which must be there, not older than the sources, and a development build (a release there would be tests of the
+    /// wrong program).
+    /// </summary>
     public static string Binary()
     {
         string? fromEnvironment = Environment.GetEnvironmentVariable("DMC_BIN");
@@ -36,16 +46,22 @@ public static class DmcRunner
             return fromEnvironment;
         }
 
-        string binary = Path.Combine(TestEnv.Root, "bin", OperatingSystem.IsWindows() ? "dmc.exe" : "dmc");
-        TestEnv.Need(File.Exists(binary), "the published dmc (run: dotnet publish src/Dmc.Cli -r <rid> -o bin)");
+        string binary = Path.Combine(TestEnv.Root, "artifacts", "bin", OperatingSystem.IsWindows() ? "dmc.exe" : "dmc");
+        TestEnv.Need(File.Exists(binary), $"the published dmc (run: {Publish})");
 
         // A binary left over from before the last edit would pass or fail for the wrong reasons.
         var built = File.GetLastWriteTimeUtc(binary);
         var newest = NewestSource();
         if (newest.Time > built)
-            Assert.Fail($"{binary} is older than {newest.Path}: republish it with dotnet publish src/Dmc.Cli -r <rid> -o bin");
+            Assert.Fail($"{binary} is older than {newest.Path}: republish it with {Publish}");
+        string printed = _printed.Value;
+        if (printed != "dmc " + DevVersion)
+            Assert.Fail($"{binary} prints '{printed}', not 'dmc {DevVersion}': republish it with {Publish}");
         return binary;
     }
+
+    static readonly Lazy<string> _printed = new(() =>
+        TestEnv.Run(Path.Combine(TestEnv.Root, "artifacts", "bin", OperatingSystem.IsWindows() ? "dmc.exe" : "dmc"), ["--version"]).Stdout.Trim());
 
     static (DateTime Time, string Path) NewestSource()
     {

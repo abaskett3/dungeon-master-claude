@@ -136,6 +136,52 @@ public abstract class DigestCommandContract
         StringAssert.Contains(result.Stderr, "No session logs found");
     }
 
+    /// <summary>
+    /// A token count that is not a finite number (NaN and Infinity, which Python's JSON writes and reads) or an
+    /// <c>output_tokens</c> that is not a number is a bad log like any other: one line naming the file and the line of the
+    /// record, exit 1, and, because the bad log is the newest and so comes after the good ones, nothing printed or written
+    /// before it, by <c>list</c> or by <c>show</c> alike. Each bad record sits among finite readings. Before, these
+    /// escaped as an unexpected failure ending in <c>(LogShapeException)</c>, with the earlier sessions' files already
+    /// written by <c>show</c>, because they were found only while the statistics were being worked out.
+    /// </summary>
+    [TestMethod]
+    public void ALogWithATokenCountThatIsNotAFiniteNumberIsReportedByFileAndLine()
+    {
+        const string NotFinite = "a token count that is not a finite number";
+        string bad = Path.Combine(_logs, "dddd5555-bad.jsonl");
+        string Record(int minute, string id, string usage) =>
+            $"{{\"type\":\"assistant\",\"timestamp\":\"{Stamp(minute)}\",\"message\":{{\"id\":\"{id}\",\"usage\":{{{usage}}}}}}}";
+        const string Finite = "\"input_tokens\":10,\"cache_read_input_tokens\":20,\"cache_creation_input_tokens\":30,\"output_tokens\":4";
+        var cases = new (string Name, string Usage, string Message)[]
+        {
+            ("input_tokens NaN", "\"input_tokens\":NaN,\"output_tokens\":4", NotFinite),
+            ("cache_read_input_tokens Infinity", "\"input_tokens\":10,\"cache_read_input_tokens\":Infinity", NotFinite),
+            ("cache_creation_input_tokens -Infinity", "\"cache_creation_input_tokens\":-Infinity", NotFinite),
+            ("output_tokens NaN", "\"input_tokens\":10,\"output_tokens\":NaN", NotFinite),
+            ("output_tokens Infinity", "\"input_tokens\":10,\"output_tokens\":Infinity", NotFinite),
+            ("output_tokens that is text", "\"input_tokens\":10,\"output_tokens\":\"4\"", "\"output_tokens\" is not a number"),
+            ("two finite counts whose sum overflows", "\"input_tokens\":1.7e308,\"cache_read_input_tokens\":1.7e308", NotFinite),
+        };
+        foreach (var (name, usage, message) in cases)
+        {
+            // Line 1 is a player message, line 2 a finite reading, line 3 the bad one, line 4 a finite reading again.
+            File.WriteAllLines(bad, [User(0, "hello").ToJsonString(), Record(1, "m1", Finite), Record(2, "m2", usage), Record(3, "m3", Finite)]);
+            File.SetLastWriteTimeUtc(bad, DateTime.UtcNow.AddDays(1));
+            string expected = $"dmc digest: dddd5555-bad.jsonl line 3: {message}\n";
+
+            var shown = DigestOf();
+            Assert.AreEqual(1, shown.ExitCode, $"show, {name}: {shown}");
+            Assert.AreEqual(expected, shown.Stderr, $"show, {name}");
+            Assert.AreEqual("", shown.Stdout, $"show, {name}");
+            Assert.IsFalse(Directory.Exists(_out), $"show writes nothing when a log is bad: {name}");
+
+            var listed = Run("list");
+            Assert.AreEqual(1, listed.ExitCode, $"list, {name}: {listed}");
+            Assert.AreEqual(expected, listed.Stderr, $"list, {name}");
+            Assert.AreEqual("", listed.Stdout, $"list prints no heading or rows when a log is bad: {name}");
+        }
+    }
+
     [TestMethod]
     public void NonAsciiTextSurvives()
     {

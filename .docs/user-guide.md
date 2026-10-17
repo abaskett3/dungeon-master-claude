@@ -31,10 +31,12 @@ If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy
 The launcher does three things:
 
 1. It runs `tools/get-dmc`, which installs or updates `dmc` in `bin/`. It prints one line when it installs something and nothing when `dmc` is already current. Each download is checked against a SHA-256 committed in `tools/dmc-release.json` before anything in it is run.
-2. It starts Claude Code on Sonnet at `high` effort, with the settings made for play (`.claude/play-settings.json`), which switch off connectors and tools a game does not use and add the break reminder.
+2. It starts Claude Code on Sonnet at `high` effort, with the settings made for play (`.claude/play-settings.json`), which switch off connectors and tools a game does not use, block shell deletes (`rm`, `Remove-Item` and their aliases) and add the break reminder.
 3. Anything you type after the launcher's name goes on to Claude Code, so `./play.sh --continue` works.
 
 If `dmc` cannot be had (no network, an unsupported system), the launcher says so in a line and starts Claude Code anyway. You can play and save, but DMC cannot roll its own dice, draw maps or read PDFs until `dmc` is fetched. See [Troubleshooting](#troubleshooting).
+
+DMC never deletes or moves your campaign files unless you ask for that file to go. When you do, it cannot run the delete or move itself in a play session (`rm`, `mv`, `Remove-Item`, `Move-Item`, `git clean` and `find -delete` are blocked): it tells you the command to run in your own terminal. The block is not complete (see [decisions.md](decisions.md)), so the rule in `CLAUDE.md` is the first line of defence.
 
 Starting plain `claude` in the folder also works, but it starts on your account's default model, loads more than play needs and gets no break reminder. In such a session, if `bin/dmc` is missing, Claude Code shows DMC a one-line notice at the start and DMC fetches `dmc` itself.
 
@@ -112,10 +114,12 @@ Type `/campaign-full-save` when you stop. It also rewrites the story summary, pr
 
 Every message you send re-reads the whole conversation, so a long conversation uses more of your usage limit with each message, and details blur as it grows. DMC therefore offers breaks.
 
-Started with a launcher, DMC is told before each of your messages how large the conversation is. From about 150,000 tokens it offers a break at the next natural pause: the end of a scene, the end of a fight, or the top of a combat round with nothing waiting on you. Never while a roll or decision is pending.
+Started with a launcher, DMC is told before each of your messages how large the conversation is. When it is large, DMC offers a break at the next natural pause: the end of a scene, the end of a fight, or the top of a combat round with nothing waiting on you. Never while a roll or decision is pending.
+
+"Large" is measured from where the conversation settled after DMC loaded your campaign. The first offer comes when the conversation has grown by 40,000 tokens beyond that point, and never before 150,000 tokens in all. So a campaign that loads a lot is not offered a break one round in.
 
 - Say **yes**: DMC runs a full save and checks it, then tells you it is safe. Type `/clear` and then `/resume-campaign`. DMC restates where you are without a full recap; a fight resumes on the same round with everyone where they stood.
-- Say **no**: DMC asks again when the conversation reaches the next band. The bands are fixed: 150,000 tokens, then every 40,000 after it (190,000, 230,000 and so on).
+- Say **no**: DMC asks again when the conversation has grown by another 40,000 tokens.
 
 A fresh session starts smaller than it used to, because the resume reads less (see Resuming), so a break gives back more room.
 
@@ -126,6 +130,8 @@ Claude Code may still compact a long conversation on its own. That loses nothing
 To undo only the last exchange, just say so; DMC corrects the state and carries on.
 
 To go further back, type `/rewind-campaign` (or ask to rewind). DMC finds the moment in the session logs, says it back in one line and waits for your confirmation. It then rewrites every campaign file to that moment: HP and resources, inventory, enemies, facts, maps and notes. The session log keeps one line saying a rewind happened. Your character has not seen what lay ahead, so DMC may change things the party had not yet discovered; anything established before the rewind point stays as it was.
+
+A rewind can leave files behind: maps of places the party has now never seen. DMC does not delete files, so it lists them, asks you to confirm they should go, and gives you the command to run yourself. Until you have, it notes them as "do not load or draw" and does not use them.
 
 ## Player options
 
@@ -207,7 +213,8 @@ Git ignores `adventures/`, `modules/` and `rules/`, so the toolkit can be shared
 | `get-dmc: the dmc of dmc-vX does not run on this computer, ...` | The program downloaded but cannot run here, for example on a Linux older than glibc 2.34. |
 | `get-dmc: dmc is not built for Intel Macs: ...` or `... not built for <system>` | This system is not supported. Play works without `dmc`, but with no dice roller, maps or PDF reading. |
 | `get-dmc: no dmc release is pinned yet ...` | The toolkit folder is from before the first release. Update it. |
-| `dmc play: Claude Code (claude) is not on the PATH: ...` | Install Claude Code, or open a new terminal after installing it. |
+| `dmc play: Claude Code (claude) is not on the PATH: ...`, or `play: Claude Code (claude) is not on the PATH: ...` from `./play.ps1` | Install Claude Code, or open a new terminal after installing it. The launchers exit with code 127 in this case. |
+| `play: Claude Code could not be started: ...` (`./play.ps1`) | `claude` was found but would not run: blocked by security software or SmartScreen, damaged, or an npm shim that failed. The reason follows the colon. Reinstall Claude Code, or unblock it. The launcher exits with code 1. |
 | `dmc play: only ...claude.cmd was found, ...` (Windows) | Only npm's command shim was found, without its PowerShell script. Install Claude Code's own `claude.exe`, or start with `./play.ps1`. |
 | The map tab did not open, or stopped updating | Open `adventures/<campaign>/maps/live.html` in your browser yourself. It refreshes itself while DMC redraws. |
 | `This PDF is password-protected. ...` | Give DMC an unlocked copy. |

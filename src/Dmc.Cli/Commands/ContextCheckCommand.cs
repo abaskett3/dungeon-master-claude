@@ -6,8 +6,9 @@ namespace Dmc.Commands;
 /// <summary>
 /// <c>dmc context-check</c>: replaced <c>scripts/context_check.py</c>. The play launcher's UserPromptSubmit hook
 /// runs it before each player message. Claude Code passes a JSON object on stdin that includes
-/// <c>transcript_path</c>, the session's log. Below the threshold nothing is printed; from it on, one line is, and
-/// Claude Code adds it to DMC's context.
+/// <c>transcript_path</c>, the session's log. Nothing is printed until the context passes the first band (the larger of
+/// 150k and the context after the session's resume plus 40k, see <see cref="BreakReminder"/>); from there on one line
+/// is, and Claude Code adds it to DMC's context.
 /// <para>
 /// It never gets in the way of a prompt: on any error (bad input, a missing or unreadable log) it prints nothing
 /// and exits 0.
@@ -26,7 +27,7 @@ public sealed class ContextCheckCommand : ICommand
 
     /// <summary>
     /// Reads the hook's JSON from standard input and prints the <see cref="BreakReminder"/> line for the session's
-    /// current context size, or nothing when the size is below the threshold or cannot be found.
+    /// current context size and baseline, or nothing when the size is below the first band or cannot be found.
     /// </summary>
     /// <param name="args">Ignored: the hook passes everything on standard input.</param>
     /// <param name="io">Standard input is the hook's JSON; standard output gets the line.</param>
@@ -35,28 +36,30 @@ public sealed class ContextCheckCommand : ICommand
     // enforces "never fails" (see NeverFails). The line is written last, so a failure leaves no partial output.
     public int Run(string[] args, Io io)
     {
-        string line = BreakReminder.For(ContextOfHook(io.In.ReadToEnd()));
+        var reading = ContextOfHook(io.In.ReadToEnd());
+        string line = BreakReminder.For(reading.Size, reading.Baseline);
         if (line.Length > 0)
             io.Out.WriteLine(line);
         return 0;
     }
 
-    /// <summary>The context size the hook's input points at; 0 when it points at nothing usable.</summary>
+    /// <summary>The context size and baseline the hook's input points at; both 0 when it points at nothing usable.</summary>
     /// <param name="input">The hook's JSON; empty text counts as <c>{}</c>.</param>
     /// <returns>
-    /// The last context size in the log that <c>transcript_path</c> names (a leading <c>~</c> is expanded), or 0 when
-    /// the JSON is not an object or has no non-empty string <c>transcript_path</c>.
+    /// The reading of the log that <c>transcript_path</c> names (a leading <c>~</c> is expanded): the last context
+    /// size and the baseline it is measured from. Both are 0 when the JSON is not an object or has no non-empty
+    /// string <c>transcript_path</c>.
     /// </returns>
     /// <exception cref="System.Text.Json.JsonException">The input is not valid JSON. The caller lets it through; <see cref="CommandLine"/> turns it into silence.</exception>
-    internal static long ContextOfHook(string input)
+    internal static ContextReading ContextOfHook(string input)
     {
         using var hook = JsonDocument.Parse(string.IsNullOrEmpty(input) ? "{}" : input);
         if (hook.RootElement.ValueKind != JsonValueKind.Object
             || !hook.RootElement.TryGetProperty("transcript_path", out var value)
             || value.ValueKind != JsonValueKind.String)
-            return 0;
+            return default;
         string? path = value.GetString();
-        return string.IsNullOrEmpty(path) ? 0 : TranscriptReader.LastContext(ExpandUser(path, OperatingSystem.IsWindows()));
+        return string.IsNullOrEmpty(path) ? default : TranscriptReader.Read(ExpandUser(path, OperatingSystem.IsWindows()));
     }
 
     /// <summary>

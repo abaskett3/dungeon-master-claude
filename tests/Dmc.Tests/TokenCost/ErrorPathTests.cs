@@ -39,7 +39,7 @@ public sealed partial class ErrorPathTests
         Assert.AreEqual("", result.Stdout + result.Stderr, what);
     }
 
-    /// <summary>Command lines of <c>dmc</c> itself (not of a subcommand's input) that must fail with one line, each as one argument list.</summary>
+    /// <summary>Command lines of <c>dmc</c> itself (not of a subcommand's input) that must fail with one line, each as one argument list; for <c>roll</c>, labels and targets included.</summary>
     public static IEnumerable<object[]> RollErrors { get; } =
     [
         [Array.Empty<string>()], // no command at all
@@ -62,6 +62,12 @@ public sealed partial class ErrorPathTests
         [new[] { "roll", "a\nb" }], // a line break in the echoed expression is written out, not printed
         [new[] { "roll", "a\r\nb" }],
         [new[] { "roll", "1d20\n" }],
+        [new[] { "roll", "Pip: 1d20@14" }], // a label and a target (finding 4 of issue #6)
+        [new[] { "roll", "Pip: 1d20@AC" }],
+        [new[] { "roll", "Pip: 2d20kh3@AC14" }],
+        [new[] { "roll", ": 1d20" }],
+        [new[] { "roll", "Pip\nX: 1d20" }], // a line break in a label is written out too
+        [new[] { "roll", "Pip: banana\n@DC13" }],
     ];
 
     /// <summary>The test's display name: its method and the command line, with line breaks written out.</summary>

@@ -42,6 +42,12 @@ public static class SvgDrawing
     /// <summary>The default colour of a wall, and of a window's frame.</summary>
     const string WallColor = "#3b4149";
 
+    /// <summary>The fill of the plate behind the current turn in the turn order.</summary>
+    const string TurnPlate = "#2d3a4a";
+
+    /// <summary>The outline of that plate and the colour of its "TURN" tag.</summary>
+    const string TurnAccent = "#6fb1e0";
+
     /// <summary>Tokens sharing a cell: two across, so four fit in a 40 px cell.</summary>
     public const double SlotRadius = 8.5;
 
@@ -361,8 +367,10 @@ public static class SvgDrawing
 
     /// <summary>
     /// The whole picture as one SVG document: the title and notes, the grid with its coordinates, edge captions,
-    /// labels and creatures, the scale bar and compass, and, to the right, the panel that lists the creatures and
-    /// the key to the symbols. Its size is worked out from the contents, in the units the PNG uses as pixels.
+    /// labels and creatures, the scale bar and compass, and, to the right, the panel that lists, in this order, the
+    /// turn order (only when the map has an <c>"initiative"</c>, the current turn on a highlighted plate), the
+    /// creatures and the key to the symbols. Its size is worked out from the contents, in the units the PNG uses as
+    /// pixels.
     /// </summary>
     /// <param name="m">A map that passed <see cref="MapChecker.Check"/>.</param>
     public static string Render(MapModel m)
@@ -511,11 +519,35 @@ public static class SvgDrawing
             py += 10;
         }
 
-        void EntryText(List<string> lines)
+        // Height of an entry of this many lines of text (never less than a token sample).
+        int EntryHeight(int lineCount) => Math.Max(lineCount * rowH, 24);
+
+        // The text of one panel entry, then the cursor moves down past it.
+        void EntryText(List<string> lines, string weight = "normal")
         {
             for (int i = 0; i < lines.Count; i++)
-                @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink));
-            py += Math.Max(lines.Count * rowH, 24) + 7;
+                @out.Add(Text(panelX + 34, py + 16 + i * rowH, lines[i], 13, Ink, weight: weight));
+            py += EntryHeight(lines.Count) + 7;
+        }
+
+        if (m.Initiative is { Count: > 0 })
+        {
+            Heading("Turn order");
+            int place = 0;
+            foreach (var token in m.Initiative)
+            {
+                bool now = token == m.Current;
+                var lines = Wrap($"{++place}. {token.Name}", now ? chars - 6 : chars);
+                if (now)
+                {
+                    @out.Add($"<rect x=\"{panelX - 6}\" y=\"{py - 2}\" width=\"{Panel - 4}\" height=\"{EntryHeight(lines.Count) + 4}\" rx=\"5\" "
+                             + $"fill=\"{TurnPlate}\" stroke=\"{TurnAccent}\" stroke-width=\"1.5\"/>");
+                    @out.Add(Text(panelX + Panel - 14, py + 16, "TURN", 11, TurnAccent, "end", "bold"));
+                }
+                @out.Add(DrawToken(token, panelX + 12, py + 12, legendScale: 9));
+                EntryText(lines, now ? "bold" : "normal");
+            }
+            py += 16;
         }
 
         if (m.Tokens.Count > 0)

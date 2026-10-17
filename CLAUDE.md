@@ -131,10 +131,10 @@ When a roll belongs to the player (attacks, damage, checks, saves, initiative, d
 
 When a roll is yours:
 
-- Roll every die with `dmc`, never in your head: `./bin/dmc roll 1d20+5`, the same in PowerShell and bash. Several expressions can go in one call.
+- Roll every die with `dmc`, never in your head, each with a label and its target if it has one: `./bin/dmc roll "Krag, stone:1d20+7@AC15" "Kole, Dex save:1d20+3@DC13" "Krag, damage:2d6+4"`, the same in PowerShell and bash. Quote each roll; a label has no colon. `@AC` gives hit or miss (a natural 20 hits, a natural 1 misses), `@DC` success or fail.
 - If `bin/dmc` is missing or says it is out of date, run `bash tools/get-dmc.sh` (in PowerShell, `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`) once, then carry on. `dmc` also draws the maps and reads PDFs.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
-- Show every roll the player options let the player see. When they show numbers (the default), give each its own line, however many there are: `dmc`'s line unchanged, with a label before it and the target and result after: `Krag, stone: 1d20+7: [12] +7 = 19 vs AC 15, hit`.
+- Show every roll the player options let the player see: paste `dmc`'s line for it unchanged, one line per roll however many there are (`Krag, stone: 1d20+7: [12] +7 = 19 vs AC 15, hit`). If the options say rolls are narrated with no numbers, paste no line. If a house rule changes a verdict, paste the line unchanged and state the ruling after it.
 - Decide what a creature does before you roll for it: whether it attacks, whom, or whether it has had enough and runs. Never roll an attack and then choose whether to use it.
 
 A roll that has been shown or reported stands. Do not reroll or misreport it.
@@ -180,7 +180,7 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 
 - `maps/live.json` is the truth about where everyone stands. Only what the character has seen goes into a map file; the player can see all of it.
 - `./bin/dmc map adventures/<campaign>/maps/live.json` draws it in the player's browser and prints every distance. State distances only from `dmc` output.
-- In a fight, when someone moves: roll; update `game-state.md` and `live.json`, checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; narrate; run `dmc map` last. If it refuses the file, correct the position and say so in a line.
+- In a fight, once per reply: roll; update `game-state.md` and `live.json` in one edit (positions, and `current` for whoever acts next), checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; narrate; run `dmc map` last, only if something on the map changed, never once per monster turn. If it refuses the file, correct it and say so in a line.
 
 ## Narration
 

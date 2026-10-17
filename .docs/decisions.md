@@ -107,6 +107,27 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The user asked for everything to be documented in code and in product-level documents in `.docs/`, and for that to hold for every change from now on. `CLAUDE.md`'s git section is what all toolkit work, including subagents, follows, and it costs nothing during play.
 - **Source:** PR #22.
 
+## Labelled rolls: a natural 20 or 1 decides an attack only, and the old line is kept
+
+- **Date:** 2026-10-17
+- **Decision:** `dmc roll` takes `label:dice@AC<n>` or `@DC<n>` and prints the existing line with the label before it and the verdict after (`Pip, shot: 2d20kl1+5: [17, 9] keep [9] +5 = 14 vs AC 14, hit`). Against an AC, a natural 20 hits and a natural 1 misses whatever the total, only when exactly one d20 counts (a single d20, or the kept die under advantage or disadvantage), and the line says `(natural 20)` or `(natural 1)`. A DC gets no such rule, since 5e gives no automatic success or failure to checks and saves. Meeting the target succeeds. The line keeps the old format rather than the shorter one sketched in issue #6 (`... 2d20kl1+5 [17, 9] keep 9 +5 = 14 ...`), so the line is what `dmc roll` always printed and what Phase 1 already put in `CLAUDE.md`; the cost is a double colon after the label.
+- **Reason:** Rolls went unshown when many came in one reply, because DMC rebuilt each line by hand. With `dmc` printing the whole line, DMC pastes it unchanged. The natural 20 and 1 rule is in the SRD for attack rolls only ("If the d20 roll for an attack is a 20, the attack hits regardless of any modifiers or the target's AC", and likewise a 1 misses).
+- **Source:** Issue #6 finding 4; PR #25; SRD 5.1, "Making an Attack".
+
+## Pasting `dmc`'s line unchanged, and house rules stated after it
+
+- **Date:** 2026-10-17
+- **Decision:** `CLAUDE.md` § Dice has DMC paste `dmc`'s line unchanged, one per roll. If a campaign's house rule changes a verdict, DMC pastes the line unchanged and states the ruling after it.
+- **Reason:** The line is the record of what was rolled, and `dmc` follows strict 5e, so it cannot know a house rule. Editing the line would make it say something no die produced.
+- **Source:** Review of PR #25.
+
+## Turn order on the map: initiative by token id
+
+- **Date:** 2026-10-17
+- **Decision:** `live.json` takes optional `"initiative"` (the creatures in turn order) and `"current"`. Each entry is a token's `id`, preferred because ids are unique, or the name of exactly one token; a name shared by several tokens is refused with their ids. An entry that matches no token is an error, `current` must be in `initiative`, and both keys are checked only when drawing, so `--measure` is never blocked by a stale order. A scene does not inherit the keys from its base place. In a fight DMC sets `current` once per reply, in the same edit as any moves, and runs `dmc map` once, last, only if something on the map changed.
+- **Reason:** The player lost track of whose turn it was and when each creature acts. Names need not be unique ("Goblin" twice), so matching by name alone drew the wrong token or none. An unmatched entry is an error so that a typo is caught instead of drawing silently; the cost is that a creature that is not a token (a lair action) cannot be listed. Redrawing once per reply, not once per monster turn, keeps the cost of a fight down.
+- **Source:** Issue #6 finding 5; PR #25 and its review.
+
 ## The build checks that code is documented
 
 - **Date:** 2026-10-17

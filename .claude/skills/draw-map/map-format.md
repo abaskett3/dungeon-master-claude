@@ -78,6 +78,30 @@ is a "+N" badge, where N counts the fourth creature and every one after it and i
 no direction is established), `"edges"` (`{"top"|"bottom"|"left"|"right": text}`, a caption on that side), `"notes"`
 (a line under the title) and `"labels"` (`[{"at": "I3", "text": "..."}]`, text on a pale plate over a cell).
 
+## Turn order in a fight
+
+Two optional keys, for a scene (a place file has no fight):
+
+```json
+"initiative": ["1", "@", "K"],
+"current": "@"
+```
+
+`"initiative"` is the creatures in the order they act, each written as the `id` of a token on the map (preferred:
+ids are unique), or as the `name` of a token when exactly one token has it. `"current"` is whose turn it is, written
+the same way and in the list. The picture then has a **Turn order** list at the top of the panel beside the grid,
+numbered, each creature with its token's colour and mark, and the current turn on a highlighted plate tagged `TURN`,
+in `live.html` and in `live.png`. Without `"initiative"` there is no list, and without `"current"` the list has no
+mark (between rounds); a map with neither is drawn exactly as before. When the fight ends, delete both keys.
+
+The keys belong to the scene that holds them: a scene does not inherit them from its `"base"` place file, so a
+place file's own `"initiative"` and `"current"` are ignored when it is used as a base.
+
+A mistake is one line, and nothing is drawn: `"initiative"` must be a list of ids or names, none twice, each matching
+a token on the map (a creature that is not on the map is not in the order), and `"current"` must be in it. An entry
+that is the name of several tokens (two goblins both called "Goblin") is refused, and the error lists their ids to
+use instead. `--measure` does not check the turn order, so a stale one never blocks a distance.
+
 ## Distances
 
 Distances are between the nearest cells of two creatures, in a straight line; walls are not taken into account. At 5

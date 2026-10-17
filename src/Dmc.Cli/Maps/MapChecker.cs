@@ -82,7 +82,9 @@ public static class MapChecker
     /// <summary>
     /// Read a place or scene file; a scene's "base" is merged underneath it. A scene is a file with a <c>base</c>, the
     /// name of a place file in the same folder (without <c>.json</c>): every key of the scene replaces the place's key of
-    /// the same name. A scene may repeat its place's scale but not change it, and a place cannot itself have a base.
+    /// the same name, except that the place's <c>initiative</c> and <c>current</c> are dropped, because a turn order
+    /// belongs to the scene that holds it. A scene may repeat its place's scale but not change it, and a place cannot
+    /// itself have a base.
     /// </summary>
     /// <param name="path">The place or scene file.</param>
     /// <returns>The merged object, which has a <c>grid</c>. Nothing else about it is checked yet: see <see cref="Check"/>.</returns>
@@ -113,6 +115,9 @@ public static class MapChecker
                                            + $"is drawn at {PyJson.Dumps(baseFt)}: a scene cannot change its place's scale.");
                 }
             }
+            // A fight's turn order belongs to the scene that holds it, never to the place it stands on.
+            merged.Remove("initiative");
+            merged.Remove("current");
             foreach (var pair in data)
             {
                 if (pair.Key != "base")
@@ -209,11 +214,16 @@ public static class MapChecker
     /// Validate the map and return it in the form the drawing code uses. Checks the grid (rectangular, every symbol
     /// known), the scale and the <c>north</c> direction; each creature (id of one or two characters and unique, a
     /// known kind, a size from 1 to 4, a cell on the map and not in a wall or empty space, and, at 5 ft, a cell of its
-    /// own); each label; and that <c>edges</c> has only top, bottom, left and right.
+    /// own); each label; that <c>edges</c> has only top, bottom, left and right; and, when drawing, the turn order
+    /// (<c>initiative</c> and <c>current</c>).
     /// </summary>
     /// <param name="data">The object from <see cref="LoadMap"/>.</param>
+    /// <param name="turnOrder">
+    /// Whether to check the turn order. Drawing does; measuring a distance does not depend on it, so a stale order
+    /// never blocks <c>--measure</c>.
+    /// </param>
     /// <exception cref="DmcException">The first thing found wrong, worded as <c>map_render.py</c> worded it.</exception>
-    public static MapModel Check(PyDict data)
+    public static MapModel Check(PyDict data, bool turnOrder = true)
     {
         if (!data.TryGetValue("grid", out var gridValue))
             throw Fail("the map has no \"grid\".");
@@ -324,7 +334,62 @@ public static class MapChecker
                 edgeText[pair.Key] = Py.Str(pair.Value);
         }
 
+        var (initiative, current) = turnOrder ? CheckTurnOrder(data, tokens) : ([], null);
+
         return new MapModel(Py.Str(Get(data, "title", "Map")), Py.Str(Get(data, "notes", "")), grid, cols, rows, legend,
-            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText);
+            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText, initiative, current);
+    }
+
+    /// <summary>
+    /// Check the optional <c>"initiative"</c> (the creatures in turn order) and <c>"current"</c> (whose turn it is).
+    /// Each entry is a token's id or, if no token has that id, the name of exactly one token; a name shared by several
+    /// tokens is refused, with their ids. A creature appears once, and <c>"current"</c> must be in the order. Null and
+    /// an empty list mean there is no turn order. A fight that is over simply drops both keys.
+    /// </summary>
+    /// <returns>The tokens in turn order (empty with no turn order) and the token whose turn it is, or null.</returns>
+    static (IReadOnlyList<Token> Initiative, Token? Current) CheckTurnOrder(PyDict data, List<Token> tokens)
+    {
+        var order = new List<Token>();
+        object? initiative = Get(data, "initiative", null);
+        if (initiative is not null)
+        {
+            if (initiative is not List<object?> entries || entries.Any(n => n is not string { Length: > 0 }))
+                throw Fail("\"initiative\" must be a list of creatures (token ids or names), in turn order.");
+            foreach (string entry in entries.Cast<string>())
+            {
+                var token = ResolveCreature("initiative", entry, tokens);
+                if (order.Contains(token))
+                    throw Fail($"\"initiative\" lists \"{entry}\" twice.");
+                order.Add(token);
+            }
+        }
+
+        object? current = Get(data, "current", null);
+        if (current is null)
+            return (order, null);
+        if (current is not string { Length: > 0 } currentText)
+            throw Fail("\"current\" must be the id or name of the creature whose turn it is.");
+        var now = ResolveCreature("current", currentText, tokens);
+        if (!order.Contains(now))
+            throw Fail($"\"current\" is \"{currentText}\", who is not in \"initiative\".");
+        return (order, now);
+    }
+
+    /// <summary>
+    /// The token an <c>"initiative"</c> or <c>"current"</c> entry means: the one whose id it is, else the only one
+    /// whose name it is. <paramref name="key"/> names the key in the error.
+    /// </summary>
+    static Token ResolveCreature(string key, string text, List<Token> tokens)
+    {
+        var byId = tokens.FirstOrDefault(t => t.Id == text);
+        if (byId is not null)
+            return byId;
+        var named = tokens.Where(t => t.Name == text).ToList();
+        if (named.Count == 1)
+            return named[0];
+        if (named.Count == 0)
+            throw Fail($"\"{key}\" names \"{text}\", which is neither the id nor the name of any token on the map.");
+        throw Fail($"\"{key}\" names \"{text}\", the name of {named.Count} tokens: use their ids "
+                   + $"({string.Join(", ", named.Select(t => t.Id))}).");
     }
 }

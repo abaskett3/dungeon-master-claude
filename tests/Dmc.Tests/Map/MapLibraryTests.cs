@@ -80,6 +80,84 @@ public sealed class MapCheckingTests
     /// <summary>The <c>tokens</c> key holding one creature with these keys.</summary>
     static (string, object?) One(params (string, object?)[] token) => ("tokens", Arr(Obj(token)));
 
+    /// <summary>
+    /// Issue #6, finding 5: the optional <c>"initiative"</c> and <c>"current"</c> keys of a fight are checked against the
+    /// tokens, with one-line errors. An entry is a token's id, or the name of exactly one token.
+    /// </summary>
+    [TestMethod]
+    public void TheTurnOrderIsCheckedAgainstTheTokens()
+    {
+        var tokens = WithTokens(SceneTokens());
+        var m = Checked(tokens, ("initiative", Arr("Goblin boss", "@")), ("current", "Thorin"));
+        CollectionAssert.AreEqual(new[] { "Goblin boss", "Thorin" }, m.Initiative!.Select(t => t.Name).ToArray());
+        Assert.AreEqual("Thorin", m.Current!.Name);
+
+        // Neither key (or both null) is no turn order at all.
+        foreach (var none in new[] { Checked(tokens), Checked(tokens, ("initiative", null), ("current", null)) })
+        {
+            Assert.IsEmpty(none.Initiative!);
+            Assert.IsNull(none.Current);
+        }
+        // Between turns: an order and no one in particular.
+        Assert.IsNull(Checked(tokens, ("initiative", Arr("Thorin"))).Current);
+
+        Rejected("neither the id nor the name of any token", tokens, ("initiative", Arr("Thorin", "Zed")));
+        Rejected("lists \"@\" twice", tokens, ("initiative", Arr("Thorin", "@")));
+        Rejected("must be a list of creatures", tokens, ("initiative", Arr("Thorin", 5)));
+        Rejected("must be a list of creatures", tokens, ("initiative", "Thorin"));
+        Rejected("\"current\" is \"Goblin boss\", who is not in \"initiative\"", tokens, ("initiative", Arr("Thorin")), ("current", "Goblin boss"));
+        Rejected("who is not in \"initiative\"", tokens, ("current", "Thorin"));
+        Rejected("\"current\" must be the id or name", tokens, ("initiative", Arr("Thorin")), ("current", 3));
+    }
+
+    /// <summary>A name shared by several tokens is refused with their ids; the ids themselves always work.</summary>
+    [TestMethod]
+    public void ANameSharedByTokensIsRefusedAndTheirIdsAreUsed()
+    {
+        var goblins = WithTokens(Arr(
+            Obj(("id", "@"), ("name", "Thorin"), ("kind", "pc"), ("at", "B2")),
+            Obj(("id", "1"), ("name", "Goblin"), ("kind", "enemy"), ("at", "E2")),
+            Obj(("id", "2"), ("name", "Goblin"), ("kind", "enemy"), ("at", "F2"))));
+        Rejected("the name of 2 tokens: use their ids (1, 2)", goblins, ("initiative", Arr("Thorin", "Goblin")));
+        Rejected("\"current\" names \"Goblin\", the name of 2 tokens", goblins, ("initiative", Arr("1")), ("current", "Goblin"));
+        var m = Checked(goblins, ("initiative", Arr("2", "@", "1")), ("current", "1"));
+        CollectionAssert.AreEqual(new[] { "2", "@", "1" }, m.Initiative!.Select(t => t.Id).ToArray());
+        Assert.AreEqual("1", m.Current!.Id);
+    }
+
+    /// <summary>The turn order is not checked when measuring, and a scene does not inherit one from its base place.</summary>
+    [TestMethod]
+    public void TheTurnOrderIsCheckedOnlyWhenDrawingAndIsNotInheritedFromABase()
+    {
+        var stale = Place();
+        stale["tokens"] = SceneTokens();
+        stale["initiative"] = Arr("Gone");
+        Assert.ThrowsExactly<DmcException>(() => MapChecker.Check(stale));
+        Assert.IsEmpty(MapChecker.Check(stale, turnOrder: false).Initiative!);
+
+        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string live = Path.Combine(folder, "live.json");
+            var place = Place();
+            place["initiative"] = Arr("Gone");
+            place["current"] = "Gone";
+            File.WriteAllText(Path.Combine(folder, "hall.json"), Json(place));
+            File.WriteAllText(live, Json(Obj(("base", "hall"), ("tokens", SceneTokens()))));
+            var model = MapChecker.Check(MapChecker.LoadMap(live));
+            Assert.IsEmpty(model.Initiative!);
+            Assert.IsNull(model.Current);
+            // A scene's own turn order is its own.
+            File.WriteAllText(live, Json(Obj(("base", "hall"), ("tokens", SceneTokens()), ("initiative", Arr("Thorin")), ("current", "Thorin"))));
+            Assert.AreEqual("Thorin", MapChecker.Check(MapChecker.LoadMap(live)).Current!.Name);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [TestMethod]
     public void AValidMap()
     {
@@ -488,6 +566,28 @@ public sealed class MapDrawingTests
         string words = SvgText(SvgDrawing.Render(m));
         StringAssert.Contains(words, "altar");
         Assert.DoesNotContain("ON THE MAP", words);
+    }
+
+    /// <summary>The list is in the panel only when the map has an initiative, the current turn is marked once, and nothing else changes.</summary>
+    [TestMethod]
+    public void TheTurnOrderIsDrawnBesideTheGridOnlyWhenTheMapHasOne()
+    {
+        var tokens = ("tokens", (object?)SceneTokens());
+        string plain = SvgDrawing.Render(Checked(tokens));
+        Assert.DoesNotContain("TURN", SvgText(plain));
+        // An empty order is no order: the picture is the same.
+        Assert.AreEqual(plain, SvgDrawing.Render(Checked(tokens, ("initiative", Arr()))));
+
+        string svg = SvgDrawing.Render(Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")));
+        string words = SvgText(svg);
+        StringAssert.Contains(words, "TURN ORDER");
+        Assert.IsLessThan(words.IndexOf("2. Thorin", StringComparison.Ordinal), words.IndexOf("1. Goblin boss", StringComparison.Ordinal));
+        Assert.AreEqual(1, System.Text.RegularExpressions.Regex.Matches(svg, ">TURN<").Count, "one current turn is marked");
+
+        // With no one's turn marked, there is a list and no mark.
+        string between = SvgDrawing.Render(Checked(tokens, ("initiative", Arr("Goblin boss", "Thorin"))));
+        StringAssert.Contains(SvgText(between), "TURN ORDER");
+        Assert.DoesNotContain(">TURN<", between);
     }
 
     [TestMethod]

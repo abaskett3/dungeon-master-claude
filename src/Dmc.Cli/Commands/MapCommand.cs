@@ -50,7 +50,8 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
     /// <summary>
     /// Checks the map file and, by default, writes <c>live.html</c> and <c>live-data.js</c> beside it and prints the
     /// distances between the creatures; <c>--png</c> adds <c>live.png</c>, <c>--open</c> opens the page, and
-    /// <c>--measure</c> only prints the distance between two cells and writes nothing.
+    /// <c>--measure</c> only prints the distance between two cells and writes nothing. The turn order
+    /// (<c>"initiative"</c> and <c>"current"</c>) is checked and drawn only when drawing, so <c>--measure</c> ignores it.
     /// </summary>
     /// <param name="args">The arguments after <c>map</c>.</param>
     /// <param name="io">Standard output gets the report, or the help text.</param>
@@ -66,7 +67,8 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         }
 
         string mapPath = parsed.Map!;
-        var model = MapChecker.Check(MapChecker.LoadMap(mapPath));
+        // --measure draws nothing, so a stale turn order must not stop it.
+        var model = MapChecker.Check(MapChecker.LoadMap(mapPath), turnOrder: parsed.Measure is null);
 
         if (parsed.Measure is not null)
         {

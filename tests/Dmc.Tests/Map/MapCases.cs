@@ -73,7 +73,7 @@ public static partial class MapCases
 
     // ---------- the cases ----------
 
-    /// <summary>The maps that must draw: places and scenes at every scale, shared cells, merging with a base, and <c>--png</c>.</summary>
+    /// <summary>The maps that must draw: places and scenes at every scale, shared cells, merging with a base, the turn order of a fight, and <c>--png</c>.</summary>
     static IEnumerable<CommandCase> Drawn()
     {
         yield return Scene("a scene on its base", Scene_());
@@ -81,6 +81,7 @@ public static partial class MapCases
         yield return Scene("a scene overrides its base", OnHall(("title", "Goblin hall, on fire")));
         yield return Scene("a scene may repeat its base's scale", OnHall(("cell_ft", 5)));
         yield return Scene("a scene drawn with a png", Scene_(), "--png");
+        yield return Scene("a scene with the turn order", OnHall(("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")), "--png");
         yield return new CommandCase("an absolute path", work => [Path.Combine(work, "live.json")], null, work =>
         {
             File.WriteAllText(Path.Combine(work, "goblin-hall.json"), PyJson.Dumps(Place()));
@@ -223,7 +224,7 @@ public static partial class MapCases
         yield return Scene("measure after a scale error", Obj(("base", "goblin-hall"), ("cell_ft", 7)), "--measure", "B2", "C3");
     }
 
-    /// <summary>Map files and bases that the checker rejects, one case for each message, plus a few that are accepted (listed in <see cref="Fine"/>).</summary>
+    /// <summary>Map files and bases that the checker rejects, one case for each message (the turn order keys <c>initiative</c> and <c>current</c> included), plus a few that are accepted (listed in <see cref="Fine"/>).</summary>
     static IEnumerable<CommandCase> Rejected()
     {
         // The messages the Python tests look for, one by one.
@@ -288,6 +289,11 @@ public static partial class MapCases
             ("an orphan base", Obj(("base", "nowhere"))),
             ("a chained base", Obj(("base", "live"))),
             ("a self base", Obj(("base", "chain"))),
+            ("initiative names nobody on the map", Hall(("tokens", Arr(Pair)), ("initiative", Arr("Thorin", "Zed")))),
+            ("initiative lists a name twice", Hall(("tokens", Arr(Pair)), ("initiative", Arr("Thorin", "Thorin")))),
+            ("initiative is not a list of names", Hall(("tokens", Arr(Pair)), ("initiative", Arr("Thorin", 5)))),
+            ("current is not in the initiative", Hall(("tokens", Arr(Pair)), ("initiative", Arr("Thorin")), ("current", "Goblin boss"))),
+            ("current with no initiative", Hall(("tokens", Arr(Pair)), ("current", "Thorin"))),
         ];
         foreach (var (name, map) in maps)
             yield return Alone("rejects: " + name, map);

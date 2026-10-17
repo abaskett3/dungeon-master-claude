@@ -14,7 +14,7 @@ The prompts always write `./bin/dmc <command> ...`. Every such form is on the al
 ```
 $ dmc --help
 usage: dmc <command> [args]
-  roll          roll dice: dmc roll 1d20+5 2d20kh1+5 4d6kh3
+  roll          roll dice: dmc roll 1d20+5 4d6kh3, or with a label and target "Pip, shot:2d20kl1+5@AC14"
   context-check read the hook's JSON on stdin; print a line when the context is large (never fails)
   map           draw a map for the player's browser: dmc map <map.json> [--png] [--open] [--measure A B]
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
@@ -66,10 +66,11 @@ It says nothing when the pin is missing, unreadable or empty, and nothing for a 
 ## roll
 
 ```
-dmc roll <dice> [<dice> ...]
+dmc roll [label:]<dice>[@AC<n>|@DC<n>] [...]
+dmc roll --help
 ```
 
-Rolls each expression and prints one line per expression on stdout, errors included.
+Rolls each argument and prints one line per argument on stdout, errors included. An argument may carry a label and a target (see below); with neither it is a bare dice expression.
 
 | Form | Meaning |
 |---|---|
@@ -99,9 +100,26 @@ xyz: not a dice expression (try 1d20+5, 2d20kh1, 4d6kh3)
 2d6kh3: cannot keep 3 of 2 dice
 ```
 
-With no expression, it prints `usage: dmc roll <dice> [<dice> ...]   e.g. 1d20+5 2d6+3 2d20kh1+5 4d6kh3` on stdout and exits 1. If the random source cannot be read, it prints `dmc roll: cannot read /dev/urandom, no dice rolled` and exits 2.
+With no argument, it prints `usage: dmc roll [label:]<dice>[@AC<n>|@DC<n>] ...   e.g. 1d20+5 2d20kh1+5 "Pip, shot:1d20+5@AC14"` on stdout and exits 1. `--help` (or `-h`) prints the longer help and exits 0. If the random source cannot be read, it prints `dmc roll: cannot read /dev/urandom, no dice rolled` and exits 2.
 
-CLAUDE.md § Dice has DMC show each roll as this line unchanged, with a label before it and the target and result after. A `label:expr@target` form that prints that whole line is planned (see [roadmap.md](roadmap.md)).
+### Label and target
+
+An argument may be `label:dice@target` (added in release 0.1.2). Label and target are each optional. The label is everything before the first colon, so it may hold spaces and commas but no colon; quote the whole argument so the shell passes it as one. The target is `@AC` or `@DC` (any case) and a whole number, after the last `@`. The line is the plain line with the label before it and the verdict after:
+
+```
+$ dmc roll "Pip, shot:2d20kl1+5@AC14" "Kole, Dex save:1d20+3@DC13" "Krag, damage:2d6+4" 1d20+5
+Pip, shot: 2d20kl1+5: [17, 9] keep [9] +5 = 14 vs AC 14, hit
+Kole, Dex save: 1d20+3: [9] +3 = 12 vs DC 13, fail
+Krag, damage: 2d6+4: [3, 5] +4 = 12
+1d20+5: [12] +5 = 17
+```
+
+- An AC target says `hit` or `miss`; a DC target says `success` or `fail`. A total that meets the target succeeds, as in 5e.
+- **Natural 20 and 1.** Against an AC only, a natural 20 hits and a natural 1 misses whatever the total, and the line says so: `1d20-5: [20] -5 = 15 vs AC 30, hit (natural 20)`, `1d20+30: [1] +30 = 31 vs AC 5, miss (natural 1)`. This applies only when exactly one d20 counts: a single d20, or the kept die under advantage or disadvantage (`2d20kh1`, `2d20kl1`). Two d20s added up have no natural roll. A DC has no such rule: checks and saves have no automatic success or failure in 5e, so there is no note and no override. The line does not compute critical damage.
+- **Errors** are one line, start with the label, draw no dice and exit 1; the other arguments are still rolled. A bad target gives `Pip: 1d20: target "@14" is not @AC<n> or @DC<n> (try @AC14, @DC13)`. An empty label (`: 1d20`) or a line break in a label is refused.
+- The bare syntax is untouched: an argument with no colon and no `@` prints exactly the line it always did.
+
+CLAUDE.md § Dice has DMC call `dmc roll` with a label and target on every roll it makes and paste the line unchanged. If a campaign's house rule changes a verdict, DMC pastes the line unchanged and states the ruling after it, because `dmc` follows strict 5e.
 
 ## map
 
@@ -116,7 +134,7 @@ Checks a place or scene file, draws it, and prints the distance between every pa
 |---|---|
 | `--png` | Also write `live.png`, the same picture at the same pixel size as the SVG, for DMC to look at. |
 | `--open` | Also open `live.html` in the default browser. Used once per session; afterwards the open page updates itself. |
-| `--measure FROM TO` | Print only the distance between two cells, such as `B2 H4`, and draw nothing. The map is still loaded and checked. |
+| `--measure FROM TO` | Print only the distance between two cells, such as `B2 H4`, and draw nothing. The map is still loaded and checked, except for its turn order, which a stale `initiative` therefore cannot block. |
 
 It writes next to the map file: `live.html` (the page the player keeps open), `live-data.js` (the current picture, rewritten on every run; the page polls it every two seconds) and, with `--png`, `live.png`.
 
@@ -132,6 +150,13 @@ Distances (1 cell = 5 ft, straight line, walls ignored; 5 ft is adjacent):
 
 $ dmc map maps/live.json --measure B2 H4
 B2 to H4: 6 squares, 30 ft (straight line, walls ignored)
+```
+
+**Turn order** (added in release 0.1.2). A scene may hold `"initiative"`, the creatures in the order they act, and `"current"`, whose turn it is. Each is a token's `id` (preferred) or the name of exactly one token. The picture, in `live.html` and `live.png`, then has a numbered "Turn order" list at the top of the panel beside the grid, each creature with its token's colour and mark and the current turn on a highlighted plate tagged `TURN`. Without `"initiative"` the picture is exactly as before. A scene does not inherit these keys from its base place. Mistakes are one line and nothing is drawn:
+
+```
+dmc map: "initiative" names "Goblin", the name of 2 tokens: use their ids (1, 2).
+dmc map: "current" is "Pip", who is not in "initiative".
 ```
 
 Distances are measured between the nearest cells of two creatures, in a straight line that ignores walls. At 5 ft and 30 ft they count squares the 5e way, a diagonal step costing the same as a straight one; at 30 ft they read "about N ft", and two creatures in one cell read "same square (within 30 ft)". On a mile-scale map they are the true straight-line distance between cell centres, "about N miles".

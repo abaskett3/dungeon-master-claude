@@ -305,6 +305,28 @@ public abstract partial class MapCommandContract
         CollectionAssert.AreEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, png[..8]);
     }
 
+    /// <summary>The turn order is in the page data when the scene has one and not otherwise; a bad one draws nothing.</summary>
+    [TestMethod]
+    public void TheTurnOrderReachesThePageAndABadOneIsNotDrawn()
+    {
+        Assert.AreEqual(0, Map(_scene).ExitCode);
+        StringAssert.DoesNotMatch(Payload().GetProperty("svg").GetString()!, new Regex("TURN"));
+
+        Write("live.json", With(Scene(), ("initiative", Arr("Goblin boss", "Thorin")), ("current", "Thorin")));
+        var result = Map(_scene);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        StringAssert.Contains(SvgText(Payload().GetProperty("svg").GetString()!), "TURN ORDER");
+
+        Write("live.json", With(Scene(), ("initiative", Arr("Thorin")), ("current", "Goblin boss")));
+        AssertFails("\"current\" is \"Goblin boss\", who is not in \"initiative\"", _scene);
+
+        // A stale order never blocks a distance: --measure draws nothing and does not check it.
+        Write("live.json", With(Scene(), ("initiative", Arr("Gone")), ("current", "Gone")));
+        var measured = Map(_scene, "--measure", "B2", "E2");
+        Assert.AreEqual(0, measured.ExitCode, measured.ToString());
+        StringAssert.Contains(measured.Stdout, "B2 to E2");
+    }
+
     [TestMethod]
     public void NonAsciiNamesSurvive()
     {

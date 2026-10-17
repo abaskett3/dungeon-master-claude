@@ -74,11 +74,13 @@ By default you roll for your own character and for party checks, and DMC rolls f
 
 Answer with the totals ("18 and 4"), or show your working ("12+6=18 and 3+1=4"). DMC reads natural 20s and 1s from your working, or from a total that equals 20 or 1 plus the modifier. Say "roll it for me" when you would rather DMC rolled one.
 
-DMC's own rolls come from `dmc roll`. With the default options, each is shown on its own line with a label, the dice, the total, the target and the result:
+DMC's own rolls come from `dmc roll`. With the default options, each is shown on its own line, exactly as `dmc` printed it, with a label, the dice, the total, the target and the result:
 
 ```
 Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit
 ```
+
+Against an armor class, a natural 20 hits and a natural 1 misses whatever the total, and the line says so (`hit (natural 20)`). Checks and saves have no such rule. If a house rule of your campaign changes a result, DMC shows the line as rolled and states the ruling after it.
 
 ### Fights and plans
 
@@ -93,6 +95,7 @@ When positions matter, DMC opens a map in your web browser: a grid with walls, t
 
 - Squares are named by column letter and row number, as printed along the edges: `E4` is the fifth column of the fourth row, counting rows from the top. You can answer the same way: "I move to F4".
 - Hovering over a token shows who it is.
+- In a fight, a "Turn order" list beside the grid shows who acts when, numbered, with whose turn it is highlighted, so you can plan ahead.
 - Every map is to scale. Fights use 5 ft squares, or 30 ft squares for very large places; overland maps use 1, 6 or 60 miles a square.
 - The map shows only what your character has seen.
 - The map is a local file, `adventures/<campaign>/maps/live.html`. Nothing is uploaded.

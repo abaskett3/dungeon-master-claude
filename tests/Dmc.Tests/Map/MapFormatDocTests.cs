@@ -13,6 +13,7 @@ public sealed class MapFormatDocTests
     /// <summary>A file of the draw-map skill's folder, as text.</summary>
     static string Skill(string name) => File.ReadAllText(Path.Combine(TestEnv.Root, ".claude", "skills", "draw-map", name));
 
+    /// <summary>The format file names every scale, symbol, terrain, kind and top-level key (turn order included).</summary>
     [TestMethod]
     public void TheFormatFileNamesEveryScaleSymbolAndTerrain()
     {
@@ -25,7 +26,7 @@ public sealed class MapFormatDocTests
             StringAssert.Contains(doc, $"`{terrain}`");
         foreach (var (kind, _) in MapRules.Kinds)
             StringAssert.Contains(doc, $"`{kind}`");
-        foreach (string key in new[] { "scale_note", "north", "edges", "notes", "labels", "base", "legend", "cell_ft", "grid", "tokens" })
+        foreach (string key in new[] { "scale_note", "north", "edges", "notes", "labels", "base", "legend", "cell_ft", "grid", "tokens", "initiative", "current" })
             StringAssert.Contains(doc, $"\"{key}\"");
     }
 

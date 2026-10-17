@@ -6,6 +6,11 @@
 # The archive comes from this repository's GitHub Release, over HTTPS only. Its SHA-256 is checked against the pin
 # before anything in it is unpacked or run; on a mismatch nothing is installed.
 #
+# What it installed is recorded in bin/.dmc-release (the tag, and the SHA-256 of the installed program, one key per
+# line). bin/dmc counts as the pinned release only when that stamp names the pinned tag, the program still has the
+# stamp's hash, and it prints the pinned version. A build made on this computer (dotnet publish ... -o bin) has no
+# stamp, and carries the same version number as the release it was made for, so it is replaced by the release.
+#
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub (the
 # SHA-256 check still applies), and DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64).
 
@@ -67,6 +72,27 @@ function Get-Version([string] $exe) {
     }
 }
 
+function Get-Stamped([string] $stamp, [string] $key) {
+    foreach ($line in [System.IO.File]::ReadAllLines($stamp)) {
+        if ($line.StartsWith("$key=", [StringComparison]::Ordinal)) { return $line.Substring($key.Length + 1).Trim() }
+    }
+    return ''
+}
+
+# True when the program is the release $tag that get-dmc installed: the stamp names that tag, the program has the
+# hash in the stamp, and it prints that version. Quiet, and fast enough to run at every launch.
+function Test-Current([string] $exe, [string] $stamp, [string] $tag) {
+    try {
+        if (-not ((Test-Path -LiteralPath $exe -PathType Leaf) -and (Test-Path -LiteralPath $stamp -PathType Leaf))) { return $false }
+        $stampedSha = Get-Stamped $stamp 'sha256'
+        if ((Get-Stamped $stamp 'tag') -ne $tag -or -not $stampedSha) { return $false }
+        if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant() -ne $stampedSha.ToLowerInvariant()) { return $false }
+        return (Get-Version $exe) -eq ('dmc ' + $tag.Substring('dmc-v'.Length))
+    } catch {
+        return $false
+    }
+}
+
 try {
     $rid = Get-Platform
     $windows = $rid.StartsWith('win-')
@@ -95,7 +121,8 @@ try {
     if (Test-Path -LiteralPath $bin -PathType Container) {
         Get-ChildItem -LiteralPath $bin -Filter '*.old' -File -Force | Remove-Item -Force -ErrorAction SilentlyContinue
     }
-    if ((Test-Path -LiteralPath $exe -PathType Leaf) -and (Get-Version $exe) -eq "dmc $version") { exit 0 }
+    $stampFile = Join-Path $bin '.dmc-release'
+    if (Test-Current $exe $stampFile $tag) { exit 0 }
 
     $asset = if ($windows) { "$tag-$rid.zip" } else { "$tag-$rid.tar.gz" }
     New-Item -ItemType Directory -Force -Path $bin | Out-Null
@@ -165,6 +192,12 @@ try {
             }
             Move-Item -LiteralPath $new.FullName -Destination $target
         }
+        # The stamp comes last, and goes in whole: a run cut short before it leaves a stamp that does not match the
+        # program, and the next run installs again. One line per key, with line feeds, as get-dmc.sh reads it.
+        $installed = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+        $stampTemp = Join-Path $work 'stamp'
+        [System.IO.File]::WriteAllText($stampTemp, "tag=$tag`nsha256=$installed`n", (New-Object System.Text.UTF8Encoding($false)))
+        Move-Item -LiteralPath $stampTemp -Destination $stampFile -Force
     } finally {
         Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
     }

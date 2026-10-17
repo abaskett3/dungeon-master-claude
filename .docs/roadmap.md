@@ -16,7 +16,8 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
-| Play fights and review them, issue #6 Phase 3 | Done | Two sparring bouts reviewed; one failure, the map drawn before the narration, fixed by PR #37, which closes issue #6. |
+| `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
+| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -48,13 +49,21 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
-- **PR #37:** issue #6 Phase 3, `CLAUDE.md` § Maps says the narration is reply text written before the `dmc map` call and before any picture is sent to a remote player. Closes issue #6.
+- **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
 
-## Next
+## Next: issue #6
 
-Nothing in issue #6 remains; later work is tracked in the open issues on GitHub. Issue #6 is closed: Phase 1 (the prompts and templates, PR #19) and Phase 2 (labelled rolls and the turn order on the map, PR #25, release 0.1.2) were followed by Phase 3, a play test of two sparring bouts. Readied actions, shown rolls, enemy options and movement held. The map was redrawn before the narration in all 6 map updates, because reply text written after a tool call appears after it and DMC wrote none before `dmc map`; PR #37 fixed the wording. The rest is in [decisions.md](decisions.md).
+Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase 1 (the prompts and templates, PR #19) is done. So is Phase 2, shipped in release 0.1.2 (PR #26), on which `CLAUDE.md` § Dice and § Maps now depend:
 
-The labelled rolls and the turn order are described in [dmc-reference.md](dmc-reference.md#label-and-target) and [campaign-files.md](campaign-files.md#the-map-files).
+- **Labelled rolls (PR #25).** `dmc roll "label:expr@target"` prints a line ready to paste, for example `Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit`, with a natural 20 or 1 deciding an attack. The bare syntax keeps working, and `dmc roll --help` is new. Described in [dmc-reference.md](dmc-reference.md#label-and-target).
+- **Turn order on the map (PR #25).** `live.json` gains `"initiative"` (the order, by token id) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked. Described in [campaign-files.md](campaign-files.md#the-map-files).
+
+What remains:
+
+1. **Phase 3, check it worked.** Play one fight, run `/review-transcript` on that session, and check that the map never ran ahead of the narration, every enemy option was stated, readied actions were said back, every roll was shown and movement stayed consistent.
+2. **Close issue #6.**
+
+Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](campaign-files.md) (for `live.json`) and this roadmap, under the documentation rule.
 
 ## Not planned unless needed
 

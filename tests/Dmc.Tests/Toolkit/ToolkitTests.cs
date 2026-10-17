@@ -35,19 +35,43 @@ public sealed partial class ToolkitTests
             .Select(f => Path.GetRelativePath(TestEnv.Root, f).Replace('\\', '/')).Order(StringComparer.Ordinal),
     ];
 
-    /// <summary>The <c>Tool(pattern)</c> rules of the allow list in settings.json, each with its pattern as a regex.</summary>
-    static readonly (string Tool, string Pattern, Regex Matches)[] AllowRules =
-        Settings("settings.json")["permissions"]!["allow"]!.AsArray().Select(r => Rule().Match((string)r!)).Where(m => m.Success)
-            .Select(m => (m.Groups[1].Value, m.Groups[2].Value,
-                new Regex("^" + Regex.Escape(m.Groups[2].Value).Replace(@"\*", ".*") + "$", RegexOptions.Singleline)))
+    /// <summary>
+    /// The <c>Tool(pattern)</c> rules of one permission list (<c>allow</c> or <c>deny</c>) of a settings file, each with
+    /// its pattern as a regex. One parser serves both lists so that they cannot disagree about what a pattern matches.
+    /// </summary>
+    static (string Tool, string Pattern, Regex Matches)[] Rules(string file, string list) =>
+        (Settings(file)["permissions"]?[list]?.AsArray() ?? []).Select(r => Rule().Match((string)r!)).Where(m => m.Success)
+            .Select(m => (m.Groups[1].Value, m.Groups[2].Value, PatternRegex(m.Groups[1].Value, m.Groups[2].Value)))
             .ToArray();
+
+    /// <summary>
+    /// A rule's pattern as a regex over one command, as Claude Code documents the matching: <c>*</c> stands for any
+    /// text wherever it is; a trailing <c> *</c> also matches the bare command, but only when it is the pattern's only
+    /// wildcard (<c>find * -delete *</c> does not match <c>find x -delete</c>); PowerShell matching ignores case.
+    /// </summary>
+    static Regex PatternRegex(string tool, string pattern)
+    {
+        string regex = pattern.EndsWith(" *", StringComparison.Ordinal) && pattern.Count(c => c == '*') == 1
+            ? Regex.Escape(pattern[..^2]) + "( .*)?"
+            : Regex.Escape(pattern).Replace(@"\*", ".*");
+        return new Regex("^" + regex + "$", RegexOptions.Singleline | (tool == "PowerShell" ? RegexOptions.IgnoreCase : RegexOptions.None));
+    }
+
+    /// <summary>The rules of the allow list in settings.json.</summary>
+    static readonly (string Tool, string Pattern, Regex Matches)[] AllowRules = Rules("settings.json", "allow");
+
+    /// <summary>The rules of the deny list in play-settings.json.</summary>
+    static readonly (string Tool, string Pattern, Regex Matches)[] DenyRules = Rules("play-settings.json", "deny");
 
     /// <summary>A permission rule such as <c>Bash(./bin/dmc roll *)</c>: group 1 is the tool, group 2 the pattern.</summary>
     [GeneratedRegex(@"^(\w+)\((.*)\)$")]
     private static partial Regex Rule();
 
-    /// <summary>Whether a rule's pattern, where <c>*</c> stands for anything, takes the whole command.</summary>
+    /// <summary>Whether an allow rule's pattern takes the whole command.</summary>
     static bool Allowed(string tool, string command) => AllowRules.Any(r => r.Tool == tool && r.Matches.IsMatch(command));
+
+    /// <summary>Whether a deny rule of play-settings.json takes the whole command (one subcommand: Claude Code splits chains itself).</summary>
+    static bool Denied(string tool, string command) => DenyRules.Any(r => r.Tool == tool && r.Matches.IsMatch(command));
 
     /// <summary>A command the prompts tell DMC to run: <c>./bin/dmc</c> and what follows, up to the end of the code span or line.</summary>
     [GeneratedRegex(@"\./bin/dmc(?: [^`\n]*)?")]
@@ -232,9 +256,11 @@ public sealed partial class ToolkitTests
         // Tools play, the dice and map commands, rules lookups and the module and import skills need.
         string[] needed = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "PowerShell", "Skill", "ToolSearch",
                            "AskUserQuestion", "WebSearch", "WebFetch", "Agent"];
-        foreach (string rule in settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? [])
+        // Bash(rm *) removes one command, not the tool; every other rule (a bare name or glob, Bash(*), Edit(adventures/**)) can take away what play needs.
+        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !NamesACommand(r)))
         {
-            string pattern = "^" + Regex.Escape(rule.Split('(')[0]).Replace(@"\*", ".*") + "$";
+            string toolName = Rule().Match(rule) is { Success: true } m ? m.Groups[1].Value : rule;
+            string pattern = "^" + Regex.Escape(toolName).Replace(@"\*", ".*") + "$";
             foreach (string tool in needed)
                 Assert.IsFalse(Regex.IsMatch(tool, pattern), $"play-settings.json denies {tool} ({rule}), which play needs");
         }
@@ -243,6 +269,79 @@ public sealed partial class ToolkitTests
             Assert.AreEqual("on", (string?)overrides?[skill] ?? "on", $"play-settings.json hides /{skill}");
         // The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.
         Assert.IsNull(settings["permissions"]?["allow"]);
+    }
+
+    /// <summary>
+    /// Whether a deny rule names one specific command, <c>Bash(rm *)</c> or <c>PowerShell(Remove-Item *)</c>, as opposed
+    /// to a whole tool (<c>Bash</c>, <c>Bash(*)</c>, <c>Bash(* --help)</c>) or a file rule (<c>Edit(adventures/**)</c>).
+    /// </summary>
+    static bool NamesACommand(string rule) =>
+        Rule().Match(rule) is { Success: true } m && m.Groups[1].Value is "Bash" or "PowerShell"
+        && m.Groups[2].Value.Length > 0 && (char.IsLetter(m.Groups[2].Value[0]) || m.Groups[2].Value[0] == '.');
+
+    [TestMethod]
+    public void OnlyARuleNamingACommandEscapesTheToolGuard()
+    {
+        foreach (string rule in new[] { "Bash(rm *)", "PowerShell(Remove-Item *)", "Bash(git clean *)", "Bash(find * -delete*)", "PowerShell(mv *)" })
+            Assert.IsTrue(NamesACommand(rule), rule);
+        foreach (string rule in new[] { "Bash", "Bash(*)", "PowerShell(*)", "Bash(* --help)", "Edit(adventures/**)", "Read(**)", "Write(*)", "mcp__*", "Skill(rewind-campaign)" })
+            Assert.IsFalse(NamesACommand(rule), rule);
+    }
+
+    /// <summary>
+    /// The shell deletes and moves play must not run (issue #36), as <c>Tool(pattern)</c> deny rules. <c>Remove-Item</c>,
+    /// <c>Move-Item</c> and their aliases are listed one by one so a rule does not depend on how Claude Code canonicalizes
+    /// an alias. <c>xargs * rm*</c> covers <c>xargs</c> with flags, which Claude Code does not strip before matching
+    /// (a bare <c>xargs rm</c> is matched as <c>rm</c>).
+    /// </summary>
+    static readonly string[] ShellDeleteRules =
+    [
+        "Bash(rm *)", "Bash(rmdir *)", "Bash(unlink *)", "Bash(mv *)", "Bash(git clean *)",
+        "Bash(find * -delete*)", "Bash(xargs rm*)", "Bash(xargs * rm*)",
+        "PowerShell(Remove-Item *)", "PowerShell(rm *)", "PowerShell(del *)", "PowerShell(erase *)",
+        "PowerShell(rd *)", "PowerShell(ri *)", "PowerShell(rmdir *)",
+        "PowerShell(Move-Item *)", "PowerShell(mi *)", "PowerShell(move *)", "PowerShell(mv *)", "PowerShell(git clean *)",
+    ];
+
+    [TestMethod]
+    public void ThePlaySettingsDenyShellDeletes()
+    {
+        string[] denied = Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        foreach (string rule in ShellDeleteRules)
+            CollectionAssert.Contains(denied, rule, $"play-settings.json does not deny {rule}");
+
+        foreach (string command in new[]
+                 {
+                     "rm a.md", "rm -rf adventures/x", "rm", "rmdir adventures/x", "unlink a.md", "mv a.md b.md", "git clean -fd",
+                     "find adventures -name x -delete", "find . -delete", "xargs rm", "xargs rm -f", "xargs -n1 rm a", "xargs -0 -n1 rm -rf",
+                 })
+            Assert.IsTrue(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[]
+                 {
+                     "Remove-Item a.md", "remove-item -Recurse -Force adventures/x", "Remove-Item", "rm a.md", "del a.md", "erase a.md",
+                     "rd adventures/x", "ri a.md", "rmdir adventures/x", "RI a.md", "Move-Item a.md b.md", "mi a b", "move a b", "mv a b", "git clean -fd",
+                 })
+            Assert.IsTrue(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // What play does run is not caught: reading, listing, dmc, and commands that only start with the same letters.
+        foreach (string command in new[]
+                 {
+                     "ls adventures", "cat a.md", "./bin/dmc roll 1d20", "rmx a.md", "rmdirs a", "mvx a", "git status",
+                     "find adventures -name x", "xargs grep x",
+                 })
+            Assert.IsFalse(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[] { "Get-ChildItem adventures", "./bin/dmc roll 1d20", "Remove-Itemx a", "ri2 a", "Move-Itemx a", "git status" })
+            Assert.IsFalse(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // An inner * is a wildcard even when the pattern ends in " *": "find * -delete *" does not take a bare "find x -delete".
+        Assert.IsTrue(PatternRegex("Bash", "find * -delete *").IsMatch("find x -delete y"));
+        Assert.IsFalse(PatternRegex("Bash", "find * -delete *").IsMatch("find x -delete"));
+        Assert.IsTrue(PatternRegex("Bash", "rm *").IsMatch("rm"));
+
+        // Toolkit work is not blocked: none of these rules is in settings.json, which applies to it as well.
+        string[] shared = Settings("settings.json")["permissions"]?["deny"]?.AsArray().Select(r => (string)r!).ToArray() ?? [];
+        foreach (string rule in ShellDeleteRules)
+            CollectionAssert.DoesNotContain(shared, rule, $"settings.json applies to toolkit work and must not deny {rule}");
     }
 
     // ---------- the launchers and shell scripts ----------

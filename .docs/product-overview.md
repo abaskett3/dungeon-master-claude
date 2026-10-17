@@ -31,7 +31,7 @@ When they pull against each other, DMC looks for the ruling that keeps both. Mos
 | Published modules | `/ingest-module` turns the player's own copy of an adventure (PDF, Markdown, text, HTML, EPUB) into an index and chapter digests with page references, so DMC runs it from the text and tracks progress through it. | `ingest-module` skill, `dmc pdf` |
 | Rules lookup | An optional local copy of the free System Reference Document in `rules/`, indexed by `/setup-rules`, so rulings come from the text rather than memory. | `setup-rules` skill |
 | Breaks | Before each player message, a hook tells DMC how full the conversation is. Past a threshold DMC offers a save and a fresh session at the next natural pause, which keeps sessions cheap and accurate. | `dmc context-check`, CLAUDE.md § Compaction and long sessions |
-| Rewinds | `/rewind-campaign` takes the campaign back to an earlier moment by agreement and makes every file read as if the undone events never happened. | `rewind-campaign` skill |
+| Rewinds | `/rewind-campaign` takes the campaign back to an earlier moment by agreement and makes every file read as if the undone events never happened. Files DMC may not delete (maps of places the party has now never seen) are listed for you to confirm and delete yourself, and are not used meanwhile. | `rewind-campaign` skill |
 | Session review | `/review-transcript` reads the recorded sessions of a campaign and reports where the toolkit's own prompts made the game worse, with proposed fixes. | `review-transcript` skill, `dmc digest` |
 
 The player only needs to type `/new-campaign`, `/resume-campaign` and `/campaign-full-save`, plus Claude Code's own `/clear` at a break. DMC uses the other skills on its own.

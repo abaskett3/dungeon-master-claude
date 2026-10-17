@@ -47,6 +47,30 @@ public sealed class LauncherTests
         }
     }
 
+    /// <summary>
+    /// With no <c>claude</c> on the PATH (an empty folder stands in for the fake's), no release pinned, a launcher must
+    /// start nothing and exit 127. play.ps1 once exited 0 here: a command that cannot be found sets no exit code.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(Shells), typeof(Bootstrap))]
+    public void WhenClaudeIsNotInstalledTheLauncherExits127(string shell)
+    {
+        string noClaude = Path.Combine(Path.GetTempPath(), "dmc-no-claude-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(noClaude);
+        using var toolkit = new ToolkitCopy("", new Dictionary<string, string>());
+        try
+        {
+            var result = Launch(shell, toolkit, noClaude, Path.GetTempPath());
+            Assert.AreEqual(127, result.ExitCode, $"no claude, no session:\n{result}");
+            Assert.IsFalse(result.Stdout.Contains("fake claude in ", StringComparison.Ordinal), result.ToString());
+            StringAssert.Contains(result.Stderr, "claude", result.ToString());
+        }
+        finally
+        {
+            Directory.Delete(noClaude, recursive: true);
+        }
+    }
+
     [TestMethod]
     [DynamicData(nameof(Shells), typeof(Bootstrap))]
     public void WithAReleasePinnedTheLauncherFetchesDmcAndHandsOverToIt(string shell)

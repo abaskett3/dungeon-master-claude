@@ -10,6 +10,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Releases 0.1.0, 0.1.1 and 0.1.2 | Done | Published and pinned (PR #17, PR #21, PR #26). See [releases.md](releases.md). |
 | `dmc digest show` (PR #18) | Done | Shipped in 0.1.1. |
 | Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
+| `play.ps1` exits 127 when `claude` is not installed, issue #28 | Fixed in its pull request | Launcher only, so it needs no release. |
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |

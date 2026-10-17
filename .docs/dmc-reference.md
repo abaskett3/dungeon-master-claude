@@ -48,7 +48,7 @@ dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, play, --v
 | 0 | Success. `context-check` always exits 0. |
 | 1 | A failure the user can fix: a bad dice expression, a map with a mistake in it, a missing or unreadable file, no command or an unknown command. |
 | 2 | A mistake in the arguments (missing, unknown or malformed), and `roll` when the operating system's random source cannot be read. |
-| 127 | `play`: Claude Code is not on the PATH. |
+| 127 | `play`: Claude Code is not on the PATH. The launchers `play.ps1` and `play.sh` exit 127 for the same reason. |
 | other | `play` passes on Claude Code's own exit code. |
 
 **Output.** UTF-8 with no byte-order mark, and LF line ends on every system. A character that cannot be encoded prints as `?`.
@@ -296,7 +296,7 @@ Starts Claude Code for a play session from the toolkit root, as
 claude --model sonnet --effort high --settings .claude/play-settings.json [args...]
 ```
 
-with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned.
+with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned. When no `dmc` can be had they start Claude Code themselves, and if `claude` is not on the PATH then, `play.sh` exits 127 (its shell's own message) and `play.ps1` prints `play: Claude Code (claude) is not on the PATH: install it, then run this again` and exits 127, so a script that checks the exit code sees the failure.
 
 On Windows it starts `claude.exe` from the PATH, or failing that npm's `claude.ps1` through PowerShell. It never starts npm's `claude.cmd` through `cmd.exe`, which would re-parse the arguments.
 

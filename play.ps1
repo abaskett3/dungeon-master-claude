@@ -10,11 +10,11 @@
 # Outputs:   whatever Claude Code prints. When no bin/dmc that runs can be had, a warning on stderr first: get-dmc's own
 #            error line, if get-dmc failed ("get-dmc: ..."), then this script's line ("play: dmc is not available ..."),
 #            so one line if get-dmc succeeded but the dmc it left does not run, two if get-dmc failed. get-dmc may install
-#            dmc into bin/ (see tools/get-dmc.ps1); this script writes nothing itself.
-# Exit code: that of "bin/dmc play" or of claude, which is the session's. Known bug: if claude is not on the PATH,
-#            PowerShell reports the error but sets no exit code, and the script then exits with whatever $LASTEXITCODE
-#            held (0 if nothing set it, or the code of an earlier command such as get-dmc), so it can exit 0 with no
-#            session started. play.sh exits 127 in that case.
+#            dmc into bin/ (see tools/get-dmc.ps1); this script writes nothing itself. If claude cannot be started, one
+#            line on stderr instead of a session: "play: Claude Code (claude) is not on the PATH: install it, then run
+#            this again".
+# Exit code: that of "bin/dmc play" or of claude, which is the session's. 127 if claude is not on the PATH (as play.sh
+#            does, and as dmc play does), after one line on stderr that says so; no session is started then.
 #
 # It never stops play because dmc is missing or broken: it starts Claude Code without it, and says so. It never hands
 # the session to a bin/dmc that fails to print its version, and never changes the arguments it was given.
@@ -34,6 +34,12 @@ if ($pinned) {
         exit $LASTEXITCODE
     }
     [Console]::Error.WriteLine('play: dmc is not available, so Claude Code starts without it, and DMC cannot roll dice, draw maps or read PDFs until get-dmc succeeds.')
+}
+# A command that cannot be found is a non-terminating PowerShell error that sets no $LASTEXITCODE, so "exit $LASTEXITCODE"
+# below would pass on a stale value (0 if nothing had run). Look for claude first, and say 127 when it is not there.
+if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+    [Console]::Error.WriteLine('play: Claude Code (claude) is not on the PATH: install it, then run this again')
+    exit 127
 }
 claude --model sonnet --effort high --settings .claude/play-settings.json @args
 exit $LASTEXITCODE

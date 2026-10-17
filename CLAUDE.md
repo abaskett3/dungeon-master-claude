@@ -194,11 +194,11 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 You cannot prevent or delay context compaction, and you will not always get a warning. That is why saving as you go is mandatory.
 
 - After a compaction or any gap in your memory, re-run the `resume-campaign` steps before narrating. Trust the files over the compacted summary.
-- **Breaks.** A clean reload from the files is more reliable than a long conversation, and cheaper. When a context note says a break is due (the play launcher adds one before each player message), offer one at the next break point, never while a roll or decision is pending:
+- **Breaks.** A clean reload from the files is more reliable than a large context, and cheaper. When a context note says a break is due because the context is large (the play launcher adds one before each player message, once the context has grown well past what the resume loaded), offer one at the next break point, never while a roll or decision is pending:
   - in a fight, the top of a round, or the end of the fight;
   - outside a fight, the end of a scene (the party leaves a place, time jumps, a conversation ends, a rest starts), or in a long scene a moment when the player's last action is resolved and nothing is half done: no roll asked for, no NPC waiting on the character's reply, no choice in front of the player beyond what to do next.
 
-  The player may decline; the note says when to ask again. If they accept, run `/campaign-full-save` as a planned break, and tell them it is safe to start fresh only after its consistency check (step 7) has passed; they then type `/clear` and `/resume-campaign`. With no context note (a session not started with the launcher), suggest the same break when a session has clearly run long.
+  The player may decline; the note says when to ask again. If they accept, run `/campaign-full-save` as a planned break, and tell them it is safe to start fresh only after its consistency check (step 7) has passed; they then type `/clear` and `/resume-campaign`. With no context note (a session not started with the launcher), suggest the same break when the context has clearly grown large.
 - If the player says they are about to `/compact` or `/clear`, run `/campaign-full-save` first.
 
 ## Skills

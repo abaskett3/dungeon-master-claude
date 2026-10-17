@@ -275,12 +275,24 @@ Times are UTC; "ctx" is the number of tokens sent to the model on that call. Err
 dmc context-check < hook-input.json
 ```
 
-The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. Below 150,000 tokens it prints nothing. From there on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 40,000 tokens, so a declined break is offered again at the next band.
+The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. A break is due when the context is large, and "large" is relative to what the session loaded: the first band starts at the larger of 150,000 tokens and the **baseline** plus 40,000, and a band follows every 40,000 tokens after that. Below the first band it prints nothing. From it on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 40,000 tokens, so a declined break is offered again at the next band.
+
+**The baseline** is where the context settled after the session loaded its files. `dmc` finds it from the log alone, in the part after the latest compaction boundary (`/clear` starts a new log, so it needs no rule):
+
+1. The most recent resume: a `/resume-campaign` command echoed in a user record, or a call of the `Skill` tool for `resume-campaign` by DMC (how it re-runs the resume after a compaction).
+2. After a resume, the baseline is the context of the last call before the first player message that follows it, that is, the end of the recap. Tool results, slash-command echoes, hook and system injections, compaction summaries and sub-agent messages are not player messages. If the player has not answered the recap yet, the baseline is the latest context.
+3. With no resume in that part of the log, the baseline is the context of its first assistant reply.
+
+A resume that settles at 142,000 tokens therefore puts the first band at 182,000, not 150,000. A session that never loads much keeps the 150,000 floor. To find the resume, `dmc` reads back from the end of the log to it, which is near the start; on a 1.3 MB log that takes under 0.1 s.
 
 ```
 $ echo '{"transcript_path":"<folder>/session.jsonl"}' | dmc context-check
-Context 197k, break due since 190k: at the next break point, offer a full save and a fresh session, unless the player has declined since 190k.
+Context 197k is large, break due since 190k: at the next break point, offer a full save and a fresh session, unless the player has declined since 190k.
 ```
+
+The bands are counted from the first band, so a break the player declined is offered again after another 40,000 tokens. A new resume, which sets a new baseline, starts the count again.
+
+This changed after release 0.1.2, so it reaches players with the next release. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
 It never fails: on any error (input that is not JSON, a missing or unreadable log) it prints nothing and exits 0. It also skips the stale-binary warning, so the hook stays silent.
 

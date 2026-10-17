@@ -55,13 +55,13 @@ public sealed class ContextCheckEdgeTests
     static string Assistant(int context) => ContextCheckContract.Assistant(context).ToJsonString();
 
     /// <summary>A user record's JSON line.</summary>
-    static string User() => ContextCheckContract.User("go on").ToJsonString();
+    static string User(string text = "go on") => ContextCheckContract.User(text).ToJsonString();
 
     [TestMethod]
     public void TheReminderStartsExactlyAtTheThreshold()
     {
         Assert.AreEqual("", BreakReminder.For(149999));
-        Assert.AreEqual("Context 150k, break due since 150k: at the next break point, offer a full save and a fresh "
+        Assert.AreEqual("Context 150k is large, break due since 150k: at the next break point, offer a full save and a fresh "
                         + "session, unless the player has declined since 150k.", BreakReminder.For(150000));
     }
 
@@ -71,7 +71,118 @@ public sealed class ContextCheckEdgeTests
         StringAssert.Contains(BreakReminder.For(189999), "break due since 150k");
         StringAssert.Contains(BreakReminder.For(190000), "break due since 190k");
         StringAssert.Contains(BreakReminder.For(230000), "break due since 230k");
-        StringAssert.Contains(BreakReminder.For(1000000), "Context 1000k, break due since 990k");
+        StringAssert.Contains(BreakReminder.For(1000000), "Context 1000k is large, break due since 990k");
+    }
+
+    // The first band is the larger of 150k and the baseline plus 40k; the bands then rise every 40k from there, so
+    // a declined offer is repeated at the next one, as before.
+    [TestMethod]
+    public void TheFirstBandIsRelativeToTheBaselineWithA150kFloor()
+    {
+        Assert.AreEqual(150000, BreakReminder.FirstBand(0));
+        Assert.AreEqual(150000, BreakReminder.FirstBand(31000), "a small baseline keeps the floor");
+        Assert.AreEqual(150000, BreakReminder.FirstBand(110000), "baseline + 40k is exactly the floor");
+        Assert.AreEqual(182000, BreakReminder.FirstBand(142000), "the resume of issue 35, 142k");
+
+        Assert.AreEqual("", BreakReminder.For(181999, baseline: 142000));
+        StringAssert.Contains(BreakReminder.For(182000, baseline: 142000), "break due since 182k");
+        StringAssert.Contains(BreakReminder.For(221999, baseline: 142000), "break due since 182k");
+        StringAssert.Contains(BreakReminder.For(222000, baseline: 142000), "break due since 222k");
+        StringAssert.Contains(BreakReminder.For(230000, baseline: 142000), "Context 230k is large");
+    }
+
+    /// <summary>A user record that echoes a slash command, as Claude Code writes it.</summary>
+    static string Command(string name) => ContextCheckContract.User(
+        $"<command-message>{name}</command-message>\n<command-name>/{name}</command-name>").ToJsonString();
+
+    /// <summary>An assistant record that calls the Skill tool, as DMC re-runs a resume after a compaction.</summary>
+    static string SkillCall(int context, string skill)
+    {
+        var record = ContextCheckContract.Assistant(context);
+        record["message"]!["content"] = new JsonArray(new JsonObject
+        {
+            ["type"] = "tool_use", ["name"] = "Skill", ["input"] = new JsonObject { ["skill"] = skill },
+        });
+        return record.ToJsonString();
+    }
+
+    /// <summary>A user record that holds only a tool result, which is not a player message.</summary>
+    const string ToolResult =
+        "{\"type\": \"user\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"t\", \"content\": \"file text\"}]}}";
+
+    // No resume: the baseline is the first reply, so a session that never loads much keeps the 150k floor.
+    [TestMethod]
+    public void WithoutAResumeTheBaselineIsTheFirstReply()
+    {
+        var reading = TranscriptReader.Read(Write(User(), Assistant(31000), ToolResult, Assistant(120000), User(), Assistant(160000)));
+        Assert.AreEqual(new ContextReading(160000, 31000), reading);
+    }
+
+    // One resume: the baseline is the end of its recap, the last call before the first player message after it.
+    // Sub-agent calls, slash-command echoes, meta records and tool results in between do not count.
+    [TestMethod]
+    public void AfterOneResumeTheBaselineIsTheEndOfTheRecap()
+    {
+        string meta = "{\"type\": \"user\", \"isMeta\": true, \"message\": {\"role\": \"user\", \"content\": \"Base directory for this skill\"}}";
+        var reading = TranscriptReader.Read(Write(
+            Assistant(20000), Command("resume-campaign"), meta, Assistant(31000), ToolResult, Assistant(120000),
+            ContextCheckContract.Assistant(10000, sidechain: true).ToJsonString(), Assistant(142000),
+            User(), Assistant(150000), User(), Assistant(170000)));
+        Assert.AreEqual(new ContextReading(170000, 142000), reading);
+    }
+
+    // Two resumes: the latest one counts, whatever came before it.
+    [TestMethod]
+    public void WithTwoResumesTheLatestOneCounts()
+    {
+        var reading = TranscriptReader.Read(Write(
+            Command("resume-campaign"), Assistant(100000), User(), Assistant(130000), User(),
+            Command("resume-campaign"), Assistant(60000), User(), Assistant(90000)));
+        Assert.AreEqual(new ContextReading(90000, 60000), reading);
+    }
+
+    // A resume with no player message after it yet: nothing has been added since, so the baseline is the latest context.
+    [TestMethod]
+    public void ARecapNobodyHasAnsweredYetIsItsOwnBaseline() =>
+        Assert.AreEqual(new ContextReading(142000, 142000), TranscriptReader.Read(Write(
+            Assistant(20000), Command("resume-campaign"), Assistant(142000))));
+
+    // A compaction ends the log's earlier history: the resume DMC runs afterwards (a Skill call, not a command echo)
+    // sets the baseline, and a resume from before the compaction is not looked for.
+    [TestMethod]
+    public void ACompactionCutsTheSearchAndTheSkillCallIsAResume()
+    {
+        string boundary = "{\"type\": \"system\", \"subtype\": \"compact_boundary\"}";
+        var viaSkill = TranscriptReader.Read(Write(
+            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), boundary, User("summary"),
+            SkillCall(30000, "resume-campaign"), Assistant(120000), User(), Assistant(130000)));
+        Assert.AreEqual(new ContextReading(130000, 120000), viaSkill);
+
+        // No resume after the boundary: the first reply after it, not the old resume, is the baseline.
+        var noResume = TranscriptReader.Read(Write(
+            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), boundary, User("summary"),
+            Assistant(40000), User(), Assistant(100000)));
+        Assert.AreEqual(new ContextReading(100000, 40000), noResume);
+
+        // A boundary as the latest thing is still "nothing yet".
+        Assert.AreEqual(new ContextReading(0, 0), TranscriptReader.Read(Write(Assistant(250000), boundary)));
+    }
+
+    // The reminder end to end: a resume that settles above 150k moves the first band up with it.
+    [TestMethod]
+    public void ABaselineAbove150kMovesTheFirstBandUp()
+    {
+        string Run(params string[] lines) => DmcRunner.InProcess(["context-check"],
+            new JsonObject { ["transcript_path"] = Write(lines) }.ToJsonString()).Stdout.Trim();
+
+        string[] loaded = [Command("resume-campaign"), Assistant(165000), User()];
+        Assert.AreEqual("", Run([.. loaded, Assistant(204999)]), "165k + 40k = 205k is where the first band starts");
+        StringAssert.StartsWith(Run([.. loaded, Assistant(205000)]), "Context 205k is large, break due since 205k:");
+        StringAssert.StartsWith(Run([.. loaded, Assistant(250000)]), "Context 250k is large, break due since 245k:");
+
+        // A resume that settles low keeps the 150k floor.
+        StringAssert.StartsWith(Run(Command("resume-campaign"), Assistant(60000), User(), Assistant(150000)),
+            "Context 150k is large, break due since 150k:");
     }
 
     [TestMethod]
@@ -108,7 +219,7 @@ public sealed class ContextCheckEdgeTests
     [TestMethod]
     public void AByteOrderMarkOnStdinMakesTheInputUnreadable()
     {
-        string input = new System.Text.Json.Nodes.JsonObject { ["transcript_path"] = Write(Assistant(180000)) }.ToJsonString();
+        string input = new System.Text.Json.Nodes.JsonObject { ["transcript_path"] = Write(Assistant(90000), Assistant(180000)) }.ToJsonString();
         Assert.AreNotEqual("", DmcRunner.BlackBox(["context-check"], input).Stdout, "the same input without a BOM gives the reminder");
         var result = DmcRunner.BlackBox(["context-check"], "﻿" + input);
         Assert.AreEqual(0, result.ExitCode);
@@ -160,7 +271,7 @@ public sealed class ContextCheckEdgeTests
     [TestMethod]
     public void InvalidUtf8InsideAStringSkipsOnlyThatLine()
     {
-        byte[] good = Encoding.UTF8.GetBytes(Assistant(180000) + "\n");
+        byte[] good = Encoding.UTF8.GetBytes(Assistant(90000) + "\n" + Assistant(180000) + "\n");
         byte[] bad = [.. Encoding.UTF8.GetBytes("{\"type\": \"assistant\", \"message\": {\"content\": \"x"), 0xFF, 0xFE,
             .. Encoding.UTF8.GetBytes("y\", \"usage\": {\"input_tokens\": 5}}}\n")];
         string path = WriteBytes([.. good, .. bad]);

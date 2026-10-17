@@ -95,15 +95,15 @@ public abstract class ContextCheckContract
     public void TheFirstBandFrom150k()
     {
         string line = Check(Log(Assistant(90000), User("go on"), Assistant(163400), User("I attack")));
-        Assert.AreEqual("Context 163k, break due since 150k: at the next break point, offer a full save "
+        Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save "
                         + "and a fresh session, unless the player has declined since 150k.", line);
     }
 
     [TestMethod]
     public void TheBandRisesEvery40k()
     {
-        string line = Check(Log(Assistant(195000), User("go on")));
-        StringAssert.StartsWith(line, "Context 195k, break due since 190k:");
+        string line = Check(Log(Assistant(90000), User("go on"), Assistant(195000)));
+        StringAssert.StartsWith(line, "Context 195k is large, break due since 190k:");
         StringAssert.EndsWith(line, "declined since 190k.");
     }
 
@@ -119,7 +119,7 @@ public abstract class ContextCheckContract
             ["type"] = "assistant",
             ["message"] = new JsonObject { ["id"] = "x", ["model"] = "<synthetic>", ["usage"] = new JsonObject(), ["content"] = new JsonArray() },
         };
-        string line = Check(Log(Assistant(160000), Assistant(20000, sidechain: true), empty));
+        string line = Check(Log(Assistant(90000), Assistant(160000), Assistant(20000, sidechain: true), empty));
         StringAssert.StartsWith(line, "Context 160k");
     }
 
@@ -132,13 +132,13 @@ public abstract class ContextCheckContract
 
     [TestMethod]
     public void ACutLastLineAndJunkAreIgnored() =>
-        StringAssert.StartsWith(Check(LogWithTail("{\"type\": \"assistant\", \"mess", Assistant(170000))), "Context 170k");
+        StringAssert.StartsWith(Check(LogWithTail("{\"type\": \"assistant\", \"mess", Assistant(90000), Assistant(170000))), "Context 170k");
 
     [TestMethod]
     public void ALogLongerThanOneChunk()
     {
         var filler = User(new string('x', TranscriptReader.ChunkSize / 2)); // each line crosses a chunk boundary
-        string path = Log(Assistant(175000), filler, filler, filler, filler, filler, User("go on"));
+        string path = Log(Assistant(90000), Assistant(175000), filler, filler, filler, filler, filler, User("go on"));
         Assert.IsGreaterThan(2L * TranscriptReader.ChunkSize, new FileInfo(path).Length);
         StringAssert.StartsWith(Check(path), "Context 175k");
     }

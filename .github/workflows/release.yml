@@ -61,8 +61,9 @@ jobs:
             fi
             publish=true
           else
-            # A dry run uses the version in the project file.
-            version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/Dmc.Cli/Dmc.Cli.csproj | head -n 1)"
+            # A dry run builds a release-shaped version that no real release has: the project file's own version is
+            # the development one (0.0.0-dev), which is not a release tag.
+            version="0.0.0"
             tag="dmc-v$version"
             publish=false
           fi
@@ -306,7 +307,7 @@ jobs:
           pattern: dmc-*
           path: ${{ runner.temp }}/dist
           merge-multiple: true
-      - name: Write the pin and the version
+      - name: Write the pin
         run: |
           set -euo pipefail
           dist="$RUNNER_TEMP/dist"
@@ -316,12 +317,9 @@ jobs:
           done
           bash .github/release/write-pin.sh "$TAG" "$dist"
           jq -e --arg tag "$TAG" '.tag == $tag and (.sha256 | length) == 5' tools/dmc-release.json > /dev/null
-          # The project's version follows the release, so a build from main is not reported as stale.
-          sed -i "s:<Version>[^<]*</Version>:<Version>$VERSION</Version>:" src/Dmc.Cli/Dmc.Cli.csproj
-          grep -q "<Version>$VERSION</Version>" src/Dmc.Cli/Dmc.Cli.csproj
           git diff
           mkdir -p "$RUNNER_TEMP/pin"
-          cp tools/dmc-release.json src/Dmc.Cli/Dmc.Cli.csproj "$RUNNER_TEMP/pin/"
+          cp tools/dmc-release.json "$RUNNER_TEMP/pin/"
       - uses: actions/upload-artifact@v7
         with:
           name: pin
@@ -344,8 +342,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C "$branch"
-          git add tools/dmc-release.json src/Dmc.Cli/Dmc.Cli.csproj
-          git commit -m "Pin dmc $VERSION" -m "Written by the release workflow for $TAG: the tag and the SHA-256 of each archive in tools/dmc-release.json, and the project's version."
+          git add tools/dmc-release.json
+          git commit -m "Pin dmc $VERSION" -m "Written by the release workflow for $TAG: the tag and the SHA-256 of each archive in tools/dmc-release.json."
           git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
           open="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --base main --state open --json url --jq '.[0].url // ""')"
           if [ -n "$open" ]; then
@@ -356,7 +354,6 @@ jobs:
             echo "Pins the release [$TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG) in \`tools/dmc-release.json\`, written by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID))."
             echo
             echo "- \`tools/dmc-release.json\`: the tag and the SHA-256 of each archive on the release. Once this is merged, \`./play.ps1\` and \`./play.sh\` fetch dmc into \`bin/\` with \`tools/get-dmc\` and start play through \`bin/dmc play\`."
-            echo "- \`src/Dmc.Cli/Dmc.Cli.csproj\`: \`<Version>\` set to $VERSION, so a build from main matches the pin and is not reported as stale."
             echo
             echo "Each archive was installed with get-dmc and run on its own platform's runner before the release was published."
             echo

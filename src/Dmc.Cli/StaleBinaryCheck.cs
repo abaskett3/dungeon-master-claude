@@ -34,11 +34,17 @@ public static class StaleBinaryCheck
             err.WriteLine(warning);
     }
 
-    /// <summary>The warning for a pin file's text and this program's version, or null when there is nothing to say.</summary>
+    /// <summary>
+    /// The warning for a pin file's text and this program's version, or null when there is nothing to say. Only a
+    /// release (a version like 1.2.3) can be out of date. A build made on this computer says <c>0.0.0-dev</c>, is not a
+    /// release, and is left alone: whoever built it did so on purpose, and the launchers replace it with the release.
+    /// </summary>
     internal static string? Warning(string pin, string version)
     {
         string? tag = PinnedTag(pin);
         if (tag is null || !tag.StartsWith(TagPrefix, StringComparison.Ordinal) || tag[TagPrefix.Length..] == version)
+            return null;
+        if (!Version.TryParse(version, out _))
             return null;
         return $"dmc: this is dmc {version}, but the toolkit pins {tag}: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it";
     }

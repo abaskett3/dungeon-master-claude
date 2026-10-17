@@ -4,7 +4,10 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>dmc</AssemblyName>
     <RootNamespace>Dmc</RootNamespace>
-    <Version>0.1.0</Version>
+    <!-- Every build that is not a release says so: "dmc" with the version option prints "dmc 0.0.0-dev", which no release ever prints,
+         so get-dmc replaces it with the pinned release and the stale-binary warning leaves it alone. A release gets its
+         exact version from its tag (release.yml builds it with -p:Version=X.Y.Z); nothing writes it back here. -->
+    <Version>0.0.0-dev</Version>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Run the AOT, trim and single-file analyzers on every build, so a local build already shows what a release
          build would complain about. -->

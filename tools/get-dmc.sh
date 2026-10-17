@@ -6,11 +6,6 @@
 # The archive comes from this repository's GitHub Release, over HTTPS only. Its SHA-256 is checked against the pin
 # before anything in it is unpacked or run; on a mismatch nothing is installed.
 #
-# What it installed is recorded in bin/.dmc-release (the tag, and the SHA-256 of the installed program, one key per
-# line). bin/dmc counts as the pinned release only when that stamp names the pinned tag, the program still has the
-# stamp's hash, and it prints the pinned version. A build made on this computer (dotnet publish ... -o bin) has no
-# stamp, and carries the same version number as the release it was made for, so it is replaced by the release.
-#
 # On Windows (Git Bash, MSYS, Cygwin) this hands over to tools/get-dmc.ps1.
 #
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub. The
@@ -32,58 +27,14 @@ pinned_tag() {
 }
 
 system="$(uname -s 2>/dev/null)"
-
-# Sets $sha256 to the SHA-256 of the file $1, in lower case (both tools print it so). The file is read from standard
-# input, so its name cannot change how the hash is printed. Fails when there is no tool for it. This and is_current
-# use shell built-ins where they can: starting a program costs far more than hashing on Windows.
-sha256_of() {
-    if [ "$system" = Darwin ] && command -v shasum >/dev/null 2>&1; then
-        sha256="$(shasum -a 256 < "$1")"
-    elif command -v sha256sum >/dev/null 2>&1; then
-        sha256="$(sha256sum < "$1")"
-    elif command -v shasum >/dev/null 2>&1; then
-        sha256="$(shasum -a 256 < "$1")"
-    else
-        return 1
-    fi
-    sha256="${sha256%% *}"
-    [ -n "$sha256" ]
-}
-
-stamp="$root/bin/.dmc-release"
-
-# Reads bin/.dmc-release into $stamped_tag and $stamped_sha (the first line of each key). Fails when there is no stamp.
-read_stamp() {
-    stamped_tag=''
-    stamped_sha=''
-    [ -f "$stamp" ] || return 1
-    while IFS= read -r line || [ -n "$line" ]; do
-        line="${line%$'\r'}"
-        case "$line" in
-            tag=*) if [ -z "$stamped_tag" ]; then stamped_tag="${line#tag=}"; fi ;;
-            sha256=*) if [ -z "$stamped_sha" ]; then stamped_sha="${line#sha256=}"; fi ;;
-        esac
-    done < "$stamp"
-}
-
-# True when the program $1 is the release $2 that get-dmc installed: the stamp names that tag, the program has the
-# hash in the stamp, and it prints that version. Quiet, and fast enough to run at every launch.
-is_current() {
-    [ -n "$2" ] && [ -f "$1" ] || return 1
-    read_stamp && [ "$stamped_tag" = "$2" ] && [ -n "$stamped_sha" ] || return 1
-    sha256_of "$1" && [ "$sha256" = "$stamped_sha" ] || return 1
-    ran="$("$1" --version 2>/dev/null)"
-    [ "${ran//$'\r'/}" = "dmc ${2#dmc-v}" ]
-}
-
 case "$system" in
     MINGW* | MSYS* | CYGWIN*)
         # Most launches find bin/dmc.exe current: say nothing and do not start PowerShell for that. Old copies of a
-        # dmc.exe that was running when it was replaced go too (one still running stays until next time). Without a
-        # tool to hash with, this is not current as far as it can tell, and PowerShell has Get-FileHash.
+        # dmc.exe that was running when it was replaced go too (one still running stays until next time).
         tag="$(pinned_tag)"
         rm -f "$root"/bin/*.old 2>/dev/null
-        if is_current "$root/bin/dmc.exe" "$tag"; then
+        if [ -n "$tag" ] && [ -f "$root/bin/dmc.exe" ] \
+            && [ "$("$root/bin/dmc.exe" --version 2>/dev/null | tr -d '\r')" = "dmc ${tag#dmc-v}" ]; then
             exit 0
         fi
         exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$root/tools/get-dmc.ps1")"
@@ -119,7 +70,7 @@ sha="$(sed -n "s/^[[:space:]]*\"$rid\"[[:space:]]*:[[:space:]]*\"\([0-9a-fA-F]\{
 
 version="${tag#dmc-v}"
 exe="$root/bin/dmc"
-if [ -x "$exe" ] && is_current "$exe" "$tag"; then
+if [ -f "$exe" ] && [ -x "$exe" ] && [ "$("$exe" --version 2>/dev/null)" = "dmc $version" ]; then
     exit 0
 fi
 
@@ -140,8 +91,18 @@ else
         -o "$work/$asset" "$url" 2>/dev/null || fail "could not download $url"
 fi
 
-sha256_of "$work/$asset" || fail "sha256sum or shasum is needed to check dmc"
-[ "$sha256" = "$sha" ] || fail "$asset does not match its SHA-256 in tools/dmc-release.json, so nothing was installed"
+# The hash is read from standard input, so the file's name cannot change how it is printed.
+if [ "$os" = osx ] && command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 < "$work/$asset")"
+elif command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum < "$work/$asset")"
+elif command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 < "$work/$asset")"
+else
+    fail "sha256sum or shasum is needed to check dmc"
+fi
+actual="${actual%% *}"
+[ "$actual" = "$sha" ] || fail "$asset does not match its SHA-256 in tools/dmc-release.json, so nothing was installed"
 
 mkdir "$work/unpacked" || fail "cannot make a temporary folder in bin/"
 tar -xzf "$work/$asset" -C "$work/unpacked" 2>/dev/null || fail "could not unpack $asset"
@@ -160,9 +121,4 @@ for file in "$work/unpacked"/*; do
     fi
 done
 mv -f "$work/unpacked/dmc" "$exe" || fail "cannot write bin/dmc"
-# The stamp comes last, and goes in whole: a run cut short before it leaves a stamp that does not match the program,
-# and the next run installs again.
-sha256_of "$exe" || fail "cannot read bin/dmc to record it"
-printf 'tag=%s\nsha256=%s\n' "$tag" "$sha256" > "$work/stamp" && mv -f "$work/stamp" "$stamp" \
-    || fail "cannot write bin/.dmc-release"
 printf 'get-dmc: installed dmc %s (%s) in bin/\n' "$version" "$rid"

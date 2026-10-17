@@ -72,18 +72,45 @@ public static class Bootstrap
     /// <summary>A release of the published dmc: its tag and a folder holding its archive for this computer.</summary>
     public sealed record Release(string Tag, string Version, string Assets, string Sha256);
 
+    /// <summary>The version the test release is built with. A build made here says 0.0.0-dev, which is never a release's.</summary>
+    const string ReleaseVersion = "9.9.9";
+
     /// <summary>
-    /// The published <c>dmc</c> packed the way the release workflow packs it (a zip on Windows, a tar.gz elsewhere,
-    /// the files at the top), with <see cref="NativeStandIn"/> in place of the native libraries. Made once.
+    /// A release of dmc packed the way the release workflow packs it (a zip on Windows, a tar.gz elsewhere, the files at
+    /// the top), with <see cref="NativeStandIn"/> in place of the native libraries. The program is published from the
+    /// sources with <c>-p:Version=</c>, as the workflow does, since the one in <c>bin/</c> reports the development
+    /// version. Made once.
     /// </summary>
     public static Release PublishedRelease() => _release.Value;
 
     static readonly Lazy<Release> _release = new(() =>
     {
-        string binary = DmcRunner.Binary();
+        string work = Path.Combine(Path.GetTempPath(), "dmc-release-build-" + Guid.NewGuid().ToString("N"));
+        string output = Path.Combine(work, "out");
+        // Built from a copy of the sources, so that the build leaves src/Dmc.Cli/bin and obj as they were.
+        Directory.CreateDirectory(work);
+        foreach (string file in new[] { "Directory.Build.props", "Directory.Packages.props", "global.json" })
+            File.Copy(Path.Combine(TestEnv.Root, file), Path.Combine(work, file), overwrite: true);
+        string source = Path.Combine(TestEnv.Root, "src", "Dmc.Cli");
+        string copy = Path.Combine(work, "src", "Dmc.Cli");
+        foreach (string file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            string relative = Path.GetRelativePath(source, file);
+            if (relative.StartsWith("bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                || relative.StartsWith("obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                continue;
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, relative))!);
+            File.Copy(file, Path.Combine(copy, relative));
+        }
+        var published = TestEnv.Run(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet",
+            ["publish", copy, "-c", "Release", "-r", Rid, "-o", output, $"-p:Version={ReleaseVersion}"],
+            cwd: work, timeoutSeconds: 600, environment: new Dictionary<string, string?> { ["DOTNET_NOLOGO"] = "1", ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1" });
+        Assert.AreEqual(0, published.ExitCode, published.ToString());
+        string binary = Path.Combine(output, ExeName);
         var answer = TestEnv.Run(binary, ["--version"]);
         Assert.AreEqual(0, answer.ExitCode, answer.ToString());
-        string version = answer.Stdout.Trim()["dmc ".Length..];
+        Assert.AreEqual($"dmc {ReleaseVersion}\n", answer.Stdout, "a release gets its version from -p:Version, not from the project");
+        string version = ReleaseVersion;
         string tag = "dmc-v" + version;
 
         string assets = Path.Combine(Path.GetTempPath(), "dmc-release-" + Guid.NewGuid().ToString("N"));
@@ -105,7 +132,9 @@ public static class Bootstrap
             tar.WriteEntry(binary, ExeName);
             tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, NativeStandIn) { DataStream = new MemoryStream(standIn) });
         }
-        return new Release(tag, version, assets, Sha256(archive));
+        string sha256 = Sha256(archive);
+        Directory.Delete(work, recursive: true);
+        return new Release(tag, version, assets, sha256);
     });
 
     public static string Sha256(string file)

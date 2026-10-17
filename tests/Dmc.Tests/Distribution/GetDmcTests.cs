@@ -37,6 +37,12 @@ public sealed class GetDmcTests
         var release = PublishedRelease();
         using var toolkit = new ToolkitCopy(release.Tag, new Dictionary<string, string> { [Rid] = release.Sha256 });
 
+        // A build made on this computer is already in bin/. It says 0.0.0-dev, not the pinned version, so it is replaced.
+        Directory.CreateDirectory(toolkit.Bin);
+        File.Copy(Dmc.Tests.Support.DmcRunner.Binary(), toolkit.Exe);
+        var local = Dmc.Tests.Support.TestEnv.Run(toolkit.Exe, ["--version"]);
+        Assert.AreEqual("dmc 0.0.0-dev\n", local.Stdout, local.ToString());
+
         var first = RunScript(shell, toolkit, "tools/get-dmc", environment: From(release.Assets));
         Assert.AreEqual(0, first.ExitCode, first.ToString());
         Assert.AreEqual($"get-dmc: installed dmc {release.Version} ({Rid}) in bin/", string.Join("\n", first.StdoutLines), first.ToString());
@@ -49,42 +55,6 @@ public sealed class GetDmcTests
         var again = RunScript(shell, toolkit, "tools/get-dmc", environment: From(release.Assets));
         Assert.AreEqual(0, again.ExitCode, again.ToString());
         Assert.AreEqual("", again.Stdout + again.Stderr, "nothing is printed when dmc is current");
-    }
-
-    /// <summary>
-    /// A program that prints the pinned version is not enough: bin/dmc counts as current only if bin/.dmc-release names
-    /// the pinned tag and the program's SHA-256. A local build of the same version has no stamp, and a stamp that
-    /// does not match is no better, so the release is installed over both.
-    /// </summary>
-    [TestMethod]
-    [DynamicData(nameof(Shells), typeof(Bootstrap))]
-    public void ReplacesAProgramThatIsNotWhatItInstalled(string shell)
-    {
-        var release = PublishedRelease();
-        using var toolkit = new ToolkitCopy(release.Tag, new Dictionary<string, string> { [Rid] = release.Sha256 });
-        string installedLine = $"get-dmc: installed dmc {release.Version} ({Rid}) in bin/";
-        string stamp = Path.Combine(toolkit.Bin, ".dmc-release");
-
-        // A local build: the right version, and no stamp.
-        Directory.CreateDirectory(toolkit.Bin);
-        File.Copy(Dmc.Tests.Support.DmcRunner.Binary(), toolkit.Exe);
-        var first = RunScript(shell, toolkit, "tools/get-dmc", environment: From(release.Assets));
-        Assert.AreEqual(installedLine, string.Join("\n", first.StdoutLines), first.ToString());
-        Assert.IsTrue(File.Exists(Path.Combine(toolkit.Bin, NativeStandIn)), "the release was installed");
-        string stamped = $"tag={release.Tag}\nsha256={Sha256(toolkit.Exe)}\n";
-        Assert.AreEqual(stamped, File.ReadAllText(stamp));
-
-        // The stamp is gone, or says the program is another one.
-        foreach (string? damaged in new[] { null, $"tag={release.Tag}\nsha256={new string('0', 64)}\n", "tag=dmc-v0.0.1\nsha256=" + Sha256(toolkit.Exe) + "\n" })
-        {
-            if (damaged is null)
-                File.Delete(stamp);
-            else
-                File.WriteAllText(stamp, damaged);
-            var again = RunScript(shell, toolkit, "tools/get-dmc", environment: From(release.Assets));
-            Assert.AreEqual(installedLine, string.Join("\n", again.StdoutLines), again.ToString());
-            Assert.AreEqual(stamped, File.ReadAllText(stamp));
-        }
     }
 
     [TestMethod]

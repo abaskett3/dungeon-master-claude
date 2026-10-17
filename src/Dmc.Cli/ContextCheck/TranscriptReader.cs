@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Unicode;
+using Dmc.SessionLog;
 
 namespace Dmc.ContextCheck;
 
@@ -7,27 +8,32 @@ namespace Dmc.ContextCheck;
 /// Finds the context size of the last API call in a Claude Code session log (<c>.jsonl</c>), as
 /// <c>scripts/context_check.py</c> did, and the baseline the break reminder is measured from. The size is the last
 /// assistant record's input tokens plus the tokens read from and written to the cache. This runs before every
-/// player message and reads the log from the end in chunks: <see cref="LastContext"/> stops at the first answer, one
-/// read; <see cref="Read"/> goes on back to the session's resume, which is usually near the start of the log.
+/// player message, so it reads as little as it can: the size is found by reading the log from the end and stopping
+/// at the first answer, and the baseline by reading it from the start, parsing only the few records that settle it
+/// (see <see cref="Read"/>).
 /// <para>
 /// <b>The baseline</b> is where the context settled after the session loaded its files. It is found from the log
 /// alone, in the part of it after the latest compaction boundary (a <c>/clear</c> starts a new log, so it needs no
 /// rule of its own):
 /// </para>
 /// <list type="number">
-/// <item>Find the most recent resume: a <c>/resume-campaign</c> command echoed in a user record, or a call of the
-/// <c>Skill</c> tool for <c>resume-campaign</c> by DMC (how it re-runs after a compaction).</item>
-/// <item>The baseline is the context of the last assistant call before the first real player message after that
-/// resume, the end of the recap. A real player message is a user record that is not a tool result, a slash-command
-/// echo, a hook or system injection or a compaction summary. If no player message has followed yet, it is the
-/// latest context.</item>
-/// <item>With no resume since the start of the log (or since the compaction), it is the context of the first
-/// assistant reply in that part of the log.</item>
+/// <item>The baseline is the context of the last assistant call before the first player message in that part. After
+/// a <c>/clear</c> and a <c>/resume-campaign</c> that is the end of the recap; after a compaction, the end of the
+/// reload that follows it, if it comes before the player's next message.</item>
+/// <item>If no call comes before that message, it is the context of the first reply to it.</item>
+/// <item>If no player message has come yet, nothing has been added since loading, and it is the latest context.</item>
 /// </list>
+/// <para>
+/// This needs no marker for the resume, so it holds however the files were loaded (the slash command, DMC's
+/// <c>Skill</c> call, or reads one by one). A resume the player runs later in the session comes after a player
+/// message and so cannot move the baseline up. A player message is a user record with a text block that is not a
+/// tool result, a meta record, a compaction summary, a sub-agent's message, a slash-command echo or another
+/// injection (see <see cref="UserText"/>).
+/// </para>
 /// </summary>
 public static class TranscriptReader
 {
-    /// <summary>Bytes of the log read at a time, from the end.</summary>
+    /// <summary>Bytes of the log read at a time.</summary>
     public const int ChunkSize = 1 << 20;
 
     /// <summary>The UTF-8 byte-order mark, dropped from the start of a line.</summary>
@@ -38,14 +44,37 @@ public static class TranscriptReader
     static readonly JsonDocumentOptions Options = new() { MaxDepth = 1000 };
 
     /// <summary>
-    /// Context of the last call in the log; 0 if a compaction came after it or there is none. Reads the log from
-    /// the end in <see cref="ChunkSize"/> pieces and stops at the first answer, so a long log costs one read.
-    /// Throws on anything it cannot read, and on a record whose shape the script would also trip over: the caller
-    /// treats every failure as "print nothing".
+    /// The latest context size and the baseline the break reminder is measured from (see the class summary for how
+    /// the baseline is found).
+    /// <para>
+    /// The size comes from reading the log from the end in <see cref="ChunkSize"/> pieces, stopping at the first
+    /// assistant call: a long log costs one read. It throws on anything it cannot read, and on a record whose shape
+    /// the script would also trip over: the caller treats every failure as "print nothing".
+    /// </para>
+    /// <para>
+    /// The baseline comes from a pass over the log from the start. Only the records that can settle it are parsed:
+    /// everything up to the first player message after the latest compaction boundary, and, for the rest of the
+    /// log, only the lines that could be a boundary (the words <c>compact_boundary</c> or a <c>\u</c> escape). A
+    /// record of an unexpected shape in that pass is skipped, never an error, because it can at most leave the
+    /// baseline at the 150,000 floor.
+    /// </para>
     /// </summary>
     /// <param name="path">The session log, a file of one JSON record per line. It may be growing while it is read.</param>
-    /// <returns>The context size in tokens, or 0 when a compaction boundary is the latest thing in the log or no call is in it.</returns>
-    public static long LastContext(string path)
+    /// <returns>
+    /// The reading: size 0 (and baseline 0) when a compaction boundary is the latest thing in the log or no call is
+    /// in it. The baseline is 0 when it cannot be told (the log has no assistant call after the first player
+    /// message yet), which the reminder treats as "none".
+    /// </returns>
+    public static ContextReading Read(string path)
+    {
+        long size = LatestContext(path);
+        return size == 0 ? default : new ContextReading(size, BaselineOf(path, size));
+    }
+
+    /// <summary>Context of the last call in the log; 0 if a compaction came after it or there is none.</summary>
+    /// <param name="path">The session log.</param>
+    /// <returns>The size in tokens, or 0.</returns>
+    static long LatestContext(string path)
     {
         long context = 0;
         ScanBackwards(path, line =>
@@ -62,68 +91,103 @@ public static class TranscriptReader
     }
 
     /// <summary>
-    /// The latest context size and the baseline the break reminder is measured from (see the class summary for how
-    /// the baseline is found). Reads back from the end of the log as far as the latest resume, the latest compaction
-    /// boundary or the start of the log, whichever comes first. A record of an unexpected shape throws if it is the
-    /// one that gives the latest size, as for <see cref="LastContext"/>; further back it is skipped, since it
-    /// cannot change the reminder by more than the baseline, which the reminder can do without.
+    /// The baseline: the context of the last call before the first player message after the latest compaction
+    /// boundary, else of the first reply to that message, else (no player message yet) <paramref name="latest"/>.
+    /// Reads forward from the start of the log, so a boundary found later in it restarts the search.
     /// </summary>
-    /// <param name="path">The session log. It may be growing while it is read.</param>
-    /// <returns>
-    /// The reading: size 0 when a compaction boundary is the latest thing in the log or no call is in it. The
-    /// baseline is 0 when no call is in the log.
-    /// </returns>
-    public static ContextReading Read(string path)
+    /// <param name="path">The session log.</param>
+    /// <param name="latest">The latest context, the baseline when no player message has been seen.</param>
+    /// <returns>The baseline in tokens; 0 when a player message has no call before or after it.</returns>
+    static long BaselineOf(string path, long latest)
     {
-        long size = -1;          // the latest context; -1 until the first call is seen from the end
-        long first = 0;          // the earliest call seen so far: the baseline when there is no resume
-        long afterRecap = 0;     // the call before the earliest player message seen so far
-        bool playerSeen = false; // a player message was seen and the call before it has not yet been
-        bool resumed = false;
+        long before = 0;   // the last call seen before the first player message
+        long baseline = 0; // set once the first player message (and the call that settles it) is found
+        bool playerSeen = false;
 
-        ScanBackwards(path, line =>
+        ScanForwards(path, line =>
         {
+            // Past the point where the baseline is known only a later boundary matters, and the cheap test for
+            // one (a byte search) is all most lines get.
+            bool settled = baseline > 0;
+            if (settled && !CouldBeCompaction(line.Span))
+                return false;
+
             Classified found;
             try
             {
                 found = Classify(line);
             }
-            catch (InvalidDataException) when (size >= 0)
+            catch (Exception e) when (e is InvalidDataException or FormatException or InvalidOperationException)
             {
-                return false;
+                return false; // a record of an unexpected shape, or a token count out of range: skipped
             }
 
             switch (found.Kind)
             {
                 case RecordKind.Compaction:
-                    if (size < 0)
-                        size = 0;
-                    return true;
-                case RecordKind.Assistant:
-                    if (size < 0)
-                        size = found.Context;
-                    first = found.Context;
-                    if (playerSeen)
-                    {
-                        afterRecap = found.Context;
-                        playerSeen = false;
-                    }
-                    if (found.CallsResume)
-                        resumed = true;
-                    return resumed;
-                case RecordKind.Player:
+                    before = baseline = 0;
+                    playerSeen = false;
+                    break;
+                case RecordKind.Player when !playerSeen:
                     playerSeen = true;
-                    return false;
-                case RecordKind.ResumeCommand:
-                    resumed = true;
-                    return true;
-                default:
-                    return false;
+                    baseline = before; // 0 when no call came first; the next call then settles it
+                    break;
+                case RecordKind.Assistant when !settled:
+                    if (!playerSeen)
+                        before = found.Context;
+                    else if (baseline == 0)
+                        baseline = found.Context;
+                    break;
             }
+            return false;
         });
 
-        size = Math.Max(size, 0);
-        return new ContextReading(size, resumed && afterRecap > 0 ? afterRecap : resumed ? size : first);
+        return playerSeen ? baseline : latest;
+    }
+
+    /// <summary>
+    /// Calls <paramref name="visit"/> on each line of the log, the first line first, until it returns true. Reads the
+    /// log in <see cref="ChunkSize"/> pieces.
+    /// </summary>
+    /// <param name="path">The session log. It may be growing while it is read; a last line that is still being written fails to parse and is skipped.</param>
+    /// <param name="visit">Takes one line (without its newline) and returns true to stop.</param>
+    static void ScanForwards(string path, Func<ReadOnlyMemory<byte>, bool> visit)
+    {
+        using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var buffer = new byte[ChunkSize];
+        var carry = new MemoryStream(); // the start of a line that crosses into the next chunk
+        int read;
+        while ((read = file.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            int start = 0;
+            while (true)
+            {
+                int newline = buffer.AsSpan(start, read - start).IndexOf((byte)'\n');
+                if (newline < 0)
+                {
+                    carry.Write(buffer, start, read - start);
+                    break;
+                }
+
+                ReadOnlyMemory<byte> line;
+                if (carry.Length > 0)
+                {
+                    carry.Write(buffer, start, newline);
+                    line = carry.ToArray();
+                    carry.SetLength(0);
+                }
+                else
+                {
+                    line = buffer.AsMemory(start, newline);
+                }
+
+                if (visit(line))
+                    return;
+                start += newline + 1;
+            }
+        }
+        if (carry.Length > 0)
+            visit(carry.ToArray());
     }
 
     /// <summary>
@@ -184,7 +248,7 @@ public static class TranscriptReader
     }
 
     /// <summary>Joins the pieces of one line into a single buffer.</summary>
-    /// <param name="pieces">The pieces, the latest in the file first (the order <see cref="LastContext"/> collects them in).</param>
+    /// <param name="pieces">The pieces, the latest in the file first (the order <see cref="ScanBackwards"/> collects them in).</param>
     /// <returns>The line in file order; the one piece itself, uncopied, when there is only one.</returns>
     static ReadOnlyMemory<byte> Assemble(List<ReadOnlyMemory<byte>> pieces)
     {
@@ -202,12 +266,13 @@ public static class TranscriptReader
 
     /// <summary>
     /// What one log line is, for the scans: a compaction boundary, an assistant call (with its context size), a
-    /// real player message, the echo of a <c>/resume-campaign</c> command, or nothing that matters. A line that is
-    /// not a JSON object, or does not count, is <see cref="RecordKind.Skipped"/>.
+    /// real player message, or nothing that matters. A line that is not a JSON object, or does not count, is
+    /// <see cref="RecordKind.Skipped"/>.
     /// </summary>
     /// <param name="line">One log line, without its newline.</param>
     /// <returns>The classification; a default value (<see cref="RecordKind.Skipped"/>) for a line that does not matter.</returns>
     /// <exception cref="InvalidDataException">An assistant record has a shape the old script would also trip over.</exception>
+    /// <exception cref="FormatException">An assistant record's token count is a number too large to read.</exception>
     static Classified Classify(ReadOnlyMemory<byte> line)
     {
         // Python decodes a line as UTF-8-with-BOM before parsing it, so a BOM is dropped...
@@ -229,61 +294,42 @@ public static class TranscriptReader
         if (Text(record, "type") == "system" && Text(record, "subtype") == "compact_boundary")
             return new Classified(RecordKind.Compaction);
         if (Text(record, "type") == "user")
-            return new Classified(UserKind(record));
+            return new Classified(IsPlayerMessage(record) ? RecordKind.Player : RecordKind.Skipped);
 
         double context = ContextOf(record);
         if (context == 0)
             return default; // synthetic messages (errors, interruptions) carry zero usage
-        return new Classified(RecordKind.Assistant, (long)Math.Floor(context), CallsResumeSkill(record));
+        return new Classified(RecordKind.Assistant, (long)Math.Floor(context));
     }
 
     /// <summary>
-    /// What a user record is. Never throws: a shape it does not know is skipped. A real player message has text
-    /// (a string, or a text block) and is none of: a sub-agent's message, a meta record (the skill text a command
-    /// loads), a compaction summary, a slash-command echo, a local-command output or a system reminder.
+    /// True when a user record is a message the player typed. It is not a sub-agent's message, a meta record (the
+    /// skill text a command loads) or a compaction summary, and at least one of its text blocks (or its text, when
+    /// the content is a string) is typed text as <see cref="UserText"/> defines it: not a slash-command echo, a
+    /// shell-command record, a task notice, an interruption marker or another injection. A record of only tool
+    /// results has no text block. Never throws: a shape it does not know is not a player message.
     /// </summary>
     /// <param name="record">A record whose <c>type</c> is <c>user</c>.</param>
-    /// <returns><see cref="RecordKind.Player"/>, <see cref="RecordKind.ResumeCommand"/> or <see cref="RecordKind.Skipped"/>.</returns>
-    static RecordKind UserKind(JsonElement record)
+    /// <returns>True for a player message.</returns>
+    static bool IsPlayerMessage(JsonElement record)
     {
         if ((record.TryGetProperty("isSidechain", out var side) && Truthy(side))
             || (record.TryGetProperty("isMeta", out var meta) && Truthy(meta))
             || (record.TryGetProperty("isCompactSummary", out var summary) && Truthy(summary)))
-            return RecordKind.Skipped;
+            return false;
         if (!record.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object
             || !message.TryGetProperty("content", out var content))
-            return RecordKind.Skipped;
+            return false;
 
-        string? text = content.ValueKind switch
+        return content.ValueKind switch
         {
-            JsonValueKind.String => content.GetString(),
-            JsonValueKind.Array => content.EnumerateArray()
-                .Where(block => block.ValueKind == JsonValueKind.Object && Text(block, "type") == "text")
-                .Select(block => Text(block, "text")).FirstOrDefault(),
-            _ => null, // an array of tool results only has no text
+            JsonValueKind.String => content.GetString() is { Length: > 0 } text && UserText.IsTyped(text),
+            JsonValueKind.Array => content.EnumerateArray().Any(block =>
+                block.ValueKind == JsonValueKind.Object && Text(block, "type") == "text"
+                && Text(block, "text") is { Length: > 0 } text && UserText.IsTyped(text)),
+            _ => false,
         };
-        if (string.IsNullOrEmpty(text))
-            return RecordKind.Skipped;
-        if (text.StartsWith("<command-", StringComparison.Ordinal))
-            return text.Contains("<command-name>/resume-campaign</command-name>", StringComparison.Ordinal)
-                ? RecordKind.ResumeCommand
-                : RecordKind.Skipped;
-        return text.StartsWith("<local-command", StringComparison.Ordinal)
-               || text.StartsWith("<system-reminder>", StringComparison.Ordinal)
-            ? RecordKind.Skipped
-            : RecordKind.Player;
     }
-
-    /// <summary>True when an assistant record calls the <c>Skill</c> tool for <c>resume-campaign</c>: how DMC re-runs the resume after a compaction.</summary>
-    /// <param name="record">An assistant record.</param>
-    /// <returns>True when one of its content blocks is that tool call.</returns>
-    static bool CallsResumeSkill(JsonElement record) =>
-        record.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.Object
-        && message.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array
-        && content.EnumerateArray().Any(block =>
-            block.ValueKind == JsonValueKind.Object && Text(block, "type") == "tool_use" && Text(block, "name") == "Skill"
-            && block.TryGetProperty("input", out var input) && input.ValueKind == JsonValueKind.Object
-            && Text(input, "skill") == "resume-campaign");
 
     /// <summary>
     /// A cheap test that skips most lines (attachments, snapshots) without parsing them. It may only say no for a
@@ -294,8 +340,16 @@ public static class TranscriptReader
     /// <param name="line">One log line.</param>
     /// <returns>False only when the line cannot matter.</returns>
     static bool CouldBeRelevant(ReadOnlySpan<byte> line) =>
-        line.IndexOf("assistant"u8) >= 0 || line.IndexOf("user"u8) >= 0 || line.IndexOf("compact_boundary"u8) >= 0
-        || line.IndexOf("\\u"u8) >= 0;
+        line.IndexOf("assistant"u8) >= 0 || line.IndexOf("user"u8) >= 0 || CouldBeCompaction(line);
+
+    /// <summary>
+    /// The same kind of test for a compaction boundary alone: false only for a line that cannot be one, because it
+    /// has neither the word <c>compact_boundary</c> nor a <c>\u</c> escape that could spell a letter of it.
+    /// </summary>
+    /// <param name="line">One log line.</param>
+    /// <returns>False only when the line cannot be a compaction boundary.</returns>
+    static bool CouldBeCompaction(ReadOnlySpan<byte> line) =>
+        line.IndexOf("compact_boundary"u8) >= 0 || line.IndexOf("\\u"u8) >= 0;
 
     /// <summary>Parses one log line as JSON the way Python's <c>json.loads</c> would, including its <c>NaN</c> and <c>Infinity</c>.</summary>
     /// <returns>The document, or null when the line is not JSON (a cut last line, a blank one, junk). The caller disposes it.</returns>
@@ -436,13 +490,9 @@ enum RecordKind
 
     /// <summary>A message the player typed.</summary>
     Player,
-
-    /// <summary>The echo of a <c>/resume-campaign</c> command.</summary>
-    ResumeCommand,
 }
 
 /// <summary>One classified log line.</summary>
 /// <param name="Kind">What the line is.</param>
 /// <param name="Context">The context size, for an assistant call; otherwise 0.</param>
-/// <param name="CallsResume">True for an assistant call that invokes the <c>resume-campaign</c> skill.</param>
-readonly record struct Classified(RecordKind Kind, long Context = 0, bool CallsResume = false);
+readonly record struct Classified(RecordKind Kind, long Context = 0);

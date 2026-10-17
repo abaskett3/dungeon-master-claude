@@ -58,6 +58,7 @@ public sealed class OutputBytesTests
         {
             string log = Path.Combine(folder, "session.jsonl");
             File.WriteAllText(log, ContextCheck.ContextCheckContract.Assistant(31000).ToJsonString() + "\n"
+                                   + ContextCheck.ContextCheckContract.User("go on").ToJsonString() + "\n"
                                    + ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n");
             var result = DmcRunner.BlackBox(["context-check"], new JsonObject { ["transcript_path"] = log }.ToJsonString());
             AssertNoBom(result.StdoutBytes, "context-check stdout");

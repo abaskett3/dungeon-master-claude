@@ -119,7 +119,7 @@ public abstract class ContextCheckContract
             ["type"] = "assistant",
             ["message"] = new JsonObject { ["id"] = "x", ["model"] = "<synthetic>", ["usage"] = new JsonObject(), ["content"] = new JsonArray() },
         };
-        string line = Check(Log(Assistant(90000), Assistant(160000), Assistant(20000, sidechain: true), empty));
+        string line = Check(Log(Assistant(90000), User("go on"), Assistant(160000), Assistant(20000, sidechain: true), empty));
         StringAssert.StartsWith(line, "Context 160k");
     }
 
@@ -132,13 +132,13 @@ public abstract class ContextCheckContract
 
     [TestMethod]
     public void ACutLastLineAndJunkAreIgnored() =>
-        StringAssert.StartsWith(Check(LogWithTail("{\"type\": \"assistant\", \"mess", Assistant(90000), Assistant(170000))), "Context 170k");
+        StringAssert.StartsWith(Check(LogWithTail("{\"type\": \"assistant\", \"mess", Assistant(90000), User("go on"), Assistant(170000))), "Context 170k");
 
     [TestMethod]
     public void ALogLongerThanOneChunk()
     {
         var filler = User(new string('x', TranscriptReader.ChunkSize / 2)); // each line crosses a chunk boundary
-        string path = Log(Assistant(90000), Assistant(175000), filler, filler, filler, filler, filler, User("go on"));
+        string path = Log(Assistant(90000), User("go on"), Assistant(175000), filler, filler, filler, filler, filler, User("go on"));
         Assert.IsGreaterThan(2L * TranscriptReader.ChunkSize, new FileInfo(path).Length);
         StringAssert.StartsWith(Check(path), "Context 175k");
     }

@@ -91,81 +91,140 @@ public sealed class ContextCheckEdgeTests
         StringAssert.Contains(BreakReminder.For(230000, baseline: 142000), "Context 230k is large");
     }
 
+    /// <summary>The size and baseline of the log at this path: what the hook works from.</summary>
+    static ContextReading Reading(string path) => TranscriptReader.Read(path);
+
+    /// <summary>The latest context size of the log at this path (the first part of <see cref="Reading"/>).</summary>
+    static long LastContext(string path) => TranscriptReader.Read(path).Size;
+
     /// <summary>A user record that echoes a slash command, as Claude Code writes it.</summary>
     static string Command(string name) => ContextCheckContract.User(
         $"<command-message>{name}</command-message>\n<command-name>/{name}</command-name>").ToJsonString();
-
-    /// <summary>An assistant record that calls the Skill tool, as DMC re-runs a resume after a compaction.</summary>
-    static string SkillCall(int context, string skill)
-    {
-        var record = ContextCheckContract.Assistant(context);
-        record["message"]!["content"] = new JsonArray(new JsonObject
-        {
-            ["type"] = "tool_use", ["name"] = "Skill", ["input"] = new JsonObject { ["skill"] = skill },
-        });
-        return record.ToJsonString();
-    }
 
     /// <summary>A user record that holds only a tool result, which is not a player message.</summary>
     const string ToolResult =
         "{\"type\": \"user\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"t\", \"content\": \"file text\"}]}}";
 
-    // No resume: the baseline is the first reply, so a session that never loads much keeps the 150k floor.
-    [TestMethod]
-    public void WithoutAResumeTheBaselineIsTheFirstReply()
-    {
-        var reading = TranscriptReader.Read(Write(User(), Assistant(31000), ToolResult, Assistant(120000), User(), Assistant(160000)));
-        Assert.AreEqual(new ContextReading(160000, 31000), reading);
-    }
+    /// <summary>A meta record, such as the skill text a slash command loads.</summary>
+    const string Meta =
+        "{\"type\": \"user\", \"isMeta\": true, \"message\": {\"role\": \"user\", \"content\": \"Base directory for this skill\"}}";
 
-    // One resume: the baseline is the end of its recap, the last call before the first player message after it.
-    // Sub-agent calls, slash-command echoes, meta records and tool results in between do not count.
+    /// <summary>The compaction boundary record and the summary record that follows it.</summary>
+    const string Boundary = "{\"type\": \"system\", \"subtype\": \"compact_boundary\"}";
+
+    /// <summary>The user record that holds a compaction summary, which is not a player message.</summary>
+    const string CompactSummary =
+        "{\"type\": \"user\", \"isCompactSummary\": true, \"message\": {\"role\": \"user\", \"content\": \"This session is being continued\"}}";
+
+    // No resume: the first player message has no call before it, so the baseline is the reply to it, and a session
+    // that never loads much keeps the 150k floor.
     [TestMethod]
-    public void AfterOneResumeTheBaselineIsTheEndOfTheRecap()
-    {
-        string meta = "{\"type\": \"user\", \"isMeta\": true, \"message\": {\"role\": \"user\", \"content\": \"Base directory for this skill\"}}";
-        var reading = TranscriptReader.Read(Write(
-            Assistant(20000), Command("resume-campaign"), meta, Assistant(31000), ToolResult, Assistant(120000),
+    public void WithoutAResumeTheBaselineIsTheFirstReply() =>
+        Assert.AreEqual(new ContextReading(160000, 31000),
+            Reading(Write(User(), Assistant(31000), ToolResult, Assistant(120000), User(), Assistant(160000))));
+
+    // One resume: the baseline is the end of its recap, the last call before the first player message. Sub-agent
+    // calls, slash-command echoes, meta records and tool results in between do not count.
+    [TestMethod]
+    public void AfterOneResumeTheBaselineIsTheEndOfTheRecap() =>
+        Assert.AreEqual(new ContextReading(170000, 142000), Reading(Write(
+            Command("resume-campaign"), Meta, Assistant(31000), ToolResult, Assistant(120000),
             ContextCheckContract.Assistant(10000, sidechain: true).ToJsonString(), Assistant(142000),
-            User(), Assistant(150000), User(), Assistant(170000)));
-        Assert.AreEqual(new ContextReading(170000, 142000), reading);
-    }
+            User(), Assistant(150000), User(), Assistant(170000))));
 
-    // Two resumes: the latest one counts, whatever came before it.
+    // Two resumes: a resume after the first player message, which the player runs mid-session, does not move the
+    // baseline, so it cannot hide that the context has grown.
     [TestMethod]
-    public void WithTwoResumesTheLatestOneCounts()
-    {
-        var reading = TranscriptReader.Read(Write(
+    public void AResumeMidSessionDoesNotMoveTheBaseline() =>
+        Assert.AreEqual(new ContextReading(90000, 100000), Reading(Write(
             Command("resume-campaign"), Assistant(100000), User(), Assistant(130000), User(),
-            Command("resume-campaign"), Assistant(60000), User(), Assistant(90000)));
-        Assert.AreEqual(new ContextReading(90000, 60000), reading);
-    }
+            Command("resume-campaign"), Assistant(60000), User(), Assistant(90000))));
 
-    // A resume with no player message after it yet: nothing has been added since, so the baseline is the latest context.
+    // A recap nobody has answered yet: nothing has been added since loading, so the baseline is the latest context.
     [TestMethod]
     public void ARecapNobodyHasAnsweredYetIsItsOwnBaseline() =>
-        Assert.AreEqual(new ContextReading(142000, 142000), TranscriptReader.Read(Write(
-            Assistant(20000), Command("resume-campaign"), Assistant(142000))));
+        Assert.AreEqual(new ContextReading(142000, 142000),
+            Reading(Write(Assistant(20000), Command("resume-campaign"), Assistant(142000))));
 
-    // A compaction ends the log's earlier history: the resume DMC runs afterwards (a Skill call, not a command echo)
-    // sets the baseline, and a resume from before the compaction is not looked for.
+    // A compaction restarts the search: only the part after the latest boundary counts, whether the reload comes
+    // before the player's next message or the first reply does.
     [TestMethod]
-    public void ACompactionCutsTheSearchAndTheSkillCallIsAResume()
+    public void OnlyThePartAfterTheLatestCompactionCounts()
     {
-        string boundary = "{\"type\": \"system\", \"subtype\": \"compact_boundary\"}";
-        var viaSkill = TranscriptReader.Read(Write(
-            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), boundary, User("summary"),
-            SkillCall(30000, "resume-campaign"), Assistant(120000), User(), Assistant(130000)));
-        Assert.AreEqual(new ContextReading(130000, 120000), viaSkill);
+        Assert.AreEqual(new ContextReading(130000, 120000), Reading(Write(
+            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), Boundary, CompactSummary,
+            Assistant(30000), ToolResult, Assistant(120000), User(), Assistant(130000))), "the reload before the next message");
+        Assert.AreEqual(new ContextReading(100000, 40000), Reading(Write(
+            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), Boundary, CompactSummary,
+            User(), Assistant(40000), User(), Assistant(100000))), "the first reply when the message comes first");
+        Assert.AreEqual(new ContextReading(70000, 60000), Reading(Write(
+            User(), Assistant(100000), Boundary, User(), Assistant(50000), Boundary, CompactSummary,
+            Assistant(60000), User(), Assistant(70000))), "the latest of two boundaries");
+        Assert.AreEqual(new ContextReading(0, 0), Reading(Write(Assistant(250000), Boundary)), "a boundary as the latest thing");
+    }
 
-        // No resume after the boundary: the first reply after it, not the old resume, is the baseline.
-        var noResume = TranscriptReader.Read(Write(
-            Command("resume-campaign"), Assistant(100000), User(), Assistant(250000), boundary, User("summary"),
-            Assistant(40000), User(), Assistant(100000)));
-        Assert.AreEqual(new ContextReading(100000, 40000), noResume);
+    // Records that are not what the player typed must not end the search for the first player message.
+    [TestMethod]
+    public void InjectedRecordsAreNotPlayerMessages()
+    {
+        string[] injected =
+        [
+            User("[Request interrupted by user]"), User("<bash-input>ls</bash-input>"), User("<bash-stdout>a b</bash-stdout>"),
+            User("<system-reminder>a hook said so</system-reminder>"), User("<local-command-stdout>ok</local-command-stdout>"),
+            User("<task-notification>done</task-notification>"), Meta, CompactSummary, ToolResult,
+        ];
+        Assert.AreEqual(new ContextReading(150000, 120000), Reading(Write(
+            [Assistant(31000), .. injected, Assistant(120000), User("I attack"), Assistant(150000)])));
+    }
 
-        // A boundary as the latest thing is still "nothing yet".
-        Assert.AreEqual(new ContextReading(0, 0), TranscriptReader.Read(Write(Assistant(250000), boundary)));
+    // Every text block counts, not only the first: a message whose first block is an injection and whose second is
+    // typed text is a player message.
+    [TestMethod]
+    public void AnyTextBlockOfAMessageCanBeThePlayersText()
+    {
+        string blocks = new JsonObject
+        {
+            ["type"] = "user",
+            ["message"] = new JsonObject
+            {
+                ["role"] = "user",
+                ["content"] = new JsonArray(
+                    new JsonObject { ["type"] = "text", ["text"] = "<system-reminder>x</system-reminder>" },
+                    new JsonObject { ["type"] = "text", ["text"] = "I attack" }),
+            },
+        }.ToJsonString();
+        Assert.AreEqual(new ContextReading(120000, 31000), Reading(Write(Assistant(31000), blocks, Assistant(120000))));
+    }
+
+    // A bad record before the baseline is settled is skipped, never an error: a shape it should not have, or a
+    // token count too large to read (which makes GetDouble throw a FormatException).
+    [TestMethod]
+    public void ABadOlderRecordIsSkippedWhenFindingTheBaseline()
+    {
+        string[] bad =
+        [
+            "{\"type\": \"assistant\", \"message\": \"text\"}",
+            "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": \"7\"}}}",
+            "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 1e999}}}",
+            "{\"type\": \"user\", \"message\": 5}",
+        ];
+        foreach (string record in bad)
+            Assert.AreEqual(new ContextReading(160000, 31000),
+                Reading(Write(record, Assistant(31000), User(), Assistant(120000), record, User(), Assistant(160000))), record);
+    }
+
+    // The scan from the start reads across chunk boundaries: the first player message is a line longer than two
+    // chunks, and a boundary comes after more than two chunks of tool results.
+    [TestMethod]
+    public void TheBaselineIsFoundInALogLongerThanSeveralChunks()
+    {
+        string huge = User(new string('x', 2 * TranscriptReader.ChunkSize + 7));
+        string filler = ToolResult.Replace("file text", new string('y', TranscriptReader.ChunkSize / 2)); // each line crosses a chunk boundary
+        Assert.AreEqual(new ContextReading(150000, 31000), Reading(Write(
+            Assistant(31000), huge, Assistant(120000), filler, filler, filler, filler, filler, filler, User(), Assistant(150000))));
+        Assert.AreEqual(new ContextReading(150000, 60000), Reading(Write(
+            Assistant(31000), huge, Assistant(120000), filler, filler, filler, filler, filler, filler, Boundary, CompactSummary,
+            Assistant(60000), User(), Assistant(150000))));
     }
 
     // The reminder end to end: a resume that settles above 150k moves the first band up with it.
@@ -187,39 +246,39 @@ public sealed class ContextCheckEdgeTests
 
     [TestMethod]
     public void CrLfLineEndingsAreRead() =>
-        Assert.AreEqual(180000, TranscriptReader.LastContext(WriteBytes(Encoding.UTF8.GetBytes(
+        Assert.AreEqual(180000, LastContext(WriteBytes(Encoding.UTF8.GetBytes(
             Assistant(180000) + "\r\n" + User() + "\r\n"))));
 
     [TestMethod]
     public void ALogWithoutAFinalNewlineIsRead() =>
-        Assert.AreEqual(180000, TranscriptReader.LastContext(WriteBytes(Encoding.UTF8.GetBytes(Assistant(180000)))));
+        Assert.AreEqual(180000, LastContext(WriteBytes(Encoding.UTF8.GetBytes(Assistant(180000)))));
 
     [TestMethod]
     public void BytesThatAreNotUtf8AreSkippedLikeAnyOtherJunk()
     {
         var bytes = Encoding.UTF8.GetBytes(Assistant(180000) + "\n").Concat(new byte[] { 0xFF, 0xFE, 0x80, (byte)'\n' }).ToArray();
-        Assert.AreEqual(180000, TranscriptReader.LastContext(WriteBytes(bytes)));
+        Assert.AreEqual(180000, LastContext(WriteBytes(bytes)));
     }
 
     [TestMethod]
     public void AJsonValueThatIsNotAnObjectIsSkipped() =>
-        Assert.AreEqual(180000, TranscriptReader.LastContext(Write(Assistant(180000), "[1, 2]", "5", "\"text\"", "null")));
+        Assert.AreEqual(180000, LastContext(Write(Assistant(180000), "[1, 2]", "5", "\"text\"", "null")));
 
     [TestMethod]
     public void ACompactionBoundaryStopsTheSearch() =>
-        Assert.AreEqual(0, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(0, LastContext(Write(
             Assistant(240000), "{\"type\": \"system\", \"subtype\": \"compact_boundary\"}", User())));
 
     [TestMethod]
     public void ASystemRecordThatIsNotACompactionIsIgnored() =>
-        Assert.AreEqual(240000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(240000, LastContext(Write(
             Assistant(240000), "{\"type\": \"system\", \"subtype\": \"other\"}", User())));
 
     // A BOM on stdin is not skipped (the script read it as a character and rejected the JSON), so the hook says nothing.
     [TestMethod]
     public void AByteOrderMarkOnStdinMakesTheInputUnreadable()
     {
-        string input = new System.Text.Json.Nodes.JsonObject { ["transcript_path"] = Write(Assistant(90000), Assistant(180000)) }.ToJsonString();
+        string input = new System.Text.Json.Nodes.JsonObject { ["transcript_path"] = Write(Assistant(90000), User(), Assistant(180000)) }.ToJsonString();
         Assert.AreNotEqual("", DmcRunner.BlackBox(["context-check"], input).Stdout, "the same input without a BOM gives the reminder");
         var result = DmcRunner.BlackBox(["context-check"], "﻿" + input);
         Assert.AreEqual(0, result.ExitCode);
@@ -228,11 +287,11 @@ public sealed class ContextCheckEdgeTests
 
     [TestMethod]
     public void AnEmptyFileHasNoContext() =>
-        Assert.AreEqual(0, TranscriptReader.LastContext(WriteBytes([])));
+        Assert.AreEqual(0, LastContext(WriteBytes([])));
 
     [TestMethod]
     public void MissingUsageFieldsCountAsZero() =>
-        Assert.AreEqual(5000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(5000, LastContext(Write(
             "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 5000}}}")));
 
     // The script gives up (prints nothing) when a record has a shape it cannot take apart. dmc does the same, so
@@ -250,7 +309,7 @@ public sealed class ContextCheckEdgeTests
         foreach (string record in records)
         {
             string path = Write(Assistant(180000), record);
-            Assert.ThrowsExactly<InvalidDataException>(() => TranscriptReader.LastContext(path), record);
+            Assert.ThrowsExactly<InvalidDataException>(() => LastContext(path), record);
 
             var result = DmcRunner.InProcess(["context-check"],
                 new JsonObject { ["transcript_path"] = path }.ToJsonString());
@@ -262,7 +321,7 @@ public sealed class ContextCheckEdgeTests
 
     [TestMethod]
     public void AnEmptyMessageOrUsageIsNotAnError() =>
-        Assert.AreEqual(180000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(180000, LastContext(Write(
             Assistant(180000), "{\"type\": \"assistant\", \"message\": null}",
             "{\"type\": \"assistant\", \"message\": {\"usage\": []}}", "{\"type\": \"assistant\", \"message\": {}}")));
 
@@ -271,11 +330,11 @@ public sealed class ContextCheckEdgeTests
     [TestMethod]
     public void InvalidUtf8InsideAStringSkipsOnlyThatLine()
     {
-        byte[] good = Encoding.UTF8.GetBytes(Assistant(90000) + "\n" + Assistant(180000) + "\n");
+        byte[] good = Encoding.UTF8.GetBytes(Assistant(90000) + "\n" + User() + "\n" + Assistant(180000) + "\n");
         byte[] bad = [.. Encoding.UTF8.GetBytes("{\"type\": \"assistant\", \"message\": {\"content\": \"x"), 0xFF, 0xFE,
             .. Encoding.UTF8.GetBytes("y\", \"usage\": {\"input_tokens\": 5}}}\n")];
         string path = WriteBytes([.. good, .. bad]);
-        Assert.AreEqual(180000, TranscriptReader.LastContext(path));
+        Assert.AreEqual(180000, LastContext(path));
 
         var result = DmcRunner.InProcess(["context-check"], new JsonObject { ["transcript_path"] = path }.ToJsonString());
         StringAssert.StartsWith(result.Stdout, "Context 180k");
@@ -286,13 +345,13 @@ public sealed class ContextCheckEdgeTests
     {
         byte[] good = Encoding.UTF8.GetBytes(Assistant(180000) + "\n");
         byte[] bad = [.. Encoding.UTF8.GetBytes("{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 5}}}"), 0x80, (byte)'\n'];
-        Assert.AreEqual(180000, TranscriptReader.LastContext(WriteBytes([.. good, .. bad])));
+        Assert.AreEqual(180000, LastContext(WriteBytes([.. good, .. bad])));
     }
 
     // Item 5: a BOM at the start of a line is dropped, as Python's utf-8-sig does.
     [TestMethod]
     public void AByteOrderMarkAtTheStartOfTheFirstLineIsDropped() =>
-        Assert.AreEqual(180000, TranscriptReader.LastContext(WriteBytes([0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes(Assistant(180000) + "\n" + User() + "\n")])));
+        Assert.AreEqual(180000, LastContext(WriteBytes([0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes(Assistant(180000) + "\n" + User() + "\n")])));
 
     // Item 5: Python's json.loads reads NaN and Infinity as floats; the record then trips the script up when it
     // prints, so nothing is printed. dmc gives up on the same records.
@@ -303,7 +362,7 @@ public sealed class ContextCheckEdgeTests
         {
             string path = Write(Assistant(180000),
                 $"{{\"type\": \"assistant\", \"message\": {{\"usage\": {{\"input_tokens\": {value}}}}}}}");
-            Assert.ThrowsExactly<InvalidDataException>(() => TranscriptReader.LastContext(path), value);
+            Assert.ThrowsExactly<InvalidDataException>(() => LastContext(path), value);
             var result = DmcRunner.InProcess(["context-check"], new JsonObject { ["transcript_path"] = path }.ToJsonString());
             Assert.AreEqual("", result.Stdout + result.Stderr, value);
         }
@@ -312,13 +371,13 @@ public sealed class ContextCheckEdgeTests
     [TestMethod]
     public void NaNInAFieldThatIsNotUsedDoesNotSpoilTheRecord()
     {
-        Assert.AreEqual(170000, TranscriptReader.LastContext(Write(Assistant(180000),
+        Assert.AreEqual(170000, LastContext(Write(Assistant(180000),
             "{\"type\": \"assistant\", \"message\": {\"usage\": {\"input_tokens\": 170000, \"output_tokens\": NaN}, \"x\": [Infinity, -Infinity]}}")));
         // Inside a string it is just text.
-        Assert.AreEqual(170000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(170000, LastContext(Write(
             "{\"type\": \"assistant\", \"message\": {\"content\": \"NaN Infinity\", \"usage\": {\"input_tokens\": 170000}}}")));
         // A compaction boundary that holds one still counts.
-        Assert.AreEqual(0, TranscriptReader.LastContext(Write(Assistant(180000),
+        Assert.AreEqual(0, LastContext(Write(Assistant(180000),
             "{\"type\": \"system\", \"subtype\": \"compact_boundary\", \"metadata\": {\"x\": NaN}}")));
     }
 
@@ -343,7 +402,7 @@ public sealed class ContextCheckEdgeTests
         string huge = ContextCheckContract.User(new string('x', 3 * TranscriptReader.ChunkSize)).ToJsonString();
         string path = Write(Assistant(180000), huge);
         Assert.IsGreaterThan(3L * TranscriptReader.ChunkSize, new FileInfo(path).Length);
-        Assert.AreEqual(180000, TranscriptReader.LastContext(path));
+        Assert.AreEqual(180000, LastContext(path));
     }
 
     [TestMethod]
@@ -353,7 +412,7 @@ public sealed class ContextCheckEdgeTests
             "\"content\":\"" + new string('x', 2 * TranscriptReader.ChunkSize + 123) + "\"");
         string path = Write(Assistant(180000), huge);
         Assert.IsGreaterThan(2L * TranscriptReader.ChunkSize, new FileInfo(path).Length);
-        Assert.AreEqual(170000, TranscriptReader.LastContext(path));
+        Assert.AreEqual(170000, LastContext(path));
     }
 
     [TestMethod]
@@ -362,7 +421,7 @@ public sealed class ContextCheckEdgeTests
         string huge = ContextCheckContract.Assistant(170000).ToJsonString().Replace("\"content\":[]",
             "\"content\":\"" + string.Concat(Enumerable.Range(0, 3 * TranscriptReader.ChunkSize / 10).Select(i => (i % 10).ToString())) + "\"");
         string path = Write(Assistant(160000), huge, User(), User());
-        Assert.AreEqual(170000, TranscriptReader.LastContext(path));
+        Assert.AreEqual(170000, LastContext(path));
     }
 
     [TestMethod]
@@ -370,7 +429,7 @@ public sealed class ContextCheckEdgeTests
     {
         string huge = ContextCheckContract.Assistant(170000).ToJsonString().Replace("\"content\":[]",
             "\"content\":\"" + new string('x', 2 * TranscriptReader.ChunkSize + 123) + "\"");
-        Assert.AreEqual(170000, TranscriptReader.LastContext(Write(huge, User(), User())));
+        Assert.AreEqual(170000, LastContext(Write(huge, User(), User())));
     }
 
     // Item 9: the cheap test that skips lines without parsing them must never skip a record that counts. JSON
@@ -378,13 +437,13 @@ public sealed class ContextCheckEdgeTests
     [TestMethod]
     public void ARecordWhoseTypeIsWrittenWithEscapesIsStillRead()
     {
-        Assert.AreEqual(170000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(170000, LastContext(Write(
             "{\"type\": \"\\u0061ssistant\", \"message\": {\"usage\": {\"input_tokens\": 170000}}}")));
-        Assert.AreEqual(170000, TranscriptReader.LastContext(Write(
+        Assert.AreEqual(170000, LastContext(Write(
             "{\"t\\u0079pe\": \"assist\\u0061nt\", \"message\": {\"usage\": {\"input_tokens\": 170000}}}")));
-        Assert.AreEqual(0, TranscriptReader.LastContext(Write(Assistant(180000),
+        Assert.AreEqual(0, LastContext(Write(Assistant(180000),
             "{\"type\": \"system\", \"subtype\": \"compact\\u005fboundary\"}")));
-        Assert.AreEqual(0, TranscriptReader.LastContext(Write(Assistant(180000),
+        Assert.AreEqual(0, LastContext(Write(Assistant(180000),
             "{\"type\": \"s\\u0079stem\", \"subtype\": \"compact_boundary\"}")));
     }
 
@@ -392,7 +451,7 @@ public sealed class ContextCheckEdgeTests
     public void ALineThatCannotBeRelevantIsNotParsed()
     {
         // Not valid JSON, and no sign of either record type: skipped before parsing, with no effect on the answer.
-        Assert.AreEqual(180000, TranscriptReader.LastContext(Write(Assistant(180000), "{\"type\": \"user\", \"content\": [1, 2,")));
+        Assert.AreEqual(180000, LastContext(Write(Assistant(180000), "{\"type\": \"user\", \"content\": [1, 2,")));
     }
 
     // Item 10: the dispatcher alone enforces "never fails", for a failure inside the real command too.

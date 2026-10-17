@@ -48,26 +48,49 @@ public sealed class LauncherTests
     }
 
     /// <summary>
-    /// With no <c>claude</c> on the PATH (an empty folder stands in for the fake's), no release pinned, a launcher must
-    /// start nothing and exit 127. play.ps1 once exited 0 here: a command that cannot be found sets no exit code.
+    /// With no <c>claude</c> on the PATH (an empty folder stands in for the fake's), a launcher must start nothing and
+    /// exit 127, whether or not a release is pinned. play.ps1 once exited 0 here: a command that cannot be found sets no
+    /// exit code. The PowerShell launcher's stderr is exactly its lines: with nothing pinned, its one message; with a
+    /// pin whose archive cannot be had, get-dmc's line, the "dmc is not available" line, then that message. Bash's last
+    /// line is the shell's own, so only the lines before it are compared.
     /// </summary>
     [TestMethod]
     [DynamicData(nameof(Shells), typeof(Bootstrap))]
     public void WhenClaudeIsNotInstalledTheLauncherExits127(string shell)
     {
-        string noClaude = Path.Combine(Path.GetTempPath(), "dmc-no-claude-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(noClaude);
-        using var toolkit = new ToolkitCopy("", new Dictionary<string, string>());
+        const string notFound = "play: Claude Code (claude) is not on the PATH: install it, then run this again";
+        string? noClaude = null;
         try
         {
-            var result = Launch(shell, toolkit, noClaude, Path.GetTempPath());
+            noClaude = Path.Combine(Path.GetTempPath(), "dmc-no-claude-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(noClaude);
+
+            using var unpinned = new ToolkitCopy("", new Dictionary<string, string>());
+            var result = Launch(shell, unpinned, noClaude, Path.GetTempPath());
             Assert.AreEqual(127, result.ExitCode, $"no claude, no session:\n{result}");
             Assert.IsFalse(result.Stdout.Contains("fake claude in ", StringComparison.Ordinal), result.ToString());
-            StringAssert.Contains(result.Stderr, "claude", result.ToString());
+            if (shell == "bash")
+                StringAssert.Contains(result.Stderr, "claude", result.ToString());
+            else
+                CollectionAssert.AreEqual(new[] { notFound }, result.StderrLines, result.ToString());
+
+            // A release is pinned but its archive cannot be had: the warnings come first, and 127 all the same.
+            using var pinned = new ToolkitCopy("dmc-v9.8.7", new Dictionary<string, string> { [Rid] = new string('a', 64) });
+            var withPin = Launch(shell, pinned, noClaude, Path.GetTempPath());
+            Assert.AreEqual(127, withPin.ExitCode, withPin.ToString());
+            Assert.IsFalse(withPin.Stdout.Contains("fake claude in ", StringComparison.Ordinal), withPin.ToString());
+            string[] lines = withPin.StderrLines;
+            StringAssert.StartsWith(lines[0], $"get-dmc: {Asset("dmc-v9.8.7", Rid)} is not in ", withPin.ToString());
+            Assert.AreEqual("play: dmc is not available, so Claude Code starts without it, and DMC cannot roll dice, draw maps or read PDFs until get-dmc succeeds.", lines[1], withPin.ToString());
+            if (shell == "bash")
+                Assert.HasCount(3, lines, withPin.ToString());
+            else
+                CollectionAssert.AreEqual(new[] { notFound }, lines[2..], withPin.ToString());
         }
         finally
         {
-            Directory.Delete(noClaude, recursive: true);
+            if (noClaude is not null)
+                Directory.Delete(noClaude, recursive: true);
         }
     }
 

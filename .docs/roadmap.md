@@ -10,13 +10,13 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Releases 0.1.0, 0.1.1 and 0.1.2 | Done | Published and pinned (PR #17, PR #21, PR #26). See [releases.md](releases.md). |
 | `dmc digest show` (PR #18) | Done | Shipped in 0.1.1. |
 | Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
-| `play.ps1` exits 127 when `claude` is not installed, issue #28 | Fixed in its pull request | Launcher only, so it needs no release. |
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
+| `play.ps1` exits with a real code when `claude` cannot be started, issue #28 (PR #31) | Done (PR #31) | Launcher only, so it needs no release. |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
@@ -49,6 +49,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #31:** `play.ps1` no longer exits with a stale code when `claude` is missing or cannot run: 127 if it is not found, 1 with a message if it cannot be started (issue #28).
 
 ## Next: issue #6
 

@@ -296,7 +296,7 @@ Starts Claude Code for a play session from the toolkit root, as
 claude --model sonnet --effort high --settings .claude/play-settings.json [args...]
 ```
 
-with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned. When no `dmc` can be had they start Claude Code themselves, and if `claude` is not on the PATH then, `play.sh` exits 127 (its shell's own message) and `play.ps1` prints `play: Claude Code (claude) is not on the PATH: install it, then run this again` and exits 127, so a script that checks the exit code sees the failure.
+with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned. When no `dmc` can be had they start Claude Code themselves, and if `claude` is not on the PATH then, `play.sh` exits 127 (its shell's own message) and `play.ps1` prints `play: Claude Code (claude) is not on the PATH: install it, then run this again` and exits 127; if `claude` is found but cannot be started (blocked, damaged, a shim that throws) it prints `play: Claude Code could not be started: <reason>` and exits 1. Either way a script that checks the exit code sees the failure.
 
 On Windows it starts `claude.exe` from the PATH, or failing that npm's `claude.ps1` through PowerShell. It never starts npm's `claude.cmd` through `cmd.exe`, which would re-parse the arguments.
 

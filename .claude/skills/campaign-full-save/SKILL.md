@@ -29,7 +29,9 @@ Go back over the session for facts you established and did not log: names, place
 
 Then prune. Merge lines that say the same thing, replace a superseded fact instead of keeping both versions, and delete anything struck through or marked void. Every line left should be true now.
 
-`canon.md` is read whole at every resume. If it has passed about 230 lines, move the lines whose subject can no longer come up (a person dead and done with, a place left for good, a promise kept) to `story/canon-archive.md`, under the same headings; create it if missing. Split by whether the subject is still live, not by age: anyone or anything that can still come up stays. Rulings never move.
+Then archive, every full save, not only when it seems worth it. Count the lines of `canon.md` now (Grep, pattern `^`, count mode). Resume reads canon whole only while it is under about 230 lines; past that it reads only the Rulings and what a search finds, so a canon that stays long makes resume miss facts. If the count is over about 230, move the lines whose subject can no longer come up (a person dead and done with, a place left for good, a promise kept) to `story/canon-archive.md`, under the same headings; create it if missing. Keep moving until the count is under about 200, so the next session's additions do not push it back over. Split by whether the subject is still live, not by age: anyone or anything that can still come up stays. Rulings never move. If nothing more can be moved because every remaining subject is live, leave the file and tell the player in the step 8 report that canon is long and resume will search it.
+
+Keep each line to one fact in a sentence or two. A line that has grown into a paragraph is split, or its detail goes on the sheet it belongs to, so that the line count means something.
 
 ## 5. DM notes
 
@@ -53,6 +55,7 @@ Read every file this save changed again, and the sheets of the PCs and of every 
 - Location and time agree between `game-state.md` and the end of the session log.
 - Every quest in `game-state.md` appears in the summary or session log, and none is marked both active and complete.
 - No name is spelled two ways. No new canon line contradicts an older one (search for the subject).
+- `canon.md` is under about 230 lines (count them again with Grep after step 4), or you have said why not in the step 8 report.
 
 Fix what you find. If two sources disagree and you cannot tell which is right, ask the player.
 

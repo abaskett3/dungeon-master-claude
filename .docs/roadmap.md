@@ -16,7 +16,8 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
-| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
+| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. The first play test's findings became issue #35. |
+| Lighter resume, issue #35 part 2 | Done | Prompts and templates only: canon is searched past about 230 lines, the session log is read from its tail, sheets are limited to the PCs, the party and those present, and every full save checks canon's size. Closes issue #35 together with the break alert change (part 1, which ships in the release after 0.1.2). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

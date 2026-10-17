@@ -5,16 +5,24 @@ using static Dmc.Digest.DigestText;
 namespace Dmc.Digest;
 
 /// <summary>
-/// <c>list</c> and <c>digest</c> of <c>scripts/transcript_digest.py</c>: the same table, statistics and files.
+/// <c>list</c> and <c>show</c> (the script's <c>digest</c>) of <c>scripts/transcript_digest.py</c>: the same table,
+/// statistics and files.
 /// </summary>
 internal static class Digester
 {
     public static int Run(DigestRequest request, Io io)
     {
-        if (request.Command == "list")
-            List(request, io);
-        else
-            Digest(request, io);
+        switch (request.Command)
+        {
+            case DigestArguments.List:
+                List(request, io);
+                break;
+            case DigestArguments.Show:
+                Show(request, io);
+                break;
+            default:
+                throw new InvalidOperationException($"dmc digest has no subcommand {request.Command}");
+        }
         return 0;
     }
 
@@ -72,7 +80,7 @@ internal static class Digester
         }
     }
 
-    static void Digest(DigestRequest request, Io io)
+    static void Show(DigestRequest request, Io io)
     {
         var sessions = Load(request).Where(s => s.Turns.Count > 0).ToList();
         if (sessions.Count == 0)

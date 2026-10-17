@@ -39,7 +39,7 @@ Page numbers are PDF page numbers, starting at 1.
 
     static readonly string[] Options = ["--help", "--pages", "--dpi", "--out"];
 
-    static readonly string[] Commands = ["info", "text", "render", "all"];
+    internal static readonly string[] Commands = ["info", "text", "render", "all"];
 
     public int Run(string[] args, Io io)
     {

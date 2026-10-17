@@ -13,8 +13,10 @@ internal sealed record DigestRequest(string Command, string? Campaign, string? A
     IReadOnlyList<string> Sessions);
 
 /// <summary>
-/// Reads the command line the way <c>transcript_digest.py</c>'s <c>argparse</c> does, with its messages (apart from the
-/// usage text, which dmc leaves out: an error is one line and exit code 2). argparse has two levels here, and so has
+/// Reads the command line the way <c>transcript_digest.py</c>'s <c>argparse</c> did, with its messages (apart from the
+/// usage text, which dmc leaves out: an error is one line and exit code 2). The subcommand names, and so the
+/// invalid-choice message that lists them, are dmc's own now (the script's second subcommand was <c>digest</c>, and is
+/// <c>show</c> here); everything else still follows the script. argparse has two levels here, and so has
 /// this: the command is picked first, and everything after it belongs to the command's own parser. The order argparse
 /// follows is kept: every argument is sorted as an option, a plain argument or the "--" marker before any is read; the
 /// session ids are the plain arguments up to the first option after them (a later one is "unrecognized"); an option
@@ -23,11 +25,15 @@ internal sealed record DigestRequest(string Command, string? Campaign, string? A
 /// </summary>
 internal static class DigestArguments
 {
-    static readonly string[] Commands = ["list", "show"];
+    /// <summary>The subcommands' names. This is the only place they are spelled out in the program.</summary>
+    public const string List = "list", Show = "show";
+
+    /// <summary>The subcommands, in the order the invalid-choice message lists them.</summary>
+    internal static readonly string[] Commands = [List, Show];
 
     static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs"];
 
-    static readonly string[] DigestOptions = [.. ListOptions, "--out"];
+    static readonly string[] ShowOptions = [.. ListOptions, "--out"];
 
     /// <summary>Read the arguments after <c>dmc digest</c>. Null means "--help".</summary>
     public static DigestRequest? Parse(string[] args)
@@ -103,8 +109,8 @@ internal static class DigestArguments
     /// <summary>The command's own parser. Arguments it does not recognize are added to <paramref name="extras"/>.</summary>
     static DigestRequest? ParseCommand(string command, string[] args, List<string> extras)
     {
-        bool show = command == "show";
-        var (kinds, classified) = Sort(args, show ? DigestOptions : ListOptions);
+        bool show = command == Show;
+        var (kinds, classified) = Sort(args, show ? ShowOptions : ListOptions);
         string? campaign = null, after = null, logs = null, output = null;
         var sessions = new List<string>();
         bool sessionsOpen = show; // the session ids are taken once

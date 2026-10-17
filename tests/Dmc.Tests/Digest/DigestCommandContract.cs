@@ -154,6 +154,14 @@ public abstract class DigestCommandContract
     }
 
     [TestMethod]
+    public void TheCommandMustBeListOrShow()
+    {
+        var result = Digest("digest"); // the old name of show, which is not kept
+        Assert.AreEqual(2, result.ExitCode);
+        Assert.AreEqual("dmc digest: argument command: invalid choice: 'digest' (choose from list, show)\n", result.Stderr);
+    }
+
+    [TestMethod]
     public void TheOutputFolderIsMadeAndItsFilesAreOverwritten()
     {
         Assert.AreEqual(0, DigestOf("ffff").ExitCode);

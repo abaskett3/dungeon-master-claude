@@ -207,15 +207,15 @@ public static class DigestCases
     {
         yield return Case("list", StandardLogs, "list", "--logs", "logs");
         yield return Case("list with shortened options and an equals sign", StandardLogs, "list", "--logs=logs", "--camp=silver-egg", "--af", "2026-01-01");
-        yield return Case("digest of everything", StandardLogs, "show", "--logs", "logs", "--out", "out");
-        yield return Case("digest of two session ids", StandardLogs, "show", "--logs", "logs", "--out", "out", "ffff", "abcd");
-        yield return Case("digest with the ids after the options", StandardLogs, "show", "--logs", "logs", "--out", "out", "--campaign", "silver-egg", "abcd");
-        yield return Case("digest with the ids after a double dash", StandardLogs, "show", "--logs", "logs", "--out", "out", "--", "ffff");
-        yield return Case("digest into a folder that does not exist yet", StandardLogs, "show", "--logs", "logs", "--out", "deep/er/out", "--after", "2026-02-01");
+        yield return Case("show of everything", StandardLogs, "show", "--logs", "logs", "--out", "out");
+        yield return Case("show of two session ids", StandardLogs, "show", "--logs", "logs", "--out", "out", "ffff", "abcd");
+        yield return Case("show with the ids after the options", StandardLogs, "show", "--logs", "logs", "--out", "out", "--campaign", "silver-egg", "abcd");
+        yield return Case("show with the ids after a double dash", StandardLogs, "show", "--logs", "logs", "--out", "out", "--", "ffff");
+        yield return Case("show into a folder that does not exist yet", StandardLogs, "show", "--logs", "logs", "--out", "deep/er/out", "--after", "2026-02-01");
         yield return Case("every class of third and later call", Logs(l => WriteLog(l, CallRecords())), "show", "--logs", "logs", "--out", "out");
         yield return Case("text with letters outside the BMP", Logs(UnicodeLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("odd records, listed", Logs(OddLog), "list", "--logs", "logs");
-        yield return Case("odd records, digested", Logs(OddLog), "show", "--logs", "logs", "--out", "out");
+        yield return Case("odd records, shown", Logs(OddLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("growth, ties and a short id shared by two logs", Logs(GrowthLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("ids, models, names and skills that are null, empty or numbers", Logs(KeysLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("token counts that are floats and bools", Logs(NumbersLog), "show", "--logs", "logs", "--out", "out");
@@ -237,7 +237,7 @@ public static class DigestCases
         yield return Case("a missing value comes before an unknown option", StandardLogs, "list", "--bogus", "--campaign");
         yield return Case("a flag given a value", StandardLogs, "list", "--logs", "logs", "--help=x");
         yield return Case("session ids after an option are not recognized", StandardLogs, "show", "--logs", "logs", "abcd", "--campaign", "silver-egg", "ffff");
-        yield return Case("an option of digest given to list", StandardLogs, "list", "--logs", "logs", "--out", "out");
+        yield return Case("an option of show given to list", StandardLogs, "list", "--logs", "logs", "--out", "out");
         yield return Case("a double dash does not stand for the value", StandardLogs, "show", "--logs", "--", "logs");
         yield return Case("a folder that is not there", StandardLogs, "list", "--logs", "nowhere");
         yield return Case("nothing to show", StandardLogs, "show", "--logs", "logs", "--out", "out", "--campaign", "nowhere");

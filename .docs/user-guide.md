@@ -94,6 +94,7 @@ Against an armor class, a natural 20 hits and a natural 1 misses whatever the to
 When positions matter, DMC opens a map in your web browser: a grid with walls, terrain and a token for everyone in the scene. Keep the tab beside the terminal; it checks for changes every two seconds and redraws itself, with no reloading.
 
 - Squares are named by column letter and row number, as printed along the edges: `E4` is the fifth column of the fourth row, counting rows from the top. You can answer the same way: "I move to F4".
+- In a fight DMC describes what happened first and redraws the map after, so the map never shows a move you have not read about. If it ever does, tell DMC.
 - Hovering over a token shows who it is.
 - In a fight, a "Turn order" list beside the grid shows who acts when, numbered, with whose turn it is highlighted, so you can plan ahead.
 - Every map is to scale. Fights use 5 ft squares, or 30 ft squares for very large places; overland maps use 1, 6 or 60 miles a square.

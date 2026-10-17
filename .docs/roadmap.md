@@ -13,7 +13,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |
-| Code documentation: XML doc comments, script and workflow headers (PR #24) | In review | Due to merge straight after PR #23; it turns on the build's check for missing public doc comments. Mark this row done when it merges. |
+| Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a | Next | |
 | Turn order drawn on the map, issue #6 Phase 2b | Next | |
 | Release 0.1.2 | Next | Ships Phase 2a and 2b. |
@@ -46,7 +46,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **0.1.1** published and pinned (PR #21).
 - **PR #22:** the rule that every change updates its documentation.
 - **PR #23:** these product documents.
-- **PR #24** (in review): XML doc comments throughout the code, and header comments on scripts and workflows.
+- **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 
 ## Next: issue #6
 

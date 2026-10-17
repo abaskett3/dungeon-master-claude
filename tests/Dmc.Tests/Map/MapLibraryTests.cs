@@ -9,6 +9,7 @@ namespace Dmc.Tests.Map;
 // call the library code of the CLI project in this process. The CommandLine class is in MapCommandContract.cs.
 // "SystemExit" in the Python is a DmcException here: dmc prints its message as "dmc map: <message>".
 
+/// <summary>Column letters and cell names (<see cref="Cells"/>), in this process: naming, parsing, and the errors for a bad or off-map cell.</summary>
 [TestClass]
 public sealed class MapCellNamesTests
 {
@@ -62,17 +63,21 @@ public sealed class MapCellNamesTests
     }
 }
 
+/// <summary>What <see cref="MapChecker"/> accepts and rejects in a map, in this process: the grid, legend, scale, north, creatures, labels and edges, each with its message.</summary>
 [TestClass]
 public sealed class MapCheckingTests
 {
+    /// <summary>Asserts that the standard map with these keys replaced is rejected with a message holding <paramref name="expected"/>.</summary>
     static void Rejected(string expected, params (string, object?)[] changes)
     {
         var caught = Assert.ThrowsExactly<DmcException>(() => Checked(changes));
         StringAssert.Contains(caught.Message, expected);
     }
 
+    /// <summary>The <c>tokens</c> key with this list, as a change for <see cref="Rejected"/>.</summary>
     static (string, object?) WithTokens(List<object?> tokens) => ("tokens", tokens);
 
+    /// <summary>The <c>tokens</c> key holding one creature with these keys.</summary>
     static (string, object?) One(params (string, object?)[] token) => ("tokens", Arr(Obj(token)));
 
     [TestMethod]
@@ -279,6 +284,7 @@ public sealed class MapCheckingTests
     }
 }
 
+/// <summary>The distance rules of <see cref="Distances"/>, in this process, at every scale: squares, feet, miles, and the "about" and "same square" wording.</summary>
 [TestClass]
 public sealed class MapDistancesTests
 {
@@ -443,9 +449,11 @@ public sealed class MapDistancesTests
     }
 }
 
+/// <summary>The picture <see cref="SvgDrawing"/> makes, in this process: text wrapping, terrain, creatures, shared cells, labels and the panel, read back from the SVG.</summary>
 [TestClass]
 public sealed class MapDrawingTests
 {
+    /// <summary>The SVG XML namespace, for finding elements in the picture.</summary>
     static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
 
     [TestMethod]

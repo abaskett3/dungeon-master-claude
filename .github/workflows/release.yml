@@ -7,6 +7,13 @@ name: Release
 # Only pushing a tag dmc-vX.Y.Z publishes anything. A pull request that changes the release files, or a manual run,
 # is a dry run: it builds, packs, hashes and installs everything the same way, writes the pin file it would propose,
 # and uploads it all as workflow artifacts. A dry run creates no release, pushes nothing and opens no pull request.
+#
+# Triggers: a pushed tag dmc-v*, which releases; a pull request that touches this file, .github/release/, tools/,
+# src/Dmc.Cli/Dmc.Cli.csproj or Directory.Packages.props, and a manual run (workflow_dispatch), both dry runs.
+#
+# An archive holds exactly dmc and its native libraries: the pack step copies only the program and the *.dll, *.so and
+# *.dylib files of the publish folder, so neither symbols nor the XML documentation file could get into it, and it fails
+# the build unless there are exactly four files.
 
 on:
   push:
@@ -32,6 +39,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
 jobs:
+  # Works out the tag and version: from the pushed tag (which must be dmc-vX.Y.Z and on main), or, in a dry run, 0.0.0.
   prepare:
     name: Version
     runs-on: ubuntu-latest
@@ -74,6 +82,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "$tag (publish: $publish)"
 
+  # On each platform's own runner: publishes dmc with Native AOT, packs the four-file archive and its SHA-256, installs it
+  # with get-dmc.sh and get-dmc.ps1, runs it, checks that a corrupted archive is refused, and uploads the archive as an artifact.
   build:
     name: ${{ matrix.rid }}
     needs: prepare
@@ -209,6 +219,8 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+  # Tag pushes only: creates the GitHub Release from the archives (keeping one that is already published), then hashes
+  # what the release really holds, for the pin.
   release:
     name: GitHub Release
     needs: [prepare, build]
@@ -275,6 +287,8 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+  # Writes tools/dmc-release.json with write-pin.sh and checks it. On a release it also pushes the branch pin-<tag> and opens
+  # the pull request that pins it; on a dry run it only uploads the pin file it would propose.
   pin:
     name: Pin pull request
     needs: [prepare, build, release]

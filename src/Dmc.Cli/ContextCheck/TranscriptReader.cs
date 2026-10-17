@@ -13,8 +13,10 @@ public static class TranscriptReader
     /// <summary>Bytes of the log read at a time, from the end.</summary>
     public const int ChunkSize = 1 << 20;
 
+    /// <summary>The UTF-8 byte-order mark, dropped from the start of a line.</summary>
     static ReadOnlySpan<byte> Utf8Bom => [0xEF, 0xBB, 0xBF];
 
+    /// <summary>How each log line is parsed: deeper nesting than <see cref="JsonDocument"/> allows by default.</summary>
     // Python's json.loads allows nesting up to its recursion limit, about 1000; JsonDocument stops at 64 by default.
     static readonly JsonDocumentOptions Options = new() { MaxDepth = 1000 };
 
@@ -24,6 +26,8 @@ public static class TranscriptReader
     /// Throws on anything it cannot read, and on a record whose shape the script would also trip over: the caller
     /// treats every failure as "print nothing".
     /// </summary>
+    /// <param name="path">The session log, a file of one JSON record per line. It may be growing while it is read.</param>
+    /// <returns>The context size in tokens, or 0 when a compaction boundary is the latest thing in the log or no call is in it.</returns>
     public static long LastContext(string path)
     {
         // The log is being written by Claude Code while it is read: share it fully.
@@ -76,6 +80,9 @@ public static class TranscriptReader
         return 0;
     }
 
+    /// <summary>Joins the pieces of one line into a single buffer.</summary>
+    /// <param name="pieces">The pieces, the latest in the file first (the order <see cref="LastContext"/> collects them in).</param>
+    /// <returns>The line in file order; the one piece itself, uncopied, when there is only one.</returns>
     static ReadOnlyMemory<byte> Assemble(List<ReadOnlyMemory<byte>> pieces)
     {
         if (pieces.Count == 1)
@@ -132,6 +139,8 @@ public static class TranscriptReader
     static bool CouldBeRelevant(ReadOnlySpan<byte> line) =>
         line.IndexOf("assistant"u8) >= 0 || line.IndexOf("compact_boundary"u8) >= 0 || line.IndexOf("\\u"u8) >= 0;
 
+    /// <summary>Parses one log line as JSON the way Python's <c>json.loads</c> would, including its <c>NaN</c> and <c>Infinity</c>.</summary>
+    /// <returns>The document, or null when the line is not JSON (a cut last line, a blank one, junk). The caller disposes it.</returns>
     static JsonDocument? Parse(ReadOnlyMemory<byte> line)
     {
         try
@@ -204,6 +213,7 @@ public static class TranscriptReader
             + Tokens(usage, "cache_creation_input_tokens");
     }
 
+    /// <summary>The string under <paramref name="name"/>; null when it is missing or is not a string.</summary>
     static string? Text(JsonElement record, string name) =>
         record.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 

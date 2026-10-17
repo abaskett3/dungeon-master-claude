@@ -10,6 +10,12 @@ namespace Dmc.Digest;
 /// </summary>
 internal static class Digester
 {
+    /// <summary>Runs the subcommand the request names.</summary>
+    /// <param name="request">What to do, from <see cref="DigestArguments.Parse"/>.</param>
+    /// <param name="io">Standard output gets the table or the statistics.</param>
+    /// <returns>Always 0; a failure throws instead.</returns>
+    /// <exception cref="DmcException">The log folder is missing, or <c>show</c> matched no session that has a player message.</exception>
+    /// <exception cref="InvalidOperationException">The request names a subcommand that does not exist (a programming error).</exception>
     public static int Run(DigestRequest request, Io io)
     {
         switch (request.Command)
@@ -39,6 +45,8 @@ internal static class Digester
     }
 
     /// <summary>The sessions the request asks for, oldest first (by the time the log was last written).</summary>
+    /// <param name="request">Which sessions: by id prefix, by campaign touched, and by end date, each only if given; and which folder.</param>
+    /// <exception cref="DmcException">The log folder does not exist.</exception>
     static List<Session> Load(DigestRequest request)
     {
         string folder = string.IsNullOrEmpty(request.Logs) ? LogFolder.Default() : request.Logs;
@@ -63,6 +71,10 @@ internal static class Digester
         return sessions;
     }
 
+    /// <summary>
+    /// <c>list</c>: one row per session (short id, start and end, size in KB, player messages, peak context,
+    /// campaign, and the start of the first message), under a heading row.
+    /// </summary>
     static void List(DigestRequest request, Io io)
     {
         static string Row(string id, string start, string end, string kb, string messages, string peak, string campaign, string first) =>
@@ -80,6 +92,11 @@ internal static class Digester
         }
     }
 
+    /// <summary>
+    /// <c>show</c>: for each session that has player messages, writes <c>&lt;id&gt;-turns.txt</c> and
+    /// <c>&lt;id&gt;-transcript.md</c> to the output folder, then <c>stats.md</c> with every session's statistics,
+    /// which it also prints. Files from an earlier run with the same names are overwritten.
+    /// </summary>
     static void Show(DigestRequest request, Io io)
     {
         var sessions = Load(request).Where(s => s.Turns.Count > 0).ToList();

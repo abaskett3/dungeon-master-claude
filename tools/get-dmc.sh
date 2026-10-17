@@ -10,6 +10,20 @@
 #
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub. The
 # SHA-256 check still applies.
+#
+# Usage:     bash tools/get-dmc.sh        (no arguments; the working folder does not matter)
+# Inputs:    tools/dmc-release.json (the tag, and one SHA-256 for each platform); bin/dmc, to see which version is there.
+#            It needs curl (not with DMC_GET_TEST_ASSETS), tar, and sha256sum or shasum.
+# Outputs:   bin/dmc and the native libraries from the archive, beside it. Nothing is written outside bin/, and the
+#            temporary folder it works in (bin/.get-dmc.*) is removed on every exit.
+# Exit code: 0 when bin/dmc is the pinned release already, or has just been installed. 1 on any failure, with one line
+#            "get-dmc: <what went wrong>" on stderr (an unsupported system or processor, no pin, a download that fails
+#            or stalls, a hash that does not match, an archive that cannot be unpacked or whose dmc does not run).
+#            On Windows the exit code is that of get-dmc.ps1.
+#
+# It never installs an archive whose hash does not match the pin, never unpacks or runs anything from an archive before
+# the hash has matched, never downloads over plain HTTP, and never touches what is in bin/ until the new dmc has run.
+# It prints nothing when there is nothing to do.
 
 set -u
 

@@ -40,8 +40,10 @@ public static class DigestCases
             File.SetLastWriteTimeUtc(Path.Combine(logs, names[i]), new DateTime(2026, 1, 5, 12, 0, 0, DateTimeKind.Utc).AddMinutes(i));
     }
 
+    /// <summary>The usual working folder: "logs" holding the three made-up sessions of <see cref="DigestFixtures.WriteLogFolder"/>.</summary>
     static readonly Action<string> StandardLogs = Logs(WriteLogFolder);
 
+    /// <summary>A case that starts from a working folder made by <paramref name="seed"/>; there is no standard input.</summary>
     static CommandCase Case(string name, Action<string> seed, params string[] args) => new(name, _ => args, null, seed);
 
     // ---------- the cases that digest ----------
@@ -140,6 +142,7 @@ public static class DigestCases
         "{\"type\":\"assistant\",\"timestamp\":\"" + Stamp(minute) + "\",\"message\":{\"id\":" + id + ",\"model\":" + model
         + ",\"usage\":" + usage + ",\"content\":" + content + "}}";
 
+    /// <summary>One <c>tool_use</c> block as JSON text; like <see cref="Msg"/>, each field is given as JSON, so the id or name can be null or a number.</summary>
     static string ToolJson(string id, string name, string input) => "{\"type\":\"tool_use\",\"id\":" + id + ",\"name\":" + name + ",\"input\":" + input + "}";
 
     /// <summary>
@@ -203,6 +206,7 @@ public static class DigestCases
         File.WriteAllText(Path.Combine(logs, "0000bbbb-numbers.jsonl"), string.Join("\n", lines) + "\n", new UTF8Encoding(false));
     }
 
+    /// <summary>The inputs that digest successfully: <c>list</c> and <c>show</c> with every option spelling, and each odd log above.</summary>
     static IEnumerable<CommandCase> SameOutput()
     {
         yield return Case("list", StandardLogs, "list", "--logs", "logs");
@@ -298,6 +302,7 @@ public sealed class DigestCaseTests
             StringAssert.StartsWith(result.Stdout, "id ");
     });
 
+    /// <summary>Runs <c>dmc digest show</c> on the logs <paramref name="seed"/> makes and returns <c>stats.md</c>, with LF line endings.</summary>
     static string Stats(Action<string> seed)
     {
         string stats = "";

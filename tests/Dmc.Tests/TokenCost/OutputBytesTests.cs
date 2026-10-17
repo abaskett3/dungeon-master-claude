@@ -12,8 +12,12 @@ namespace Dmc.Tests.TokenCost;
 [TestClass]
 public sealed class OutputBytesTests
 {
+    /// <summary>The UTF-8 byte-order mark.</summary>
     static readonly byte[] Bom = [0xEF, 0xBB, 0xBF];
 
+    /// <summary>Asserts that captured output exists and does not start with a byte-order mark.</summary>
+    /// <param name="bytes">The raw bytes of a stream; null (a result from an in-process run) fails the test.</param>
+    /// <param name="what">The stream and command, for the failure message.</param>
     static void AssertNoBom(byte[]? bytes, string what)
     {
         Assert.IsNotNull(bytes, what);

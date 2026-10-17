@@ -24,6 +24,7 @@ public static class Bootstrap
         (OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux") + "-"
         + (RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64");
 
+    /// <summary>The file name of the program: <c>dmc.exe</c> on Windows, <c>dmc</c> elsewhere.</summary>
     public static string ExeName { get; } = OperatingSystem.IsWindows() ? "dmc.exe" : "dmc";
 
     /// <summary>The name of the archive of a release for a runtime identifier, as the release workflow names it.</summary>
@@ -38,8 +39,12 @@ public static class Bootstrap
     /// </summary>
     public sealed class ToolkitCopy : IDisposable
     {
+        /// <summary>The copy's folder, which the test may write into (the pin, <c>bin/</c>).</summary>
         public string Root { get; } = Path.Combine(Path.GetTempPath(), "dmc-bootstrap-" + Guid.NewGuid().ToString("N"));
 
+        /// <summary>Copies the scripts and writes the pin.</summary>
+        /// <param name="tag">The release the pin names; empty for a toolkit that pins none yet.</param>
+        /// <param name="sha256">The archive hashes in the pin, by archive name.</param>
         public ToolkitCopy(string tag, IReadOnlyDictionary<string, string> sha256)
         {
             Directory.CreateDirectory(Path.Combine(Root, "tools"));
@@ -50,10 +55,13 @@ public static class Bootstrap
                 $"{{\n  \"about\": \"test pin\",\n  \"tag\": \"{tag}\",\n  \"sha256\": {{\n{entries}\n  }}\n}}\n");
         }
 
+        /// <summary>Where get-dmc installs the program: <c>bin/</c> in the copy.</summary>
         public string Bin => Path.Combine(Root, "bin");
 
+        /// <summary>The installed program's path, which exists only once get-dmc has run.</summary>
         public string Exe => Path.Combine(Bin, ExeName);
 
+        /// <summary>Deletes the copy. A folder that cannot be deleted (still in use) is left behind without an error.</summary>
         public void Dispose()
         {
             try
@@ -70,6 +78,10 @@ public static class Bootstrap
     }
 
     /// <summary>A release of the published dmc: its tag and a folder holding its archive for this computer.</summary>
+    /// <param name="Tag">The release tag, <c>dmc-v9.9.9</c>.</param>
+    /// <param name="Version">The version the program prints.</param>
+    /// <param name="Assets">The folder holding the archive, named as the release workflow names it.</param>
+    /// <param name="Sha256">The archive's SHA-256, as the pin holds it.</param>
     public sealed record Release(string Tag, string Version, string Assets, string Sha256);
 
     /// <summary>The version the test release is built with. A build made here says 0.0.0-dev, which is never a release's.</summary>
@@ -89,8 +101,14 @@ public static class Bootstrap
     /// </summary>
     public static Release PublishedRelease() => _release.Value;
 
+    /// <summary>The release, built on first use and shared by every test in the run.</summary>
     static readonly Lazy<Release> _release = new(MakeRelease);
 
+    /// <summary>
+    /// Builds the release: gets the 9.9.9 program (from <c>DMC_TEST_RELEASE_DIR</c> or by publishing), checks its
+    /// version, and packs it with the stand-in file into an archive in a new folder. Its working folder is deleted; the
+    /// archive folder is left for the tests, and removed only if the build fails.
+    /// </summary>
     static Release MakeRelease()
     {
         string work = Path.Combine(Path.GetTempPath(), "dmc-release-build-" + Guid.NewGuid().ToString("N"));
@@ -160,6 +178,7 @@ public static class Bootstrap
         return Path.Combine(output, ExeName);
     }
 
+    /// <summary>Deletes a folder, and says nothing if it cannot (a file still in use).</summary>
     static void DeleteQuietly(string folder)
     {
         try
@@ -174,6 +193,7 @@ public static class Bootstrap
         }
     }
 
+    /// <summary>The SHA-256 of a file as lower-case hex, the form the pin holds.</summary>
     public static string Sha256(string file)
     {
         using var stream = File.OpenRead(file);
@@ -215,6 +235,7 @@ public static class Bootstrap
             .Where(dir => !HasClaude(dir))
             .Prepend(folder));
 
+    /// <summary>True when a PATH folder holds something named <c>claude</c> with any extension.</summary>
     static bool HasClaude(string dir)
     {
         try
@@ -277,6 +298,7 @@ public static class Bootstrap
         return found!;
     }
 
+    /// <summary>The full path of a program on the PATH, found the way <c>dmc play</c> finds Claude Code; null if absent.</summary>
     static string? Find(string name) =>
         PlayCommand.FindOnPath(name, Environment.GetEnvironmentVariable("PATH"), ".EXE", OperatingSystem.IsWindows());
 

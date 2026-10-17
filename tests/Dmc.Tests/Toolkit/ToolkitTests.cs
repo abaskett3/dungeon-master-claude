@@ -16,10 +16,13 @@ namespace Dmc.Tests.Toolkit;
 [TestClass]
 public sealed partial class ToolkitTests
 {
+    /// <summary>A file of the repository (path relative to the root) as text, with LF line endings.</summary>
     static string Read(string path) => File.ReadAllText(Path.Combine(TestEnv.Root, path)).Replace("\r\n", "\n");
 
+    /// <summary>One of the settings files in <c>.claude/</c>, parsed.</summary>
     static JsonNode Settings(string name) => JsonNode.Parse(Read(Path.Combine(".claude", name)))!;
 
+    /// <summary>The folder names under <c>.claude/skills</c>, in ordinal order: the skills' names.</summary>
     static string[] SkillNames() =>
         Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills")).Select(d => Path.GetFileName(d)!).Order(StringComparer.Ordinal).ToArray();
 
@@ -39,6 +42,7 @@ public sealed partial class ToolkitTests
                 new Regex("^" + Regex.Escape(m.Groups[2].Value).Replace(@"\*", ".*") + "$", RegexOptions.Singleline)))
             .ToArray();
 
+    /// <summary>A permission rule such as <c>Bash(./bin/dmc roll *)</c>: group 1 is the tool, group 2 the pattern.</summary>
     [GeneratedRegex(@"^(\w+)\((.*)\)$")]
     private static partial Regex Rule();
 
@@ -163,7 +167,18 @@ public sealed partial class ToolkitTests
         }
     }
 
-    enum BinDmc { Missing, Junk, Published }
+    /// <summary>What <c>bin/dmc</c> is in a test of the session-start hook.</summary>
+    enum BinDmc
+    {
+        /// <summary>There is no file.</summary>
+        Missing,
+
+        /// <summary>A file that is not a program.</summary>
+        Junk,
+
+        /// <summary>A copy of the published binary under test, which runs.</summary>
+        Published,
+    }
 
     [TestMethod]
     public void WithoutAWorkingBinDmcASessionIsToldOnceHowToGetIt()
@@ -270,6 +285,7 @@ public sealed partial class ToolkitTests
         CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "modules/.gitkeep", "rules/.gitkeep" },
             GitLsFiles(["adventures", "modules", "rules", "bin"]).Order(StringComparer.Ordinal).ToArray());
 
+    /// <summary>The files git tracks under these paths (<c>git ls-files</c>, from the repository root). The test is skipped, or fails on CI, outside a git checkout.</summary>
     static string[] GitLsFiles(string[] args)
     {
         TestEnv.Need(Directory.Exists(Path.Combine(TestEnv.Root, ".git")) || File.Exists(Path.Combine(TestEnv.Root, ".git")), "a git checkout");

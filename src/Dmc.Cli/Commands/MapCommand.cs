@@ -13,12 +13,16 @@ namespace Dmc.Commands;
 /// </remarks>
 public sealed class MapCommand(Action<string>? open = null) : ICommand
 {
+    /// <summary>Opens a URL in the browser for <c>--open</c>. <see cref="Browser.Open"/> in the real program; a test passes one that only records the URL.</summary>
     readonly Action<string> _open = open ?? Browser.Open;
 
+    /// <inheritdoc />
     public string Name => "map";
 
+    /// <inheritdoc />
     public string Summary => "draw a map for the player's browser: dmc map <map.json> [--png] [--open] [--measure A B]";
 
+    /// <summary>The text <c>--help</c> prints: usage, what is written, and what each option does.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
 usage: dmc map <map.json> [--png] [--open]
@@ -32,10 +36,26 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
   --measure  only print the distance between two cells, draw nothing
 """.Replace("\r\n", "\n");
 
+    /// <summary>The options <see cref="Argparse"/> recognises, and may be given as a unique prefix of.</summary>
     static readonly string[] Options = ["--help", "--png", "--open", "--measure"];
 
+    /// <summary>The command line, read.</summary>
+    /// <param name="Map">The map file; null only when <paramref name="Help"/> is set.</param>
+    /// <param name="Png">Whether <c>--png</c> was given.</param>
+    /// <param name="Open">Whether <c>--open</c> was given.</param>
+    /// <param name="Measure">The two cells after <c>--measure</c>, or null if it was not given.</param>
+    /// <param name="Help">Whether <c>--help</c> was given, which stops the reading at once.</param>
     sealed record Arguments(string? Map, bool Png, bool Open, string[]? Measure, bool Help);
 
+    /// <summary>
+    /// Checks the map file and, by default, writes <c>live.html</c> and <c>live-data.js</c> beside it and prints the
+    /// distances between the creatures; <c>--png</c> adds <c>live.png</c>, <c>--open</c> opens the page, and
+    /// <c>--measure</c> only prints the distance between two cells and writes nothing.
+    /// </summary>
+    /// <param name="args">The arguments after <c>map</c>.</param>
+    /// <param name="io">Standard output gets the report, or the help text.</param>
+    /// <returns>0 on success or <c>--help</c>.</returns>
+    /// <exception cref="DmcException">A usage mistake (exit code 2), or a map file that cannot be read or does not pass <see cref="MapChecker"/>.</exception>
     public int Run(string[] args, Io io)
     {
         var parsed = Parse(args);
@@ -78,6 +98,8 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
     }
 
     /// <summary>Read the arguments as <c>argparse</c> does, in order, with its messages.</summary>
+    /// <param name="args">The arguments after <c>map</c>.</param>
+    /// <exception cref="DmcException">A usage mistake, exit code 2: no map, an extra or unknown argument, <c>--measure</c> without two values, or a value given to a flag.</exception>
     static Arguments Parse(string[] args)
     {
         string? map = null;
@@ -140,5 +162,6 @@ creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
         return new Arguments(map, png, open, measure, Help: false);
     }
 
+    /// <summary>A usage mistake: <see cref="Argparse.Usage"/>.</summary>
     static DmcException Usage(string message) => Argparse.Usage(message);
 }

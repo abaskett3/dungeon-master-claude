@@ -32,8 +32,19 @@ public static class PdfExtractor
     /// <summary>The largest <c>--dpi</c> that is accepted: 1200 dpi is already 134 million pixels on a letter page.</summary>
     public const int MaxDpi = 1200;
 
+    /// <summary>UTF-8 with no byte-order mark, for the text files.</summary>
     static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>
+    /// Runs one request. The checks that can fail come first (the file, the PDF, the page list, the resolution, the
+    /// pages' sizes), so a failed run writes nothing; then <c>info</c> prints, <c>text</c> writes the text files, and
+    /// <c>render</c> writes the pictures (<c>all</c> does both).
+    /// </summary>
+    /// <param name="request">What to do.</param>
+    /// <param name="io">Standard output gets the report lines.</param>
+    /// <param name="libsslAvailable">For a test: whether OpenSSL is available. See <see cref="PdfFile.Open"/>.</param>
+    /// <returns>Always 0; a failure throws instead.</returns>
+    /// <exception cref="DmcException">The file is missing or unreadable, the page list is bad, or the resolution is out of range.</exception>
     public static int Run(PdfRequest request, Io io, Func<bool>? libsslAvailable = null)
     {
         if (!File.Exists(request.Pdf))
@@ -67,6 +78,10 @@ public static class PdfExtractor
     /// </summary>
     static string TextOf(PdfDocument document, int n) => TryText(document, n, out _);
 
+    /// <summary>The text of page <paramref name="n"/>, as <see cref="TextOf"/> gives it, and the loaded page.</summary>
+    /// <param name="document">The PDF.</param>
+    /// <param name="n">The page number, from 1.</param>
+    /// <param name="page">The page PdfPig loaded; null when loading or reading it failed.</param>
     static string TryText(PdfDocument document, int n, out Page? page)
     {
         page = null;
@@ -92,6 +107,14 @@ public static class PdfExtractor
         return sizes;
     }
 
+    /// <summary>
+    /// <c>info</c>: the page count, then a line for each page with its characters of text, images and size in inches,
+    /// then a list of the pages with less than <see cref="SparseText"/> characters.
+    /// </summary>
+    /// <param name="pdf">The PDF's path, for PDFium's page sizes when PdfPig cannot load a page.</param>
+    /// <param name="document">The PDF.</param>
+    /// <param name="pages">The pages to report, from 1.</param>
+    /// <param name="io">Standard output.</param>
     static void Info(string pdf, PdfDocument document, List<int> pages, Io io)
     {
         io.Out.WriteLine($"pages: {document.NumberOfPages}");
@@ -123,6 +146,14 @@ public static class PdfExtractor
             io.Out.WriteLine("little or no text (scan, map or art; look at the page image): " + string.Join(", ", sparse));
     }
 
+    /// <summary>
+    /// <c>text</c>: one file per page in <c>text/</c>, and, only when every page of the PDF was asked for,
+    /// <c>all-text.txt</c> with the pages one after another under "===== PDF PAGE N =====" lines.
+    /// </summary>
+    /// <param name="document">The PDF.</param>
+    /// <param name="pages">The pages to write, from 1.</param>
+    /// <param name="output">The output folder, created if needed.</param>
+    /// <param name="io">Standard output.</param>
     static void Text(PdfDocument document, List<int> pages, string output, Io io)
     {
         string textFolder = Path.Combine(output, "text");
@@ -141,6 +172,13 @@ public static class PdfExtractor
         io.Out.WriteLine($"text: {pages.Count} pages -> {textFolder}" + (whole ? $" and {all}" : ""));
     }
 
+    /// <summary><c>render</c>: one JPEG per page in <c>pages/</c>, drawn by PDFium at the requested resolution.</summary>
+    /// <param name="request">Gives the PDF's path and the resolution.</param>
+    /// <param name="pages">The pages to draw, from 1.</param>
+    /// <param name="sizes">PDFium's size of every page, in points, from <see cref="PageSizes"/>.</param>
+    /// <param name="output">The output folder, created if needed.</param>
+    /// <param name="io">Standard output.</param>
+    /// <exception cref="DmcException">A page could not be encoded as a JPEG.</exception>
     static void Render(PdfRequest request, List<int> pages, SizeF[] sizes, string output, Io io)
     {
         string pageFolder = Path.Combine(output, "pages");
@@ -177,8 +215,10 @@ public static class PdfExtractor
 
     /// <summary>
     /// The size of a page's picture as PyMuPDF makes it: the size in points at <paramref name="dpi"/>, rounded up (MuPDF's
-    /// <c>fz_round_rect</c> allows a thousandth of a pixel before it does).
+    /// <c>fz_round_rect</c> allows a thousandth of a pixel before it does). Never less than 1 pixel on a side.
     /// </summary>
+    /// <param name="points">The page's size in points (1/72 inch).</param>
+    /// <param name="dpi">The resolution.</param>
     public static (int Width, int Height) PixelSize(SizeF points, int dpi) =>
         (Math.Max(1, (int)Math.Ceiling(points.Width * dpi / 72.0 - 0.001)),
          Math.Max(1, (int)Math.Ceiling(points.Height * dpi / 72.0 - 0.001)));

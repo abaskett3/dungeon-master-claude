@@ -127,7 +127,10 @@ public sealed class DigestHelperTests
 [TestClass]
 public sealed class DigestParsingTests
 {
+    /// <summary>The temporary folder holding the log, made once for the whole class.</summary>
     static string _folder = "";
+
+    /// <summary>The session read from the made-up log <see cref="DigestFixtures.Records"/>.</summary>
     static Session _s = null!;
 
     [ClassInitialize]
@@ -141,6 +144,7 @@ public sealed class DigestParsingTests
     [ClassCleanup]
     public static void RemoveLog() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Asserts that a counter holds exactly these counts, whatever the order.</summary>
     static void AssertCounts(Dictionary<string, long> expected, Counter actual) =>
         CollectionAssert.AreEquivalent(expected, actual.ToDictionary());
 
@@ -289,7 +293,10 @@ public sealed class DigestParsingTests
 [TestClass]
 public sealed class DigestCallsPerMessageTests
 {
+    /// <summary>The temporary folder holding the log, made once for the whole class.</summary>
     static string _folder = "";
+
+    /// <summary>The session read from the made-up log <see cref="DigestFixtures.CallRecords"/>.</summary>
     static Session _s = null!;
 
     [ClassInitialize]
@@ -303,6 +310,7 @@ public sealed class DigestCallsPerMessageTests
     [ClassCleanup]
     public static void RemoveLog() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>The third-and-later calls of a turn as <c>class:context</c> pairs joined with ";".</summary>
     static string Extra(Turn turn) => string.Join(";", Report.ExtraCalls(turn).Select(c => $"{c.Class}:{c.Ctx}"));
 
     [TestMethod]
@@ -411,9 +419,12 @@ public sealed class DigestCallsPerMessageTests
 /// <summary>A folder made for one test and removed with it.</summary>
 public sealed class TempFolder : IDisposable
 {
+    /// <summary>The folder's full path.</summary>
     public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
 
+    /// <summary>Creates the folder.</summary>
     public TempFolder() => Directory.CreateDirectory(Path);
 
+    /// <summary>Deletes the folder and everything in it.</summary>
     public void Dispose() => Directory.Delete(Path, recursive: true);
 }

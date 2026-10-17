@@ -10,6 +10,7 @@ namespace Dmc.Tests.Pdf;
 // code of the CLI project in this process. "SystemExit" in the Python is a DmcException here. The CommandLine class is
 // in PdfCommandContract.cs.
 
+/// <summary>The <c>--pages</c> list (<see cref="PageRanges"/>), in this process: the default, ranges, spacing, sorting, and every error.</summary>
 [TestClass]
 public sealed class ParsePagesTests
 {
@@ -86,12 +87,14 @@ public sealed class ParsePagesTests
 [TestClass]
 public sealed class PageTextTests
 {
+    /// <summary>The text <see cref="PageText"/> makes of one page of a PDF given as bytes.</summary>
     static string TextOf(byte[] pdf, int page = 1)
     {
         using var document = PdfDocument.Open(pdf);
         return PageText.Of(document.GetPage(page));
     }
 
+    /// <summary>Glossary rows as the Pinebrook module has them: a word, dot leaders and the translation.</summary>
     static string[] DotLeaderRows { get; } =
     [
         "above .............................svern",
@@ -172,8 +175,10 @@ public sealed class PageTextTests
 [TestClass]
 public sealed class PdfFileTests
 {
+    /// <summary>The test's temporary folder, holding the PDFs it writes.</summary>
     string _folder = "";
 
+    /// <summary>Creates the temporary folder.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
@@ -184,6 +189,7 @@ public sealed class PdfFileTests
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Write a file in the temporary folder and return its path.</summary>
     string Write(string name, byte[] bytes)
     {
         string path = Path.Combine(_folder, name);

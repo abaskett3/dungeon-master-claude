@@ -9,17 +9,37 @@ namespace Dmc.Maps;
 /// </summary>
 public static class SvgDrawing
 {
-    public const int Cell = 40;      // pixels per cell
-    public const int Pad = 16;       // outer margin
-    public const int Gutter = 26;    // room for the coordinates along each edge
-    public const int Panel = 290;    // width of the legend panel beside the map
+    /// <summary>Pixels per cell.</summary>
+    public const int Cell = 40;
+
+    /// <summary>The outer margin, in pixels.</summary>
+    public const int Pad = 16;
+
+    /// <summary>Room for the coordinates along each edge, in pixels.</summary>
+    public const int Gutter = 26;
+
+    /// <summary>The width of the legend panel beside the map, in pixels.</summary>
+    public const int Panel = 290;
+
+    /// <summary>The font family of every text in the picture, and of the page around it.</summary>
     public const string Font = "Segoe UI, Helvetica, Arial, sans-serif";
 
+    /// <summary>The background colour of the picture and of the page.</summary>
     public const string PageBg = "#1e2227";
+
+    /// <summary>The main text colour.</summary>
     public const string Ink = "#e6e8eb";
+
+    /// <summary>The colour of secondary text: notes, coordinates, headings.</summary>
     public const string Muted = "#9aa3ad";
+
+    /// <summary>The default colour of a floor tile.</summary>
     const string FloorColor = "#ebe6d9";
+
+    /// <summary>The outline of a floor tile.</summary>
     const string GridLine = "#cbc4b3";
+
+    /// <summary>The default colour of a wall, and of a window's frame.</summary>
     const string WallColor = "#3b4149";
 
     /// <summary>Tokens sharing a cell: two across, so four fit in a 40 px cell.</summary>
@@ -31,17 +51,27 @@ public static class SvgDrawing
     /// <summary>When more share a cell, the last place is a "+N" badge.</summary>
     public const int ShownInACell = 4;
 
+    /// <summary>The colour of a kind of creature (<see cref="MapRules.Kinds"/>).</summary>
     static string Kinded(string kind) => MapRules.Kinds.First(k => k.Kind == kind).Color;
 
+    /// <summary>A whole number as an SVG attribute value.</summary>
     static string Num(int value) => value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>A number as Python's <c>str(float)</c> writes it, such as <c>8.5</c>, or <c>12.0</c> for a whole one.</summary>
     static string Num(double value) => Py.FloatRepr(value);
 
+    /// <summary>A coordinate or length with one decimal, as Python's <c>f"{value:.1f}"</c> writes it.</summary>
     static string F(double value) => Py.F1(value);
 
     // ---------- text ----------
 
-    /// <summary>Break text into lines of at most <paramref name="width"/> characters, on spaces.</summary>
+    /// <summary>
+    /// Break text into lines of at most <paramref name="width"/> characters, on spaces. A word longer than the width
+    /// gets a line to itself. Runs of whitespace become one space.
+    /// </summary>
+    /// <param name="text">The text to break.</param>
+    /// <param name="width">The most characters (code points) a line may hold.</param>
+    /// <returns>The lines; one empty line when the text has no words.</returns>
     public static List<string> Wrap(string text, int width)
     {
         var lines = new List<string>();
@@ -63,20 +93,36 @@ public static class SvgDrawing
         return lines.Count > 0 ? lines : [""];
     }
 
+    /// <summary>One <c>&lt;text&gt;</c> element, with <paramref name="content"/> escaped for HTML. The overloads below take the font size as a number.</summary>
+    /// <param name="x">The anchor's x position.</param>
+    /// <param name="y">The text's baseline.</param>
+    /// <param name="content">The text.</param>
+    /// <param name="size">The font size, already written as it goes into the attribute.</param>
+    /// <param name="fill">The colour.</param>
+    /// <param name="anchor"><c>start</c>, <c>middle</c> or <c>end</c>: which side of the text is at <paramref name="x"/>.</param>
+    /// <param name="weight"><c>normal</c> or <c>bold</c>.</param>
     static string Text(double x, double y, string content, string size, string fill = Ink, string anchor = "start",
         string weight = "normal") =>
         $"<text x=\"{F(x)}\" y=\"{F(y)}\" font-family=\"{Font}\" font-size=\"{size}\" fill=\"{fill}\" "
         + $"text-anchor=\"{anchor}\" font-weight=\"{weight}\">{Py.HtmlEscape(content)}</text>";
 
+    /// <summary><see cref="Text(double, double, string, string, string, string, string)"/> with a whole-number font size, written without a decimal point.</summary>
     static string Text(double x, double y, string content, int size, string fill = Ink, string anchor = "start",
         string weight = "normal") => Text(x, y, content, Num(size), fill, anchor, weight);
 
+    /// <summary><see cref="Text(double, double, string, string, string, string, string)"/> with a fractional font size, written as Python writes a float.</summary>
     static string Text(double x, double y, string content, double size, string fill = Ink, string anchor = "start",
         string weight = "normal") => Text(x, y, content, Num(size), fill, anchor, weight);
 
     // ---------- terrain ----------
 
     /// <summary>SVG for one cell of the given terrain with its top-left corner at x, y.</summary>
+    /// <param name="terrain">One of <see cref="MapRules.Terrains"/>; anything else is drawn as a <c>feature</c>.</param>
+    /// <param name="symbol">The grid symbol (a code point). A feature is drawn as a floor with this character on it.</param>
+    /// <param name="x">The left edge.</param>
+    /// <param name="y">The top edge.</param>
+    /// <param name="s">The side of the square: <see cref="Cell"/> on the map, smaller in the key.</param>
+    /// <param name="color">The legend entry's colour, which replaces the terrain's main one; null for the default.</param>
     public static string Tile(string terrain, int symbol, double x, double y, double s, string? color = null)
     {
         var @out = new StringBuilder();
@@ -181,6 +227,7 @@ public static class SvgDrawing
     /// or null for a token left out because the cell is crowded. A token that shares no cell has no entry.
     /// Badges is one entry for each crowded cell, drawn as "+N" in the last place.
     /// </summary>
+    /// <param name="tokens">Every creature on the map, in the order the file lists them (the order that decides who is shown and who is hidden).</param>
     public static (Dictionary<string, (double Dx, double Dy)?> Slots, List<(int Col, int Row, double Dx, double Dy, List<Token> Hidden)> Badges)
         SharedSlots(IReadOnlyList<Token> tokens)
     {
@@ -226,7 +273,14 @@ public static class SvgDrawing
         return (slots, badges);
     }
 
-    /// <summary>The "+N" that stands for the tokens that did not fit in a crowded cell.</summary>
+    /// <summary>The "+N" that stands for the tokens that did not fit in a crowded cell. Hovering it lists their names.</summary>
+    /// <param name="col">The crowded cell's column.</param>
+    /// <param name="row">The crowded cell's row.</param>
+    /// <param name="dx">The badge's x offset in pixels from the cell's left edge.</param>
+    /// <param name="dy">The badge's y offset in pixels from the cell's top edge.</param>
+    /// <param name="hidden">The creatures that are not drawn. The badge counts them.</param>
+    /// <param name="x0">The left edge of the grid.</param>
+    /// <param name="y0">The top edge of the grid.</param>
     static string DrawBadge(int col, int row, double dx, double dy, List<Token> hidden, int x0, int y0)
     {
         double cx = x0 + col * Cell + dx, cy = y0 + row * Cell + dy;
@@ -238,8 +292,14 @@ public static class SvgDrawing
 
     /// <summary>
     /// SVG for a creature. With <paramref name="legendScale"/>, a small sample at x0, y0. With
-    /// <paramref name="slot"/>, drawn small inside its cell, which it shares with others.
+    /// <paramref name="slot"/>, drawn small inside its cell, which it shares with others. Otherwise it fills the
+    /// cells it covers. A creature that is down is drawn faded with a line through it.
     /// </summary>
+    /// <param name="token">The creature.</param>
+    /// <param name="x0">The left edge of the grid, or the sample's centre when <paramref name="legendScale"/> is given.</param>
+    /// <param name="y0">The top edge of the grid, or the sample's centre when <paramref name="legendScale"/> is given.</param>
+    /// <param name="legendScale">The radius of the small sample drawn in the key; null to draw the creature on the map.</param>
+    /// <param name="slot">Where in its cell to draw it, in pixels from the cell's top-left corner, when the cell is shared (see <see cref="SharedSlots"/>); null to draw it across the cells it covers.</param>
     static string DrawToken(Token token, double x0, double y0, int? legendScale = null, (double Dx, double Dy)? slot = null)
     {
         string color = Kinded(token.Kind);
@@ -299,6 +359,12 @@ public static class SvgDrawing
 
     // ---------- the picture ----------
 
+    /// <summary>
+    /// The whole picture as one SVG document: the title and notes, the grid with its coordinates, edge captions,
+    /// labels and creatures, the scale bar and compass, and, to the right, the panel that lists the creatures and
+    /// the key to the symbols. Its size is worked out from the contents, in the units the PNG uses as pixels.
+    /// </summary>
+    /// <param name="m">A map that passed <see cref="MapChecker.Check"/>.</param>
     public static string Render(MapModel m)
     {
         int cols = m.Cols, rows = m.Rows;
@@ -487,5 +553,6 @@ public static class SvgDrawing
                + $"<rect width=\"100%\" height=\"100%\" fill=\"{PageBg}\"/>" + string.Concat(@out) + "</svg>";
     }
 
+    /// <summary>A whole number as Python's <c>f"{value:.0f}"</c> writes it (used for the picture's size).</summary>
     static string F0(double value) => Py.F0(value);
 }

@@ -28,15 +28,27 @@ public static class PyJson
         return reader.Document();
     }
 
+    /// <summary>
+    /// A recursive-descent reader over the code points of the text, ported from CPython's scanner. The methods that
+    /// scan a value take where it starts and give back, in <c>next</c>, where it ended.
+    /// </summary>
+    /// <param name="s">The text as code points (positions in error messages count code points, as Python's do).</param>
     sealed class Reader(int[] s)
     {
+        /// <summary>Raised where Python's scanner raises <c>StopIteration</c>: no value starts here. The document turns it into "Expecting value".</summary>
+        /// <param name="index">The position where the value was expected.</param>
         sealed class Stop(int index) : Exception
         {
+            /// <summary>The position where the value was expected.</summary>
             public int Index { get; } = index;
         }
 
+        /// <summary>How many objects and arrays are open at this point; limited by <see cref="MaxDepth"/>.</summary>
         int _depth;
 
+        /// <summary>Builds a syntax error whose text ends in Python's <c>line L column C (char P)</c>.</summary>
+        /// <param name="message">What was wrong, as Python words it.</param>
+        /// <param name="position">The code point index it was found at.</param>
         JsonDecodeError Error(string message, int position)
         {
             int line = 1, lineStart = -1;
@@ -51,6 +63,8 @@ public static class PyJson
             return new JsonDecodeError($"{message}: line {line} column {position - lineStart} (char {position})");
         }
 
+        /// <summary>The whole text as one value, with only whitespace around it. A byte-order mark is refused, as Python refuses one.</summary>
+        /// <exception cref="JsonDecodeError">The text is not one JSON value.</exception>
         public object? Document()
         {
             if (s.Length > 0 && s[0] == 0xFEFF)
@@ -71,8 +85,10 @@ public static class PyJson
             return value;
         }
 
+        /// <summary>JSON's four whitespace characters (not every Unicode space).</summary>
         static bool IsWhitespace(int c) => c is ' ' or '\t' or '\n' or '\r';
 
+        /// <summary>The position of the first non-whitespace code point at or after <paramref name="at"/>.</summary>
         int SkipWhitespace(int at)
         {
             while (at < s.Length && IsWhitespace(s[at]))
@@ -80,8 +96,10 @@ public static class PyJson
             return at;
         }
 
+        /// <summary>True when the code point at <paramref name="at"/> exists and is <paramref name="c"/>.</summary>
         bool Is(int at, char c) => at < s.Length && s[at] == c;
 
+        /// <summary>True when <paramref name="word"/> is written starting at <paramref name="at"/>.</summary>
         bool Matches(int at, string word)
         {
             if (at + word.Length > s.Length)
@@ -94,6 +112,10 @@ public static class PyJson
             return true;
         }
 
+        /// <summary>Reads one value of any kind starting at <paramref name="at"/>, which must not be whitespace.</summary>
+        /// <param name="at">Where the value starts.</param>
+        /// <param name="next">Where it ends: the position just after it.</param>
+        /// <exception cref="Stop">No value starts at <paramref name="at"/>.</exception>
         object? ScanOnce(int at, out int next)
         {
             if (at >= s.Length)
@@ -128,8 +150,16 @@ public static class PyJson
             return ScanNumber(at, out next);
         }
 
+        /// <summary>An ASCII digit; JSON numbers allow no others.</summary>
         static bool IsDigit(int c) => c is >= '0' and <= '9';
 
+        /// <summary>
+        /// Reads a number as CPython's scanner does. One with a fraction or an exponent is a <see cref="double"/>; any
+        /// other is a <see cref="long"/>, or a <see cref="BigInteger"/> when it does not fit.
+        /// </summary>
+        /// <param name="start">Where the number starts.</param>
+        /// <param name="next">The position just after it.</param>
+        /// <exception cref="Stop">What starts here is not a number.</exception>
         object? ScanNumber(int start, out int next)
         {
             int at = start;
@@ -184,6 +214,7 @@ public static class PyJson
             return whole >= long.MinValue && whole <= long.MaxValue ? (object)(long)whole : whole;
         }
 
+        /// <summary>The value of a hexadecimal digit, or -1 if it is not one.</summary>
         static int HexValue(int c) => c switch
         {
             >= '0' and <= '9' => c - '0',
@@ -192,6 +223,13 @@ public static class PyJson
             _ => -1,
         };
 
+        /// <summary>
+        /// Reads a string, resolving its escapes. A <c>\uXXXX</c> high surrogate followed by a low one becomes one code
+        /// point; a lone surrogate is kept, as Python keeps it.
+        /// </summary>
+        /// <param name="start">Where the text starts: just after the opening quote.</param>
+        /// <param name="next">The position just after the closing quote.</param>
+        /// <exception cref="JsonDecodeError">The string is unterminated, has a raw control character or has a bad escape.</exception>
         string ScanString(int start, out int next)
         {
             int begin = start - 1;
@@ -274,6 +312,9 @@ public static class PyJson
             }
         }
 
+        /// <summary>Reads an object. A repeated key keeps the later value in the first one's place.</summary>
+        /// <param name="start">Where the contents start: just after the "{".</param>
+        /// <param name="next">The position just after the "}".</param>
         PyDict ScanObject(int start, out int next)
         {
             Enter();
@@ -304,6 +345,9 @@ public static class PyJson
             return result;
         }
 
+        /// <summary>Reads an array.</summary>
+        /// <param name="start">Where the contents start: just after the "[".</param>
+        /// <param name="next">The position just after the "]".</param>
         List<object?> ScanArray(int start, out int next)
         {
             Enter();
@@ -327,6 +371,8 @@ public static class PyJson
             return result;
         }
 
+        /// <summary>Counts one more open object or array.</summary>
+        /// <exception cref="JsonDecodeError">The nesting is deeper than <see cref="MaxDepth"/>.</exception>
         void Enter()
         {
             if (++_depth > MaxDepth)
@@ -344,6 +390,8 @@ public static class PyJson
         return builder.ToString();
     }
 
+    /// <summary>Appends one JSON value to <paramref name="builder"/>.</summary>
+    /// <exception cref="InvalidOperationException">The value is not a JSON value (not null, bool, int, long, BigInteger, double, string, list or <see cref="PyDict"/>).</exception>
     static void Write(StringBuilder builder, object? value)
     {
         switch (value)
@@ -399,6 +447,7 @@ public static class PyJson
         }
     }
 
+    /// <summary>Appends a quoted string: the usual short escapes, then <c>\uXXXX</c> for everything outside printable ASCII (a character above U+FFFF as its surrogate pair).</summary>
     static void WriteString(StringBuilder builder, string text)
     {
         builder.Append('"');

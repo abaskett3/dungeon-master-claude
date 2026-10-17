@@ -10,13 +10,22 @@ namespace Dmc.Tests.Digest;
 /// </summary>
 public static class DigestFixtures
 {
+    /// <summary>The id, and so the file name, of the main made-up session.</summary>
     public const string SessionId = "abcd1234-0000-4000-8000-000000000000";
+
+    /// <summary>The DM's first line of narration in the main session.</summary>
     public const string Narration = "You stand in the goblin hall.";
+
+    /// <summary>A Windows path to <c>game-state.md</c> of the made-up campaign, as a log written on Windows holds it.</summary>
     public const string State = "D:\\dmc\\adventures\\silver-egg\\game-state.md";
+
+    /// <summary>A Bash command that rolls dice with the old script, which the digest must still class as a roll.</summary>
     public const string RollLine = "bash scripts/roll.sh 1d20+5";
 
+    /// <summary>A timestamp on 2026-01-02, at 10:<paramref name="minute"/>:00 UTC.</summary>
     public static string Stamp(int minute) => $"2026-01-02T10:{minute:00}:00.000Z";
 
+    /// <summary>A user record at this minute with this content (a string, or an array of blocks); <paramref name="extra"/> adds top-level fields such as <c>isMeta</c>.</summary>
     public static JsonObject User(int minute, JsonNode content, params (string Key, JsonNode Value)[] extra)
     {
         var record = new JsonObject
@@ -30,6 +39,14 @@ public static class DigestFixtures
         return record;
     }
 
+    /// <summary>An assistant record with the API message <paramref name="id"/> and these content blocks.</summary>
+    /// <param name="minute">When it was written.</param>
+    /// <param name="id">The API message id; records that repeat it are one call.</param>
+    /// <param name="content">The content blocks (see <see cref="Blocks"/>).</param>
+    /// <param name="fresh">Input tokens that were not cached.</param>
+    /// <param name="cached">Input tokens read from the cache.</param>
+    /// <param name="written">Input tokens written to the cache.</param>
+    /// <param name="output">Output tokens.</param>
     public static JsonObject Assistant(int minute, string id, JsonArray content, int fresh, int cached, int written, int output) => new()
     {
         ["type"] = "assistant",
@@ -50,8 +67,10 @@ public static class DigestFixtures
         },
     };
 
+    /// <summary>A <c>text</c> content block.</summary>
     public static JsonObject Text(string text) => new() { ["type"] = "text", ["text"] = text };
 
+    /// <summary>A <c>tool_use</c> block: the call's id, the tool's name, and its input as key and value pairs.</summary>
     public static JsonObject ToolUse(string id, string name, params (string Key, JsonNode Value)[] args)
     {
         var input = new JsonObject();
@@ -60,6 +79,7 @@ public static class DigestFixtures
         return new JsonObject { ["type"] = "tool_use", ["id"] = id, ["name"] = name, ["input"] = input };
     }
 
+    /// <summary>A <c>tool_result</c> block for the call with this id; <c>is_error</c> is set only when <paramref name="isError"/> is true.</summary>
     public static JsonObject ToolResult(string id, JsonNode content, bool isError = false)
     {
         var block = new JsonObject { ["type"] = "tool_result", ["tool_use_id"] = id, ["content"] = content };
@@ -68,6 +88,7 @@ public static class DigestFixtures
         return block;
     }
 
+    /// <summary>An array of content blocks.</summary>
     public static JsonArray Blocks(params JsonNode[] blocks) => new(blocks);
 
     /// <summary>One session: two player messages, a compaction between them, one failed edit.</summary>

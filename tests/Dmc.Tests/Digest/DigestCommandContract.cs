@@ -12,13 +12,19 @@ namespace Dmc.Tests.Digest;
 /// </summary>
 public abstract class DigestCommandContract
 {
+    /// <summary>The test's temporary working folder, which holds <see cref="_logs"/> and <see cref="_out"/>.</summary>
     string _folder = "";
+
+    /// <summary>The folder of made-up session logs, <c>logs</c> inside the working folder.</summary>
     string _logs = "";
+
+    /// <summary>The folder <c>show</c> writes to, <c>out</c> inside the working folder; created by the command.</summary>
     string _out = "";
 
     /// <summary>Run <c>dmc digest</c> with these arguments.</summary>
     protected abstract ProcessResult Digest(params string[] args);
 
+    /// <summary>Creates the working folder and fills <c>logs</c> with the three made-up sessions.</summary>
     [TestInitialize]
     public void MakeFolders()
     {
@@ -29,16 +35,20 @@ public abstract class DigestCommandContract
         WriteLogFolder(_logs);
     }
 
+    /// <summary>Deletes the working folder.</summary>
     [TestCleanup]
     public void RemoveFolders() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Run a subcommand (<c>list</c> or <c>show</c>) on the made-up logs, with these further arguments.</summary>
     ProcessResult Run(string command, params string[] args) => Digest([command, "--logs", _logs, .. args]);
 
     /// <summary>The Python test's <c>digest</c>: the logs and the output folder, then these arguments.</summary>
     ProcessResult DigestOf(params string[] args) => Run("show", ["--out", _out, .. args]);
 
+    /// <summary>The names of the files <c>show</c> wrote to the output folder, in ordinal order.</summary>
     string[] Listing() => Directory.GetFileSystemEntries(_out).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal).ToArray();
 
+    /// <summary>One file of the output folder, with LF line endings.</summary>
     string Read(string name) => File.ReadAllText(Path.Combine(_out, name)).Replace("\r\n", "\n");
 
     [TestMethod]
@@ -193,6 +203,7 @@ public abstract class DigestCommandContract
 [TestClass]
 public sealed class DigestInProcessTests : DigestCommandContract
 {
+    /// <summary>Runs <c>dmc digest</c> in this process.</summary>
     protected override ProcessResult Digest(params string[] args) => DmcRunner.InProcess(["digest", .. args]);
 }
 
@@ -200,5 +211,6 @@ public sealed class DigestInProcessTests : DigestCommandContract
 [TestClass]
 public sealed class DigestBlackBoxTests : DigestCommandContract
 {
+    /// <summary>Runs <c>dmc digest</c> as the published binary, in a subprocess.</summary>
     protected override ProcessResult Digest(params string[] args) => DmcRunner.BlackBox(["digest", .. args]);
 }

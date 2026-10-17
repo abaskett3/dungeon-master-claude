@@ -7,6 +7,7 @@ namespace Dmc.Tests.Roll;
 [TestClass]
 public sealed class RollInProcessTests : RollContract
 {
+    /// <summary>Runs <c>dmc roll</c> in this process.</summary>
     protected override ProcessResult Roll(params string[] exprs) => DmcRunner.InProcess(["roll", .. exprs]);
 }
 
@@ -14,6 +15,7 @@ public sealed class RollInProcessTests : RollContract
 [TestClass]
 public sealed class RollBlackBoxTests : RollContract
 {
+    /// <summary>Runs <c>dmc roll</c> as the published binary, in a subprocess.</summary>
     protected override ProcessResult Roll(params string[] exprs) => DmcRunner.BlackBox(["roll", .. exprs]);
 }
 
@@ -27,12 +29,17 @@ public sealed class DiceRollerTests
     /// <summary>Hands out the given 32-bit draws in order, as little-endian bytes.</summary>
     sealed class Scripted(params uint[] draws) : IRandomBytes
     {
+        /// <summary>The index of the next draw to hand out.</summary>
         int _next;
+
+        /// <summary>How many draws have been used so far.</summary>
         public int Drawn => _next;
 
+        /// <summary>Fills a 4-byte buffer with the next draw. Asking for more draws than were given fails the test with an index error.</summary>
         public void Fill(Span<byte> buffer) => BitConverter.TryWriteBytes(buffer, draws[_next++]);
     }
 
+    /// <summary>Rolls one expression with a <see cref="Scripted"/> source that gives these draws.</summary>
     static RollOutcome Roll(string expr, params uint[] draws) => new DiceRoller(new Scripted(draws)).Roll(expr);
 
     [TestMethod]
@@ -128,10 +135,17 @@ public sealed class DiceRollerTests
         Assert.IsFalse(Roll("a\nb\nc").Line.Contains((char)10));
     }
 
+    /// <summary>
+    /// A stream that counts bytes up (0, 1, 2, ... wrapping at 256) and records how many bytes each read asked for. The
+    /// members other than <c>Read</c> are only what a <see cref="Stream"/> needs: it cannot seek or be written.
+    /// </summary>
     // Item 8: dice are read from /dev/urandom in pools, like roll.sh, not one read per die.
     sealed class CountingStream : Stream
     {
+        /// <summary>The size of each read, in order.</summary>
         public List<int> Reads { get; } = [];
+
+        /// <summary>The number of bytes handed out so far, which is also the value of the next one before wrapping.</summary>
         long _position;
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -180,6 +194,7 @@ public sealed class DiceRollerTests
         Assert.AreEqual(2, e.ExitCode);
     }
 
+    /// <summary>A stream whose every read fails, as a source of random bytes that cannot be read does. The other members are only what a <see cref="Stream"/> needs.</summary>
     sealed class ThrowingStream : Stream
     {
         public override int Read(byte[] buffer, int offset, int count) => throw new IOException("no entropy");

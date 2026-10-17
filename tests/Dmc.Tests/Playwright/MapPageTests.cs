@@ -17,8 +17,10 @@ namespace Dmc.Tests.Playwright;
 [TestClass]
 public sealed class MapPageTests : PageTest
 {
+    /// <summary>The test's temporary working folder, holding the map files and the page <c>dmc map</c> draws.</summary>
     string _folder = "";
 
+    /// <summary>Launches Chromium once, to find out whether it is installed; the tests are skipped (on CI, failed) when it is not.</summary>
     [ClassInitialize]
     public static async Task BrowserIsInstalled(TestContext _)
     {
@@ -36,6 +38,7 @@ public sealed class MapPageTests : PageTest
             "Playwright's Chromium (run: pwsh tests/Dmc.Tests/bin/<configuration>/net10.0/playwright.ps1 install chromium; " + problem + ")");
     }
 
+    /// <summary>A large window, so the map and its panel are not squeezed.</summary>
     public override BrowserNewContextOptions ContextOptions() => new() { ViewportSize = new ViewportSize { Width = 1600, Height = 1200 } };
 
     [TestInitialize]
@@ -50,6 +53,7 @@ public sealed class MapPageTests : PageTest
     [TestCleanup]
     public void RemoveFolder() => Directory.Delete(_folder, recursive: true);
 
+    /// <summary>Runs the published <c>dmc map live.json</c> (plus these options) in the working folder, which must succeed, and returns the <c>file:///</c> address of <c>live.html</c>.</summary>
     string Draw(params string[] extra)
     {
         var result = DmcRunner.BlackBox(["map", "live.json", .. extra], cwd: _folder);

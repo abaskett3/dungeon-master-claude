@@ -4,6 +4,13 @@
     <RootNamespace>Dmc.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- The documentation file is built here too (see Directory.Build.props), so the compiler checks that every comment
+         is well formed: a param tag for every parameter or none, a cref that resolves. CS1591 (no comment on a visible
+         member) is the one check switched off, and only here. MSTest needs a test class and every test method to be
+         public, and a test method whose name says what it proves needs no comment, so the check would flag several
+         hundred members that are meant to have none. Test classes, helpers and fixtures are documented all the same;
+         that is kept by review, not by the compiler. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

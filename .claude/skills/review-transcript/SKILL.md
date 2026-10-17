@@ -22,7 +22,7 @@ A transcript that did not come from Claude Code (for example a chat export in a 
 ## 2. Build the digest
 
 ```
-./bin/dmc digest digest <id> [<id> ...]
+./bin/dmc digest show <id> [<id> ...]
 ```
 
 This writes to `adventures/.transcript-review/`:

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Dmc.Commands;
+using Dmc.Digest;
 using Dmc.Tests.Distribution;
 using Dmc.Tests.Support;
 
@@ -48,9 +49,19 @@ public sealed partial class ToolkitTests
     [GeneratedRegex(@"\./bin/dmc(?: [^`\n]*)?")]
     private static partial Regex DmcCommand();
 
-    /// <summary>A subcommand, as in <c>`dmc map`</c> or <c>./bin/dmc pdf info &lt;pdf&gt;</c> (in a code span or a code block).</summary>
-    [GeneratedRegex(@"(?:`|\./bin/)dmc ([a-z][a-z-]*)")]
+    /// <summary>
+    /// A subcommand, as in <c>`dmc map`</c> or <c>./bin/dmc pdf info &lt;pdf&gt;</c> (in a code span or a code block),
+    /// and the word after it, if that is a plain word.
+    /// </summary>
+    [GeneratedRegex(@"(?:`|\./bin/)dmc ([a-z][a-z-]*)(?: ([a-z][a-z-]*))?")]
     private static partial Regex Subcommand();
+
+    /// <summary>The subcommands of the commands that have their own, taken from the parsers.</summary>
+    static readonly Dictionary<string, string[]> Choices = new()
+    {
+        ["digest"] = DigestArguments.Commands,
+        ["pdf"] = PdfCommand.Commands,
+    };
 
     // ---------- the settings ----------
 
@@ -66,6 +77,8 @@ public sealed partial class ToolkitTests
             {
                 Assert.Contains(m.Groups[1].Value, known, $"{file} names `dmc {m.Groups[1].Value}`, which is not a dmc subcommand");
                 used.Add(m.Groups[1].Value);
+                if (Choices.TryGetValue(m.Groups[1].Value, out var choices) && m.Groups[2].Success)
+                    Assert.Contains(m.Groups[2].Value, choices, $"{file} names `dmc {m.Groups[1].Value} {m.Groups[2].Value}`, which is not one of: {string.Join(", ", choices)}");
             }
             foreach (string command in DmcCommand().Matches(text).Select(m => m.Value.TrimEnd()))
             {

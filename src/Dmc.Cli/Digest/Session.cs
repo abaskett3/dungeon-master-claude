@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Dmc.Maps;
+using Dmc.SessionLog;
 using static Dmc.Digest.DigestText;
 
 namespace Dmc.Digest;
@@ -445,10 +446,7 @@ internal sealed partial class Session
                 {
                     Lines.Add($"\n### COMPACTION SUMMARY {clock}\n{Cut(text, 4000)}");
                 }
-                else if (Py.Truthy(Get(rec, "isMeta"))
-                         || text.StartsWith("<local-command", StringComparison.Ordinal)
-                         || text.StartsWith("<command-name>", StringComparison.Ordinal)
-                         || text.StartsWith("<system-reminder>", StringComparison.Ordinal))
+                else if (Py.Truthy(Get(rec, "isMeta")) || UserText.IsInjected(text))
                 {
                     Lines.Add($"\n### (injected) {clock} {OneLine(text, 200)}");
                 }

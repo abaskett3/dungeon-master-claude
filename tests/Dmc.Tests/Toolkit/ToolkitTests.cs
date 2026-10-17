@@ -244,9 +244,11 @@ public sealed partial class ToolkitTests
 
         // With the published dmc: the reminder, from a log past the threshold.
         var due = RunHook(hook, BinDmc.Published, project => new JsonObject { ["transcript_path"] = Path.Combine(project, "session.jsonl") }.ToJsonString(),
-            project => File.WriteAllText(Path.Combine(project, "session.jsonl"), ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n"));
+            project => File.WriteAllText(Path.Combine(project, "session.jsonl"), ContextCheck.ContextCheckContract.Assistant(31000).ToJsonString() + "\n"
+                + ContextCheck.ContextCheckContract.User("go on").ToJsonString() + "\n"
+                + ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n"));
         Assert.AreEqual(0, due.ExitCode, due.ToString());
-        StringAssert.StartsWith(due.Stdout, "Context 163k, break due since 150k", due.ToString());
+        StringAssert.StartsWith(due.Stdout, "Context 163k is large, break due since 150k", due.ToString());
     }
 
     [TestMethod]

@@ -16,6 +16,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
+| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. The first play test's findings became issue #35. |
+| Break alert relative to the resume, issue #35 part 1 | Done, in the next release | `dmc context-check` starts its bands at the larger of 150,000 and the post-resume baseline plus 40,000; wording says the context is large. Changes the binary, so it ships in the release after 0.1.2. |
+| Lighter resume, issue #35 part 2 | Next | Prompts only: search a large `canon.md`, read the tail of the session log, sheets of those present only. |
 | `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | `play.ps1` exits with a real code when `claude` cannot be started, issue #28 (PR #31) | Done (PR #31) | Launcher only, so it needs no release. |
 | `dmc digest` refuses a log with a bad token count as one error naming the file and line, issue #29 (PR #32) | Done (PR #32) | Changes the binary; ships in the next release, 0.1.3. |

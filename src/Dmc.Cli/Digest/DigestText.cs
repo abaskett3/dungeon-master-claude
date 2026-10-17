@@ -163,7 +163,9 @@ internal static partial class DigestText
 
     /// <summary>
     /// Python's <c>"%d" % number</c>: a whole number as it is, a float cut towards zero. Python refuses <c>nan</c> and
-    /// <c>inf</c> (ValueError, OverflowError), and so does this, in one line.
+    /// <c>inf</c> (ValueError, OverflowError), and so does this, in one line. <see cref="Session"/> refuses a log whose token
+    /// counts are not finite when it reads the record, so a count from a log reaches here finite; this is the guard for
+    /// anything computed from them that is not (a sum or a difference that overflows).
     /// </summary>
     public static string Whole(double number)
     {

@@ -16,6 +16,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
+| `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
+| `play.ps1` exits with a real code when `claude` cannot be started, issue #28 (PR #31) | Done (PR #31) | Launcher only, so it needs no release. |
+| `dmc digest` refuses a log with a bad token count as one error naming the file and line, issue #29 (PR #32) | Done (PR #32) | Changes the binary; ships in the next release, 0.1.3. |
 | No deleting or moving campaign files in play, issue #36 (PR #38) | Done | A clause in `CLAUDE.md` § Saving as you go, deny rules for shell deletes and moves in `.claude/play-settings.json`, and a toolkit test. Not a complete block; see [decisions.md](decisions.md). |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
@@ -49,6 +52,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
+- **PR #31:** `play.ps1` no longer exits with a stale code when `claude` is missing or cannot run: 127 if it is not found, 1 with a message if it cannot be started (issue #28).
+- **PR #32:** `dmc digest` checks token counts as it reads each record, so a `NaN`, an `Infinity` or a text `output_tokens` is reported with its file and line by `list` and `show` alike, before any output (issue #29).
 - **PR #38:** issue #36, `CLAUDE.md` forbids deleting or moving a file under `adventures/` unless the player asks, `play-settings.json` denies `rm`, `mv`, `Remove-Item`, `Move-Item`, `git clean`, `find -delete` and their aliases, and `rewind-campaign` lists stale maps for the player to delete instead of deleting them. Closes issue #36.
 
 ## Next: issue #6

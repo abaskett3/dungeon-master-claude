@@ -205,7 +205,8 @@ Git ignores `adventures/`, `modules/` and `rules/`, so the toolkit can be shared
 | `get-dmc: the dmc of dmc-vX does not run on this computer, ...` | The program downloaded but cannot run here, for example on a Linux older than glibc 2.34. |
 | `get-dmc: dmc is not built for Intel Macs: ...` or `... not built for <system>` | This system is not supported. Play works without `dmc`, but with no dice roller, maps or PDF reading. |
 | `get-dmc: no dmc release is pinned yet ...` | The toolkit folder is from before the first release. Update it. |
-| `dmc play: Claude Code (claude) is not on the PATH: ...` | Install Claude Code, or open a new terminal after installing it. |
+| `dmc play: Claude Code (claude) is not on the PATH: ...`, or `play: Claude Code (claude) is not on the PATH: ...` from `./play.ps1` | Install Claude Code, or open a new terminal after installing it. The launchers exit with code 127 in this case. |
+| `play: Claude Code could not be started: ...` (`./play.ps1`) | `claude` was found but would not run: blocked by security software or SmartScreen, damaged, or an npm shim that failed. The reason follows the colon. Reinstall Claude Code, or unblock it. The launcher exits with code 1. |
 | `dmc play: only ...claude.cmd was found, ...` (Windows) | Only npm's command shim was found, without its PowerShell script. Install Claude Code's own `claude.exe`, or start with `./play.ps1`. |
 | The map tab did not open, or stopped updating | Open `adventures/<campaign>/maps/live.html` in your browser yourself. It refreshes itself while DMC redraws. |
 | `This PDF is password-protected. ...` | Give DMC an unlocked copy. |

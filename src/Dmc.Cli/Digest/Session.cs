@@ -164,7 +164,10 @@ internal sealed partial class Session
     /// <summary>The campaign named most often in the log (the first one named if two tie), or "-".</summary>
     public string Campaign() => Campaigns.IsEmpty ? "-" : Campaigns.MostCommon(1)[0].Key.Display;
 
-    /// <summary>The token counts summed over the calls. (A count that is not a number stops the script here, and so it does dmc.)</summary>
+    /// <summary>
+    /// The token counts summed over the calls. (A count that is not a number stops the script here; dmc has already refused
+    /// such a log when it read the record, so every count summed here is a finite number.)
+    /// </summary>
     public Usage Tokens()
     {
         double input = 0, output = 0, cacheRead = 0, cacheCreation = 0;
@@ -268,10 +271,27 @@ internal sealed partial class Session
         }
     }
 
+    /// <summary>The message of the shape error for a token count that is NaN or infinite (a log can spell both), or a sum of counts that overflows.</summary>
+    const string NotFinite = "a token count that is not a finite number";
+
+    /// <summary>
+    /// One token count of a <c>usage</c> object, 0 when missing: <see cref="DigestText.Number"/>, and finite. A count that
+    /// is NaN or infinite would make Python's <c>"%d"</c> fail in the statistics, so it is refused where it is read.
+    /// </summary>
+    /// <param name="usage">The <c>usage</c> object of an assistant message.</param>
+    /// <param name="key">The count's name, such as <c>output_tokens</c>.</param>
+    /// <exception cref="LogShapeException">The count is not a number (<c>"output_tokens" is not a number</c>), or is NaN or infinite.</exception>
+    static double Count(PyDict usage, string key)
+    {
+        double count = Number(usage, key);
+        return double.IsFinite(count) ? count : throw new LogShapeException(NotFinite);
+    }
+
     /// <summary>
     /// An assistant record: notes the API call (once per message id), writes the DM's text to the transcript and hands
-    /// each tool call to <see cref="ToolUse"/>.
+    /// each tool call to <see cref="ToolUse"/>. Checks that its token counts are finite numbers (see <see cref="Count"/>).
     /// </summary>
+    /// <exception cref="LogShapeException">A token count is not a finite number, or a content block has the wrong shape.</exception>
     /// <param name="msg">The record's <c>message</c>.</param>
     /// <param name="clock">The time of day of the record.</param>
     /// <param name="toolOf">Tool calls seen so far, by id, for matching their results.</param>
@@ -281,7 +301,12 @@ internal sealed partial class Session
     double Assistant(PyDict msg, string clock, Dictionary<PyKey, ToolInfo> toolOf, Dictionary<PyKey, Call> callOf, HashSet<PyKey> seenIds)
     {
         PyDict usage = DictOrEmpty(msg, "usage");
-        double ctxNow = Number(usage, "input_tokens") + Number(usage, "cache_read_input_tokens") + Number(usage, "cache_creation_input_tokens");
+        // Every count the statistics add up or print is checked here, in the record that holds it, so a bad one is reported
+        // with its line, by the same catch as every other shape error, whichever command reads the log.
+        double ctxNow = Count(usage, "input_tokens") + Count(usage, "cache_read_input_tokens") + Count(usage, "cache_creation_input_tokens");
+        if (!double.IsFinite(ctxNow))
+            throw new LogShapeException(NotFinite);
+        Count(usage, "output_tokens");
         var mid = PyKey.Of(Get(msg, "id"));
         Calls[mid] = usage;
         if (seenIds.Add(mid))

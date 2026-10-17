@@ -1,11 +1,11 @@
 {
   "about": "The dmc release that tools/get-dmc.ps1 and tools/get-dmc.sh install into bin/. Written by .github/workflows/release.yml, one key per line (get-dmc.sh reads it without a JSON parser). An empty tag means no release yet: the launchers then start Claude Code themselves.",
-  "tag": "dmc-v0.1.2",
+  "tag": "dmc-v0.1.3",
   "sha256": {
-    "win-x64": "4816d2434120a65f734c13ecf665227468948793476b41386df3a5f9db2c385f",
-    "win-arm64": "efb36fb3d5c2ff28207a1c0e7a786eccbba34013be84c98396023b648057f6fd",
-    "linux-x64": "501c6254e62359a3ecf308febac45c06dae48daaf0fddb8ce0d8bb2f25989d3b",
-    "linux-arm64": "0c300290abc5475c74a7275cc3b1a7433a743e7bd76b1af22e462878c3f1d407",
-    "osx-arm64": "421294e47d552d2e99067a91467c39e845008867f7af9329969cc04b0315a592"
+    "win-x64": "ea4d17fc1b68e8ca9219d03151c2822873215042b8566c52ef642ff4e79651bf",
+    "win-arm64": "20901ee4ca7bf7a484483b156b78fbc99ad8ad03dc474751273c88c36b09176d",
+    "linux-x64": "e3837f007e584bda680edc95766df48fd0b43b4e33cdd36dd77a158b3a5c66b5",
+    "linux-arm64": "605b162588753b54928c547ec6ede246c94881e6b0d89b3121b7a2e8ed544d0d",
+    "osx-arm64": "fafd0d4293d9e9234436860196bc4901c3dcbfd2cd03d94fd0a9ec4b48a60443"
   }
 }

@@ -310,12 +310,18 @@ public sealed partial class ToolkitTests
         }
     }
 
+    /// <summary>
+    /// Every path the prompts name under <c>templates/</c>, <c>tools/</c>, <c>.claude/skills/</c> or <c>.docs/</c> exists,
+    /// so DMC is never sent to a file that is not there. A bare folder (<c>.docs/</c>) counts as a path too.
+    /// <c>.docs/</c> is included because CLAUDE.md's documentation rule sends every change to the product documents
+    /// there, by name (<c>.docs/roadmap.md</c>, <c>.docs/decisions.md</c>).
+    /// </summary>
     [TestMethod]
     public void PathsNamedInThePromptsExist()
     {
         foreach (string file in PromptFiles())
         {
-            foreach (Match m in Regex.Matches(Read(file), @"(?<![\w/.-])(?:templates|tools|\.claude/skills)/[A-Za-z0-9_./-]+"))
+            foreach (Match m in Regex.Matches(Read(file), @"(?<![\w/.-])(?:templates|tools|\.claude/skills|\.docs)/[A-Za-z0-9_./-]*"))
             {
                 string named = m.Value.TrimEnd('.', '/');
                 Assert.IsTrue(Path.Exists(Path.Combine(TestEnv.Root, named)), $"{file} points at {named}, which does not exist");

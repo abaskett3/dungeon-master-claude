@@ -13,6 +13,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |
+| `dmc digest` reports a log it cannot total as a one-line error naming the file, and writes nothing, issue #29 | Fixed in its pull request | Changes the binary; ships in the next release, 0.1.3. |
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |

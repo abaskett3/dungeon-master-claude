@@ -165,6 +165,7 @@ internal sealed partial class Session
     public string Campaign() => Campaigns.IsEmpty ? "-" : Campaigns.MostCommon(1)[0].Key.Display;
 
     /// <summary>The token counts summed over the calls. (A count that is not a number stops the script here, and so it does dmc.)</summary>
+    /// <exception cref="LogShapeException">A count is not a number. Called after reading, so it is not a <see cref="DmcException"/> yet: <c>Digester.Reporting</c> turns it into one that names the file.</exception>
     public Usage Tokens()
     {
         double input = 0, output = 0, cacheRead = 0, cacheCreation = 0;

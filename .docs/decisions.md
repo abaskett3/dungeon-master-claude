@@ -79,6 +79,13 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The repeated word read badly, and the user asked for it to go. It needed a new release (0.1.1), since the skill calls the new name.
 - **Source:** PR #18.
 
+## A log that cannot be reported on stops the whole digest, before any output
+
+- **Date:** 2026-10-17
+- **Decision:** In `dmc digest`, a log whose shape fails only when its figures are worked out (a token count that is `NaN` or infinite, or an `output_tokens` that is not a number) is reported as a `DmcException`, `<file>.jsonl: <message>`, exit 1, in the form of the "not valid UTF-8" error (no line number: the problem is in a sum, not on a line). It stops the whole run rather than skipping that session, and nothing is printed or written first: `list` builds every row before printing the heading, and `show` builds every file's text before creating the output folder.
+- **Reason:** `Session` already stops the run for a bad log it finds while reading, so a bad log meant the same thing whichever moment found it. Skipping a session instead would mean `stats.md` silently lacks it, and the `review-transcript` skill would read a review that looks complete. Building everything in memory first costs nothing (the transcripts are already in memory) and removes the other fault, the files of earlier sessions left behind by a run that then failed. Reporting at one place, `Digester.Reporting`, covers every route into the figures, where catching only the non-finite count in `DigestText.Whole` would have left the text `output_tokens` case, and `list`, as unexpected failures.
+- **Source:** Issue #29.
+
 ## Combat procedure rules from issue #6, Phase 1
 
 - **Date:** 2026-10-17

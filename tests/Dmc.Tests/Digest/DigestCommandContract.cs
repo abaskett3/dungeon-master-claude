@@ -136,6 +136,33 @@ public abstract class DigestCommandContract
         StringAssert.Contains(result.Stderr, "No session logs found");
     }
 
+    /// <summary>
+    /// A token count of NaN (which Python's JSON writes and reads) is a bad log like any other: one line naming the file,
+    /// exit 1, and, because it is the newest log and so comes after the good ones, nothing printed or written before it.
+    /// It was once an unexpected failure ending in <c>(LogShapeException)</c>, with the earlier sessions' files already written.
+    /// </summary>
+    [TestMethod]
+    public void ALogWithATokenCountThatIsNotAFiniteNumberIsReportedByName()
+    {
+        string bad = "dddd5555-bad.jsonl";
+        File.WriteAllText(Path.Combine(_logs, bad),
+            User(0, "hello").ToJsonString() + "\n"
+            + "{\"type\":\"assistant\",\"timestamp\":\"2026-01-04T10:01:00.000Z\",\"message\":{\"id\":\"m\",\"usage\":{\"input_tokens\":NaN}}}\n");
+        File.SetLastWriteTimeUtc(Path.Combine(_logs, bad), DateTime.UtcNow.AddDays(1));
+        const string expected = "dmc digest: dddd5555-bad.jsonl: a token count that is not a finite number\n";
+
+        var shown = DigestOf();
+        Assert.AreEqual(1, shown.ExitCode, shown.ToString());
+        Assert.AreEqual(expected, shown.Stderr);
+        Assert.AreEqual("", shown.Stdout);
+        Assert.IsFalse(Directory.Exists(_out), "show writes nothing when a log is bad");
+
+        var listed = Run("list");
+        Assert.AreEqual(1, listed.ExitCode, listed.ToString());
+        Assert.AreEqual(expected, listed.Stderr);
+        Assert.AreEqual("", listed.Stdout, "list prints no heading or rows when a log is bad");
+    }
+
     [TestMethod]
     public void NonAsciiTextSurvives()
     {

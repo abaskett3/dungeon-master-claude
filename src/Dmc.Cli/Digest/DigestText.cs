@@ -7,8 +7,10 @@ namespace Dmc.Digest;
 
 /// <summary>
 /// A record in a session log that is not shaped the way Claude Code writes it (a message that is a number, a tool
-/// call's input that is a list). The script would stop on it with a traceback; <see cref="Session"/> turns this into
-/// one line that names the file and the line.
+/// call's input that is a list, a token count that is not a finite number). The script would stop on it with a traceback.
+/// Nothing is allowed to escape as this type: <see cref="Session"/> turns one found while reading into one line that names
+/// the file and the line, and <c>Digester.Reporting</c> turns one found while the figures are worked out into one line that
+/// names the file.
 /// </summary>
 internal sealed class LogShapeException(string message) : Exception(message);
 
@@ -165,6 +167,8 @@ internal static partial class DigestText
     /// Python's <c>"%d" % number</c>: a whole number as it is, a float cut towards zero. Python refuses <c>nan</c> and
     /// <c>inf</c> (ValueError, OverflowError), and so does this, in one line.
     /// </summary>
+    /// <param name="number">A token count or a sum of them.</param>
+    /// <exception cref="LogShapeException">The number is NaN or infinite. The caller turns it into a <see cref="DmcException"/> that names the log (<see cref="Session"/> while reading, <c>Digester.Reporting</c> afterwards).</exception>
     public static string Whole(double number)
     {
         if (!double.IsFinite(number))

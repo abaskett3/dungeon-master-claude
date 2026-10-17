@@ -18,6 +18,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. The first play test's findings became issue #35. |
 | Lighter resume, issue #35 part 2 | Done | Prompts and templates only: canon past about 230 lines is read as its always-read sections plus a search, the session log is read from its tail (whole after an unsaved session), sheets are limited to the PCs, the companions and those present, and every full save splits and counts canon. Closes issue #35 together with the break alert change (part 1, which ships in the release after 0.1.2). |
+| `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -49,6 +50,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #33:** `dmc pdf` writes into a staging folder inside the output folder and moves the files into place only when the whole run has succeeded; a page too big for a JPEG is refused up front (issue #30).
 
 ## Next: issue #6
 

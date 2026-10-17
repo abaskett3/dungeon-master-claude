@@ -111,7 +111,7 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull requests" bullets) requires every change to update its documentation in the same PR; a PR that leaves it stale is not finished:
 
-- **in code**, an XML doc comment on every type and member the change adds or changes, private ones included (the build catches only missing public ones), and a header comment on every script and workflow it adds or changes;
+- **in code**, an XML doc comment on every type and member the change adds or changes, private ones included (the build catches only missing public ones, from PR #24), and a header comment on every script and workflow it adds or changes;
 - **in `.docs/`**, the documents that describe what changed, including [roadmap.md](roadmap.md) for status and [decisions.md](decisions.md) for any decision and its reason. A change to `CLAUDE.md`, a skill or a template changes how the product behaves, so it counts;
 - **in the PR description**, which documents changed, or why none needed to.
 

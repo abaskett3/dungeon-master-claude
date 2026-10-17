@@ -40,35 +40,38 @@ The player talks only to Claude Code. Claude Code, following `CLAUDE.md` and the
 
 ## Starting a session
 
-1. The player runs a launcher. If `tools/dmc-release.json` pins a tag, the launcher runs `get-dmc`, which does nothing when `bin/dmc --version` already prints the pinned version, and otherwise downloads `<tag>-<rid>.zip` or `.tar.gz` from the GitHub Release, checks its SHA-256, checks that the new program runs and prints that version, and only then moves it into `bin/`.
-2. If `bin/dmc --version` runs, the launcher hands over to `bin/dmc play`, which starts `claude --model sonnet --effort high --settings .claude/play-settings.json` plus the player's arguments, from the toolkit root, and waits. Otherwise the launcher prints one line and starts that same `claude` command itself.
-3. Claude Code loads `CLAUDE.md`, `.claude/settings.json` and the play settings. The `SessionStart` hook runs `"$CLAUDE_PROJECT_DIR/bin/dmc" --version`; if that fails it prints one line telling DMC to run `get-dmc` before the first roll, and otherwise prints nothing.
-4. Following `CLAUDE.md` § Starting a session, DMC finds the active campaign (`adventures/.active-campaign`) and runs the `resume-campaign` skill: it reads the player options, `game-state.md`, the summary, the DM notes, the sheets of the party, the latest session log and the canon, checks them against each other, and recaps.
+1. The player runs a launcher. If `tools/dmc-release.json` pins no tag (an empty tag, or no readable file), the launcher neither runs `get-dmc` nor looks at `bin/dmc`: it prints nothing and starts `claude --model sonnet --effort high --settings .claude/play-settings.json` plus the player's arguments itself.
+2. If the pin names a tag, the launcher runs `get-dmc`, which does nothing when `bin/dmc --version` already prints the pinned version, and otherwise downloads `<tag>-<rid>.zip` or `.tar.gz` from the GitHub Release, checks its SHA-256, checks that the new program runs and prints that version, and only then moves it into `bin/`.
+3. Then, if `bin/dmc --version` runs, the launcher hands over to `bin/dmc play`, which starts that same `claude` command from the toolkit root and waits. If it does not run, the launcher prints one line saying `dmc` is not available and starts the `claude` command itself.
+4. Claude Code loads `CLAUDE.md`, `.claude/settings.json` and the play settings. The `SessionStart` hook runs `"$CLAUDE_PROJECT_DIR/bin/dmc" --version`; if that fails it prints one line telling DMC to run `get-dmc` before the first roll, and otherwise prints nothing.
+5. Following `CLAUDE.md` § Starting a session, DMC finds the active campaign (`adventures/.active-campaign`) and runs the `resume-campaign` skill: it reads the player options, `game-state.md`, the summary, the DM notes, the sheets of the party, the latest session log and the canon, checks them against each other, and recaps.
 
 ## A turn of play
 
 1. The player sends a message. The play settings' `UserPromptSubmit` hook runs `"$CLAUDE_PROJECT_DIR/bin/dmc" context-check 2>/dev/null || true`. Claude Code passes it a JSON object naming the session's log; `dmc` reads the log from the end, finds the latest context size and, from 150,000 tokens on, prints one line that Claude Code adds to DMC's context. Below that, and on any error, it prints nothing and exits 0, so it can never block a prompt.
 2. DMC checks the files for anything it is about to state (`CLAUDE.md` § Accuracy and consistency): names and facts in `story/canon.md`, current numbers in `game-state.md`, enemy counts in the Opposition table of `story/dm-notes.md`.
 3. If the player must roll, DMC asks in dice notation and stops. If DMC rolls, it runs `./bin/dmc roll` and shows the line.
-4. DMC writes what changed before narrating the next beat: one edit to `game-state.md` per reply (in a fight, one edit that replaces the whole tracker block), one line in `canon.md` per new fact, the character sheet if an item or relationship changed.
+4. DMC writes what changed before narrating the next beat (`CLAUDE.md` § Saving as you go): any change to the present moment goes into `game-state.md`, each new fact gets one line in `canon.md`, and the character sheet changes if an item or relationship did. In a fight, the combat tracker is brought up to date once per reply, with a single edit that replaces the whole tracker block.
 5. In a fight, when someone moves, the order is fixed by `CLAUDE.md` § Maps: roll; update `game-state.md` and `maps/live.json`; get any distance to be stated from `./bin/dmc map <live.json> --measure A B`, which draws nothing; narrate; run `./bin/dmc map` last. The browser picture changes only when a full `dmc map` run rewrites `live-data.js` (the page polls it every two seconds), so drawing last means the map never shows a move before the text has described it.
 6. At the end of a scene DMC appends its beats to `story/sessions/session-NNN.md`.
 
 ## A full save
 
-`/campaign-full-save` (the `campaign-full-save` skill) is the step that makes a fresh session safe:
+`/campaign-full-save` (the `campaign-full-save` skill) is the step that makes a fresh session safe. Its steps, with the skill's own numbers:
 
-1. `game-state.md` is brought to this exact moment, fight included (`update-game-state`).
-2. Every character who appeared gets their sheet updated (`character-sheet-update`); bit parts go into `minor-npcs.md`.
-3. Unwritten scenes are appended to the session log.
-4. Missed facts go into `canon.md`, which is then pruned; past about 230 lines, facts whose subject can no longer come up move to `canon-archive.md`.
-5. `dm-notes.md` is updated, including the Opposition table; closed threads move to `dm-notes-archive.md`.
-6. `module-progress.md`, if present, is brought up to date.
-7. `summary.md` is rewritten, under about 600 words.
-8. Every file the save changed, and every party sheet, is read again in one batch and checked against the others: HP, resources, inventory, location, time, quests, spellings.
-9. The "Last full save" line is stamped. For a planned break, a line under Pending tells the next resume to restate the immediate situation only.
+| Step | What happens |
+|---|---|
+| 1. Game state | `game-state.md` is brought to this exact moment, fight included (`update-game-state`). |
+| 2. Character sheets | Every character who appeared gets their sheet updated (`character-sheet-update`); bit parts go into `minor-npcs.md`. |
+| 3. Session log | Unwritten scenes are appended to the session log. |
+| 4. Canon | Missed facts go into `canon.md`, which is then pruned; past about 230 lines, facts whose subject can no longer come up move to `canon-archive.md`. |
+| 5. DM notes | `dm-notes.md` is updated, including the Opposition table; closed threads move to `dm-notes-archive.md`. |
+| 5a. Module progress | `module-progress.md`, if present, is brought up to date. |
+| 6. Summary | `summary.md` is rewritten, under about 600 words. |
+| 7. Consistency check | Every file the save changed, and every party sheet, is read again in one batch and checked against the others: HP, resources, inventory, location, time, quests, spellings. |
+| 8. Stamp and report | The "Last full save" line is stamped. For a planned break, a line under Pending tells the next resume to restate the immediate situation only. The player is told what the save covers. |
 
-The player is told it is safe to `/clear` only after step 8 passes.
+For a planned break, the player is told it is safe to `/clear` only after the consistency check (step 7) has passed, as `CLAUDE.md` § Compaction and long sessions says.
 
 ## Compaction
 

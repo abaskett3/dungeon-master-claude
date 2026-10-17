@@ -20,7 +20,7 @@ tag dmc-vX.Y.Z on main -> release.yml builds, checks, publishes -> "Pin dmc X.Y.
 | `linux-arm64` | `ubuntu-22.04-arm` | `dmc-vX.Y.Z-linux-arm64.tar.gz` |
 | `osx-arm64` | `macos-latest` | `dmc-vX.Y.Z-osx-arm64.tar.gz` |
 
-Each is built with Native AOT on its own platform's runner, since AOT does not cross-compile between operating systems. Linux is built on Ubuntu 22.04 because an AOT binary runs only on the same or a newer glibc than it was built with; that makes the floor glibc 2.34. Intel Macs (`osx-x64`) are not built. Each archive holds four files at the top level and no folder: `dmc` (`dmc.exe`) and the native libraries for SkiaSharp, HarfBuzzSharp and PDFium. The release also carries `SHA256SUMS.txt`.
+Each is built with Native AOT on its own platform's runner, since AOT does not cross-compile between operating systems. Linux is built on Ubuntu 22.04, the oldest Ubuntu runner GitHub offers, because an AOT binary runs only on the same or a newer Linux than it was built on, and building on a newer system could raise the glibc it needs. Ubuntu 22.04 ships glibc 2.35, but the floor for players is glibc 2.34: the newest glibc symbol version that `dmc` and its native libraries actually use, as measured in issue #3's Phase 0 spike. Intel Macs (`osx-x64`) are not built. Each archive holds four files at the top level and no folder: `dmc` (`dmc.exe`) and the native libraries for SkiaSharp, HarfBuzzSharp and PDFium. The release also carries `SHA256SUMS.txt`.
 
 ## Cutting a release
 

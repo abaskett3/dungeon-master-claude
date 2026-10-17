@@ -225,7 +225,7 @@ Condenses Claude Code's session logs, which are far too big to read, for the `re
 | `--campaign` | Only sessions that touched `adventures/<NAME>/`. |
 | `--after` | Only sessions that ended on or after this date (UTC). |
 | `--logs` | Folder of session `.jsonl` files. Default: this toolkit's Claude Code logs. |
-| `--out` | Output folder of `show`. Default `adventures/.transcript-review`, overwritten on each run, not in git. |
+| `--out` | Output folder of `show`. Default `adventures/.transcript-review` under the toolkit root, one folder whatever the campaign, not in git. Each run rewrites `stats.md` and the files of the sessions it digests; files left by earlier runs for other sessions are not deleted. |
 
 `list` prints a table, one session per row: id, start and end (UTC), size in KB, number of player messages, peak context, campaign and the first message.
 
@@ -234,7 +234,7 @@ $ dmc digest list --logs <empty folder>
 id        start (UTC)       end (UTC)             KB  msgs peak ctx  campaign             first message
 ```
 
-`show` writes, and prints the statistics:
+`show` writes these files, prints the statistics, and ends with the line `Wrote stats.md and, for each session, <id>-turns.txt and <id>-transcript.md to <folder>`:
 
 | File | Holds |
 |---|---|

@@ -5,8 +5,8 @@ This log is for contributors who want to know why the toolkit is the way it is b
 ## .NET 10 Native AOT on every platform, Linux built on Ubuntu 22.04
 
 - **Date:** 2026-10-14
-- **Decision:** Replace the Python scripts and the two shell dice rollers with one .NET 10 program, `dmc`, compiled with Native AOT for each platform. Build Linux on Ubuntu 22.04, which sets the floor at glibc 2.34. The self-contained single-file build stays as the local developer default only.
-- **Reason:** Players then need nothing installed but Claude Code: no Python, no pip, no .NET runtime. .NET 10 is a long-term-support release. The Phase 0 spike found no AOT or trim warnings with the chosen libraries and start-up of 5 to 29 ms; single-file worked but started 15 to 20 times slower, which matters for a hook that runs before every message. An AOT binary runs only on the same or a newer glibc than it was built with, so the oldest supported runner sets the floor.
+- **Decision:** Replace the Python scripts and the two shell dice rollers with one .NET 10 program, `dmc`, compiled with Native AOT for each platform. Build Linux on Ubuntu 22.04. The floor for players is glibc 2.34. The self-contained single-file build stays as the local developer default only.
+- **Reason:** Players then need nothing installed but Claude Code: no Python, no pip, no .NET runtime. .NET 10 is a long-term-support release. The Phase 0 spike found no AOT or trim warnings with the chosen libraries and start-up of 5 to 29 ms; single-file worked but started 15 to 20 times slower, which matters for a hook that runs before every message. An AOT binary runs only on the same or a newer Linux than it was built on, so Linux is built on the oldest Ubuntu runner, 22.04, which ships glibc 2.35. The 2.34 floor is not the runner's glibc but the newest glibc symbol version that `dmc` and its native libraries use, measured in the spike.
 - **Source:** Issue #3 (plan and "Verified facts"), and its Phase 0 decision comment.
 
 ## One-line errors, and output kept small
@@ -103,6 +103,6 @@ This log is for contributors who want to know why the toolkit is the way it is b
 ## Every change updates its documentation
 
 - **Date:** 2026-10-17
-- **Decision:** `CLAUDE.md` § Git and GitHub requires every change to update the documentation in the same PR: an XML doc comment on every type and member added or changed (private ones included; the build catches only missing public ones), a header comment on every script and workflow, and the `.docs/` documents that describe the change, including `roadmap.md` and this log. A change to `CLAUDE.md`, a skill or a template counts. The PR description says which documents changed, or why none needed to, and the review checks the documentation is current.
+- **Decision:** `CLAUDE.md` § Git and GitHub requires every change to update the documentation in the same PR: an XML doc comment on every type and member added or changed (private ones included; the build catches only missing public ones, from PR #24), a header comment on every script and workflow, and the `.docs/` documents that describe the change, including `roadmap.md` and this log. A change to `CLAUDE.md`, a skill or a template counts. The PR description says which documents changed, or why none needed to, and the review checks the documentation is current.
 - **Reason:** The user asked for everything to be documented in code and in product-level documents in `.docs/`, and for that to hold for every change from now on. `CLAUDE.md`'s git section is what all toolkit work, including subagents, follows, and it costs nothing during play.
 - **Source:** PR #22.

@@ -11,7 +11,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 | `dmc digest show` (PR #18) | Done | Shipped in 0.1.1. |
 | Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
-| Documentation rule and product documents (PR #22, this folder) | Done | The rule is in `CLAUDE.md` § Git and GitHub. |
+| Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
+| Product documents in `.docs/` (PR #23) | Done | This folder. |
+| Code documentation: XML doc comments, script and workflow headers (PR #24) | In review | Due to merge straight after PR #23; it turns on the build's check for missing public doc comments. Mark this row done when it merges. |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a | Next | |
 | Turn order drawn on the map, issue #6 Phase 2b | Next | |
 | Release 0.1.2 | Next | Ships Phase 2a and 2b. |
@@ -43,6 +45,8 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #20:** developer builds report `0.0.0-dev` and publish to `artifacts/bin`, so `get-dmc` replaces any stray build in `bin/`.
 - **0.1.1** published and pinned (PR #21).
 - **PR #22:** the rule that every change updates its documentation.
+- **PR #23:** these product documents.
+- **PR #24** (in review): XML doc comments throughout the code, and header comments on scripts and workflows.
 
 ## Next: issue #6
 

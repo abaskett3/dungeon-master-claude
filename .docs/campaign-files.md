@@ -9,7 +9,7 @@ adventures/
   player-options.md          the player's preferences for every campaign
   .active-campaign           the folder name of the campaign being played (one line)
   .reviewed-sessions         session ids already reviewed by /review-transcript
-  .transcript-review/        output of dmc digest show (overwritten on each review)
+  .transcript-review/        output of dmc digest show, one folder for all campaigns (rewritten on each review)
   <campaign>/
     player-options.md        this campaign's settings and overrides
     game-state.md            the present moment
@@ -42,7 +42,7 @@ All of `adventures/` is ignored by git. A new campaign is a copy of `templates/c
 |---|---|---|---|---|
 | `adventures/player-options.md` | Dice (who rolls, how rolls are asked for and shown, secret rolls), how to talk with DMC, narration style, maps | When the player asks for a change | `templates/player-options.md` | Yes |
 | `player-options.md` | Edition, starting level, leveling, HP on level-up, what is tracked, house rules, lethality, combat difficulty, puzzle hints, tone, overrides of the general file | When the player asks for a change | `templates/campaign/player-options.md` | Yes |
-| `game-state.md` | Campaign, session number, last full save; the scene (location, date and time, conditions, who is present, what is happening, what the player was about to do); party status per character (HP, hit dice, slots, resources, conditions, concentration, exhaustion, death saves, inspiration, gold, consumables); the combat tracker; plan and standing orders; quests; clocks; pending | Whenever any of it changes, once per reply | `templates/campaign/game-state.md` | Yes, first after the options |
+| `game-state.md` | Campaign, session number, last full save; the scene (location, date and time, conditions, who is present, what is happening, what the player was about to do); party status per character (HP, hit dice, slots, resources, conditions, concentration, exhaustion, death saves, inspiration, gold, consumables); the combat tracker; plan and standing orders; quests; clocks; pending | Whenever any of it changes, before the next beat is narrated; in a fight, the tracker block once per reply, in one edit | `templates/campaign/game-state.md` | Yes, first after the options |
 | `character-sheets/pc-<name>.md` | Abilities, combat numbers and attacks, features, spellcasting, inventory, story, relationships, notes | On level-up, new items, relationships or goals | `templates/pc-sheet.md` | Yes, every PC |
 | `character-sheets/npc-<name>.md` | How to play them (voice note), what they know, secrets, relationships, history with the PC, stat block with every attack's reach or range | When an NPC is introduced, recurs or changes | `templates/npc-sheet.md`; the `character-sheet-update` skill gives a companion the full `templates/pc-sheet.md` | Companions, and NPCs in the current scene |
 | `character-sheets/minor-npcs.md` | One line each: name, role, place, a trait, attitude to the PC | When a named bit part appears | `templates/campaign/character-sheets/minor-npcs.md` | No |

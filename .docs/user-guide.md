@@ -112,7 +112,7 @@ Every message you send re-reads the whole conversation, so a long conversation u
 Started with a launcher, DMC is told before each of your messages how large the conversation is. From about 150,000 tokens it offers a break at the next natural pause: the end of a scene, the end of a fight, or the top of a combat round with nothing waiting on you. Never while a roll or decision is pending.
 
 - Say **yes**: DMC runs a full save and checks it, then tells you it is safe. Type `/clear` and then `/resume-campaign`. DMC restates where you are without a full recap; a fight resumes on the same round with everyone where they stood.
-- Say **no**: DMC asks again after the conversation has grown by about another 40,000 tokens.
+- Say **no**: DMC asks again when the conversation reaches the next band. The bands are fixed: 150,000 tokens, then every 40,000 after it (190,000, 230,000 and so on).
 
 Claude Code may still compact a long conversation on its own. That loses nothing: state is saved as you play, and after a compaction DMC reloads from the files before narrating.
 
@@ -175,7 +175,13 @@ A Markdown or text copy works too and is faster to search. The SRD lacks most su
 
 ## Choosing a model
 
-The launchers start DMC on Sonnet at `high` effort, a good default: fast and reliable at keeping the files up to date. Opus gives richer narration at higher usage; to use it, change `--model sonnet` to `--model opus` in both `play.ps1` and `play.sh`. Haiku is not recommended. Choose before your first message and keep it for the session: switching with `/model` partway sends the whole conversation to the new model again.
+The launchers start DMC on Sonnet at `high` effort, a good default: fast and reliable at keeping the files up to date. Opus gives richer narration at higher usage. The launchers cannot be switched to it: once `dmc` is installed they hand over to `dmc play`, which always asks for Sonnet. To play on Opus, start Claude Code yourself in the toolkit folder, with the same effort and play settings:
+
+```
+claude --model opus --effort high --settings .claude/play-settings.json
+```
+
+This keeps the break reminder and the play settings. Run a launcher once first, or `bash tools/get-dmc.sh`, so that `bin/dmc` is there. Haiku is not recommended. Choose before your first message and keep it for the session: switching with `/model` partway sends the whole conversation to the new model again.
 
 ## Your files
 

@@ -136,7 +136,7 @@ Set in your player options, or just ask DMC:
 
 ## Choosing a model
 
-The launcher starts DMC on Sonnet at `high` effort. Sonnet is a good default: fast, and reliable at keeping the files up to date. Opus gives richer narration and longer-range plotting at higher usage; to play on it, change `--model sonnet` to `--model opus` in both launchers (`play.ps1` and `play.sh`). Haiku is not recommended as the DM.
+The launcher starts DMC on Sonnet at `high` effort. Sonnet is a good default: fast, and reliable at keeping the files up to date. Opus gives richer narration and longer-range plotting at higher usage. The launchers cannot be switched to it: once `dmc` is installed they hand over to `dmc play`, which always asks for Sonnet. To play on Opus, start Claude Code yourself in this folder, with the same effort and play settings: `claude --model opus --effort high --settings .claude/play-settings.json`. Run `./play.ps1` or `./play.sh` once first, or `bash tools/get-dmc.sh`, so that `bin/dmc` is there. Haiku is not recommended as the DM.
 
 Choose the model before your first message and keep it for the whole session. Switching with `/model` partway through makes Claude Code send the whole conversation to the new model again, which takes a large bite of your usage at once, and changes the DM in the middle of a scene.
 

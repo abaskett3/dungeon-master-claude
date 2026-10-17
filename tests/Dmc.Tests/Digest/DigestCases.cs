@@ -207,18 +207,18 @@ public static class DigestCases
     {
         yield return Case("list", StandardLogs, "list", "--logs", "logs");
         yield return Case("list with shortened options and an equals sign", StandardLogs, "list", "--logs=logs", "--camp=silver-egg", "--af", "2026-01-01");
-        yield return Case("digest of everything", StandardLogs, "digest", "--logs", "logs", "--out", "out");
-        yield return Case("digest of two session ids", StandardLogs, "digest", "--logs", "logs", "--out", "out", "ffff", "abcd");
-        yield return Case("digest with the ids after the options", StandardLogs, "digest", "--logs", "logs", "--out", "out", "--campaign", "silver-egg", "abcd");
-        yield return Case("digest with the ids after a double dash", StandardLogs, "digest", "--logs", "logs", "--out", "out", "--", "ffff");
-        yield return Case("digest into a folder that does not exist yet", StandardLogs, "digest", "--logs", "logs", "--out", "deep/er/out", "--after", "2026-02-01");
-        yield return Case("every class of third and later call", Logs(l => WriteLog(l, CallRecords())), "digest", "--logs", "logs", "--out", "out");
-        yield return Case("text with letters outside the BMP", Logs(UnicodeLog), "digest", "--logs", "logs", "--out", "out");
+        yield return Case("digest of everything", StandardLogs, "show", "--logs", "logs", "--out", "out");
+        yield return Case("digest of two session ids", StandardLogs, "show", "--logs", "logs", "--out", "out", "ffff", "abcd");
+        yield return Case("digest with the ids after the options", StandardLogs, "show", "--logs", "logs", "--out", "out", "--campaign", "silver-egg", "abcd");
+        yield return Case("digest with the ids after a double dash", StandardLogs, "show", "--logs", "logs", "--out", "out", "--", "ffff");
+        yield return Case("digest into a folder that does not exist yet", StandardLogs, "show", "--logs", "logs", "--out", "deep/er/out", "--after", "2026-02-01");
+        yield return Case("every class of third and later call", Logs(l => WriteLog(l, CallRecords())), "show", "--logs", "logs", "--out", "out");
+        yield return Case("text with letters outside the BMP", Logs(UnicodeLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("odd records, listed", Logs(OddLog), "list", "--logs", "logs");
-        yield return Case("odd records, digested", Logs(OddLog), "digest", "--logs", "logs", "--out", "out");
-        yield return Case("growth, ties and a short id shared by two logs", Logs(GrowthLog), "digest", "--logs", "logs", "--out", "out");
-        yield return Case("ids, models, names and skills that are null, empty or numbers", Logs(KeysLog), "digest", "--logs", "logs", "--out", "out");
-        yield return Case("token counts that are floats and bools", Logs(NumbersLog), "digest", "--logs", "logs", "--out", "out");
+        yield return Case("odd records, digested", Logs(OddLog), "show", "--logs", "logs", "--out", "out");
+        yield return Case("growth, ties and a short id shared by two logs", Logs(GrowthLog), "show", "--logs", "logs", "--out", "out");
+        yield return Case("ids, models, names and skills that are null, empty or numbers", Logs(KeysLog), "show", "--logs", "logs", "--out", "out");
+        yield return Case("token counts that are floats and bools", Logs(NumbersLog), "show", "--logs", "logs", "--out", "out");
         yield return Case("growth, listed", Logs(GrowthLog), "list", "--logs", "logs", "--after", "2026-01-02");
     }
 
@@ -229,17 +229,18 @@ public static class DigestCases
     {
         yield return Case("no arguments", StandardLogs);
         yield return Case("a command that does not exist", StandardLogs, "extract");
+        yield return Case("the old name of show, which is not kept", StandardLogs, "digest", "--logs", "logs");
         yield return Case("only an option that does not exist", StandardLogs, "--bogus");
         yield return Case("an option before the command takes the next word for the command", StandardLogs, "--logs", "logs", "list");
         yield return Case("an option that does not exist", StandardLogs, "list", "--logs", "logs", "--bogus");
         yield return Case("an option without its value", StandardLogs, "list", "--logs", "logs", "--campaign");
         yield return Case("a missing value comes before an unknown option", StandardLogs, "list", "--bogus", "--campaign");
         yield return Case("a flag given a value", StandardLogs, "list", "--logs", "logs", "--help=x");
-        yield return Case("session ids after an option are not recognized", StandardLogs, "digest", "--logs", "logs", "abcd", "--campaign", "silver-egg", "ffff");
+        yield return Case("session ids after an option are not recognized", StandardLogs, "show", "--logs", "logs", "abcd", "--campaign", "silver-egg", "ffff");
         yield return Case("an option of digest given to list", StandardLogs, "list", "--logs", "logs", "--out", "out");
-        yield return Case("a double dash does not stand for the value", StandardLogs, "digest", "--logs", "--", "logs");
+        yield return Case("a double dash does not stand for the value", StandardLogs, "show", "--logs", "--", "logs");
         yield return Case("a folder that is not there", StandardLogs, "list", "--logs", "nowhere");
-        yield return Case("nothing to show", StandardLogs, "digest", "--logs", "logs", "--out", "out", "--campaign", "nowhere");
+        yield return Case("nothing to show", StandardLogs, "show", "--logs", "logs", "--out", "out", "--campaign", "nowhere");
     }
 
     /// <summary>
@@ -250,7 +251,7 @@ public static class DigestCases
     public static IEnumerable<CommandCase> DmcOnlyErrorCases()
     {
         CommandCase Bad(string name, string fileName, byte[] content, params string[] extra) => new(name,
-            _ => ["digest", "--logs", "logs", "--out", "out", .. extra], null,
+            _ => ["show", "--logs", "logs", "--out", "out", .. extra], null,
             Logs(logs => File.WriteAllBytes(Path.Combine(logs, fileName), content)));
 
         yield return Bad("a log that is not UTF-8", "bad-bytes.jsonl", [0x7B, 0xFF, 0xFE, 0x7D, 0x0A]);
@@ -263,7 +264,7 @@ public static class DigestCases
             Encoding.UTF8.GetBytes("{\"type\": \"user\", \"message\": {\"content\": \"hi\"}}\n{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": 5, \"input\": {}}]}}\n"));
         yield return Bad("a tool call whose input is a list", "input.jsonl",
             "{\"type\": \"assistant\", \"message\": {\"id\": \"m\", \"content\": [{\"type\": \"tool_use\", \"name\": \"Bash\", \"input\": [1]}]}}\n"u8.ToArray());
-        yield return new CommandCase("an output path that is a file", _ => ["digest", "--logs", "logs", "--out", "out"], null, work =>
+        yield return new CommandCase("an output path that is a file", _ => ["show", "--logs", "logs", "--out", "out"], null, work =>
         {
             StandardLogs(work);
             File.WriteAllText(Path.Combine(work, "out"), "in the way");
@@ -291,7 +292,7 @@ public sealed class DigestCaseTests
         Assert.AreEqual(0, result.ExitCode, result.ToString());
         Assert.AreEqual("", result.Stderr);
         string[] args = test.Args(folder);
-        if (args[0] == "digest")
+        if (args[0] == "show")
             Assert.IsTrue(File.Exists(Path.Combine(folder, args[Array.IndexOf(args, "--out") + 1], "stats.md")), "stats.md");
         else
             StringAssert.StartsWith(result.Stdout, "id ");
@@ -300,7 +301,7 @@ public sealed class DigestCaseTests
     static string Stats(Action<string> seed)
     {
         string stats = "";
-        new CommandCase("stats", "digest", "--logs", "logs", "--out", "out") { Seed = seed }.Run("digest", (result, folder) =>
+        new CommandCase("stats", "show", "--logs", "logs", "--out", "out") { Seed = seed }.Run("digest", (result, folder) =>
         {
             Assert.AreEqual(0, result.ExitCode, result.ToString());
             stats = File.ReadAllText(Path.Combine(folder, "out", "stats.md")).Replace("\r\n", "\n");

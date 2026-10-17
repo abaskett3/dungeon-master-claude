@@ -3,12 +3,12 @@ using Dmc.Maps;
 namespace Dmc.Digest;
 
 /// <summary>What <c>dmc digest</c> was asked to do.</summary>
-/// <param name="Command">list or digest.</param>
+/// <param name="Command">list or show.</param>
 /// <param name="Campaign">Only sessions that touched this campaign; null or empty for all.</param>
 /// <param name="After">Only sessions that ended on or after this date (text, compared with the first 10 characters of the end time).</param>
 /// <param name="Logs">The folder of session logs; null or empty for this toolkit's Claude Code logs.</param>
-/// <param name="Out">The output folder of <c>digest</c>; null or empty for <c>adventures/.transcript-review</c>.</param>
-/// <param name="Sessions">The starts of session ids <c>digest</c> was given; none means every session.</param>
+/// <param name="Out">The output folder of <c>show</c>; null or empty for <c>adventures/.transcript-review</c>.</param>
+/// <param name="Sessions">The starts of session ids <c>show</c> was given; none means every session.</param>
 internal sealed record DigestRequest(string Command, string? Campaign, string? After, string? Logs, string? Out,
     IReadOnlyList<string> Sessions);
 
@@ -23,7 +23,7 @@ internal sealed record DigestRequest(string Command, string? Campaign, string? A
 /// </summary>
 internal static class DigestArguments
 {
-    static readonly string[] Commands = ["list", "digest"];
+    static readonly string[] Commands = ["list", "show"];
 
     static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs"];
 
@@ -103,11 +103,11 @@ internal static class DigestArguments
     /// <summary>The command's own parser. Arguments it does not recognize are added to <paramref name="extras"/>.</summary>
     static DigestRequest? ParseCommand(string command, string[] args, List<string> extras)
     {
-        bool digest = command == "digest";
-        var (kinds, classified) = Sort(args, digest ? DigestOptions : ListOptions);
+        bool show = command == "show";
+        var (kinds, classified) = Sort(args, show ? DigestOptions : ListOptions);
         string? campaign = null, after = null, logs = null, output = null;
         var sessions = new List<string>();
-        bool sessionsOpen = digest; // the session ids are taken once
+        bool sessionsOpen = show; // the session ids are taken once
 
         // The plain arguments from here, up to the next option: the session ids, if still open.
         int TakePlain(int from)

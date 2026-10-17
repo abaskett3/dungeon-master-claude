@@ -35,7 +35,7 @@ public abstract class DigestCommandContract
     ProcessResult Run(string command, params string[] args) => Digest([command, "--logs", _logs, .. args]);
 
     /// <summary>The Python test's <c>digest</c>: the logs and the output folder, then these arguments.</summary>
-    ProcessResult DigestOf(params string[] args) => Run("digest", ["--out", _out, .. args]);
+    ProcessResult DigestOf(params string[] args) => Run("show", ["--out", _out, .. args]);
 
     string[] Listing() => Directory.GetFileSystemEntries(_out).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal).ToArray();
 
@@ -143,7 +143,7 @@ public abstract class DigestCommandContract
     [TestMethod]
     public void HelpPrintsTheUsage()
     {
-        foreach (string[] args in new string[][] { ["--help"], ["list", "-h"], ["digest", "--logs", "x", "--help"] })
+        foreach (string[] args in new string[][] { ["--help"], ["list", "-h"], ["show", "--logs", "x", "--help"] })
         {
             var result = Digest(args);
             Assert.AreEqual(0, result.ExitCode, string.Join(' ', args));

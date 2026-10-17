@@ -116,7 +116,7 @@ public sealed class PlayTests
     [TestMethod]
     [DataRow("", "0.1.0", null, DisplayName = "no release pinned yet")]
     [DataRow("dmc-v0.1.0", "0.1.0", null, DisplayName = "the pinned version")]
-    [DataRow("dmc-v0.2.0", "0.1.0", "dmc: this is dmc 0.1.0, but the toolkit pins dmc-v0.2.0: run ./tools/get-dmc.ps1 (PowerShell) or bash tools/get-dmc.sh to update it", DisplayName = "another version")]
+    [DataRow("dmc-v0.2.0", "0.1.0", "dmc: this is dmc 0.1.0, but the toolkit pins dmc-v0.2.0: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it", DisplayName = "another version")]
     [DataRow("v0.2.0", "0.1.0", null, DisplayName = "not a dmc tag")]
     public void TheStaleBinaryWarningComparesTheVersionWithThePin(string tag, string version, string? expected)
     {

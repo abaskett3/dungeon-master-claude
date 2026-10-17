@@ -19,7 +19,7 @@ if ($pinned) {
         & $dmc play @args
         exit $LASTEXITCODE
     }
-    [Console]::Error.WriteLine('play: dmc is not available, so Claude Code starts without it.')
+    [Console]::Error.WriteLine('play: dmc is not available, so Claude Code starts without it, and DMC cannot roll dice, draw maps or read PDFs until get-dmc succeeds.')
 }
 claude --model sonnet --effort high --settings .claude/play-settings.json @args
 exit $LASTEXITCODE

@@ -11,7 +11,7 @@ How this player likes to play, whatever the adventure. DMC reads this at the sta
 - **What the player reports**: the final totals with modifiers already added ("18 and 4"); showing the working ("12+6=18 and 3+1=4") is optional <!-- or: the number on the die, and DMC adds the modifiers -->
 - **DMC's rolls are displayed as**: dice, modifier, total and target <!-- or: total only / narrated with no numbers -->
 - **DM-side secret rolls** (enemy stealth, hidden checks): hidden <!-- or: shown -->
-- **"Roll it for me"**: on request, DMC rolls that one roll with the dice script and shows it
+- **"Roll it for me"**: on request, DMC rolls that one roll with the dice roller and shows it
 
 ## Talking with DMC
 

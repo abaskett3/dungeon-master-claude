@@ -6,27 +6,8 @@ on:
   pull_request:
 
 jobs:
-  # The Python scripts stay until Phase 6 of issue #3, so their own tests keep running.
-  test:
-    name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install PyMuPDF
-        run: python -m pip install -r scripts/requirements.txt
-      - name: Run the tests
-        run: python -m unittest discover -s tests -v
-
-  # dmc, the .NET replacement for the scripts. It is published for the runner with Native AOT, the way a release
-  # is built, and the tests then run it as a subprocess. The parity check also runs the old scripts, so Python is
-  # needed here too (and bash and PowerShell, which every runner image has).
+  # dmc is published for the runner with Native AOT, the way a release is built, and the tests then run it as a
+  # subprocess. bash and PowerShell, which the launcher and get-dmc tests use, are on every runner image.
   dotnet:
     name: dotnet (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -48,16 +29,11 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
       - name: Install the Native AOT toolchain (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang zlib1g-dev
       - name: Publish dmc with Native AOT
         run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o bin -p:PublishAot=true
-      - name: Install PyMuPDF (the parity check runs map_render.py --png and pdf_extract.py)
-        run: python -m pip install -r scripts/requirements.txt
       - name: Build the tests
         run: dotnet build tests/Dmc.Tests -c Release
       # The map page tests drive Chromium. The runner images have PowerShell (pwsh), which Playwright's installer needs.

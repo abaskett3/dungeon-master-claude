@@ -5,7 +5,7 @@ using Dmc.Pdf;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc pdf info|text|render|all &lt;pdf&gt; [--pages 1-20,35] [--dpi 110] [--out DIR]</c>: replaces
+/// <c>dmc pdf info|text|render|all &lt;pdf&gt; [--pages 1-20,35] [--dpi 110] [--out DIR]</c>: replaced
 /// <c>scripts/pdf_extract.py</c>. It writes the text of each page and a picture of each page to disk, so that DMC can
 /// read them (the Read tool cannot open very large PDFs).
 /// </summary>

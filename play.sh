@@ -12,6 +12,6 @@ if grep -Eq '^[[:space:]]*"tag"[[:space:]]*:[[:space:]]*"dmc-v' tools/dmc-releas
     if { [ -f bin/dmc ] || [ -f bin/dmc.exe ]; } && ./bin/dmc --version >/dev/null 2>&1; then
         exec ./bin/dmc play "$@"
     fi
-    echo "play: dmc is not available, so Claude Code starts without it." >&2
+    echo "play: dmc is not available, so Claude Code starts without it, and DMC cannot roll dice, draw maps or read PDFs until get-dmc succeeds." >&2
 fi
 exec claude --model sonnet --effort high --settings .claude/play-settings.json "$@"

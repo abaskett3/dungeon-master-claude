@@ -14,7 +14,7 @@ List `rules/`. If it holds nothing but `.gitkeep`, tell the player how to add th
 Note the format of each file:
 
 - **Markdown or text**: searchable directly with Grep. An index is still useful for knowing which file covers what.
-- **PDF**: run `python scripts/pdf_extract.py text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. (If PyMuPDF is missing the script says how to install it into the toolkit. Without Python, skip this step.) To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `python scripts/pdf_extract.py render <pdf> --pages N`. A PDF still needs a page index to be usable.
+- **PDF**: run `./bin/dmc pdf text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. (Without `dmc`, skip this step.) To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `./bin/dmc pdf render <pdf> --pages N`. A PDF still needs a page index to be usable.
 
 ## 2. Build `rules/index.md`
 

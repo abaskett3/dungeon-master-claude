@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using Dmc.Maps;
 
 namespace Dmc.Digest;
@@ -16,7 +17,7 @@ internal sealed class LogShapeException(string message) : Exception(message);
 /// <c>describe_call</c>, <c>result_text</c>, <c>table</c>, <c>percent</c>, <c>median</c>), with Python's meaning:
 /// text is counted and cut in code points, not in UTF-16 units, and an integer division rounds down.
 /// </summary>
-internal static class DigestText
+internal static partial class DigestText
 {
     // ---------- text in code points ----------
 
@@ -82,10 +83,24 @@ internal static class DigestText
         return OneLine(PyJson.Dumps(args), 220);
     }
 
-    /// <summary>What a tool call did, for classing the calls of a message: roll, write, lookup or other.</summary>
+    /// <summary>
+    /// <c>dmc roll</c> as a shell runs it: <c>./bin/dmc roll</c>, <c>bin/dmc.exe roll</c>, <c>&amp; "D:/x/bin/dmc.exe" roll</c>
+    /// or a bare <c>dmc roll</c>, once backslashes are made forward slashes. <c>dmc</c> must be the program being run: at the
+    /// start of the command or after <c>;</c>, <c>&amp;&amp;</c>, <c>||</c>, <c>|</c> or <c>(</c>, perhaps after PowerShell's
+    /// call operator <c>&amp;</c> and an opening quote. So <c>grep "dmc roll" CLAUDE.md</c> or <c>echo "use dmc roll"</c> is not a roll.
+    /// </summary>
+    [GeneratedRegex(@"(?:^|[;&|(])\s*(?:&\s*)?[""']?(?:[^\s""']*/)?dmc(?:\.exe)?[""']?\s+roll(?![\w-])")]
+    private static partial Regex DmcRoll();
+
+    /// <summary>
+    /// What a tool call did, for classing the calls of a message: roll, write, lookup or other. A roll is <c>dmc roll</c>,
+    /// or one of the dice scripts that came before it (<c>scripts/roll.ps1</c>, <c>scripts/roll.sh</c>), so that the logs
+    /// of sessions played before the switch to <c>dmc</c> digest as they always did.
+    /// </summary>
     public static string CallKind(string? name, PyDict args)
     {
-        if (name is "Bash" or "PowerShell" && StrOf(args, "command").Replace('\\', '/').Contains("scripts/roll", StringComparison.Ordinal))
+        if (name is "Bash" or "PowerShell" && StrOf(args, "command").Replace('\\', '/') is var command
+            && (command.Contains("scripts/roll", StringComparison.Ordinal) || DmcRoll().IsMatch(command)))
             return "roll";
         if (name is "Edit" or "Write")
             return "write";

@@ -5,13 +5,13 @@ description: Draw a map of the current room, battlefield, building, town or regi
 
 # Draw map
 
-A map exists to remove confusion. You describe the place as a small data file; `scripts/map_render.py` checks it, draws it, and shows it in a browser tab the player keeps open beside the terminal. The file is the truth about where everything is: positions and distances are read from it, not remembered.
+A map exists to remove confusion. You describe the place as a small data file; `dmc map` checks it, draws it, and shows it in a browser tab the player keeps open beside the terminal. The file is the truth about where everything is: positions and distances are read from it, not remembered.
 
 ## Before drawing
 
 Check `maps/` in the active campaign folder for an existing map of this place and start from it. The layout must agree with what you have already described and with `story/canon.md`: same exits, same distances, same features. If your earlier description was vague, the map now fixes the details; log anything new in canon.
 
-An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which the script rejects. Read its notes and any spoiler warning, then redraw it as a `.json` at 5 or 30 ft (a local place) or a mile scale (an overland map), whichever fits in about 30 cells, agreeing with the distances in `canon.md`, and keep the `.md` for its notes.
+An older map may exist only as `maps/<place>.md` with an ASCII drawing, or as a `.json` whose `"cell_ft"` is null or not a standard scale, which `dmc map` rejects. Read its notes and any spoiler warning, then redraw it as a `.json` at 5 or 30 ft (a local place) or a mile scale (an overland map), whichever fits in about 30 cells, agreeing with the distances in `canon.md`, and keep the `.md` for its notes.
 
 ## The files
 
@@ -82,10 +82,10 @@ Draw only what exists now. Something the party is thinking of placing (a triplin
 
 ## Drawing
 
-Run the script on the scene (or on a place file, to show a place with nobody on it):
+Run `dmc map` on the scene (or on a place file, to show a place with nobody on it):
 
 ```
-python scripts/map_render.py adventures/<campaign>/maps/live.json --png
+./bin/dmc map adventures/<campaign>/maps/live.json --png
 ```
 
 - It refuses a map with a mistake in it (rows of different lengths, an unknown symbol, a creature in a wall or off the edge, two creatures on one cell) and says what is wrong. Fix the file and run it again.
@@ -97,12 +97,12 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## After drawing
 
-- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, edit `live.json` and run the script before narrating on, so the picture, the tracker and your description always agree.
+- In combat, record each combatant's cell in the tracker in `game-state.md`. When anyone's position changes, edit `live.json` and run `dmc map` before narrating on, so the picture, the tracker and your description always agree.
 - If the place may be revisited, keep its `maps/<place-name>.json`, and put longer notes (ceiling heights, what lies beyond the edges, rulings about the terrain) in `maps/<place-name>.md` beside it.
 - When the fight ends or the party moves on, remove the tokens from `live.json` or point it at the new place.
 
 ## When there is no picture
 
-If Python is missing, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
+If `dmc` is unavailable, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
 
 For relationships that are not spatial (a faction web, a family tree, a timeline), a simple indented list or box-and-arrow diagram in a code block is still the right tool.

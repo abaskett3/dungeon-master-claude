@@ -10,7 +10,7 @@ modules/*
 rules/*
 !rules/.gitkeep
 
-# Python libraries installed locally for scripts/pdf_extract.py (until the scripts go in Phase 6 of issue #3)
+# Leftovers of the removed Python scripts in older checkouts (safe to delete)
 scripts/.pylib/
 __pycache__/
 

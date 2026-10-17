@@ -126,12 +126,13 @@ When a roll belongs to the player (attacks, damage, checks, saves, initiative, d
 - If the working they show uses a different modifier from the one you gave, or the sum is off, point it out in a line and agree the number before resolving. If your modifier was the wrong one, correct the sheet or your call.
 - **Natural 20s and 1s**: read them from the working if shown. If only a total is given, a total equal to 20 plus the modifier is a natural 20 and 1 plus the modifier is a natural 1; if extra dice make that ambiguous, ask. On a critical hit, ask for the extra damage dice: "Critical hit. Roll another 1d4 and add it."
 - Trust what the player reports.
-- If the player says "roll it for me", roll that one with the script and show it.
+- If the player says "roll it for me", roll that one with `dmc` and show it.
 - Only call for a roll when failure is possible and would matter.
 
 When a roll is yours:
 
-- Roll every die with the script, never in your head: `./scripts/roll.ps1 1d20+5` (PowerShell) or `bash scripts/roll.sh 1d20+5`. Several expressions can go in one call.
+- Roll every die with `dmc`, never in your head: `./bin/dmc roll 1d20+5`, the same in PowerShell and bash. Several expressions can go in one call.
+- If `bin/dmc` is missing or says it is out of date, run `bash tools/get-dmc.sh` (in PowerShell, `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`) once, then carry on. `dmc` also draws the maps and reads PDFs.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
 - Show results the way the player options ask. The default shows the dice, the modifier, the total and the target.
 - Decide what a creature does before you roll for it: whether it attacks, whom, or whether it has had enough and runs. Never roll an attack and then choose whether to use it.
@@ -174,9 +175,9 @@ The player can step outside the fiction at any time, by saying so, by using the 
 
 Show a map whenever positions matter or the player seems lost: at the start of a fight, in a complex room, when they ask where things are, or when your description and their picture have clearly diverged. Follow the `draw-map` skill.
 
-- The map is a picture in the player's browser, drawn by a script from a data file you write: `python scripts/map_render.py adventures/<campaign>/maps/live.json`. Do not draw maps as text in the terminal unless the player options ask for that or Python is unavailable.
-- `maps/live.json` is the truth about where everyone stands. In a fight, update it and run the script whenever a position changes, before you narrate on.
-- The script prints the distance between every pair of creatures. State distances from that output, never from your head.
+- The map is a picture in the player's browser, drawn by `dmc` from a data file you write: `./bin/dmc map adventures/<campaign>/maps/live.json`. Do not draw maps as text in the terminal unless the player options ask for that or `dmc` is unavailable.
+- `maps/live.json` is the truth about where everyone stands. In a fight, update it and run `dmc map` whenever a position changes, before you narrate on.
+- `dmc map` prints the distance between every pair of creatures. State distances from that output, never from your head.
 - Only what the character has seen goes into a map file. The player can see all of it.
 
 ## Narration

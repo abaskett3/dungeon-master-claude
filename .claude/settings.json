@@ -4,21 +4,14 @@
       "Edit(adventures/**)",
       "Edit(modules/**)",
       "Edit(rules/**)",
-      "PowerShell(./scripts/roll.ps1 *)",
-      "Bash(bash scripts/roll.sh *)",
-      "Bash(./scripts/roll.sh *)",
-      "PowerShell(python scripts/map_render.py *)",
-      "Bash(python scripts/map_render.py *)",
-      "Bash(python3 scripts/map_render.py *)",
-      "PowerShell(python scripts/pdf_extract.py *)",
-      "Bash(python scripts/pdf_extract.py *)",
-      "Bash(python3 scripts/pdf_extract.py *)",
-      "PowerShell(python scripts/transcript_digest.py *)",
-      "Bash(python scripts/transcript_digest.py *)",
-      "Bash(python3 scripts/transcript_digest.py *)",
-      "PowerShell(python scripts/context_check.py *)",
-      "Bash(python scripts/context_check.py *)",
-      "Bash(python3 scripts/context_check.py *)"
+      "Bash(./bin/dmc *)",
+      "PowerShell(./bin/dmc *)",
+      "PowerShell(.\\bin\\dmc *)",
+      "Bash(./bin/dmc.exe *)",
+      "PowerShell(./bin/dmc.exe *)",
+      "PowerShell(.\\bin\\dmc.exe *)",
+      "Bash(bash tools/get-dmc.sh*)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1*)"
     ]
   },
   "hooks": {
@@ -39,6 +32,14 @@
           {
             "type": "command",
             "command": "echo \"DMC: the conversation was just compacted. Before narrating anything: write any UNSAVED CHANGES from the summary to the campaign files, then follow the resume-campaign skill to reload the campaign from disk. Where the summary and the files disagree about anything already saved, the files are correct.\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/bin/dmc\" --version >/dev/null 2>&1 || echo \"DMC: bin/dmc is missing or does not run, so dice, maps and PDF reading will not work until it is fetched: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) once, before the first roll.\""
           }
         ]
       }

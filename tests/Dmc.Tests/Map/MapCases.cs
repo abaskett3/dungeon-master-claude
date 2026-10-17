@@ -1,50 +1,19 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Dmc.Maps;
-using Dmc.Tests.Map;
 using Dmc.Tests.Support;
 using static Dmc.Tests.Map.MapFixtures;
 
-namespace Dmc.Tests.Parity;
+namespace Dmc.Tests.Map;
 
 /// <summary>
-/// <c>dmc map</c> against <c>scripts/map_render.py</c> on the same files: the fixtures of the Python tests, a map
-/// at every scale, tokens sharing cells, scene and base merging, <c>--measure</c> at every scale, every error, and
-/// broken JSON. stdout, stderr, the exit code and the files written must be identical, with these exceptions,
-/// each one deliberate and narrow (see <see cref="MapScript"/>):
-/// <list type="bullet">
-/// <item>the error prefix, "map_render: " in the script and "dmc map: " in dmc;</item>
-/// <item>the usage text argparse prints before an argument error, which dmc leaves out (one line only);</item>
-/// <item>the stamp and the clock time in <c>live-data.js</c>;</item>
-/// <item>the contents of <c>live.png</c>: dmc draws it at the size of the SVG, the script a third bigger.
-///   <see cref="ThePngIsTheSizeOfTheSvg"/> checks dmc's size.</item>
-/// </list>
+/// The inputs <c>dmc map</c> was compared on against <c>map_render.py</c> until the script was deleted (Phase 6 of #3):
+/// the fixtures of the old Python tests, a map at every scale, tokens sharing cells, scene and base merging,
+/// <c>--measure</c> at every scale, every error, and broken JSON. <see cref="ErrorCases"/> feeds the one-line error guard
+/// (<c>ErrorPathTests</c>), and <see cref="MapCaseTests"/> checks that every other input still draws or measures.
 /// </summary>
-[TestClass]
-public sealed partial class MapParityTests
+public static partial class MapCases
 {
-    [GeneratedRegex(@"^usage: map_render\.py .*\n( {5,}.*\n)*", RegexOptions.Multiline)]
-    private static partial Regex ArgparseUsage();
-
-    [GeneratedRegex(@"^dmcMap\(\{""stamp"": ""[^""]*"", ""time"": ""[^""]*""")]
-    private static partial Regex Stamp();
-
-    static readonly ParityTool MapScript = new("map_render.py", "map",
-        (work, args, stdin) =>
-        {
-            string? python = Legacy.Python();
-            TestEnv.Need(python is not null, "Python 3");
-            return TestEnv.Run(python!, [Legacy.Script("map_render.py"), .. args], stdin, work,
-                environment: new Dictionary<string, string?> { ["PYTHONIOENCODING"] = "utf-8" });
-        },
-        Normalize: text =>
-        {
-            text = ArgparseUsage().Replace(text, "");
-            return text.Replace("map_render.py: error: ", "dmc map: ").Replace("map_render: ", "dmc map: ");
-        },
-        NormalizeFile: (_, text) => Stamp().Replace(text, "dmcMap({\"stamp\": \"<stamp>\", \"time\": \"<time>\""),
-        SkipContents: name => name.EndsWith(".png", StringComparison.Ordinal));
-
     // ---------- building cases ----------
 
     /// <summary>A surrogate with no partner: JSON can spell it, and no text encoding can write it.</summary>
@@ -53,7 +22,7 @@ public sealed partial class MapParityTests
     static string Text(object? value) => value as string ?? Json(value);
 
     /// <summary>A case with these files in the working folder and these arguments (file names are relative to it).</summary>
-    static ParityCase Files(string name, (string Name, object? Content)[] files, params string[] args) =>
+    static CommandCase Files(string name, (string Name, object? Content)[] files, params string[] args) =>
         new(name, _ => args, null, work =>
         {
             foreach (var (file, content) in files)
@@ -65,11 +34,11 @@ public sealed partial class MapParityTests
         });
 
     /// <summary>The goblin hall as the place file, <paramref name="scene"/> as live.json, and <c>dmc map live.json</c>.</summary>
-    static ParityCase Scene(string name, PyDict scene, params string[] args) =>
+    static CommandCase Scene(string name, PyDict scene, params string[] args) =>
         Files(name, [("goblin-hall.json", Place()), ("live.json", scene)], ["live.json", .. args]);
 
     /// <summary>One file, live.json, a map of its own.</summary>
-    static ParityCase Alone(string name, PyDict map, params string[] args) => Files(name, [("live.json", map)], ["live.json", .. args]);
+    static CommandCase Alone(string name, PyDict map, params string[] args) => Files(name, [("live.json", map)], ["live.json", .. args]);
 
     static PyDict Hall(params (string, object?)[] changes)
     {
@@ -98,14 +67,14 @@ public sealed partial class MapParityTests
 
     // ---------- the cases ----------
 
-    static IEnumerable<ParityCase> Drawn()
+    static IEnumerable<CommandCase> Drawn()
     {
         yield return Scene("a scene on its base", Scene_());
         yield return Files("a place with no creatures", [("goblin-hall.json", Place())], "goblin-hall.json");
         yield return Scene("a scene overrides its base", OnHall(("title", "Goblin hall, on fire")));
         yield return Scene("a scene may repeat its base's scale", OnHall(("cell_ft", 5)));
         yield return Scene("a scene drawn with a png", Scene_(), "--png");
-        yield return new ParityCase("an absolute path", work => [Path.Combine(work, "live.json")], null, work =>
+        yield return new CommandCase("an absolute path", work => [Path.Combine(work, "live.json")], null, work =>
         {
             File.WriteAllText(Path.Combine(work, "goblin-hall.json"), PyJson.Dumps(Place()));
             File.WriteAllText(Path.Combine(work, "live.json"), PyJson.Dumps(Scene_()));
@@ -214,7 +183,7 @@ public sealed partial class MapParityTests
         yield return Scene("png abbreviated", Scene_(), "--pn");
     }
 
-    static IEnumerable<ParityCase> Measured()
+    static IEnumerable<CommandCase> Measured()
     {
         foreach (int cellFt in MapRules.Scales)
         {
@@ -246,7 +215,7 @@ public sealed partial class MapParityTests
         yield return Scene("measure after a scale error", Obj(("base", "goblin-hall"), ("cell_ft", 7)), "--measure", "B2", "C3");
     }
 
-    static IEnumerable<ParityCase> Rejected()
+    static IEnumerable<CommandCase> Rejected()
     {
         // The messages the Python tests look for, one by one.
         (string Name, PyDict Map)[] maps =
@@ -343,7 +312,7 @@ public sealed partial class MapParityTests
     }
 
     /// <summary>Broken JSON: the script's messages ("Expecting value: line 1 column 14 (char 13)") are reproduced.</summary>
-    static IEnumerable<ParityCase> Broken()
+    static IEnumerable<CommandCase> Broken()
     {
         string[] texts =
         [
@@ -363,9 +332,9 @@ public sealed partial class MapParityTests
             yield return Files($"broken json #{n}", [("live.json", texts[n])], "live.json");
     }
 
-    static IEnumerable<ParityCase> Arguments()
+    static IEnumerable<CommandCase> Arguments()
     {
-        ParityCase Args(string name, params string[] args) => Files(name, [("goblin-hall.json", Place()), ("live.json", Scene_())], args);
+        CommandCase Args(string name, params string[] args) => Files(name, [("goblin-hall.json", Place()), ("live.json", Scene_())], args);
         yield return Args("no arguments");
         yield return Args("an unknown option", "live.json", "--bogus");
         yield return Args("an unknown short option", "live.json", "-x");
@@ -409,12 +378,9 @@ public sealed partial class MapParityTests
         yield return Args("an unknown option before a missing map", "--bogus", "--png");
     }
 
-    public static IEnumerable<ParityCase> All { get; } =
-        [.. Drawn(), .. Measured(), .. Rejected(), .. Broken(), .. Arguments()];
-
     /// <summary>
-    /// The cases above that are not errors: the map draws, or a distance is printed. They are in the parity check to
-    /// show that dmc does the same as the script, and are left out of <see cref="ErrorCases"/>.
+    /// The cases above that are not errors, apart from <see cref="Drawn"/>: the map draws, or a distance is printed.
+    /// They are left out of <see cref="ErrorCases"/>.
     /// </summary>
     static readonly HashSet<string> Fine =
     [
@@ -426,19 +392,33 @@ public sealed partial class MapParityTests
         "a double dash", "the options between", "a repeated flag",
     ];
 
-    static bool IsFine(ParityCase test) =>
+    static bool IsFine(CommandCase test) =>
         Fine.Contains(test.Name) || Regex.IsMatch(test.Name, @"^measure .* to .* at \d+ ft$");
 
     /// <summary>
+    /// The cases in <see cref="Drawn"/> that are errors, as they were for the script: a grid whose rows differ in length
+    /// once the emoji in one of them counts as the single cell it is, a token id <c>true</c> (written "True", four
+    /// characters), and a label of the base that falls off the scene's own smaller grid.
+    /// </summary>
+    static readonly HashSet<string> NotDrawn = ["an emoji symbol in the grid", "ids and names that are numbers", "a scene with its own grid and a base"];
+
+    /// <summary>Every input that must draw the map or print a distance.</summary>
+    public static IEnumerable<CommandCase> Succeeding { get; } =
+    [
+        .. Drawn().Where(c => !NotDrawn.Contains(c.Name)),
+        .. new[] { Measured(), Rejected(), Broken(), Arguments() }.SelectMany(cases => cases).Where(IsFine),
+    ];
+
+    /// <summary>
     /// Every input that must end in an error, for the token-cost guard: it must fail with exactly one line and never a
-    /// stack trace. It is the parity cases that are errors, plus the ones the script cannot be compared on because it
-    /// crashes with a traceback there: a compass direction, the tokens, the labels or a base given as the wrong kind of
+    /// stack trace. It is the cases above that are errors, plus the ones the script could not be compared on because it
+    /// crashed with a traceback there: a compass direction, the tokens, the labels or a base given as the wrong kind of
     /// value, an empty file name, and a folder or a file that is not UTF-8 given as the map.
     /// </summary>
-    public static IEnumerable<ParityCase> ErrorCases { get; } =
+    public static IEnumerable<CommandCase> ErrorCases { get; } =
     [
         .. new[] { Measured(), Rejected(), Broken(), Arguments() }.SelectMany(cases => cases).Where(c => !IsFine(c)),
-        // Python 3.12 (not 3.11) takes "--png" here as the second cell, so the script is not compared on it.
+        .. Drawn().Where(c => NotDrawn.Contains(c.Name)),
         Files("measure with an option as a value", [("goblin-hall.json", Place()), ("live.json", Scene_())], "live.json", "--measure", "B2", "--png"),
         Alone("north is a list", Hall(("north", Arr("up")))),
         Alone("tokens is a number", Hall(("tokens", 5))),
@@ -449,38 +429,6 @@ public sealed partial class MapParityTests
         Files("a folder instead of a file", [("d/x.json", "{}")], "d"),
         Files("a file that is not UTF-8", [("live.json", "{}")], "live.json").WithBytes("live.json", [0x7B, 0xFF, 0x7D]),
     ];
-
-    public static IEnumerable<object[]> CaseData => All.Select(c => new object[] { c });
-
-    public static string CaseName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
-
-    [TestMethod]
-    [DynamicData(nameof(CaseData), DynamicDataDisplayName = nameof(CaseName))]
-    public void MapMatchesMapRenderPy(ParityCase test)
-    {
-        if (test.Args(".").Any(a => a.StartsWith("--p", StringComparison.Ordinal)))
-            TestEnv.Need(Legacy.HasPyMuPdf(), "PyMuPDF");
-        ParityCheck.Run(MapScript, test);
-    }
-
-    [TestMethod]
-    public void ThePngIsTheSizeOfTheSvg()
-    {
-        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
-        try
-        {
-            WriteFile(folder, "goblin-hall.json", Place());
-            WriteFile(folder, "live.json", Scene_());
-            var result = DmcRunner.BlackBox(["map", "live.json", "--png"], cwd: folder);
-            Assert.AreEqual(0, result.ExitCode, result.ToString());
-            Assert.AreEqual(SvgSizeOf(folder), PngSizeOf(Path.Combine(folder, "live.png")));
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
-    }
 
     /// <summary>The width and height written in the SVG that live-data.js holds.</summary>
     internal static (int Width, int Height) SvgSizeOf(string folder)
@@ -501,10 +449,36 @@ public sealed partial class MapParityTests
     }
 }
 
-static class ParityCaseExtensions
+/// <summary>The inputs of <see cref="MapCases"/> that must work, run through the published binary.</summary>
+[TestClass]
+public sealed class MapCaseTests
+{
+    /// <summary>
+    /// Every map the old parity check drew still draws, and every distance it measured is still printed: exit 0, nothing
+    /// on stderr, and the page's files written (or, for <c>--measure</c>, nothing written and one line printed).
+    /// </summary>
+    [TestMethod]
+    public void EveryMapThatShouldDrawDraws() => CommandCase.RunAll(MapCases.Succeeding, "map", (test, result, folder) =>
+    {
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("", result.Stderr);
+        string[] args = test.Args(folder);
+        bool measure = args.Any(a => a.StartsWith("--meas", StringComparison.Ordinal));
+        bool png = !measure && args.Any(a => a is "--png" or "--pn");
+        string maps = Path.GetDirectoryName(Path.Combine(folder, args.First(a => a.EndsWith(".json", StringComparison.Ordinal))))!;
+        Assert.AreEqual(!measure, File.Exists(Path.Combine(maps, "live-data.js")), "live-data.js");
+        Assert.AreEqual(!measure, File.Exists(Path.Combine(maps, "live.html")), "live.html");
+        Assert.AreEqual(png, File.Exists(Path.Combine(maps, "live.png")), "live.png");
+        if (measure)
+            Assert.HasCount(1, result.StdoutLines, result.ToString());
+    });
+
+}
+
+static class CommandCaseExtensions
 {
     /// <summary>The same case with a different place file (goblin-hall.json).</summary>
-    public static ParityCase WithPlace(this ParityCase test, PyDict place) => test with
+    public static CommandCase WithPlace(this CommandCase test, PyDict place) => test with
     {
         Seed = work =>
         {
@@ -514,7 +488,7 @@ static class ParityCaseExtensions
     };
 
     /// <summary>The same case with one more file, given as text.</summary>
-    public static ParityCase WithFile(this ParityCase test, string name, string content) => test with
+    public static CommandCase WithFile(this CommandCase test, string name, string content) => test with
     {
         Seed = work =>
         {
@@ -524,7 +498,7 @@ static class ParityCaseExtensions
     };
 
     /// <summary>The same case with one more file, given as bytes.</summary>
-    public static ParityCase WithBytes(this ParityCase test, string name, byte[] content) => test with
+    public static CommandCase WithBytes(this CommandCase test, string name, byte[] content) => test with
     {
         Seed = work =>
         {

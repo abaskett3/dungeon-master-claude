@@ -3,7 +3,7 @@ using Dmc.Digest;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc digest list|digest [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]</c>: replaces
+/// <c>dmc digest list|digest [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]</c>: replaced
 /// <c>scripts/transcript_digest.py</c>. Claude Code records every session of this project as a JSONL file that is far too big
 /// to read; this turns the sessions into a readable transcript plus the numbers needed to judge how the toolkit's prompts
 /// performed, for the <c>review-transcript</c> skill.

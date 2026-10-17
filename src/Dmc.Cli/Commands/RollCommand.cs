@@ -3,7 +3,7 @@ using Dmc.Dice;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc roll 1d20+5 2d20kh1+5 ...</c>: replaces <c>scripts/roll.ps1</c> and <c>roll.sh</c>. Every argument is
+/// <c>dmc roll 1d20+5 2d20kh1+5 ...</c>: replaced <c>scripts/roll.ps1</c> and <c>roll.sh</c>. Every argument is
 /// a dice expression. One line is printed per expression, on stdout, errors included, as the scripts do. The
 /// exit code is 1 if any expression was bad (the good ones are still rolled), and 1 with a usage line when
 /// there are none.

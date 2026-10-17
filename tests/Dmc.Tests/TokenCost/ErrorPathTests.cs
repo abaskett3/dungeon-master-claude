@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using Dmc.Tests.Parity;
+using Dmc.Tests.Digest;
+using Dmc.Tests.Map;
+using Dmc.Tests.Pdf;
 using Dmc.Tests.Support;
 
 namespace Dmc.Tests.TokenCost;
@@ -67,89 +69,49 @@ public sealed partial class ErrorPathTests
         AssertOneLine(DmcRunner.InProcess(args), $"dmc {string.Join(' ', args)} (in-process)");
     }
 
-    public static IEnumerable<object[]> MapErrors { get; } = MapParityTests.ErrorCases.Select(c => new object[] { c }).ToArray();
+    public static IEnumerable<object[]> MapErrors { get; } = MapCases.ErrorCases.Select(c => new object[] { c }).ToArray();
 
-    public static string MapName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
+    public static string CaseName(System.Reflection.MethodInfo method, object[] data) => $"{method.Name}: {data[0]}";
 
     /// <summary>
-    /// Every bad map file, bad argument and bad cell prints one line and no stack trace: the same inputs as the
-    /// parity check, plus the ones the script crashes on. Every one of them must fail: a case that draws the map is
-    /// a mistake in the list, and the test says so.
+    /// Every bad map file, bad argument and bad cell prints one line and no stack trace. Every one of them must fail: a
+    /// case that draws the map is a mistake in the list, and the test says so.
     /// </summary>
     [TestMethod]
-    [DynamicData(nameof(MapErrors), DynamicDataDisplayName = nameof(MapName))]
-    public void EveryErrorOfMapPrintsOneLine(ParityCase test)
-    {
-        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
-        try
-        {
-            test.Seed?.Invoke(folder);
-            string[] args = ["map", .. test.Args(folder)];
-            var result = DmcRunner.BlackBox(args, cwd: folder);
-            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})"); // which also needs a non-zero exit code
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
-    }
+    [DynamicData(nameof(MapErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfMapPrintsOneLine(CommandCase test) =>
+        test.Run("map", (result, _) => AssertOneLine(result, test.Describe("map"))); // which also needs a non-zero exit code
 
     public static IEnumerable<object[]> PdfErrors { get; } =
-        PdfParityTests.ErrorCases().Concat(PdfParityTests.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
+        PdfCases.ErrorCases().Concat(PdfCases.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
 
     /// <summary>
     /// Every bad argument, missing file, bad page range, protected PDF and file that is not a PDF prints one line and no stack
-    /// trace: the parity cases that fail, plus the ones the script crashes on or does not check. Every one of them must fail.
+    /// trace, and writes nothing.
     /// </summary>
     [TestMethod]
-    [DynamicData(nameof(PdfErrors), DynamicDataDisplayName = nameof(MapName))]
-    public void EveryErrorOfPdfPrintsOneLine(ParityCase test)
+    [DynamicData(nameof(PdfErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfPdfPrintsOneLine(CommandCase test) => test.Run("pdf", (result, folder) =>
     {
-        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
-        try
-        {
-            test.Seed?.Invoke(folder);
-            string[] args = ["pdf", .. test.Args(folder)];
-            var result = DmcRunner.BlackBox(args, cwd: folder);
-            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
-            Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")) || Directory.Exists(Path.Combine(folder, "extracted")),
-                "a failed run must not write anything");
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
-    }
+        AssertOneLine(result, test.Describe("pdf"));
+        Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")) || Directory.Exists(Path.Combine(folder, "extracted")),
+            "a failed run must not write anything");
+    });
 
     public static IEnumerable<object[]> DigestErrors { get; } =
-        DigestParityTests.ErrorCases().Concat(DigestParityTests.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
+        DigestCases.ErrorCases().Concat(DigestCases.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
 
     /// <summary>
-    /// Every bad argument, missing folder, empty result and bad log prints one line and no stack trace: the parity cases
-    /// that fail, plus the ones the script crashes on (a log that is not UTF-8, a record of the wrong shape, an output
-    /// path that is a file). Every one of them must fail, and none may write an output folder.
+    /// Every bad argument, missing folder, empty result and bad log (not UTF-8, a record of the wrong shape, an output path
+    /// that is a file) prints one line and no stack trace. Every one of them must fail, and none may write an output folder.
     /// </summary>
     [TestMethod]
-    [DynamicData(nameof(DigestErrors), DynamicDataDisplayName = nameof(MapName))]
-    public void EveryErrorOfDigestPrintsOneLine(ParityCase test)
+    [DynamicData(nameof(DigestErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfDigestPrintsOneLine(CommandCase test) => test.Run("digest", (result, folder) =>
     {
-        string folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(folder);
-        try
-        {
-            test.Seed?.Invoke(folder);
-            string[] args = ["digest", .. test.Args(folder)];
-            var result = DmcRunner.BlackBox(args, cwd: folder);
-            AssertOneLine(result, $"dmc {string.Join(' ', args)} ({test})");
-            Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")), "a failed run must not write an output folder");
-        }
-        finally
-        {
-            Directory.Delete(folder, recursive: true);
-        }
-    }
+        AssertOneLine(result, test.Describe("digest"));
+        Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")), "a failed run must not write an output folder");
+    });
 
     [TestMethod]
     public void PlayWithoutClaudePrintsOneLine()

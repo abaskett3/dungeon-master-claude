@@ -98,7 +98,7 @@ public sealed class LauncherTests
             AssertClaudeStarted(result, toolkit);
             Assert.HasCount(2, result.StderrLines, result.ToString());
             StringAssert.StartsWith(result.StderrLines[0], $"get-dmc: {Asset("dmc-v9.8.7", Rid)} is not in ");
-            Assert.AreEqual("play: dmc is not available, so Claude Code starts without it.", result.StderrLines[1]);
+            Assert.AreEqual("play: dmc is not available, so Claude Code starts without it, and DMC cannot roll dice, draw maps or read PDFs until get-dmc succeeds.", result.StderrLines[1]);
             Assert.AreEqual(brokenDmc, File.Exists(toolkit.Exe));
         }
         finally

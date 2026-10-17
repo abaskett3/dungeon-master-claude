@@ -4,7 +4,7 @@ using Dmc.ContextCheck;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc context-check</c>: replaces <c>scripts/context_check.py</c>. The play launcher's UserPromptSubmit hook
+/// <c>dmc context-check</c>: replaced <c>scripts/context_check.py</c>. The play launcher's UserPromptSubmit hook
 /// runs it before each player message. Claude Code passes a JSON object on stdin that includes
 /// <c>transcript_path</c>, the session's log. Below the threshold nothing is printed; from it on, one line is, and
 /// Claude Code adds it to DMC's context.

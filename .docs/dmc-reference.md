@@ -26,7 +26,7 @@ $ dmc --version
 dmc 0.0.0-dev
 ```
 
-A release prints its own version (`dmc 0.1.1`); every other build prints `dmc 0.0.0-dev`. `-h` and `help` work like `--help`.
+A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.0.0-dev`. `-h` and `help` work like `--help`.
 
 ## Rules that apply to every command
 
@@ -56,7 +56,7 @@ dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, play, --v
 **Stale-binary warning.** When `tools/dmc-release.json` pins a release and this `dmc` is a different release, every command except `context-check` first prints one line on stderr and carries on:
 
 ```
-dmc: this is dmc 0.1.0, but the toolkit pins dmc-v0.1.1: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it
+dmc: this is dmc 0.1.1, but the toolkit pins dmc-v0.1.2: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it
 ```
 
 It says nothing when the pin is missing, unreadable or empty, and nothing for a developer build (`0.0.0-dev`), which is not a release.

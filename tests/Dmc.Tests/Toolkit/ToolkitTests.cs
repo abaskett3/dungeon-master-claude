@@ -232,7 +232,8 @@ public sealed partial class ToolkitTests
         // Tools play, the dice and map commands, rules lookups and the module and import skills need.
         string[] needed = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "PowerShell", "Skill", "ToolSearch",
                            "AskUserQuestion", "WebSearch", "WebFetch", "Agent"];
-        foreach (string rule in settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? [])
+        // Only a bare tool name or a tool-name glob removes a tool; Bash(rm *) removes one command, not the tool.
+        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !r.Contains('(')))
         {
             string pattern = "^" + Regex.Escape(rule.Split('(')[0]).Replace(@"\*", ".*") + "$";
             foreach (string tool in needed)
@@ -243,6 +244,63 @@ public sealed partial class ToolkitTests
             Assert.AreEqual("on", (string?)overrides?[skill] ?? "on", $"play-settings.json hides /{skill}");
         // The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.
         Assert.IsNull(settings["permissions"]?["allow"]);
+    }
+
+    /// <summary>
+    /// The shell deletes play must not run (issue #36), as <c>Tool(pattern)</c> deny rules. <c>Remove-Item</c> and its
+    /// aliases are listed one by one so the rule does not depend on how Claude Code canonicalizes an alias.
+    /// </summary>
+    static readonly string[] ShellDeleteRules =
+    [
+        "Bash(rm *)", "Bash(rmdir *)", "Bash(unlink *)",
+        "PowerShell(Remove-Item *)", "PowerShell(rm *)", "PowerShell(del *)", "PowerShell(erase *)",
+        "PowerShell(rd *)", "PowerShell(ri *)", "PowerShell(rmdir *)",
+    ];
+
+    /// <summary>
+    /// Whether a deny rule of play-settings.json matches one subcommand: the pattern's <c>*</c> stands for any text, a
+    /// trailing <c> *</c> also matches the bare command, and PowerShell rules ignore case (Claude Code's documented
+    /// matching). This cannot test how Claude Code splits a chained command; that is its own parsing.
+    /// </summary>
+    static bool Denied(string tool, string command)
+    {
+        foreach (string rule in Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!))
+        {
+            if (Rule().Match(rule) is not { Success: true } m || m.Groups[1].Value != tool) continue;
+            string pattern = m.Groups[2].Value;
+            string regex = pattern.EndsWith(" *", StringComparison.Ordinal)
+                ? Regex.Escape(pattern[..^2]) + "( .*)?"
+                : Regex.Escape(pattern).Replace(@"\*", ".*");
+            var options = RegexOptions.Singleline | (tool == "PowerShell" ? RegexOptions.IgnoreCase : RegexOptions.None);
+            if (Regex.IsMatch(command, "^" + regex + "$", options)) return true;
+        }
+        return false;
+    }
+
+    [TestMethod]
+    public void ThePlaySettingsDenyShellDeletes()
+    {
+        string[] denied = Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        foreach (string rule in ShellDeleteRules)
+            CollectionAssert.Contains(denied, rule, $"play-settings.json does not deny {rule}");
+
+        foreach (string command in new[] { "rm a.md", "rm -rf adventures/x", "rm", "rmdir adventures/x", "unlink a.md" })
+            Assert.IsTrue(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[]
+                 {
+                     "Remove-Item a.md", "remove-item -Recurse -Force adventures/x", "Remove-Item", "rm a.md", "del a.md", "erase a.md",
+                     "rd adventures/x", "ri a.md", "rmdir adventures/x", "RI a.md",
+                 })
+            Assert.IsTrue(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // What play does run is not caught: reading, listing, dmc, and commands that only start with the same letters.
+        foreach (string command in new[] { "ls adventures", "cat a.md", "./bin/dmc roll 1d20", "rmx a.md", "rmdirs a" })
+            Assert.IsFalse(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[] { "Get-ChildItem adventures", "./bin/dmc roll 1d20", "Remove-Itemx a", "ri2 a" })
+            Assert.IsFalse(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // Toolkit work is not blocked: the deletes are denied in play-settings.json only, never in settings.json.
+        Assert.IsNull(Settings("settings.json")["permissions"]?["deny"], "settings.json applies to toolkit work as well and must not deny deletes");
     }
 
     // ---------- the launchers and shell scripts ----------

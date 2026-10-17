@@ -58,7 +58,7 @@ Write changes to disk when they happen, not later. A crash, a closed terminal or
 - **Level-ups, new items, new relationships, changed goals**: update the character sheet.
 - **Stopping play, before `/compact` or `/clear`, or when the player asks**: run `/campaign-full-save`.
 
-Read campaign files with the Read tool and change them with Edit or Write, one file per call. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all.
+Read campaign files with the Read tool and change them with Edit or Write, one file per call. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all. Never delete or move a file under `adventures/` unless the player asks for that file to go, and then tell them the command to run themselves.
 
 Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved.
 

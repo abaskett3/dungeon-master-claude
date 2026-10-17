@@ -37,7 +37,17 @@
       "RemoteTrigger",
       "PushNotification",
       "ReportFindings",
-      "ShareOnboardingGuide"
+      "ShareOnboardingGuide",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(rm *)",
+      "PowerShell(del *)",
+      "PowerShell(erase *)",
+      "PowerShell(rd *)",
+      "PowerShell(ri *)",
+      "PowerShell(rmdir *)"
     ]
   },
   "hooks": {

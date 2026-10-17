@@ -38,7 +38,7 @@ Use Read and Edit or Write on each file. Do not write a script to do it.
 - **`story/dm-notes.md`**: restore the Opposition table to the point (the dead are alive again, positions reset), and remove plans that only made sense after the undone events.
 - **Session log**: cut the undone scenes from the log and add one line where they were: `Rewound on <date> to <moment> at the player's request; N scenes removed.` Do not keep the removed scenes anywhere a later session will read them.
 - **`story/summary.md`**: rewrite the recent part.
-- **`maps/`**: reset `live.json`; delete maps of places the party has now never seen.
+- **`maps/`**: reset `live.json`; for maps of places the party has now never seen, do not delete them (CLAUDE.md § Saving as you go); tell the player which they may delete themselves, with the command, and do not use those maps meanwhile.
 - **`module-progress.md`**, if present: unmark areas, encounters and treasure that are untouched again.
 
 Then search the campaign folder for the names of things that existed only in the undone stretch (a place, an NPC, an item) and for `void`, `rewound` and `~~`, and remove what you find.

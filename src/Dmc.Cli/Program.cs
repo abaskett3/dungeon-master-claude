@@ -21,7 +21,7 @@ public static class Program
         using var stderr = new StreamWriter(Console.OpenStandardError(), Io.Utf8) { NewLine = "\n", AutoFlush = true };
         try
         {
-            return CommandLine.Run(args, new Io(stdin, stdout, stderr), CommandTable.All);
+            return CommandLine.Run(args, new Io(stdin, stdout, stderr, InIsTerminal: !Console.IsInputRedirected), CommandTable.All);
         }
         finally
         {

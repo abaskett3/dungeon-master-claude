@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Dmc.ContextCheck;
 
 namespace Dmc.Commands;
@@ -53,13 +52,10 @@ public sealed class ContextCheckCommand : ICommand
     /// <exception cref="System.Text.Json.JsonException">The input is not valid JSON. The caller lets it through; <see cref="CommandLine"/> turns it into silence.</exception>
     internal static ContextReading ContextOfHook(string input)
     {
-        using var hook = JsonDocument.Parse(string.IsNullOrEmpty(input) ? "{}" : input);
-        if (hook.RootElement.ValueKind != JsonValueKind.Object
-            || !hook.RootElement.TryGetProperty("transcript_path", out var value)
-            || value.ValueKind != JsonValueKind.String)
-            return default;
-        string? path = value.GetString();
-        return string.IsNullOrEmpty(path) ? default : TranscriptReader.Read(ExpandUser(path, OperatingSystem.IsWindows()));
+        var (kind, path) = HookInput.Field(input, "transcript_path");
+        return kind != System.Text.Json.JsonValueKind.String || string.IsNullOrEmpty(path)
+            ? default
+            : TranscriptReader.Read(ExpandUser(path, OperatingSystem.IsWindows()));
     }
 
     /// <summary>

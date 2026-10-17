@@ -60,7 +60,7 @@ public abstract partial class MapCommandContract
         return map;
     }
 
-    /// <summary>The files in the working folder other than the input maps: what a run wrote (<c>live.html</c>, <c>live-data.js</c>, <c>live.png</c>).</summary>
+    /// <summary>The files in the working folder other than the input maps: what a run wrote (<c>live.html</c>, <c>live-data.js</c>, <c>live-source.txt</c>, <c>live.png</c>).</summary>
     string[] Outputs() => Directory.GetFileSystemEntries(_folder).Select(Path.GetFileName).OfType<string>()
         .Except(["goblin-hall.json", "live.json", "overland.json", "old.json"]).Order(StringComparer.Ordinal).ToArray();
 
@@ -101,7 +101,7 @@ public abstract partial class MapCommandContract
         Assert.AreEqual(0, result.ExitCode, result.Stderr);
         StringAssert.Contains(result.Stdout, "Drew \"Goblin hall\": 10 x 5 cells, 2 creatures.");
         StringAssert.Contains(result.Stdout, "@ Thorin (B2)  <->  1 Goblin boss (E2):  15 ft");
-        CollectionAssert.AreEqual(new[] { "live-data.js", "live.html" }, Outputs());
+        CollectionAssert.AreEqual(new[] { "live-data.js", "live-source.txt", "live.html" }, Outputs());
 
         var payload = Payload();
         CollectionAssert.AreEqual(new[] { "stamp", "svg", "time", "title" },

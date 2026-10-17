@@ -28,7 +28,7 @@ How this player likes to play, whatever the adventure. DMC reads this at the sta
 - **What I enjoy most**: <!-- combat, intrigue, exploration, puzzles, roleplay, humor ... -->
 - **Content to avoid**: none stated
 - **Maps**: draw one at the start of each fight and whenever I ask
-- **Maps are shown as**: a picture in my browser that updates itself (`browser`). Say `text` for ASCII maps in the terminal instead.
+- **Maps are shown as**: a picture in my browser that updates itself (`browser`). Say `text` for ASCII maps in the terminal instead, or `remote` if you play away from this computer's screen (DMC sends the picture to you).
 
 ## Other requests
 

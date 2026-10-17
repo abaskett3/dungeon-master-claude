@@ -6,7 +6,8 @@ namespace Dmc;
 /// <param name="In">Standard input.</param>
 /// <param name="Out">Standard output: what the command reports.</param>
 /// <param name="Err">Standard error: messages about the run, never its result.</param>
-public sealed record Io(TextReader In, TextWriter Out, TextWriter Err)
+/// <param name="InIsTerminal">True when standard input is a person at a terminal, not a pipe or file: a command that reads all of its input must not wait for it then. False by default, which is what a test's in-memory input is.</param>
+public sealed record Io(TextReader In, TextWriter Out, TextWriter Err, bool InIsTerminal = false)
 {
     /// <summary>UTF-8 with no byte-order mark: what dmc prints lands in DMC's context, so it stays plain.</summary>
     public static Encoding Utf8 { get; } = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);

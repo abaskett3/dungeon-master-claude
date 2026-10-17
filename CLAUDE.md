@@ -180,7 +180,7 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 
 - `maps/live.json` is the truth about where everyone stands. Only what the character has seen goes into a map file; the player can see all of it.
 - `./bin/dmc map adventures/<campaign>/maps/live.json` draws it in the player's browser and prints every distance. State distances only from `dmc` output.
-- In a fight, once per reply: roll; update `game-state.md` and `live.json` in one edit (positions, and `current` for whoever acts next), checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; narrate; run `dmc map` last, only if something on the map changed, never once per monster turn. If it refuses the file, correct it and say so in a line.
+- In a fight, once per reply: roll; update `game-state.md` and `maps/live.json` in one edit (positions, and `current` for whoever acts next), checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; then write the reply last, with no tool call after it. Do not run `dmc map` to redraw: the Stop hook (`dmc redraw`) draws a changed `live.json` after your reply and reports a refused one, which you correct (if that moves someone you already narrated, tell the player in a line). A remote player's picture, and a session without the hook: `draw-map`.
 
 ## Narration
 

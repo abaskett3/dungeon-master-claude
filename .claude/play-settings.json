@@ -41,13 +41,23 @@
       "Bash(rm *)",
       "Bash(rmdir *)",
       "Bash(unlink *)",
+      "Bash(mv *)",
+      "Bash(git clean *)",
+      "Bash(find * -delete*)",
+      "Bash(xargs rm*)",
+      "Bash(xargs * rm*)",
       "PowerShell(Remove-Item *)",
       "PowerShell(rm *)",
       "PowerShell(del *)",
       "PowerShell(erase *)",
       "PowerShell(rd *)",
       "PowerShell(ri *)",
-      "PowerShell(rmdir *)"
+      "PowerShell(rmdir *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(mi *)",
+      "PowerShell(move *)",
+      "PowerShell(mv *)",
+      "PowerShell(git clean *)"
     ]
   },
   "hooks": {

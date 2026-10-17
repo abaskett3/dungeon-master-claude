@@ -12,11 +12,11 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Combat procedure in the prompts and templates, issue #6 Phase 1 (PR #19) | Done | Prompts and templates only. |
 | Developer builds as `0.0.0-dev` in `artifacts/bin` (PR #20) | Done | Shipped in 0.1.1. |
 | Documentation rule (PR #22) | Done | In `CLAUDE.md` § Git and GitHub. |
-| No deleting campaign files in play, issue #36 (PR #38) | Done | A clause in `CLAUDE.md` § Saving as you go, deny rules for shell deletes in `.claude/play-settings.json`, and a toolkit test. Not a complete block; see [decisions.md](decisions.md). |
 | Product documents in `.docs/` (PR #23) | Done | This folder. |
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
+| No deleting or moving campaign files in play, issue #36 (PR #38) | Done | A clause in `CLAUDE.md` § Saving as you go, deny rules for shell deletes and moves in `.claude/play-settings.json`, and a toolkit test. Not a complete block; see [decisions.md](decisions.md). |
 | Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
@@ -45,11 +45,11 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #20:** developer builds report `0.0.0-dev` and publish to `artifacts/bin`, so `get-dmc` replaces any stray build in `bin/`.
 - **0.1.1** published and pinned (PR #21).
 - **PR #22:** the rule that every change updates its documentation.
-- **PR #38:** issue #36, `CLAUDE.md` forbids deleting or moving a file under `adventures/` unless the player asks, and `play-settings.json` denies `rm`, `Remove-Item` and their aliases. Closes issue #36.
 - **PR #23:** these product documents.
 - **PR #24:** XML doc comments throughout the code, header comments on scripts and workflows, and the build check for missing comments.
 - **PR #25:** issue #6 Phase 2, labelled rolls and the turn order on the map.
 - **0.1.2** published and pinned (PR #26).
+- **PR #38:** issue #36, `CLAUDE.md` forbids deleting or moving a file under `adventures/` unless the player asks, `play-settings.json` denies `rm`, `mv`, `Remove-Item`, `Move-Item`, `git clean`, `find -delete` and their aliases, and `rewind-campaign` lists stale maps for the player to delete instead of deleting them. Closes issue #36.
 
 ## Next: issue #6
 

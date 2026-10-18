@@ -31,6 +31,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Check the hook and the plan / standing-orders rule in play, then close issue #6 | Next | See [Next](#next-issue-6). |
 | Feedback about DMC recorded outside the campaign, issue #43 | Done (PR #44) | `record-feedback` and `review-feedback` skills, `feedback/`, `templates/feedback.md`; `review-transcript` now records entries and proposes no fixes. The migration of the first campaign's scattered feedback is done afterwards with the player, on local data. See [decisions.md](decisions.md). |
 | CI skips changes that are not code | Done | `tests.yml` ignores `*.md` and `*.txt` unless they are the prompts the tests read. See [decisions.md](decisions.md). |
+| `feedback/` searchable by the Grep tool | Done | `feedback/.ignore` overrides the git-ignore for ripgrep. See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

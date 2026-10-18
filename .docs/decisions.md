@@ -201,3 +201,10 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** A documentation-only change started three platform builds of a Native AOT program and all the tests for nothing. The user asked for CI to skip anything that is not technically code. The prompts are the exception: `ToolkitTests` checks that every `dmc` command, skill name and path in them is real, so a broken prompt must not merge unseen.
 - **Limits:** The filter is untested until a documentation-only PR shows the skip. `release.yml` keeps its own filter. `.docs/` files are not tested for content, only checked to exist when a prompt names them, so deleting or renaming one that a prompt names, together with a Markdown-only change, would not be caught.
 - **Source:** the user, in the session that closed issue #43.
+## feedback/ has a .ignore file so the entries can be searched
+
+- **Date:** 2026-10-18
+- **Decision:** `feedback/.ignore` holds `!*` and is tracked (`!feedback/.ignore` in `.gitignore`, LF in `.gitattributes`). The entries stay git-ignored, but ripgrep treats a `.ignore` file as overriding `.gitignore`.
+- **Reason:** The Grep tool uses ripgrep, which skips git-ignored files. A search of `feedback/` returned nothing although ten entries matched, so the duplicate check in `record-feedback` and the listing in `review-feedback` could not see any entry. Naming one file directly worked, which is why it went unnoticed. After adding the file the same search found all ten.
+- **Limits:** The same ripgrep behaviour hides any directory search under `adventures/`, `modules/` and `rules/`. A search of one named file is not affected. This is not changed here.
+- **Source:** The first run of `review-feedback`, 2026-10-18.

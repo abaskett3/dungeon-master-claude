@@ -29,7 +29,8 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Play fights and review them, issue #6 Phase 3 | Done | Two sparring bouts reviewed. Readied actions, shown rolls, enemy options and movement held; the map was drawn before the narration in all 6 updates. |
 | Redraw the map after the reply with a Stop hook, `dmc redraw`, issue #6 (PR #37) | Done (PR #37), not yet verified in play | Changes the binary and the play settings; it works only from release 0.1.3, once that is pinned. Prompt wording alone had failed 6 times out of 6. |
 | Check the hook and the plan / standing-orders rule in play, then close issue #6 | Next | See [Next](#next-issue-6). |
-| Feedback about DMC recorded outside the campaign, issue #43 | In review (PR #44) | `record-feedback` and `review-feedback` skills, `feedback/`, `templates/feedback.md`; `review-transcript` now records entries and proposes no fixes. The migration of the first campaign's scattered feedback is done afterwards with the player, on local data. See [decisions.md](decisions.md). |
+| Feedback about DMC recorded outside the campaign, issue #43 | Done (PR #44) | `record-feedback` and `review-feedback` skills, `feedback/`, `templates/feedback.md`; `review-transcript` now records entries and proposes no fixes. The migration of the first campaign's scattered feedback is done afterwards with the player, on local data. See [decisions.md](decisions.md). |
+| CI skips changes that are not code | Done | `tests.yml` ignores `*.md` and `*.txt` unless they are the prompts the tests read. See [decisions.md](decisions.md). |
 | `feedback/` searchable by the Grep tool | Done | `feedback/.ignore` overrides the git-ignore for ripgrep. See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |

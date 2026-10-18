@@ -85,13 +85,15 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 ## CI
 
-`.github/workflows/tests.yml` runs for every push to `main` and every pull request, on `ubuntu-latest` (linux-x64), `windows-latest` (win-x64) and `macos-latest` (osx-arm64), each:
+`.github/workflows/tests.yml` runs for every push to `main` and every pull request that changes more than Markdown and text files, on `ubuntu-latest` (linux-x64), `windows-latest` (win-x64) and `macos-latest` (osx-arm64), each:
 
 1. installs the .NET 10 SDK, and on Linux `clang` and `zlib1g-dev` for Native AOT;
 2. publishes `dmc` with Native AOT into `artifacts/bin`;
 3. publishes a second copy with `-p:Version=9.9.9` into `artifacts/release`;
 4. builds the tests and installs Playwright's Chromium through `pwsh`;
 5. runs `dotnet test` with `DMC_TEST_RELEASE_DIR` set.
+
+A change that touches only `*.md` or `*.txt` files does not start it, so a documentation change (`.docs/`, the roadmap) costs no runner time. `CLAUDE.md`, `README.md`, `.claude/skills/` and `templates/` always start it, because the toolkit tests read them as DMC's instructions. The `paths` filter is not tested; check it on the next documentation-only PR. The repository has no required status checks, so a skipped run never blocks a merge.
 
 `.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Build.props`, `Directory.Packages.props`, `global.json`). On a pull request it is a dry run: it builds, packs and installs every platform's archive with `get-dmc` and publishes nothing. See [releases.md](releases.md).
 

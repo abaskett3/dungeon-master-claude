@@ -143,6 +143,7 @@ public sealed partial class ToolkitTests
         }
     }
 
+    /// <summary><c>settings.json</c> allows editing <c>feedback/</c>, so <c>record-feedback</c> raises no permission prompt in play.</summary>
     [TestMethod]
     public void RecordingFeedbackInPlayRaisesNoPermissionPrompt()
     {
@@ -488,6 +489,7 @@ public sealed partial class ToolkitTests
                 $"{script} is not executable in git:\n{string.Join('\n', git)}");
     }
 
+    /// <summary>Only the <c>.gitkeep</c> of each personal folder (<c>adventures/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) is tracked, and nothing under <c>bin/</c>.</summary>
     [TestMethod]
     public void PersonalFilesStayOutOfGit() =>
         CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "feedback/.gitkeep", "modules/.gitkeep", "rules/.gitkeep" },

@@ -35,4 +35,4 @@ Settings for this campaign only. The player's general preferences (dice, how to 
 
 ## Other requests
 
-<!-- Anything else the player has asked for in this campaign, dated. -->
+<!-- Preferences only: anything else the player wants in this campaign, dated. Feedback about DMC itself (a mistake, an inconsistency) is not a preference: record it with the record-feedback skill. -->

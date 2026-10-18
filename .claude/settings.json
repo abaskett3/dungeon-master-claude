@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Edit(adventures/**)",
+      "Edit(feedback/**)",
       "Edit(modules/**)",
       "Edit(rules/**)",
       "Bash(./bin/dmc *)",

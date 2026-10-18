@@ -47,9 +47,11 @@ Plain `claude` also works, but loads more that play does not use, starts on your
 | `/ingest-module` | Read a published module so DMC can run it |
 | `/setup-rules` | Index a rules reference you have put in `rules/` |
 | `/rewind-campaign` | Go back to an earlier moment and undo what came after it |
-| `/review-transcript` | Review recorded play sessions and propose improvements to DMC's own prompts |
+| `/record-feedback` | Record feedback about how DMC itself runs the game, outside the campaign |
+| `/review-transcript` | Review recorded play sessions and record the problems found as feedback |
+| `/review-feedback` | Work through the recorded feedback and improve DMC's own prompts |
 
-DMC uses these on its own as you play. You only need to type the first three, plus Claude Code's own `/clear` when you take a break. `/review-transcript` is the exception: it is for working on the toolkit, and DMC only runs it when you ask.
+DMC uses these on its own as you play. You only need to type the first three, plus Claude Code's own `/clear` when you take a break. `/review-transcript` and `/review-feedback` are the exception: they are for working on the toolkit, and DMC only runs them when you ask.
 
 ## Talking to DMC
 
@@ -144,9 +146,13 @@ DMC runs at `high` effort. Its reasoning fills the conversation faster than the 
 
 ## Improving DMC from your own sessions
 
-Claude Code keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and reports where DMC's instructions let the game down: context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches and wasteful bookkeeping. It proposes changes to `CLAUDE.md`, the skills and the templates, and makes them once you say which you want. Your own preferences stay in your player options; they are not written into the toolkit.
+There are two kinds of feedback. How *you* like to play ("show my HP all the time") is a player option: tell DMC and it goes in your `player-options.md`. How *DMC* operates (a mistake, a fact that drifted, too much context used, a fight run against the rules, a quest that never ends) is DMC feedback. Tell DMC, or start your message with "feedback:", and it records it with `/record-feedback` as one file in `feedback/`, outside your campaign, without leaving the game.
 
-`dmc` condenses the logs, so it needs nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The review reads DMC's side of the game, so its report can contain spoilers.
+Claude Code also keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and records where DMC let the game down (context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches, wasteful bookkeeping) as more entries in `feedback/`. It changes nothing.
+
+`/review-feedback` is the one place where DMC is tuned. It works through the open entries, finds the cause in `CLAUDE.md`, the skills and the templates, and proposes changes, which it files as issues or makes once you say which entries to act on. Your own preferences stay in your player options; they are not written into the toolkit.
+
+`dmc` condenses the logs, so it needs nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The entries quote you and can contain spoilers, so `feedback/` is not in git either.
 
 ## Folder layout
 
@@ -164,11 +170,12 @@ src/Dmc.Cli/         dmc's source code (C#, .NET 10)
 tests/Dmc.Tests/     checks that dmc, the skills and the settings still work
 templates/           blank campaign files and character sheets
 adventures/          your campaigns (not in git)
+feedback/            feedback about DMC, one file per entry, outside any campaign (not in git)
 modules/             ingested published modules (not in git)
 rules/               optional local rules reference (not in git)
 ```
 
-The toolkit is a git repository. Your campaigns, modules and rules files are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
+The toolkit is a git repository. Your campaigns, modules, rules files and feedback are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ### Tests
 

@@ -6,6 +6,10 @@ adventures/*
 modules/*
 !modules/.gitkeep
 
+# Feedback about DMC quotes the player and can hold spoilers: personal data, kept out of git
+feedback/*
+!feedback/.gitkeep
+
 # The local rules reference is downloaded by each user (see README)
 rules/*
 !rules/.gitkeep

@@ -13,7 +13,7 @@ A record of what happened, written for a DM who was not there. Append a scene bl
 - What happened, in order.
 - Decisions the player made, and why if they said.
 - Rolls that changed the outcome (what, result, consequence).
-- Lines worth remembering, quoted exactly, with who said them.
+- Lines worth remembering, quoted exactly, with who said them. Log only what a character said or did in the fiction; what the player said out of character stays out, so that no NPC later knows it.
 - Changes: HP and resources spent, items and gold gained or lost, quests opened or closed, new people and places.
 - New facts added to canon.
 -->

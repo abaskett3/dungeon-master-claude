@@ -580,6 +580,19 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("CLAUDE.md"), "has one route: invoke the `record-feedback` skill");
     }
 
+    /// <summary>The prompt fixes from the first feedback review are in the files they belong in.</summary>
+    [TestMethod]
+    public void TheFirstFeedbackReviewFixesAreInThePrompts()
+    {
+        string claude = Read("CLAUDE.md");
+        StringAssert.Contains(claude, "Use Write only to create a new file");
+        StringAssert.Contains(claude, "no tool call after it, so the player's screen ends on the reply");
+        StringAssert.Contains(claude, "Never list routine upkeep");
+        StringAssert.Contains(Read("templates/campaign/game-state.md"), "## Reserved by the player");
+        StringAssert.Contains(Read("templates/campaign/player-options.md"), "**Story timeline**");
+        StringAssert.Contains(Read("templates/session-log.md"), "what the player said out of character stays out");
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

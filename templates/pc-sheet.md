@@ -70,6 +70,6 @@
 
 <!-- Who matters to this character and how things stand between them. -->
 
-## Notes
+## History
 
-<!-- Dated notes on what has happened to this character and decisions the player has made about them. -->
+<!-- Keep this the last section. Dated notes on what has happened to this character and decisions the player has made about them. Resume reads the sheet down to this heading; the full save moves old entries to character-sheets/<name>-history.md. -->

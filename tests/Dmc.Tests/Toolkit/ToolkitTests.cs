@@ -604,6 +604,16 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("templates/session-log.md"), "`sN.M`");
     }
 
+    /// <summary>A fight is planned with an ending, and fleeing is never an open-ended tool.</summary>
+    [TestMethod]
+    public void FightsArePlannedWithAnEnding()
+    {
+        string claude = Read("CLAUDE.md");
+        StringAssert.Contains(claude, "**How it ends**");
+        StringAssert.Contains(claude, "it does not do it");
+        StringAssert.Contains(claude, "flee for good at half strength");
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

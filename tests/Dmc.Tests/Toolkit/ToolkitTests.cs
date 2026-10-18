@@ -574,8 +574,7 @@ public sealed partial class ToolkitTests
         foreach (string name in SkillNames().Where(n => n != "review-feedback"))
         {
             string text = Read($".claude/skills/{name}/SKILL.md");
-            Assert.DoesNotContain("gh issue", text, $"{name} mentions gh issue; only review-feedback acts on feedback");
-            Assert.DoesNotContain("gh pr", text, $"{name} mentions gh pr; only review-feedback acts on feedback");
+            Assert.IsFalse(Regex.IsMatch(text, @"\bgh (issue|pr)\b"), $"{name} mentions gh issue or gh pr; only review-feedback acts on feedback");
         }
     }
 

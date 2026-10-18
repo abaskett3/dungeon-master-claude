@@ -96,12 +96,12 @@ The test: would the same behaviour have been wrong for a different player with d
 
 ## 6. Record
 
-Before writing, Grep `^status: open` in `feedback/` and Grep `^# ` in those files, so that a problem already recorded gets a new occurrence and not a second file.
+Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions` first, so that an interrupted review is not repeated. Then Grep `^status: (open|filed)` in `feedback/` and Grep `^# ` in `feedback/`, looking only at the titles in files from that list, so that a problem already recorded gets a new occurrence and not a second file.
 
 Write each inconsistency or mistake as an entry from `templates/feedback.md` with `source: transcript review`, in `feedback/YYYY-MM-DD-<slug>.md`. Describe the behaviour generally, so that it makes sense without the adventure. Put the Claude Code session id, the time and the quote or the numbers under Occurrences. If an open entry covers the problem, add an occurrence to it instead.
 
 Group the context and token numbers in one entry per cause, with a small table. Anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session) is an entry too, in the category `other`, saying so.
 
-Then give the user a short report: the verdict on how the sessions went, the entries created and extended (file names, one line each), the player preferences you noticed, and what you did not read. Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions`.
+Then give the user a short report: the verdict on how the sessions went, the entries created and extended (file names, one line each), the player preferences you noticed, and what you did not read.
 
 Acting on the entries, which means finding the cause in the prompts, proposing changes and making them, is `review-feedback`.

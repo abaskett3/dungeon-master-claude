@@ -19,11 +19,11 @@ Would the same behaviour have been wrong for a different player with different p
 
 ## 2. Look for a duplicate
 
-Grep `^status: open` in `feedback/` to list the open entries, then Grep `^# ` in those files for their titles. Do not read the entries whole. If one covers the same problem, add a line under Occurrences and the new quote under What the player said, with one Edit, and go to step 5.
+Grep `^status: (open|filed)` in `feedback/` to list the entries not yet fixed, then Grep `^# ` in `feedback/` and look only at the titles in files from that list. Do not read the entries whole. If one covers the same problem, add a line under Occurrences and the new quote under What the player said (two Edit calls), and go to step 5.
 
 ## 3. Write the entry
 
-Create `feedback/YYYY-MM-DD-<slug>.md` from `templates/feedback.md` with one Write call, using today's real date (the one you have; DMC has no clock, so do not run a shell command for it).
+Create `feedback/YYYY-MM-DD-<slug>.md` from `templates/feedback.md` with one Write call, using today's real-world date, as the harness gives it to you, never the in-world date from `game-state.md`. DMC has no clock, so do not run a shell command for it.
 
 - The title and What happened state the behaviour generally. The in-game details are an example. A worker must understand the entry if the campaign has been deleted.
 - Quote the player exactly under What the player said. For a slip of your own, write "none".

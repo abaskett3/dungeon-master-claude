@@ -1,13 +1,14 @@
 ---
-status: open        # open | filed #N | fixed in PR #N | not a toolkit problem: <why> | moved to player options
-category: other     # consistency | rules | combat | context | pacing | conduct | maps | bookkeeping | other
-source: player      # player | DMC | transcript review
+status: open
+category: other
+source: player
 recorded: YYYY-MM-DD
 ---
 <!--
 One file per piece of feedback about how DMC itself runs the game, saved as feedback/YYYY-MM-DD-<slug>.md. It must make sense without the adventure: a worker has to understand it and act on it even if the campaign has been deleted. It is not for the player's tastes (those are lines in a player-options.md): the test is whether the same behaviour would have been wrong for a different player with different preferences.
 
-category:
+status: open | filed #N | fixed in PR #N | not a toolkit problem: <why> | moved to player options
+category (pick one; the frontmatter above holds placeholders to replace):
   consistency  a name, number, count, distance, position or time that changed, or a fact the files held and DMC got wrong
   rules        a rule stated wrongly or applied differently the second time
   combat       combat run against the procedure: fights sized wrongly, enemies that chase or heal without end, turns ended for the player

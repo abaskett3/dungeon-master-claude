@@ -11,7 +11,7 @@ The entries in `feedback/` come from two skills: `record-feedback` (what the pla
 
 ## 1. List the open entries
 
-Grep `^status: open` in `feedback/` and read each file. A fresh worker needs no campaign file except where an entry's Context section points.
+Grep `^status: (open|filed)` in `feedback/` and read each file. A `filed #N` entry is listed so that its issue or PR can be checked and the entry closed once it has shipped. A fresh worker needs no campaign file except where an entry's Context section points.
 
 ## 2. Check whether each is already fixed
 
@@ -53,6 +53,6 @@ Then file an issue, or make the change, under CLAUDE.md § Git and GitHub.
 - Make each change in the one place it belongs. Do not restate a rule in several files.
 - Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.
 - If `CLAUDE.md` grows, look for something in it that the entries show DMC never needed, and cut or move it to a skill.
-- Write each change under the entry's Worker notes. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges.
+- Under the entry's Worker notes, write a short note of what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges.
 - Remove any stopgap option line named under Done in play once its fix has shipped.
 - Never delete an entry file: a closed status is the record.

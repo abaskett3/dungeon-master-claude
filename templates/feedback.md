@@ -5,7 +5,7 @@ source: player
 recorded: YYYY-MM-DD
 ---
 <!--
-One file per piece of feedback about how DMC itself runs the game, saved as feedback/YYYY-MM-DD-<slug>.md. It must make sense without the adventure: a worker has to understand it and act on it even if the campaign has been deleted. It is not for the player's tastes (those are lines in a player-options.md): the test is whether the same behaviour would have been wrong for a different player with different preferences.
+One file per piece of feedback about how DMC itself runs the game, saved as feedback/YYYY-MM-DD-<slug>.md. It must make sense without the adventure: a worker has to understand it and act on it even if the campaign has been deleted. Record everything the player says about how DMC runs the game here, even if it may turn out to be only their taste: review-feedback applies the test (would the same behaviour have been wrong for a different player with different preferences?) and moves a preference to the player options.
 
 status: open | filed #N | fixed in PR #N | not a toolkit problem: <why> | moved to player options
 category (pick one; the frontmatter above holds placeholders to replace):
@@ -38,7 +38,7 @@ source:
 - YYYY-MM-DD, <campaign>, session N, <moment>: "<quote>"
 
 ## Done in play
-<!-- A rewind, a ruling, or a stopgap option line with the file it is in (the worker removes the line once the fix ships). "none" if nothing. -->
+<!-- A rewind or a ruling made in play. "none" if nothing. Never a note in a campaign file. -->
 
 ## Context
 <!-- Optional pointers to campaign files and sections. Never needed to understand the entry. -->

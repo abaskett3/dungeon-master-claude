@@ -489,10 +489,10 @@ public sealed partial class ToolkitTests
                 $"{script} is not executable in git:\n{string.Join('\n', git)}");
     }
 
-    /// <summary>Only the <c>.gitkeep</c> of each personal folder (<c>adventures/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) is tracked, and nothing under <c>bin/</c>.</summary>
+    /// <summary>Only the <c>.gitkeep</c> of each personal folder (<c>adventures/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>), and the <c>.ignore</c> that makes <c>feedback/</c> searchable, are tracked, and nothing under <c>bin/</c>.</summary>
     [TestMethod]
     public void PersonalFilesStayOutOfGit() =>
-        CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "feedback/.gitkeep", "modules/.gitkeep", "rules/.gitkeep" },
+        CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "feedback/.gitkeep", "feedback/.ignore", "modules/.gitkeep", "rules/.gitkeep" },
             GitLsFiles(["adventures", "feedback", "modules", "rules", "bin"]).Order(StringComparer.Ordinal).ToArray());
 
     /// <summary>The files git tracks under these paths (<c>git ls-files</c>, from the repository root). The test is skipped, or fails on CI, outside a git checkout.</summary>
@@ -556,6 +556,21 @@ public sealed partial class ToolkitTests
         foreach (string heading in new[] { "What happened", "What the player said", "Occurrences", "Done in play", "Context" })
             StringAssert.Contains(skill, heading, $"record-feedback does not mention the section '{heading}'");
         StringAssert.Contains(skill, "templates/feedback.md");
+    }
+
+    /// <summary>
+    /// Feedback about DMC has one route: <c>record-feedback</c> writes to <c>feedback/</c> and to nothing else, and
+    /// <c>feedback/.ignore</c> un-ignores the entries so that the Grep tool (ripgrep, which skips git-ignored files) can find them.
+    /// </summary>
+    [TestMethod]
+    public void FeedbackHasOneRouteAndItsEntriesCanBeSearched()
+    {
+        string skill = Read(".claude/skills/record-feedback/SKILL.md");
+        Assert.DoesNotContain("stopgap", skill, StringComparison.OrdinalIgnoreCase, "record-feedback must not write a second copy of feedback into a campaign");
+        StringAssert.Contains(skill, "Never record such feedback by hand, or anywhere else");
+        StringAssert.Contains(Read("CLAUDE.md"), "has one route: invoke the `record-feedback` skill");
+        Assert.AreEqual("!*", Read("feedback/.ignore").Trim(), "feedback/.ignore must re-include every entry for ripgrep");
+        StringAssert.Contains(Read(".gitignore"), "!feedback/.ignore");
     }
 
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>

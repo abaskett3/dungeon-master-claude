@@ -183,12 +183,11 @@ A Markdown or text copy works too and is faster to search. The SRD lacks most su
 
 ## Giving feedback about DMC
 
-There are two kinds of feedback, and they go to different places.
+Feedback about DMC has exactly one route, so it is never lost. Whatever is wrong with how DMC runs the game (a mistake, a fact or number that drifted, too much context used, a fight run against the rules, a quest or a conversation that never ends, something it keeps offering), say it in play, in your own words or after "feedback:". You do not decide whether it is a bug or just your taste; `/review-feedback` applies the test later (would the same behaviour have been wrong for a different player?) and moves a preference to your player options.
 
-- **Player options**: how *you* like the game run ("show my HP all the time", "shorter replies", "harder fights"). Tell DMC and it writes a one-line preference in the campaign's `player-options.md`, or in `adventures/player-options.md` if it is for every campaign (it asks which if it is unclear).
-- **DMC feedback**: how *DMC* operates. A mistake, a fact or number that drifted, too much context used, a fight run against the rules, a quest or a conversation that never ends. The test: would the same behaviour have been wrong for a different player with different preferences? If yes, it is DMC feedback.
+Changing a game setting is not feedback: "make fights harder" or "hide the dice math" is a request, and DMC writes it as a one-line preference in the campaign's `player-options.md`, or in `adventures/player-options.md` if it is for every campaign.
 
-To give DMC feedback, say it in play, in your own words or after "feedback:". DMC records it with the `record-feedback` skill as one file in `feedback/`, `feedback/YYYY-MM-DD-<slug>.md`, and answers with one line out of character. Nothing is written into the campaign, and DMC does not change the toolkit mid-game. If you raise the same problem again, DMC adds a line to the same file instead of starting a new one, which also shows how much it matters. If you want a change applied in this campaign right away, say so: DMC writes one preference line in the campaign's `player-options.md` as a stopgap and names it in the entry.
+DMC records feedback with the `record-feedback` skill as one file in `feedback/`, `feedback/YYYY-MM-DD-<slug>.md`, and answers with one line out of character. Nothing is written into the campaign, and DMC does not change the toolkit mid-game. If you raise the same problem again, DMC adds a line to the same file instead of starting a new one, which also shows how much it matters.
 
 Entries quote you and can contain spoilers, so `feedback/` is not in git. Each one makes sense without the adventure.
 

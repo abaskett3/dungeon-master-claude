@@ -146,11 +146,11 @@ DMC runs at `high` effort. Its reasoning fills the conversation faster than the 
 
 ## Improving DMC from your own sessions
 
-There are two kinds of feedback. How *you* like to play ("show my HP all the time") is a player option: tell DMC and it goes in your `player-options.md`. How *DMC* operates (a mistake, a fact that drifted, too much context used, a fight run against the rules, a quest that never ends) is DMC feedback. Tell DMC, or start your message with "feedback:", and it records it with `/record-feedback` as one file in `feedback/`, outside your campaign, without leaving the game.
+Feedback about DMC has one route. Tell DMC what is wrong, in your own words or after "feedback:" (a mistake, a fact that drifted, too much context used, a fight run against the rules, a quest that never ends, something it keeps offering), and it records it with `/record-feedback` as one file in `feedback/`, outside your campaign, without leaving the game. Nothing about DMC is written into your campaign. (Changing a game setting, such as "make fights harder", is different: say so and DMC edits your player options.)
 
 Claude Code also keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and records where DMC let the game down (context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches, wasteful bookkeeping) as more entries in `feedback/`. It changes nothing.
 
-`/review-feedback` is the one place where DMC is tuned. It works through the open entries, finds the cause in `CLAUDE.md`, the skills and the templates, and proposes changes, which it files as issues or makes once you say which entries to act on. Your own preferences stay in your player options; they are not written into the toolkit.
+`/review-feedback` is the one place where DMC is tuned. It works through the open entries, finds the cause in `CLAUDE.md`, the skills and the templates, and proposes changes, which it files as issues or makes once you say which entries to act on. If an entry turns out to be only your preference, it is moved to your player options; preferences are not written into the toolkit.
 
 `dmc` condenses the logs, so it needs nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/`, which is not in git, and nothing leaves your machine. The entries quote you and can contain spoilers, so `feedback/` is not in git either.
 

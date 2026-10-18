@@ -630,6 +630,16 @@ public sealed partial class ToolkitTests
         Assert.DoesNotContain("Read every file this save changed again", save);
     }
 
+    /// <summary>The rules for messages that are not actions, and for NPCs that must not re-ask, are in <c>CLAUDE.md</c>.</summary>
+    [TestMethod]
+    public void MessagesThatAreNotActionsAreHandled()
+    {
+        string claude = Read("CLAUDE.md");
+        StringAssert.Contains(claude, "A message that arrives while you are working is a new message");
+        StringAssert.Contains(claude, "A joke, sarcasm or complaint is never an event in the fiction");
+        StringAssert.Contains(claude, "never ask again what was answered");
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

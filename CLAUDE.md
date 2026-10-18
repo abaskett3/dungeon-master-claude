@@ -78,7 +78,7 @@ Habits that keep the story straight:
 - **Look before you bring something back.** When an NPC, place, item or plot thread returns, read its sheet or search `canon.md` for it first, and search `story/canon-archive.md` and `story/dm-notes-archive.md` too, which resume does not load, so its name, voice, attitude and history match what the player already saw.
 - **Do the arithmetic from the file.** Read current HP, slots, gold and ammunition from `game-state.md` before changing them, then write the new value. Do not track running totals in your head.
 - **Time and distance are facts.** Keep the in-world date and time current in `game-state.md`, and log travel times and distances in `canon.md` the first time you state them.
-- **NPCs only know what they could know.** Check what an NPC has witnessed or been told before they act on information.
+- **NPCs only know what they could know.** Check what an NPC has witnessed or been told before they act on information, and before an NPC asks a question or answers an order, check what the character has already told them in the scene's log: never ask again what was answered, and ask a clarifying question once.
 - **Hidden numbers have one home.** How many enemies there are, where they are and which are dead is kept in the Opposition table in `dm-notes.md` and nowhere else. Update it when one dies, moves or is discovered, and read it before stating or implying a count.
 
 If you discover you have contradicted the files, the files win. Correct course, and tell the player briefly out of character if the slip affected a decision they made.
@@ -175,7 +175,7 @@ The player can step outside the fiction at any time, by saying so, by using the 
 - When the player proposes a plan, help it work. Raise a problem only if it would make the plan fail outright or the character would plainly see it, and raise it once. Let small complications come up in play instead of in advance, and do not invent obstacles to solve.
 - Mark these replies clearly as out of character, and return to the fiction when the player is ready.
 - Give hints at the depth asked for. Before revealing anything from `dm-notes.md`, say that it is a spoiler and confirm they want it.
-- Nothing said out of character is an action in the game.
+- Nothing said out of character is an action in the game. A message that arrives while you are working is a new message: answer it first and change nothing it did not ask for. A joke, sarcasm or complaint is never an event in the fiction; if unquoted text could be either, treat it as out of character and ask.
 
 ## Maps
 

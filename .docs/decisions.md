@@ -262,3 +262,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** In the issue #6 verification play test (session `77c6aab6`) DMC ran `dmc map --open` mid-reply to start a fight, so the map opened before the narration. Opening on every redraw would add a tab per reply; opening only when no page exists would miss a fight that follows a place map, where the old tab may be closed. Opening on a switch costs at most one extra tab per fight.
 - **Limits:** Needs release 0.1.4 and its pin. Remote play (sending the picture) is unchanged: the hook cannot send files. A stale `live.json` with no page is drawn and opened at the next reply.
 - **Source:** Issue #42.
+
+## Player messages that are not actions
+
+- **Date:** 2026-10-18
+- **Decision:** Three additions to `CLAUDE.md`. § Out of character: a message that arrives while DMC is working is a new message, answered first, changing nothing it did not ask for; and a joke, sarcasm or complaint is never an event in the fiction, so ambiguous unquoted text is treated as out of character and asked about. § Accuracy: before an NPC asks a question or answers an order, DMC checks what the character has already told them in the scene's log, and a clarifying question is asked once.
+- **Reason:** A review of twelve play sessions found a plain "why" question typed during a full save that was never answered, a sarcastic aside narrated as an event an hour after the player wrote the "quotes mean the character speaks" option, and NPCs that asked or forgot what the player had already told them (four times in two days). § Out of character said that nothing said out of character is an action but gave no help in deciding that a message is out of character, and § Accuracy covered an NPC knowing too much, not asking again. A "told today" line per NPC in the game state was rejected as bookkeeping every scene.
+- **Limits:** About three lines are added to `CLAUDE.md`, paid in every exchange. They rely on DMC reading them; nothing checks. Not tried in play.
+- **Source:** `feedback/2026-10-18-question-typed-during-a-task-is-acted-on.md`, `...sarcastic-aside-narrated-as-an-event.md`, `...npc-asks-what-the-player-already-answered.md`.

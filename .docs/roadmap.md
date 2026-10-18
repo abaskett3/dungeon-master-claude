@@ -37,6 +37,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Every resume starts a new session | Done | Resume closes the last session and creates the next log; scenes number per session, cited `sN.M`. See [decisions.md](decisions.md). |
 | Fights are planned with an ending | Done | `CLAUDE.md` § Sizing fights "How it ends"; fleeing is "for good". See [decisions.md](decisions.md). |
 | Resume and full save bounded | Done | Size targets enforced at the full save; sheets read down to their history; consistency check uses targeted reads. Not yet measured in play. See [decisions.md](decisions.md). |
+| Player messages that are not actions | Done | `CLAUDE.md` § Out of character (a message mid-task is answered first; a joke or complaint is never an event) and § Accuracy (do not re-ask what the character already told an NPC). See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

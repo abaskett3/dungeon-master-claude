@@ -193,3 +193,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** Feedback had landed wherever DMC happened to be writing, in six places inside one campaign, several of them loaded at every resume, so a worker had to comb play files and the play files carried notes that were not about the game. One home per kind of feedback costs play nothing in context, keeps the entries understandable without the adventure, and shows by its occurrences how often a problem was raised. Keeping the tuning in one skill stops two skills proposing different fixes for the same cause.
 - **Limits:** `Edit(feedback/**)` must be in `.claude/settings.json` for recording to raise no prompt in play. The existing scattered feedback in the first campaign is migrated by hand, with the player, after merge; that is local data and not part of the PR.
 - **Source:** Issue #43.
+
+## feedback/ has a .ignore file so the entries can be searched
+
+- **Date:** 2026-10-18
+- **Decision:** `feedback/.ignore` holds `!*` and is tracked (`!feedback/.ignore` in `.gitignore`, LF in `.gitattributes`). The entries stay git-ignored, but ripgrep treats a `.ignore` file as overriding `.gitignore`.
+- **Reason:** The Grep tool uses ripgrep, which skips git-ignored files. A search of `feedback/` returned nothing although ten entries matched, so the duplicate check in `record-feedback` and the listing in `review-feedback` could not see any entry. Naming one file directly worked, which is why it went unnoticed. After adding the file the same search found all ten.
+- **Limits:** The same ripgrep behaviour hides any directory search under `adventures/`, `modules/` and `rules/`. A search of one named file is not affected. This is not changed here.
+- **Source:** The first run of `review-feedback`, 2026-10-18.

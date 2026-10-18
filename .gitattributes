@@ -3,3 +3,5 @@
 
 # PDF test fixtures are binary: no line-ending conversion
 *.pdf binary
+# ripgrep reads this file; keep LF so the pattern has no stray carriage return
+feedback/.ignore text eol=lf

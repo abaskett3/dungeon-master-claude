@@ -593,6 +593,17 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("templates/session-log.md"), "what the player said out of character stays out");
     }
 
+    /// <summary>Every resume ends the last session and starts a new one, and the citation form is stated in the session log template.</summary>
+    [TestMethod]
+    public void EveryResumeStartsANewSession()
+    {
+        string resume = Read(".claude/skills/resume-campaign/SKILL.md");
+        StringAssert.Contains(resume, "Every resume ends the previous session and starts a fresh one");
+        StringAssert.Contains(resume, "has no scenes yet, use it");
+        Assert.DoesNotContain("keep using the current one", resume, "a resume must not continue the previous session");
+        StringAssert.Contains(Read("templates/session-log.md"), "`sN.M`");
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

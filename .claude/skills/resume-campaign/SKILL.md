@@ -41,9 +41,16 @@ If you find any, tell the player out of character what disagrees, propose the mo
 
 If the last full save was older than the last session log entry (the test is in step 6: scenes after the "through scene N" stamp, an earlier session, or no stamp to compare), the previous session ended without a full save, and you have read the whole log. Say so, and bring `summary.md` up to date from the session log before continuing.
 
-## 4. Start or continue the session log
+## 4. End the last session and start a new one
 
-If this is a new play session, create the next `story/sessions/session-NNN.md` from `templates/session-log.md`. After a compaction, or a planned break (step 5), keep using the current one.
+Every resume ends the previous session and starts a fresh one, whatever brought you here (a clear, a new day, a compaction). Do this once, after you have read the previous log in step 2.
+
+1. If the most recent log in `story/sessions/` has no scenes yet, use it and skip the rest: nothing happened since it was made.
+2. Otherwise close the old log: if its "Session end" block is still empty, fill it in with one Edit from `game-state.md` (in-world end, where we stopped, what the player intends, loose ends).
+3. Create the next `story/sessions/session-NNN.md` from `templates/session-log.md`, with the real-world date and the in-world start from `game-state.md`.
+4. Set `Current session` in `game-state.md` to the new number, and nothing else about earlier sessions.
+
+Scenes are numbered from 1 in each session. Cite a session as `sN` and a scene as `sN.M`, as the session log template says.
 
 ## 5. Recap and resume
 

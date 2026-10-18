@@ -3,7 +3,7 @@
 The present moment only. History goes in `story/sessions/`.
 
 - **Campaign**:
-- **Current session**: 1
+- **Current session**: 1 <!-- the number only; earlier sessions are in story/sessions/ and summary.md -->
 - **Last full save**: never <!-- A full save writes: date and time, session number, "through scene N" (the last scene of the session log it covers). -->
 
 ## Scene

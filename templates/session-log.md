@@ -5,6 +5,8 @@
 
 A record of what happened, written for a DM who was not there. Append a scene block at the end of each scene. Keep each to a handful of lines: facts and decisions, not prose.
 
+Every resume starts a new session, so a log covers one sitting. Scenes are numbered from 1 in each session. Cite a session as `sN` and a scene as `sN.M`, for example `(s9.4)` for session 9, scene 4.
+
 ## Scenes
 
 <!--

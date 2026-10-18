@@ -41,4 +41,4 @@ Stat blocks are sized for the party actually present (see "Sizing fights" in CLA
 
 ## About this player
 
-<!-- What they have enjoyed, what fell flat, how they like to solve problems. -->
+<!-- Lasting statements, not a diary: what they have enjoyed, what fell flat, how they like to solve problems. Merge dated lines that say the same thing; about 40 lines at most. -->

@@ -614,6 +614,22 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(claude, "flee for good at half strength");
     }
 
+    /// <summary>Sheets end with their history, so that resume can read a sheet down to it, and the full save does not re-read whole files.</summary>
+    [TestMethod]
+    public void SheetsEndWithTheirHistoryAndResumeReadsThemDownToIt()
+    {
+        foreach (string sheet in new[] { "templates/pc-sheet.md", "templates/npc-sheet.md" })
+        {
+            string last = Regex.Matches(Read(sheet), @"^## (.+)$", RegexOptions.Multiline).Last().Groups[1].Value;
+            Assert.AreEqual("History", last, $"{sheet} must end with its History section");
+        }
+        StringAssert.Contains(Read(".claude/skills/resume-campaign/SKILL.md"), "Read a sheet down to its history, not through it");
+        string save = Read(".claude/skills/campaign-full-save/SKILL.md");
+        StringAssert.Contains(save, "with targeted reads");
+        StringAssert.Contains(save, "never one Edit per line");
+        Assert.DoesNotContain("Read every file this save changed again", save);
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

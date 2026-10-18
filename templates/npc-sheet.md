@@ -27,10 +27,6 @@
 
 <!-- Other NPCs and factions they are tied to. -->
 
-## History with the PC
-
-<!-- Dated notes, oldest first: meetings, favors, slights, promises in either direction. -->
-
 ## Stat block
 
 <!-- Fill in only if they may fight or make checks. Name the source creature if based on one, and keep the numbers fixed. -->
@@ -46,3 +42,7 @@
 - **Actions** (each attack: to hit, damage, reach or range, anything it needs):
 - **Spells or special abilities**:
 - **Gear**:
+
+## History
+
+<!-- Keep this the last section. Dated notes, oldest first: meetings, favors, slights, promises in either direction. Resume reads the sheet down to this heading; the full save moves old entries to character-sheets/<name>-history.md. -->

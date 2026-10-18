@@ -1,6 +1,6 @@
 # Game state
 
-The present moment only. History goes in `story/sessions/`.
+The present moment only. History goes in `story/sessions/`. Resume reads this whole file, so keep it under about 100 lines.
 
 - **Campaign**:
 - **Current session**: 1 <!-- the number only; earlier sessions are in story/sessions/ and summary.md -->

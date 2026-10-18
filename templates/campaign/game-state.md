@@ -85,6 +85,12 @@ No fight in progress.
 
 - none
 
+## Reserved by the player
+
+<!-- An item or resource the player is keeping for a named purpose (for example the tar for the hag). Never suggest spending it on something else. -->
+
+- none
+
 ## Pending
 
 <!-- An unresolved roll, a question the player has not answered, a choice in front of them. -->

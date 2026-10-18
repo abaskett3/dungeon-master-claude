@@ -60,9 +60,9 @@ Write changes to disk when they happen, not later. A crash, a closed terminal or
 - **Level-ups, new items, new relationships, changed goals**: update the character sheet.
 - **Stopping play, before `/compact` or `/clear`, or when the player asks**: run `/campaign-full-save`.
 
-Read campaign files with the Read tool and change them with Edit or Write, one file per call. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all. Never delete or move a file under `adventures/` unless the player asks for that file to go, and then tell them the command to run themselves.
+Read campaign files with the Read tool and change them with Edit, one file per call. Use Write only to create a new file; never replace a file that exists. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all. Never delete or move a file under `adventures/` unless the player asks for that file to go, and then tell them the command to run themselves.
 
-Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved.
+Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved. Do all of it before the reply, in every turn, out-of-character answers included: reads, rolls and saves first, then the reply as one block with no tool call after it, so the player's screen ends on the reply.
 
 ## Accuracy and consistency
 
@@ -182,13 +182,13 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 
 - `maps/live.json` is the truth about where everyone stands. Only what the character has seen goes into a map file; the player can see all of it.
 - `./bin/dmc map adventures/<campaign>/maps/live.json` draws it in the player's browser and prints every distance. State distances only from `dmc` output.
-- In a fight, once per reply: roll; update `game-state.md` and `maps/live.json` in one edit (positions, and `current` for whoever acts next), checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; then write the reply last, with no tool call after it. Do not run `dmc map` to redraw: the Stop hook (`dmc redraw`) draws a changed `live.json` after your reply and reports a refused one, which you correct (if that moves someone you already narrated, tell the player in a line). A remote player's picture, and a session without the hook: `draw-map`.
+- In a fight, once per reply: roll; update `game-state.md` and `maps/live.json` in one edit (positions, and `current` for whoever acts next), checking the new cell is free and can be entered; get any distance you will state from `./bin/dmc map <live.json> --measure A B`, which draws nothing; then write the reply last (see Saving as you go). Do not run `dmc map` to redraw: the Stop hook (`dmc redraw`) draws a changed `live.json` after your reply and reports a refused one, which you correct (if that moves someone you already narrated, tell the player in a line). A remote player's picture, and a session without the hook: `draw-map`.
 
 ## Narration
 
 - Second person, present tense. Keep most beats to a short paragraph or two; let the player's interest set the length. `player-options.md` overrides.
 - Give NPCs distinct voices and their own motives. Record a voice note on their sheet so it stays the same next time.
-- End each beat with the situation open and a prompt for the player, without listing menu options unless they ask for suggestions.
+- End each beat with the situation open and a prompt for the player, without listing menu options unless they ask for suggestions. When they ask what is left or what to do, list only what moves the story: threads they raised and setups awaiting payoff, sized to the story timeline in the player options if one is set. Never list routine upkeep (meals, errands, watches) or a thread already answered in play, and check each option against canon (size, who can go where) first. Your own open notes stay in `dm-notes.md`.
 - Run initiative only while someone can act on someone else. When the party is waiting, preparing or holding and nothing can reach them yet, ask once what each of them is set to do, then move time forward to the next thing that changes the situation. Do not make the player repeat "ready again" round after round.
 
 ## Compaction and long sessions

@@ -216,3 +216,17 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The player asked for always and only one route, so feedback is never lost. DMC recorded one complaint as an entry, a note on an entry, a "stopgap" note in `game-state.md` and a possible option line, and ran the skill's steps by hand on some turns. Each extra route is a place feedback can be left behind or contradict the entry. A preference and a defect in DMC are different things and keep different homes.
 - **Limits:** Existing stopgap lines in a campaign (and a sentence in the first campaign's `game-state.md`) are left until `review-feedback` closes the entries that name them. The skill relies on DMC invoking it.
 - **Source:** the user, 2026-10-18; `feedback/2026-10-18-one-way-to-give-feedback.md`.
+
+## Six small prompt fixes from the first feedback review
+
+- **Date:** 2026-10-18
+- **Decision:** Six entries in `feedback/` are fixed together, each in the one place it belongs:
+  - `CLAUDE.md` § Narration: a list of what is left or what to do holds only threads the player raised and setups awaiting payoff, sized to the story timeline if one is set; never upkeep or threads already answered; each option is checked against canon first; DMC's own open notes stay in `dm-notes.md`.
+  - `templates/campaign/player-options.md`: a "Story timeline" line.
+  - `templates/campaign/game-state.md`: a "Reserved by the player" section, so DMC does not suggest spending an item the player is keeping for a named purpose.
+  - `CLAUDE.md` § Saving as you go: files are changed with Edit, and Write only creates a new file.
+  - `templates/session-log.md`: only what a character said or did in the fiction is logged, so an out-of-character aside is not later known by an NPC.
+  - `CLAUDE.md` § Saving as you go: in every turn the reads, rolls and saves come first and the reply is last, with no tool call after it. § Maps points to it instead of repeating it.
+- **Reason:** Each traced to something the prompts said, left out or made expensive: no rule on what to offer, no home for a timeline or a reserved item, "Edit or Write" with no guard, no marker separating out-of-character talk in the log, and the reply-last order stated only for combat. `CLAUDE.md` grows by about three lines, paid in every exchange; the reply-order rule replaces words in § Maps.
+- **Limits:** Whether Claude Code can hide diffs and commands is a display setting outside the toolkit and was not looked up. The cause of the out-of-character entry and of the overwritten `game-state.md` was inferred from the prompts, not from a transcript.
+- **Source:** `feedback/2026-10-18-dmc-offers-its-own-loose-ends-as-things-to-do.md`, `2026-10-17-quests-not-sized-to-story-timeline.md`, `2026-10-17-dmc-suggests-spending-an-item-the-player-is-saving.md`, `2026-10-17-game-state-overwritten-and-rebuilt.md`, `2026-10-17-ooc-statement-logged-as-in-fiction.md`, `2026-10-17-narration-split-by-tool-output.md`.

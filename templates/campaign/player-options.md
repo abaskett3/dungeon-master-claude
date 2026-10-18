@@ -26,6 +26,7 @@ Settings for this campaign only. The player's general preferences (dice, how to 
 
 - **Tone**: heroic fantasy
 - **Content to avoid in this campaign**: nothing beyond the general list
+- **Story timeline**: none set <!-- for example "the campaign ends in-world on Day 7". Size quests and scenes to it, as guidance and not a hard rule, summarise travel and small errands, and never drop a thread the player raises. -->
 
 ## Overrides for this campaign
 

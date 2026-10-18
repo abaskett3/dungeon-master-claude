@@ -193,3 +193,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** Feedback had landed wherever DMC happened to be writing, in six places inside one campaign, several of them loaded at every resume, so a worker had to comb play files and the play files carried notes that were not about the game. One home per kind of feedback costs play nothing in context, keeps the entries understandable without the adventure, and shows by its occurrences how often a problem was raised. Keeping the tuning in one skill stops two skills proposing different fixes for the same cause.
 - **Limits:** `Edit(feedback/**)` must be in `.claude/settings.json` for recording to raise no prompt in play. The existing scattered feedback in the first campaign is migrated by hand, with the player, after merge; that is local data and not part of the PR.
 - **Source:** Issue #43.
+
+## CI does not run for changes that are not code
+
+- **Date:** 2026-10-17
+- **Decision:** `.github/workflows/tests.yml` has a `paths` filter on both `push` and `pull_request`: everything runs it except `*.md` and `*.txt` files, and `CLAUDE.md`, `README.md`, `.claude/skills/**` and `templates/**` are put back, because the toolkit tests read them. The same list is written out for both events.
+- **Reason:** A documentation-only change started three platform builds of a Native AOT program and all the tests for nothing. The user asked for CI to skip anything that is not technically code. The prompts are the exception: `ToolkitTests` checks that every `dmc` command, skill name and path in them is real, so a broken prompt must not merge unseen.
+- **Limits:** The filter is untested until a documentation-only PR shows the skip. `release.yml` keeps its own filter. `.docs/` files are not tested for content, only checked to exist when a prompt names them, so deleting or renaming one that a prompt names, together with a Markdown-only change, would not be caught.
+- **Source:** the user, in the session that closed issue #43.

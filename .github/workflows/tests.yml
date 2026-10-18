@@ -1,6 +1,8 @@
 name: Tests
 
-# Builds and tests the toolkit's .NET code. It runs on every pull request, and on every push to main. For each of
+# Builds and tests the toolkit's .NET code. It runs on every pull request, and on every push to main, unless the change
+# touches only files that are not code: Markdown and text files are skipped, except the ones the toolkit tests read as
+# DMC's instructions (CLAUDE.md, README.md, .claude/skills/ and templates/), which still run it. For each of
 # Linux, Windows and macOS (Apple Silicon) it publishes dmc with Native AOT twice (a development build, and one with a
 # release's version number), builds the tests, installs Playwright's Chromium and runs all the tests. It writes
 # nothing to the repository and publishes nothing. The build treats a missing XML comment on a public member of dmc as
@@ -9,7 +11,25 @@ name: Tests
 on:
   push:
     branches: [main]
+    paths:
+      - "**"
+      - "!**.md"
+      - "!**.txt"
+      # The prompts: ToolkitTests checks their commands, skills and paths, so a change to them is tested.
+      - CLAUDE.md
+      - README.md
+      - .claude/skills/**
+      - templates/**
   pull_request:
+    paths:
+      - "**"
+      - "!**.md"
+      - "!**.txt"
+      # The prompts: ToolkitTests checks their commands, skills and paths, so a change to them is tested.
+      - CLAUDE.md
+      - README.md
+      - .claude/skills/**
+      - templates/**
 
 jobs:
   # The only job: publish dmc for the runner's platform, then build and run the tests against it.

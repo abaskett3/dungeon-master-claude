@@ -38,7 +38,7 @@ source:
 - YYYY-MM-DD, <campaign>, session N, <moment>: "<quote>"
 
 ## Done in play
-<!-- A rewind, a ruling, or a stopgap option line with the file it is in (the worker removes the line once the fix ships). "none" if nothing. -->
+<!-- A rewind or a ruling made in play. "none" if nothing. Never a note in a campaign file. -->
 
 ## Context
 <!-- Optional pointers to campaign files and sections. Never needed to understand the entry. -->

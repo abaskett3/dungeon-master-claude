@@ -146,7 +146,7 @@ DMC runs at `high` effort. Its reasoning fills the conversation faster than the 
 
 ## Improving DMC from your own sessions
 
-There are two kinds of feedback. How *you* like to play ("show my HP all the time") is a player option: tell DMC and it goes in your `player-options.md`. How *DMC* operates (a mistake, a fact that drifted, too much context used, a fight run against the rules, a quest that never ends) is DMC feedback. Tell DMC, or start your message with "feedback:", and it records it with `/record-feedback` as one file in `feedback/`, outside your campaign, without leaving the game.
+There are two kinds of feedback. How *you* like to play ("show my HP all the time") is a player option: tell DMC and it goes in your `player-options.md`. How *DMC* operates (a mistake, a fact that drifted, too much context used, a fight run against the rules, a quest that never ends) is feedback, which has exactly one route. Tell DMC, or start your message with "feedback:", and it records it with `/record-feedback` as one file in `feedback/`, outside your campaign, without leaving the game.
 
 Claude Code also keeps a log of every session on your machine. `/review-transcript` reads the logs for a campaign and records where DMC let the game down (context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches, wasteful bookkeeping) as more entries in `feedback/`. It changes nothing.
 

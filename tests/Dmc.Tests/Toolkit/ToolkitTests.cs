@@ -570,6 +570,16 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read(".gitattributes"), "feedback/.ignore text eol=lf");
     }
 
+    /// <summary>Feedback has one route: <c>record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>
+    [TestMethod]
+    public void FeedbackHasOneRoute()
+    {
+        string skill = Read(".claude/skills/record-feedback/SKILL.md");
+        Assert.DoesNotContain("stopgap", skill, StringComparison.OrdinalIgnoreCase, "record-feedback must not write a second copy of feedback into a campaign");
+        StringAssert.Contains(skill, "Never record such feedback by hand, or anywhere else");
+        StringAssert.Contains(Read("CLAUDE.md"), "has one route: invoke the `record-feedback` skill");
+    }
+
     /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
     [TestMethod]
     public void ResumeAndFullSaveDoNotTouchFeedback()

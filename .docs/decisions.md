@@ -208,3 +208,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The Grep tool uses ripgrep, which skips git-ignored files. A search of `feedback/` returned nothing although ten entries matched, so the duplicate check in `record-feedback` and the listing in `review-feedback` could not see any entry. Naming one file directly worked, which is why it went unnoticed. After adding the file the same search found all ten.
 - **Limits:** The same ripgrep behaviour hides any directory search under `adventures/`, `modules/` and `rules/`. A search of one named file is not affected. This is not changed here.
 - **Source:** The first run of `review-feedback`, 2026-10-18.
+
+## Feedback has one route; player options are a different thing
+
+- **Date:** 2026-10-18
+- **Decision:** A player option is a preference about the player's own game that the player wants changed. Feedback is something wrong with DMC that DMC should change. Feedback goes to `feedback/` through the `record-feedback` skill and nowhere else: not `game-state.md`, `dm-notes.md`, `canon.md`, the session logs, a `player-options.md`, or a note on another entry. The skill is invoked, not run by hand. Its classify step stays (the test: would the same behaviour have been wrong for a different player?); its stopgap step is removed, so a change the player wants now is a preference and goes to the player options. A message with both is handled as two separate items, without a reference from one to the other. `CLAUDE.md` § Player options says so in two lines. Replaces the stopgap part of the decision on recording feedback outside the campaign.
+- **Reason:** The player asked for always and only one route, so feedback is never lost. DMC recorded one complaint as an entry, a note on an entry, a "stopgap" note in `game-state.md` and a possible option line, and ran the skill's steps by hand on some turns. Each extra route is a place feedback can be left behind or contradict the entry. A preference and a defect in DMC are different things and keep different homes.
+- **Limits:** Existing stopgap lines in a campaign (and a sentence in the first campaign's `game-state.md`) are left until `review-feedback` closes the entries that name them. The skill relies on DMC invoking it.
+- **Source:** the user, 2026-10-18; `feedback/2026-10-18-one-way-to-give-feedback.md`.

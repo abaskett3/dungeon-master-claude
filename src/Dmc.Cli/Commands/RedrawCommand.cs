@@ -11,7 +11,7 @@ namespace Dmc.Commands;
 /// </summary>
 /// <remarks>
 /// <para>
-/// It prints nothing and exits 0 when there is nothing to do (no active campaign, no page drawn yet, no change), and
+/// It prints nothing and exits 0 when there is nothing to do (no active campaign, no map file to draw, no change), and
 /// on any failure that is not a refused map file. A map file that <see cref="MapChecker"/> refuses is the one case
 /// that is reported: one line on standard error and exit code 2, which for a Stop hook makes Claude Code hand the line
 /// to DMC and let it carry on, so DMC corrects the file and the reply that follows draws it.
@@ -22,13 +22,19 @@ namespace Dmc.Commands;
 /// file DMC cannot fix never makes it loop. Nothing is lost by that: a file that is still refused stays newer than the
 /// picture, so the next reply, which starts a new turn, is reported again. The message says so. When the command is
 /// run by hand at a terminal it does not wait for input, and acts as if <c>stop_hook_active</c> were false. Which file
-/// is drawn, and when, is decided by <see cref="MapRedraw"/>. If a <c>live.png</c> sits beside the page it is
+/// is drawn, and when, is decided by <see cref="MapRedraw"/>. When it draws <c>live.json</c> and the page did not show it
+/// (no page yet, or the page showed another map), it also opens <c>live.html</c> in the browser, as <c>dmc map --open</c>
+/// does, so the first map of a fight appears after the reply; a page already showing the scene is not opened again. If a <c>live.png</c> sits beside the page it is
 /// refreshed too, which costs nothing when something is drawn anyway.
 /// </para>
 /// </remarks>
 /// <param name="root">The toolkit root, the folder that holds <c>adventures/</c>; <see cref="Toolkit.Root"/> when null. A test passes a temporary folder.</param>
-public sealed class RedrawCommand(string? root = null) : ICommand
+/// <param name="open">Opens a URL in the browser. <see cref="Browser.Open"/> in the real program; a test passes one that only records the URL.</param>
+public sealed class RedrawCommand(string? root = null, Action<string>? open = null) : ICommand
 {
+    /// <summary>Opens a URL in the browser, for the first map of a fight.</summary>
+    readonly Action<string> _open = open ?? Browser.Open;
+
     /// <summary>The folder that holds <c>adventures/</c>.</summary>
     readonly string _root = root ?? Toolkit.Root;
 
@@ -58,7 +64,10 @@ public sealed class RedrawCommand(string? root = null) : ICommand
         try
         {
             bool png = File.Exists(Path.Combine(Path.GetDirectoryName(path) ?? "", "live.png"));
-            MapRedraw.Draw(path, png);
+            bool open = MapRedraw.NeedsOpening(path);
+            var (_, page, _) = MapRedraw.Draw(path, png);
+            if (open)
+                _open("file:///" + page.Replace(Path.DirectorySeparatorChar, '/').TrimStart('/'));
             return 0;
         }
         catch (DmcException e)

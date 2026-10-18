@@ -18,6 +18,12 @@ namespace Dmc.Maps;
 /// place). A page with no record (drawn by an older <c>dmc</c>) follows <see cref="LiveFile"/> alone, and a change to
 /// that scene's base place is not noticed until the scene itself changes.
 /// </para>
+/// <para>
+/// A fight's first map is drawn here too, so that the player sees it after the reply and not before. When there is no
+/// page yet, <see cref="LiveFile"/> is drawn if it exists. <see cref="NeedsOpening"/> says when the page must also be
+/// opened in the browser: when <see cref="LiveFile"/> is drawn and the page did not show it (no page, or the record names
+/// another file). A redraw of a page already showing the scene opens nothing, so no tab is opened twice.
+/// </para>
 /// </remarks>
 public static class MapRedraw
 {
@@ -29,7 +35,7 @@ public static class MapRedraw
 
     /// <summary>
     /// The map file to draw again, or null when there is nothing to do: no active campaign, no page drawn yet (DMC has
-    /// not shown a map, so none is changed behind its back), or nothing newer than the picture. Checked in order:
+    /// not shown a map and there is no <see cref="LiveFile"/>), or nothing newer than the picture. Checked in order:
     /// <see cref="LiveFile"/>; then the file the record names, and its base place. "Newer" is a strictly later
     /// modification time than <c>live-data.js</c>, so a file edited in the same clock tick as the drawing is not seen;
     /// the next edit is. With nothing changed this costs the reads of two tiny files and a few <c>stat</c> calls.
@@ -43,11 +49,11 @@ public static class MapRedraw
             return null;
         string maps = Path.Combine(root, "adventures", campaign, "maps");
         string data = Path.Combine(maps, "live-data.js");
+        string live = Path.Combine(maps, LiveFile);
         if (!File.Exists(data))
-            return null;
+            return File.Exists(live) ? live : null;
         DateTime drawn = File.GetLastWriteTimeUtc(data);
 
-        string live = Path.Combine(maps, LiveFile);
         if (File.Exists(live) && File.GetLastWriteTimeUtc(live) > drawn)
             return live;
 
@@ -64,6 +70,23 @@ public static class MapRedraw
                 return source;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Whether drawing this map file should also open the page in the browser: it is <see cref="LiveFile"/> and the
+    /// page did not show it, because no page has been drawn or the record names another file. Must be asked before
+    /// <see cref="Draw"/>, which rewrites the record. A page with no record is taken to show <see cref="LiveFile"/>.
+    /// </summary>
+    /// <param name="mapPath">The map file about to be drawn.</param>
+    public static bool NeedsOpening(string mapPath)
+    {
+        if (Path.GetFileName(mapPath) != LiveFile)
+            return false;
+        string folder = Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "";
+        if (!File.Exists(Path.Combine(folder, "live-data.js")))
+            return true;
+        string? name = PlainName(ReadLines(Path.Combine(folder, SourceFile)).FirstOrDefault());
+        return name is not null && name != LiveFile;
     }
 
     /// <summary>

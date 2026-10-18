@@ -254,3 +254,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** A review of twelve play sessions found that every resume added 104k to 165k tokens and that the full save was 8% to 34% of all context read. The causes were files that only grew (a 37,000-character PC sheet, 36,000 to 40,000 characters of DM notes, 29,000 of game state at the time), read whole at every resume, and a consistency check that read them all again. Only `canon.md` and the session log had a size rule or a partial read. Targets in lines, not characters, because there is no cheap way to count characters and a line count is already how `canon.md` is bounded.
 - **Limits:** The targets are guesses; the first campaign's files are far over them and will shrink only as full saves trim them. A sheet that keeps its history in the middle is read whole until a full save moves it. Nothing enforces the targets except the skill telling DMC to count lines. A `dmc` command that reports file sizes would be more reliable and was not built.
 - **Source:** `feedback/2026-10-18-resume-costs-over-120k-tokens-in-a-mature-campaign.md` and `feedback/2026-10-18-full-save-is-the-largest-context-cost-after-the-resume.md`.
+
+## The Stop hook opens the first map of a fight
+
+- **Date:** 2026-10-18
+- **Decision:** `dmc redraw` also draws `live.json` when no page exists yet, and opens `live.html` in the browser (as `dmc map --open`) whenever it draws `live.json` and the page did not show it: no page, or `live-source.txt` names another file. It does not open on a redraw of a page already showing the scene. `CLAUDE.md` § Maps and `draw-map` tell DMC to write `live.json` and let the hook draw and open it, never to run `dmc map --open` for a fight.
+- **Reason:** In the issue #6 verification play test (session `77c6aab6`) DMC ran `dmc map --open` mid-reply to start a fight, so the map opened before the narration. Opening on every redraw would add a tab per reply; opening only when no page exists would miss a fight that follows a place map, where the old tab may be closed. Opening on a switch costs at most one extra tab per fight.
+- **Limits:** Needs release 0.1.4 and its pin. Remote play (sending the picture) is unchanged: the hook cannot send files. A stale `live.json` with no page is drawn and opened at the next reply.
+- **Source:** Issue #42.

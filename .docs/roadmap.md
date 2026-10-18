@@ -35,6 +35,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | One route for feedback about DMC | Done | `record-feedback` is the only route; no stopgap step. See [decisions.md](decisions.md). |
 | Six small prompt fixes from the first feedback review | Done | Offers, story timeline, reserved items, Edit not Write, out-of-character remarks in the log, reply last in every turn. See [decisions.md](decisions.md). |
 | Every resume starts a new session | Done | Resume closes the last session and creates the next log; scenes number per session, cited `sN.M`. See [decisions.md](decisions.md). |
+| Fights are planned with an ending | Done | `CLAUDE.md` § Sizing fights "How it ends"; fleeing is "for good". See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

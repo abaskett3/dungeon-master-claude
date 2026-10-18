@@ -4,6 +4,8 @@ This document is for anyone who reads or edits a campaign's files by hand, chang
 
 ## Layout
 
+`feedback/` sits at the toolkit root, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
+
 ```
 adventures/
   player-options.md          the player's preferences for every campaign
@@ -110,3 +112,9 @@ A campaign is a module campaign when its folder holds `module-progress.md`, whic
 ## The rules folder
 
 `rules/` holds the player's optional rules reference, normally the SRD, and is ignored by git. `/setup-rules` writes `rules/index.md` (which document and edition, a section table with page ranges, a finer breakdown of the long alphabetical sections, and the pages most needed in play). For a PDF it first runs `dmc pdf text`, which writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`.
+
+## Feedback entries
+
+`feedback/` at the toolkit root holds feedback about how DMC itself runs the game, one file per entry, `feedback/YYYY-MM-DD-<slug>.md`, from [`templates/feedback.md`](../templates/feedback.md). It is outside `adventures/` and every campaign, ignored by git (only `feedback/.gitkeep` is tracked) because entries quote the player and can hold spoilers, and nothing in play reads it: resume and full save never touch it. The `record-feedback` skill writes entries in play; `review-transcript` writes them from the session logs; `review-feedback` reads them and updates their status.
+
+The frontmatter has `status` (`open`, `filed #N`, `fixed in PR #N`, `not a toolkit problem: <why>` or `moved to player options`), `category`, `source` (`player`, `DMC` or `transcript review`) and `recorded`. A worker finds the open entries with one search for `^status: open`; there is no index. The sections are What happened, What the player said, What should happen instead, Occurrences (a repeat adds a line, not a file), Done in play (a rewind, a ruling, or a stopgap preference line to remove once the fix ships), Context (optional pointers into a campaign) and Worker notes. An entry is written so that it makes sense if the campaign has been deleted. Entries are never deleted: a closed status is the record.

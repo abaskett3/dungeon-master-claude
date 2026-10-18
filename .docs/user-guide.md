@@ -181,9 +181,22 @@ DMC knows the 5e rules, but reading them is more reliable than remembering them.
 
 A Markdown or text copy works too and is faster to search. The SRD lacks most subclasses and some spells and monsters; for those DMC falls back to a web lookup or a ruling, which it records so it is applied the same way next time.
 
+## Giving feedback about DMC
+
+There are two kinds of feedback, and they go to different places.
+
+- **Player options**: how *you* like the game run ("show my HP all the time", "shorter replies", "harder fights"). Tell DMC and it writes a one-line preference in the campaign's `player-options.md`, or in `adventures/player-options.md` if it is for every campaign (it asks which if it is unclear).
+- **DMC feedback**: how *DMC* operates. A mistake, a fact or number that drifted, too much context used, a fight run against the rules, a quest or a conversation that never ends. The test: would the same behaviour have been wrong for a different player with different preferences? If yes, it is DMC feedback.
+
+To give DMC feedback, say it in play, in your own words or after "feedback:". DMC records it with the `record-feedback` skill as one file in `feedback/`, `feedback/YYYY-MM-DD-<slug>.md`, and answers with one line out of character. Nothing is written into the campaign, and DMC does not change the toolkit mid-game. If you raise the same problem again, DMC adds a line to the same file instead of starting a new one, which also shows how much it matters. If you want a change applied in this campaign right away, say so: DMC writes one preference line in the campaign's `player-options.md` as a stopgap and names it in the entry.
+
+Entries quote you and can contain spoilers, so `feedback/` is not in git. Each one makes sense without the adventure.
+
+To act on the entries, work on the toolkit (not in a game) and ask DMC to run `/review-feedback`. It lists the open entries, checks whether each is already fixed, finds the cause in `CLAUDE.md`, the skills and the templates, and reports. It files issues or makes changes only once you say which entries to act on, and marks each entry `filed #N` or `fixed in PR #N`; it never deletes an entry.
+
 ## Reviewing your sessions
 
-`/review-transcript` reads Claude Code's logs of a campaign's sessions and reports where DMC's instructions let the game down: context use, facts or numbers that drifted, badly sized fights, DMC acting for your character, slow stretches. It proposes changes to the toolkit and makes them only once you say which. It reads DMC's side of the game, so its report can contain spoilers. Nothing leaves your machine.
+`/review-transcript` reads Claude Code's logs of a campaign's sessions and looks for where DMC let the game down: context use, facts or numbers that drifted, badly sized fights, DMC acting for your character, slow stretches. It records each problem as an entry in `feedback/`, new or added to an existing one, the same as feedback you give in play, and changes nothing else. Acting on the entries is `/review-feedback`. It reads DMC's side of the game, so entries can contain spoilers. Nothing leaves your machine.
 
 ## Choosing a model
 
@@ -199,7 +212,7 @@ This keeps the break reminder and the play settings. Run a launcher once first, 
 
 Campaigns are ordinary text files under `adventures/`. You can read and edit your character sheet and the options by hand. To keep surprises, stay out of `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md` and the NPC sheets. [campaign-files.md](campaign-files.md) describes every file.
 
-Git ignores `adventures/`, `modules/` and `rules/`, so the toolkit can be shared without your saves or books. Back up `adventures/` separately, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
+Feedback about DMC is under `feedback/` at the toolkit root, outside every campaign. Git ignores `adventures/`, `modules/`, `rules/` and `feedback/`, so the toolkit can be shared without your saves or books. Back up `adventures/` separately, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ## Troubleshooting
 

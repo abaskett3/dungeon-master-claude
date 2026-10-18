@@ -144,6 +144,13 @@ public sealed partial class ToolkitTests
     }
 
     [TestMethod]
+    public void RecordingFeedbackInPlayRaisesNoPermissionPrompt()
+    {
+        string[] allowed = Settings("settings.json")["permissions"]!["allow"]!.AsArray().Select(r => (string)r!).ToArray();
+        CollectionAssert.Contains(allowed, "Edit(feedback/**)", "settings.json must allow editing feedback/, where record-feedback writes");
+    }
+
+    [TestMethod]
     public void HooksAreCommands()
     {
         foreach (string name in new[] { "settings.json", "play-settings.json" })
@@ -483,8 +490,8 @@ public sealed partial class ToolkitTests
 
     [TestMethod]
     public void PersonalFilesStayOutOfGit() =>
-        CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "modules/.gitkeep", "rules/.gitkeep" },
-            GitLsFiles(["adventures", "modules", "rules", "bin"]).Order(StringComparer.Ordinal).ToArray());
+        CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "feedback/.gitkeep", "modules/.gitkeep", "rules/.gitkeep" },
+            GitLsFiles(["adventures", "feedback", "modules", "rules", "bin"]).Order(StringComparer.Ordinal).ToArray());
 
     /// <summary>The files git tracks under these paths (<c>git ls-files</c>, from the repository root). The test is skipped, or fails on CI, outside a git checkout.</summary>
     static string[] GitLsFiles(string[] args)
@@ -524,6 +531,51 @@ public sealed partial class ToolkitTests
         {
             foreach (Match m in Regex.Matches(Read(file), @"`/([a-z]+(?:-[a-z]+)+)`"))
                 Assert.Contains(m.Groups[1].Value, SkillNames(), $"{file} mentions /{m.Groups[1].Value}, which is not a skill");
+        }
+    }
+
+    /// <summary>
+    /// The feedback entry template has the frontmatter keys and every section heading that <c>record-feedback</c> names,
+    /// so that the skill and the template cannot drift apart.
+    /// </summary>
+    [TestMethod]
+    public void TheFeedbackTemplateHasWhatRecordFeedbackFillsIn()
+    {
+        string template = Read("templates/feedback.md");
+        var front = Regex.Match(template, @"^---\n(.*?)\n---\n", RegexOptions.Singleline);
+        Assert.IsTrue(front.Success, "templates/feedback.md must start with a --- front matter block");
+        foreach (string key in new[] { "status", "category", "source", "recorded" })
+            Assert.IsTrue(Regex.IsMatch(front.Groups[1].Value, $@"^{key}:", RegexOptions.Multiline), $"templates/feedback.md has no `{key}:` line");
+
+        string skill = Read(".claude/skills/record-feedback/SKILL.md");
+        var headings = Regex.Matches(template, @"^## (.+)$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToArray();
+        CollectionAssert.AreEqual(new[] { "What happened", "What the player said", "What should happen instead", "Occurrences", "Done in play", "Context", "Worker notes" }, headings);
+        // The sections record-feedback tells DMC to fill in.
+        foreach (string heading in new[] { "What happened", "What the player said", "Occurrences", "Done in play", "Context" })
+            StringAssert.Contains(skill, heading, $"record-feedback does not mention the section '{heading}'");
+        StringAssert.Contains(skill, "templates/feedback.md");
+    }
+
+    /// <summary>Resume and full save never load the feedback folder: play pays nothing in context for feedback once it is written.</summary>
+    [TestMethod]
+    public void ResumeAndFullSaveDoNotTouchFeedback()
+    {
+        foreach (string skill in new[] { "resume-campaign", "campaign-full-save" })
+            Assert.DoesNotContain("feedback/", Read($".claude/skills/{skill}/SKILL.md"), $"{skill} must not load feedback/");
+    }
+
+    /// <summary>Tuning DMC happens in one place: only <c>review-feedback</c> files issues or opens PRs; <c>review-transcript</c> only records.</summary>
+    [TestMethod]
+    public void OnlyReviewFeedbackTunesDmc()
+    {
+        string transcript = Read(".claude/skills/review-transcript/SKILL.md");
+        StringAssert.Contains(transcript, "templates/feedback.md");
+        StringAssert.Contains(transcript, "review-feedback");
+        foreach (string name in SkillNames().Where(n => n != "review-feedback"))
+        {
+            string text = Read($".claude/skills/{name}/SKILL.md");
+            Assert.DoesNotContain("gh issue", text, $"{name} mentions gh issue; only review-feedback acts on feedback");
+            Assert.DoesNotContain("gh pr", text, $"{name} mentions gh pr; only review-feedback acts on feedback");
         }
     }
 

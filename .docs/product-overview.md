@@ -32,13 +32,15 @@ When they pull against each other, DMC looks for the ruling that keeps both. Mos
 | Rules lookup | An optional local copy of the free System Reference Document in `rules/`, indexed by `/setup-rules`, so rulings come from the text rather than memory. | `setup-rules` skill |
 | Breaks | Before each player message, a hook tells DMC how full the conversation is. Past a threshold DMC offers a save and a fresh session at the next natural pause, which keeps sessions cheap and accurate. | `dmc context-check`, CLAUDE.md § Compaction and long sessions |
 | Rewinds | `/rewind-campaign` takes the campaign back to an earlier moment by agreement and makes every file read as if the undone events never happened. Files DMC may not delete (maps of places the party has now never seen) are listed for you to confirm and delete yourself, and are not used meanwhile. | `rewind-campaign` skill |
-| Session review | `/review-transcript` reads the recorded sessions of a campaign and reports where the toolkit's own prompts made the game worse, with proposed fixes. | `review-transcript` skill, `dmc digest` |
+| Feedback about DMC | In play, the player's feedback about how DMC itself runs the game (a mistake, a drifting fact, a badly run fight) is recorded as one file in `feedback/`, outside the campaign; a repeat adds an occurrence to the same file. A player's taste is a player option, not feedback. | `record-feedback` skill, `templates/feedback.md` |
+| Session review | `/review-transcript` reads the recorded sessions of a campaign and records the problems it finds as entries in `feedback/`. It proposes and applies no fixes. | `review-transcript` skill, `dmc digest` |
+| Tuning DMC | `/review-feedback` works through the open entries, finds the cause in the prompts, reports, and on the user's word files issues or makes the changes. It is the only skill that tunes DMC. | `review-feedback` skill |
 
 The player only needs to type `/new-campaign`, `/resume-campaign` and `/campaign-full-save`, plus Claude Code's own `/clear` at a break. DMC uses the other skills on its own.
 
 ## How it is put together
 
-DMC is mostly text: `CLAUDE.md` sets the rules of conduct, ten skills under `.claude/skills/` describe the procedures, and `templates/` holds blank campaign files. The campaign files themselves are the source of truth; the conversation is only a cache of them. One small native program, `dmc`, does what a language model should not do by itself: roll dice, draw maps and measure distances, extract text and page images from PDFs, condense session logs, and measure the conversation's size. [architecture.md](architecture.md) describes how these fit together.
+DMC is mostly text: `CLAUDE.md` sets the rules of conduct, twelve skills under `.claude/skills/` describe the procedures, and `templates/` holds blank campaign files. The campaign files themselves are the source of truth; the conversation is only a cache of them. One small native program, `dmc`, does what a language model should not do by itself: roll dice, draw maps and measure distances, extract text and page images from PDFs, condense session logs, and measure the conversation's size. [architecture.md](architecture.md) describes how these fit together.
 
 ## What it deliberately does not do
 
@@ -47,7 +49,7 @@ DMC is mostly text: `CLAUDE.md` sets the rules of conduct, ten skills under `.cl
 - **It does not play the player's character.** DMC never decides, speaks or acts for the character, never ends a turn without asking, and treats a question as a question, not a go-ahead.
 - **It does not roll the player's dice** unless asked, and it never changes a die that has been shown. At the default lethality it keeps a campaign alive through other means (enemies that flee or take prisoners, a way out), and never says it went easy.
 - **It does not run a module from memory.** It runs from the ingested digest and the original pages, and does not railroad: leaving the script is recorded, not blocked.
-- **It does not upload anything.** Maps are local HTML files with no server; session digests are written to `adventures/.transcript-review/`, one local folder shared by all campaigns and rewritten on each review; PDFs are read on the player's machine.
+- **It does not upload anything.** Maps are local HTML files with no server; session digests are written to `adventures/.transcript-review/` and feedback to `feedback/`, one local folder shared by all campaigns and rewritten on each review; PDFs are read on the player's machine.
 - **It does not need Python, .NET or any other runtime on the player's machine.** `dmc` is a self-contained native program, downloaded and checked against a committed SHA-256.
 - **It is not signed.** No code signing or notarization; the macOS Gatekeeper and Windows SmartScreen checks on fresh machines were deliberately skipped (see [decisions.md](decisions.md)). It is not built for Intel Macs.
 - **It does not prevent context compaction.** It saves as it goes so that a compaction loses nothing, and offers breaks so that long conversations are rare.

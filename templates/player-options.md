@@ -32,4 +32,4 @@ How this player likes to play, whatever the adventure. DMC reads this at the sta
 
 ## Other requests
 
-<!-- Anything else the player has asked for that applies to every campaign. Write the preference, not the incident behind it: this file is read at every session. -->
+<!-- Preferences only: anything else the player wants for every campaign. Write the preference, not the incident behind it: this file is read at every session. Feedback about DMC itself (a mistake, an inconsistency) is not a preference: record it with the record-feedback skill. -->

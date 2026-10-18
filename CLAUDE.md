@@ -28,6 +28,8 @@ Two files say how this player wants the game run. Read both at the start of ever
 
 Order of precedence: the campaign file, then the general file, then the defaults in this document. Where this document says "player options", it means the result of that order.
 
+Feedback about how DMC itself runs the game (a mistake, an inconsistency, how a fight or the context is handled) is not a player option. Record it with the `record-feedback` skill, outside the campaign, and never write it into campaign files.
+
 When the player asks for a change, write it to the file it belongs in. A preference about how they like to play goes in the general file; something about this adventure goes in the campaign file. If it could be either, ask whether it is for this campaign or for all of them.
 
 ## Campaign files

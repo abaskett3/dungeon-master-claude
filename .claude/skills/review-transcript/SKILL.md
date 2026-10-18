@@ -1,13 +1,13 @@
 ---
 name: review-transcript
-description: Review the recorded play sessions of a campaign to find where the toolkit's own prompts (CLAUDE.md, the skills, the templates, the hooks) made the game worse, and propose fixes. Covers context size and token use, story and number consistency, difficulty, DM conduct, pacing and bookkeeping. Use when the player asks to review a transcript or a session, asks how DMC performed, or wants the prompts improved after play.
+description: Review the recorded play sessions of a campaign to find where DMC made the game worse (context size and token use, story and number consistency, difficulty, DM conduct, pacing and bookkeeping), and record each problem as an entry in feedback/. It proposes and applies no fixes; review-feedback does that. Use when the player asks to review a transcript or a session, or asks how DMC performed.
 ---
 
 # Review transcript
 
 This is toolkit work, not play: drop the DM role. The reader is the toolkit's author, so spoilers from `dm-notes.md` and the modules are fine here unless they say otherwise.
 
-The aim is to improve the prompts for every future campaign and player. A finding counts only if it traces to something the toolkit says, fails to say, or makes expensive.
+This skill finds problems in the session logs and records them as feedback entries in `feedback/`, the same place `record-feedback` writes to during play. It does not find the cause in the prompts, propose fixes or edit anything: `review-feedback` does that. A finding is a problem that would be wrong for any player, not this player's taste (section 5).
 
 ## 1. Pick the sessions
 
@@ -37,9 +37,8 @@ Never open the raw `.jsonl` logs with Read. They hold page images and whole file
 
 1. `stats.md`, then each `-turns.txt` from top to bottom. The player's side of the conversation shows where the game went well and where it went wrong faster than anything else.
 2. In each `-transcript.md`, read in full the stretches around every problem: about ten exchanges before it, so the cause is visible and not only the complaint. Skim the rest. A session where the player stopped early, rewound, or corrected DMC deserves a complete read from the point things started to slide.
-3. The prompts DMC was following in the places that went wrong: the relevant part of `CLAUDE.md`, the skill it had loaded, the template behind the file it was editing, and `.claude/settings.json` for the hooks.
 
-Read the current prompt files, then check `git log` for changes made after the session. Do not report something that has already been fixed.
+Check `git log` for changes to the prompts made after the session. Do not record something that has already been fixed.
 
 ## 4. What to look for
 
@@ -89,29 +88,20 @@ Read the current prompt files, then check `git log` for changes made after the s
 - Skills that should have run and did not, or ran and were not followed.
 - Whether a new session could really resume from the files: what did resume get wrong or have to ask?
 
-## 5. Keep preferences out of the prompts
+## 5. Keep preferences out of the entries
 
-Some of what you find is this player's taste: how long they like replies, how much mechanical detail, how hard they want the fights, what format they like. That belongs in `player-options.md`, and it is not a finding about the prompts.
+Some of what you find is this player's taste: how long they like replies, how much mechanical detail, how hard they want the fights, what format they like. That belongs in `player-options.md`, and it is not an entry.
 
-The test: would the same behaviour have been wrong for a different player with different preferences? If yes, it is a toolkit finding. If the preference was already written in the player options and DMC did not follow it, the finding is that the toolkit let an option be ignored, and the fix is about how options are read and applied, never about copying the preference into `CLAUDE.md`.
+The test: would the same behaviour have been wrong for a different player with different preferences? If yes, it is an entry. If the preference was already written in the player options and DMC did not follow it, the entry is that the toolkit let an option be ignored. A finding that is the player's taste is not an entry: list it in the report, and with the user's agreement write it as a one-line preference in the right `player-options.md`.
 
-## 6. Report
+## 6. Record
 
-Lead with a short verdict: how the sessions went and the two or three changes that would matter most. Then the findings, most damaging first. For each:
+Before writing, Grep `^status: open` in `feedback/` and Grep `^# ` in those files, so that a problem already recorded gets a new occurrence and not a second file.
 
-- **What happened**, with the session id, the time, and a short quote or the numbers.
-- **Why the prompts allowed it**: the file and passage that caused it, or what is missing.
-- **The change**: which file, and the wording or the mechanism. Prefer the smallest change that would have prevented it. A hook or a script is better than a paragraph when the problem is that DMC forgot. Say what the change costs: every line added to `CLAUDE.md` is paid for in every exchange of every session.
+Write each inconsistency or mistake as an entry from `templates/feedback.md` with `source: transcript review`, in `feedback/YYYY-MM-DD-<slug>.md`. Describe the behaviour generally, so that it makes sense without the adventure. Put the Claude Code session id, the time and the quote or the numbers under Occurrences. If an open entry covers the problem, add an occurrence to it instead.
 
-Group the context and token numbers in one small table. List separately, in a line each, anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session), and anything you noticed that is the player's preference and already recorded.
+Group the context and token numbers in one entry per cause, with a small table. Anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session) is an entry too, in the category `other`, saying so.
 
-Say what you did not read.
+Then give the user a short report: the verdict on how the sessions went, the entries created and extended (file names, one line each), the player preferences you noticed, and what you did not read. Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions`.
 
-## 7. Apply
-
-Do not edit the prompts until the user says which findings to act on. Then:
-
-- Make each change in the one place it belongs. Do not restate a rule in several files.
-- Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.
-- If `CLAUDE.md` grows, look for something in it that the transcript shows DMC never needed, and cut or move it to a skill.
-- Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions`.
+Acting on the entries, which means finding the cause in the prompts, proposing changes and making them, is `review-feedback`.

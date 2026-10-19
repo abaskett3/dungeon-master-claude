@@ -38,6 +38,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Fights are planned with an ending | Done | `CLAUDE.md` § Sizing fights "How it ends"; fleeing is "for good". See [decisions.md](decisions.md). |
 | Resume and full save bounded | Done | Size targets enforced at the full save; sheets read down to their history; consistency check uses targeted reads. Not yet measured in play. See [decisions.md](decisions.md). |
 | Player messages that are not actions | Done | `CLAUDE.md` § Out of character (a message mid-task is answered first; a joke or complaint is never an event) and § Accuracy (do not re-ask what the character already told an NPC). See [decisions.md](decisions.md). |
+| Code review runs on Copilot PRs | In review | `claude-code-review.yml` passes `github_token` and `allowed_bots: 'Copilot'`. Untested on a Copilot PR until merged and #69 is re-run. See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

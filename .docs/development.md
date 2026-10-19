@@ -97,6 +97,8 @@ A change that touches only `*.md` or `*.txt` files does not start it, so a docum
 
 `.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Build.props`, `Directory.Packages.props`, `global.json`). On a pull request it is a dry run: it builds, packs and installs every platform's archive with `get-dmc` and publishes nothing. See [releases.md](releases.md).
 
+`.github/workflows/claude-code-review.yml` runs Claude Code's review on every pull request. It uses the `CLAUDE_CODE_OAUTH_TOKEN` secret (renew it with `claude setup-token`). Pull requests opened by the Copilot coding agent run as the actor `Copilot`, which has no write access, so the workflow passes `github_token` (skipping Anthropic's OIDC app-token exchange, which answers 401 for that actor) and lists `Copilot` in `allowed_bots`; the review comment is then posted with `GITHUB_TOKEN`, hence `pull-requests: write`. See [decisions.md](decisions.md).
+
 ## Git and pull requests
 
 `CLAUDE.md` § Git and GitHub is the home of these rules; in short:

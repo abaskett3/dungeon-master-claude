@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write # --comment posts the review with GITHUB_TOKEN
       issues: read
       id-token: write
 
@@ -36,6 +36,11 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Copilot's PRs run as the actor "Copilot", which has no write access, so Anthropic's
+          # OIDC app-token exchange answers 401. Passing github_token skips that exchange;
+          # allowed_bots lets the action's own actor check accept Copilot.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_bots: 'Copilot'
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'

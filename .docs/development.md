@@ -22,6 +22,7 @@ This document is for contributors changing `dmc`, the launchers, the skills, the
 | `.github/workflows/` | `tests.yml` (CI) and `release.yml` (releases); `.github/release/write-pin.sh` |
 | `Directory.Build.props`, `Directory.Packages.props`, `global.json`, `dmc.sln` | Shared build settings, centrally pinned package versions, the SDK pin, the solution |
 | `.docs/` | These documents |
+| `.claude/skills/speckit-*`, `.specify/`, `specs/` | Spec Kit: the planning skills, its templates and state, and the specs it writes; toolkit work only, never play (see [Spec-driven changes](#spec-driven-changes)) |
 | `adventures/`, `modules/`, `rules/`, `bin/`, `artifacts/` | Personal, copyrighted or built files; all ignored by git |
 
 ## Building
@@ -131,6 +132,44 @@ Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull reque
 - **Not checked by the compiler, but required by the rule above:** private and internal members anywhere, and the classes, helpers and stubs inside the exempt test files. Keep these documented, and check them in review.
 - **Generated code** (`[GeneratedRegex]` output) is skipped by the compiler and needs no comments.
 - **Release output:** `PublishDocumentationFile` is false in `Dmc.Cli.csproj`, so `dmc.xml` is not published, and the release archives stay at four files.
+
+## Spec-driven changes
+
+[GitHub Spec Kit](https://github.com/github/spec-kit) is installed for toolkit work only, so a planning session can produce a spec, plan and task list (`/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`) and an implementing session can run `/speckit-implement` and `/speckit-converge` against them. Play never touches it: the `speckit-*` skills are installed with `disable-model-invocation: true` so their descriptions stay out of the model's context, and `.claude/play-settings.json` denies them so DMC cannot invoke them in a game. See [decisions.md](decisions.md) for the install decision and what the block does and does not stop.
+
+The skills live in `.claude/skills/speckit-*/SKILL.md`; the templates, scripts and install state are in `.specify/`; each feature's spec, plan and tasks go in `specs/NNN-<name>/`. All three are tracked in git. Using the skills needs only PowerShell (the scripts are PowerShell, `--script ps`). Playing needs none of this.
+
+**Optional requirements, only for installing or upgrading Spec Kit** (never for using the skills, never for play): Python 3.11+, [uv](https://docs.astral.sh/uv/), and `specify-cli` pinned at 1.2.1:
+
+```
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.2.1
+```
+
+**Install.** `.specify/` and `.claude/skills/speckit-*` were written by:
+
+```
+specify init --here --force --non-interactive --ignore-agent-tools --integration claude --script ps --integration-options="--events false --no-model-invocation"
+```
+
+- `--integration claude` installs one skill per command into `.claude/skills/`.
+- `--no-model-invocation` sets `disable-model-invocation: true` on every skill, keeping the descriptions out of every session's context.
+- `--events false` stops the Claude integration writing event hooks into `.claude/settings.json`. With no extensions installed nothing is written anyway, but the option keeps it so if an extension is ever added.
+- The stored options are kept in `.specify/integration.json` and reapplied on an integration upgrade.
+
+**Upgrade.** Bump the pin, then upgrade the CLI and the integration, repeating every stored option because passing `--integration-options` to an upgrade replaces all of them:
+
+```
+specify self upgrade --tag vX.Y.Z
+specify integration upgrade claude --integration-options="--events false --no-model-invocation"
+```
+
+**What resets `--no-model-invocation`, and how to reapply it.** Per Spec Kit's [integrations reference](https://github.com/github/spec-kit/blob/main/docs/reference/integrations.md) ("Claude: user-invocable-only skills"), `specify preset add/remove/update`, `specify integration use claude` and some `switch` paths reset `disable-model-invocation` to the default. Reapply it with `specify integration upgrade claude --force --integration-options="--events false --no-model-invocation"`. The toolkit test `ToolkitTests` checks that every `speckit-*` skill still has `disable-model-invocation: true`, so a silent reset fails the build.
+
+**Extensions left out, and why.** `init` does not install the opt-in extensions, and none is wanted here:
+
+- `git`: numbered feature branches, which duplicate `CLAUDE.md` § Git and GitHub.
+- `agent-context`: writes a `<!-- SPECKIT START -->` block into `CLAUDE.md`, which is loaded on every play turn and would cost the player context.
+- `github`: turns tasks into issues; the issue stays the tracking point and links to `specs/NNN-*/`.
 
 ## Writing prompts
 

@@ -164,6 +164,9 @@ play.ps1, play.sh    start a play session: fetch dmc, then Sonnet, high effort, 
 .claude/skills/      the commands above
 .claude/settings.json  permissions for saving and dmc, compaction reminders
 .claude/play-settings.json  settings for play only
+.claude/skills/speckit-*   Spec Kit's planning commands, for toolkit work only, not play
+.specify/            Spec Kit's templates, scripts and install state (toolkit work only)
+specs/               specs, plans and task lists Spec Kit writes, one folder per feature (toolkit work only)
 bin/                 dmc, the toolkit's program: dice, maps, PDF reading, session digest, break reminder (not in git)
 tools/               get-dmc.ps1 and get-dmc.sh, which download dmc; dmc-release.json, the release they install
 src/Dmc.Cli/         dmc's source code (C#, .NET 10)

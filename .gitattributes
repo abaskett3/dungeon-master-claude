@@ -5,3 +5,6 @@
 *.pdf binary
 # ripgrep reads this file; keep LF so the pattern has no stray carriage return
 feedback/.ignore text eol=lf
+# Spec Kit hashes the bytes of its skill files in .specify/integrations/*.manifest.json;
+# keep them LF on every checkout so `specify integration upgrade` sees no change
+.claude/skills/speckit-*/SKILL.md text eol=lf

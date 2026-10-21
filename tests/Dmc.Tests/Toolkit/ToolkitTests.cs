@@ -22,17 +22,22 @@ public sealed partial class ToolkitTests
     /// <summary>One of the settings files in <c>.claude/</c>, parsed.</summary>
     static JsonNode Settings(string name) => JsonNode.Parse(Read(Path.Combine(".claude", name)))!;
 
-    /// <summary>The folder names under <c>.claude/skills</c>, in ordinal order: the skills' names.</summary>
+    /// <summary>
+    /// The folder names under <c>.claude/skills</c>, in ordinal order: the skills' names. The <c>speckit-*</c> skills are
+    /// installed by Spec Kit (#51), not written here, so they are left out.
+    /// </summary>
     static string[] SkillNames() =>
-        Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills")).Select(d => Path.GetFileName(d)!).Order(StringComparer.Ordinal).ToArray();
+        Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills")).Select(d => Path.GetFileName(d)!)
+            .Where(n => !n.StartsWith("speckit-", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToArray();
 
-    /// <summary>Every file DMC reads as instructions, relative to the repository root, with forward slashes.</summary>
+    /// <summary>Every file DMC reads as instructions (not Spec Kit's), relative to the repository root, with forward slashes.</summary>
     static string[] PromptFiles() =>
     [
         "CLAUDE.md", "README.md",
         .. new[] { ".claude/skills", "templates" }.SelectMany(folder =>
             Directory.EnumerateFiles(Path.Combine(TestEnv.Root, folder), "*.md", SearchOption.AllDirectories))
-            .Select(f => Path.GetRelativePath(TestEnv.Root, f).Replace('\\', '/')).Order(StringComparer.Ordinal),
+            .Select(f => Path.GetRelativePath(TestEnv.Root, f).Replace('\\', '/'))
+            .Where(f => !f.StartsWith(".claude/skills/speckit-", StringComparison.Ordinal)).Order(StringComparer.Ordinal),
     ];
 
     /// <summary>

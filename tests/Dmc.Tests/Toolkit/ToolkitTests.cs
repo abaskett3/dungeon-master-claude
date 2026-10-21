@@ -376,8 +376,8 @@ public sealed partial class ToolkitTests
         // Tools play, the dice and map commands, rules lookups and the module and import skills need.
         string[] needed = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "PowerShell", "Skill", "ToolSearch",
                            "AskUserQuestion", "WebSearch", "WebFetch", "Agent"];
-        // Bash(rm *) removes one command, not the tool; every other rule (a bare name or glob, Bash(*), Edit(adventures/**)) can take away what play needs.
-        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !NamesACommand(r)))
+        // Bash(rm *) removes one command and Skill(speckit-plan) one skill, not the tool; every other rule (a bare name or glob, Bash(*), Edit(adventures/**)) can take away what play needs.
+        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !NamesACommand(r) && !r.StartsWith("Skill(speckit-")))
         {
             string toolName = Rule().Match(rule) is { Success: true } m ? m.Groups[1].Value : rule;
             string pattern = "^" + Regex.Escape(toolName).Replace(@"\*", ".*") + "$";
@@ -422,6 +422,21 @@ public sealed partial class ToolkitTests
         "PowerShell(rd *)", "PowerShell(ri *)", "PowerShell(rmdir *)",
         "PowerShell(Move-Item *)", "PowerShell(mi *)", "PowerShell(move *)", "PowerShell(mv *)", "PowerShell(git clean *)",
     ];
+
+    /// <summary>Play denies every Spec Kit skill, while settings.json (toolkit sessions) leaves them usable.</summary>
+    [TestMethod]
+    public void ThePlaySettingsDenyTheSpecKitSkills()
+    {
+        string[] denied = Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        string[] shared = (Settings("settings.json")["permissions"]?["deny"]?.AsArray() ?? []).Select(r => (string)r!).ToArray();
+        string[] skills = Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills"), "speckit-*").Select(d => Path.GetFileName(d)).ToArray();
+        Assert.IsNotEmpty(skills, "no Spec Kit skills found");
+        foreach (string skill in skills)
+        {
+            CollectionAssert.Contains(denied, $"Skill({skill})", $"play-settings.json does not deny {skill}");
+            CollectionAssert.DoesNotContain(shared, $"Skill({skill})", $"settings.json denies {skill}");
+        }
+    }
 
     [TestMethod]
     public void ThePlaySettingsDenyShellDeletes()

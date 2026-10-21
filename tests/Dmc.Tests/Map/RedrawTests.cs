@@ -41,9 +41,12 @@ public sealed class RedrawTests
     [TestCleanup]
     public void RemoveRoot() => Directory.Delete(_root, recursive: true);
 
+    /// <summary>The URLs the redraws asked to open; no real browser is started.</summary>
+    readonly List<string> _opened = [];
+
     /// <summary>Run <c>dmc redraw</c> in this process against the temporary toolkit, with this hook input.</summary>
     ProcessResult Redraw(string stdin = "{\"stop_hook_active\": false}") =>
-        DmcRunner.InProcess(["redraw"], stdin, [new RedrawCommand(_root)]);
+        DmcRunner.InProcess(["redraw"], stdin, [new RedrawCommand(_root, _opened.Add)]);
 
     /// <summary>Run <c>dmc redraw</c> and check, from that one run, that it exited 0 and printed nothing at all.</summary>
     void AssertSilent(string stdin = "{\"stop_hook_active\": false}", string? because = null)
@@ -270,7 +273,7 @@ public sealed class RedrawTests
         Edit("live.json", Refused());
         using var output = new StringWriter { NewLine = "\n" };
         using var errors = new StringWriter { NewLine = "\n" };
-        int exitCode = CommandLine.Run(["redraw"], new Io(new UnreadableInput(), output, errors, InIsTerminal: true), [new RedrawCommand(_root)]);
+        int exitCode = CommandLine.Run(["redraw"], new Io(new UnreadableInput(), output, errors, InIsTerminal: true), [new RedrawCommand(_root, _opened.Add)]);
         Assert.AreEqual(2, exitCode, "by hand it acts as if stop_hook_active were false");
         Assert.AreEqual("", output.ToString());
         Assert.HasCount(1, errors.ToString().TrimEnd().Split('\n'));
@@ -290,11 +293,55 @@ public sealed class RedrawTests
     }
 
     [TestMethod]
+    public void TheFirstMapOfAFightIsDrawnAndOpenedWhenThereIsNoPage()
+    {
+        AssertSilent();
+        Assert.IsTrue(File.Exists(InMaps("live-data.js")));
+        Assert.HasCount(1, _opened);
+        Assert.EndsWith("/live.html", _opened[0]);
+        AssertSilent(because: "nothing changed");
+        Assert.HasCount(1, _opened);
+    }
+
+    [TestMethod]
+    public void SwitchingFromAnotherMapToTheSceneOpensThePageOnce()
+    {
+        Draw("goblin-hall.json");
+        Edit("live.json", Moved("Bout"));
+        AssertSilent();
+        StringAssert.Contains(Data(), "Bout");
+        Assert.HasCount(1, _opened);
+        Edit("live.json", Moved("Round two"));
+        AssertSilent();
+        StringAssert.Contains(Data(), "Round two");
+        Assert.HasCount(1, _opened, "the page already showed the scene");
+    }
+
+    [TestMethod]
+    public void RedrawingTheMapTheLastDrawingShowedOpensNothing()
+    {
+        Draw("live.json");
+        Edit("live.json", Moved("Moved"));
+        AssertSilent();
+        StringAssert.Contains(Data(), "Moved");
+        Assert.IsEmpty(_opened);
+        Draw("goblin-hall.json");
+        File.SetLastWriteTimeUtc(InMaps("live-data.js"), DateTime.UtcNow.AddSeconds(-10));
+        File.SetLastWriteTimeUtc(InMaps("live.json"), DateTime.UtcNow.AddSeconds(-60));
+        WriteFile(_maps, "goblin-hall.json", Place());
+        AssertSilent();
+        Assert.IsEmpty(_opened);
+    }
+
+    [TestMethod]
     public void NoActiveCampaignOrNoPageYetMeansSilenceAndNoFiles()
     {
-        // A campaign with no page yet: DMC has not shown a map, so nothing is drawn behind its back.
-        AssertSilent();
+        File.Delete(InMaps("live.json"));
+        AssertSilent(because: "no page and no live.json");
         Assert.IsFalse(File.Exists(InMaps("live-data.js")));
+        Assert.IsEmpty(_opened);
+        WriteFile(_maps, "live.json", Scene());
+        File.SetLastWriteTimeUtc(InMaps("live.json"), DateTime.UtcNow.AddSeconds(-60));
 
         Draw("live.json");
         File.Delete(Path.Combine(_root, "adventures", ".active-campaign"));

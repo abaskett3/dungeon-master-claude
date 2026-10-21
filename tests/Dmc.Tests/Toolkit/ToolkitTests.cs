@@ -308,8 +308,13 @@ public sealed partial class ToolkitTests
         string hook = StopHook();
         StringAssert.Contains(hook, "\"$CLAUDE_PROJECT_DIR/bin/dmc\" redraw");
 
-        // Nothing changed, and nothing to draw: no output, exit 0.
-        foreach (var seed in new Action<string>?[] { Campaign("same"), null, Campaign("not drawn", drawn: false) })
+        // Nothing changed, and nothing to draw (no page and no live.json; with a live.json and no page the hook would draw and open it): no output, exit 0.
+        Action<string> noMap = project =>
+        {
+            Campaign("none", drawn: false)(project);
+            File.Delete(Path.Combine(project, "adventures", "test", "maps", "live.json"));
+        };
+        foreach (var seed in new Action<string>?[] { Campaign("same"), null, noMap })
         {
             var quiet = RunHook(hook, BinDmc.Published, _ => StopInput(false), seed);
             Assert.AreEqual(0, quiet.ExitCode, quiet.ToString());

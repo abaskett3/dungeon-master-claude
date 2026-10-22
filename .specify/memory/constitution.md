@@ -1,8 +1,9 @@
 # Dungeon Master Claude Toolkit Constitution
 
 This constitution governs changes to the toolkit: `dmc`, the launchers, the skills, the templates and the prompts.
-It names no rule of its own. Each principle points at the file where the rule lives, so a rule has one home and
-a change to it is made there.
+It adds no rule of its own. Each principle states its obligation in a line and points at the file where the rule
+lives, so a rule has one home and a change to it is made there. The MUST language gives `/speckit-plan` and
+`/speckit-analyze` something to check a feature against; it is the source's obligation, not a new one.
 
 ## Core Principles
 
@@ -12,28 +13,23 @@ enjoyable for the player. Where the two pull against each other, neither is sacr
 Source: `CLAUDE.md`, the two things that matter above everything else.
 
 ### II. Play pays nothing for toolkit work
-`CLAUDE.md` is loaded into every session and every line in it is paid for in every exchange, so it stays lean:
-procedures go in skills, and rarely needed reference goes in a file a skill points to. Toolkit-only tooling adds
-no description, hook or instruction to a play session. Players install nothing but Claude Code.
+Toolkit work MUST NOT cost the player context or an install: `CLAUDE.md` is loaded into every session and stays
+lean, and players install nothing but Claude Code.
 Sources: `.docs/development.md` § Writing prompts; `.docs/decisions.md` § .NET 10 Native AOT on every platform;
 `.docs/decisions.md` § Spec Kit installed in `.claude/skills/` and blocked in play.
 
 ### III. Each rule has one home
-A rule is written in the one place it belongs and other places point to it. Preferences that belong to one
-player are player options, not toolkit rules. Write for a reader with none of the history.
+A rule MUST be written in the one place it belongs, and other places point to it.
 Source: `.docs/development.md` § Writing prompts.
 
 ### IV. Documentation goes with every change
-Every change updates its documentation in the same PR, and a PR that leaves it stale is not finished: an XML doc
-comment on every type and member added or changed, a header comment on every script and workflow, the `.docs/`
-documents that describe the change (including `roadmap.md` and `decisions.md`), and a PR description that says
-which documents changed or why none needed to.
+Every change MUST update its documentation in the same PR; a PR that leaves it stale is not finished. What
+that covers is in the sources.
 Sources: `CLAUDE.md` § Git and GitHub (Documentation, Pull requests); `.docs/development.md` § Documentation goes
 with every change; `.docs/decisions.md` § Every change updates its documentation.
 
 ### V. Tests skip locally and fail on CI
-A test whose tool is missing is skipped on a developer's machine and fails when the `CI` environment variable is
-set, so nothing is skipped on CI. CI MUST pass before the user is asked to merge.
+A test whose tool is missing MUST skip locally and fail on CI, and CI MUST pass before the user is asked to merge.
 Sources: `.docs/development.md` § Skip locally, fail on CI; `CLAUDE.md` § Git and GitHub (Merging).
 
 ## Build and Output Constraints

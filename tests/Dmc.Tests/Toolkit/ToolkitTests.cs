@@ -376,8 +376,8 @@ public sealed partial class ToolkitTests
         // Tools play, the dice and map commands, rules lookups and the module and import skills need.
         string[] needed = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "PowerShell", "Skill", "ToolSearch",
                            "AskUserQuestion", "WebSearch", "WebFetch", "Agent"];
-        // Bash(rm *) removes one command and Skill(speckit-plan) one skill, not the tool; every other rule (a bare name or glob, Bash(*), Edit(adventures/**)) can take away what play needs.
-        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !NamesACommand(r) && !r.StartsWith("Skill(speckit-")))
+        // Bash(rm *) removes one command, not the tool, and Skill(speckit-*) one skill, not the Skill tool; every other rule (a bare name or glob, Bash(*), Edit(adventures/**)) can take away what play needs.
+        foreach (string rule in (settings["permissions"]?["deny"]?.AsArray().Select(r => (string)r!) ?? []).Where(r => !NamesACommand(r) && !r.StartsWith("Skill(", StringComparison.Ordinal)))
         {
             string toolName = Rule().Match(rule) is { Success: true } m ? m.Groups[1].Value : rule;
             string pattern = "^" + Regex.Escape(toolName).Replace(@"\*", ".*") + "$";
@@ -422,21 +422,6 @@ public sealed partial class ToolkitTests
         "PowerShell(rd *)", "PowerShell(ri *)", "PowerShell(rmdir *)",
         "PowerShell(Move-Item *)", "PowerShell(mi *)", "PowerShell(move *)", "PowerShell(mv *)", "PowerShell(git clean *)",
     ];
-
-    /// <summary>Play denies every Spec Kit skill, while settings.json (toolkit sessions) leaves them usable.</summary>
-    [TestMethod]
-    public void ThePlaySettingsDenyTheSpecKitSkills()
-    {
-        string[] denied = Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
-        string[] shared = (Settings("settings.json")["permissions"]?["deny"]?.AsArray() ?? []).Select(r => (string)r!).ToArray();
-        string[] skills = Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills"), "speckit-*").Select(d => Path.GetFileName(d)).ToArray();
-        Assert.IsNotEmpty(skills, "no Spec Kit skills found");
-        foreach (string skill in skills)
-        {
-            CollectionAssert.Contains(denied, $"Skill({skill})", $"play-settings.json does not deny {skill}");
-            CollectionAssert.DoesNotContain(shared, $"Skill({skill})", $"settings.json denies {skill}");
-        }
-    }
 
     [TestMethod]
     public void ThePlaySettingsDenyShellDeletes()
@@ -559,6 +544,52 @@ public sealed partial class ToolkitTests
             foreach (Match m in Regex.Matches(Read(file), @"`/([a-z]+(?:-[a-z]+)+)`"))
                 Assert.Contains(m.Groups[1].Value, SkillNames(), $"{file} mentions /{m.Groups[1].Value}, which is not a skill");
         }
+    }
+
+    /// <summary>The <c>speckit-*</c> skill folders under <c>.claude/skills</c>, in ordinal order: Spec Kit's, not DMC's.</summary>
+    static string[] SpecKitSkillNames() =>
+        Directory.GetDirectories(Path.Combine(TestEnv.Root, ".claude", "skills")).Select(d => Path.GetFileName(d)!)
+            .Where(n => n.StartsWith("speckit-", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// Every Spec Kit skill sets <c>disable-model-invocation: true</c>, so DMC cannot invoke it during play. The value may
+    /// be quoted, as Spec Kit writes its own front matter (<c>name: "speckit-plan"</c>). This catches an upgrade or a
+    /// preset command that silently resets the flag.
+    /// </summary>
+    [TestMethod]
+    public void EverySpecKitSkillDisablesModelInvocation()
+    {
+        foreach (string name in SpecKitSkillNames())
+        {
+            var match = Regex.Match(Read($".claude/skills/{name}/SKILL.md"), @"^---\n(.*?)\n---\n", RegexOptions.Singleline);
+            Assert.IsTrue(match.Success, $"{name}: SKILL.md must start with a --- front matter block");
+            var fields = match.Groups[1].Value.Split('\n').Where(l => l.Contains(':') && !l.StartsWith(' '))
+                .ToDictionary(l => l[..l.IndexOf(':')], l => l[(l.IndexOf(':') + 1)..].Trim().Trim('"', '\''));
+            Assert.AreEqual("true", fields.GetValueOrDefault("disable-model-invocation"), $"{name}: must set disable-model-invocation: true");
+        }
+    }
+
+    /// <summary>
+    /// <c>play-settings.json</c> denies every Spec Kit skill present, by its own <c>Skill(name)</c> rule or by a
+    /// <c>Skill(prefix*)</c> rule that covers it.
+    /// </summary>
+    [TestMethod]
+    public void PlaySettingsDeniesEverySpecKitSkill()
+    {
+        string[] denied = Settings("play-settings.json")["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        foreach (string name in SpecKitSkillNames())
+            Assert.IsTrue(denied.Any(r => r == $"Skill({name})" || Regex.IsMatch(r, @"^Skill\((.*)\*\)$") && name.StartsWith(r[6..^2], StringComparison.Ordinal)),
+                $"play-settings.json does not deny Skill({name})");
+    }
+
+    /// <summary>Spec Kit leaves no hook in <c>settings.json</c> and no <c>SPECKIT START</c> block in <c>CLAUDE.md</c>.</summary>
+    [TestMethod]
+    public void SpecKitAddsNoHookAndNoClaudeMdBlock()
+    {
+        string settings = Read(".claude/settings.json");
+        Assert.IsFalse(settings.Contains("speckit", StringComparison.OrdinalIgnoreCase)
+            || settings.Contains(".specify", StringComparison.OrdinalIgnoreCase), "settings.json must have no Spec Kit hook");
+        Assert.IsFalse(Read("CLAUDE.md").Contains("SPECKIT START", StringComparison.Ordinal), "CLAUDE.md must have no SPECKIT START block");
     }
 
     /// <summary>

@@ -20,6 +20,7 @@ usage: dmc <command> [args]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
   digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]
+  campaign      export or import a whole campaign as one file: dmc campaign export|import|show NAME-or-FILE [--out PATH] [--force] [--as NAME]
   play          start a play session: claude --model sonnet --effort high --settings .claude/play-settings.json [args]
   --version     print the version
 
@@ -35,12 +36,12 @@ A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.
 
 ```
 $ dmc
-dmc: no command given (try roll, context-check, map, pdf, digest, play, --version)
+dmc: no command given (try roll, context-check, map, pdf, digest, campaign, play, --version)
 $ dmc foo
-dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, play, --version)
+dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, campaign, play, --version)
 ```
 
-**Arguments.** `map`, `pdf` and `digest` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
+**Arguments.** `map`, `pdf`, `digest` and `campaign` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
 
 **Exit codes.**
 
@@ -298,6 +299,67 @@ id        start (UTC)       end (UTC)             KB  msgs peak ctx  campaign   
 | `DIR/<id>-transcript.md` | The whole session in order, with tool calls and results cut to a line each. |
 
 Times are UTC; "ctx" is the number of tokens sent to the model on that call. Errors include `dmc digest: No session logs found at <folder>. Pass --logs DIR.` and `dmc digest: No matching sessions with player messages.` (exit 1), and `dmc digest: argument command: invalid choice: 'digest' (choose from list, show)` (exit 2). A log `dmc` cannot read is reported with its file name, exit 1: `dmc digest: <file>.jsonl: not valid UTF-8`, or `dmc digest: <file>.jsonl line N: <what is wrong>` for the first record of the wrong shape. That includes an assistant record with a token count (`input_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` or `output_tokens`) of `NaN` or `Infinity` (`a token count that is not a finite number`), an `output_tokens` that is not a number (`"output_tokens" is not a number`), or input and cache counts whose sum overflows. Every log the request loads is read before anything is printed or written, so one bad log stops `list` and `show` alike, with no heading, rows or files from the sessions before it. The session ids rule logs out by file name before they are read, but `--campaign` and `--after` are applied only after a log has been read, so a bad log is refused even if those would have left it out. (Before 0.1.3 a non-finite count ended in `(LogShapeException)`, after `show` had written the earlier sessions' files.) The subcommand `show` was called `digest` in 0.1.0.
+
+## campaign
+
+```
+dmc campaign export NAME [--out PATH] [--force]
+dmc campaign import FILE [--as NAME]
+dmc campaign show FILE
+```
+
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. Each verb works on one campaign and never deletes or overwrites anything that was already there, except a file named by `--out` with `--force`.
+
+| Argument | Meaning |
+|---|---|
+| `NAME` | `export`: a folder under `adventures/`. |
+| `FILE` | `import`, `show`: an export file. Its name does not matter: the campaign name is read from the manifest inside it, so a renamed export imports the same. |
+| `--out` | `export`: an existing folder (the default file name is used inside it) or a file path ending in `.zip`. Default: `exports/` under the toolkit root, made when needed. Never inside `adventures/`. |
+| `--force` | `export`: replace an existing file named by `--out`. It has no effect on the default name, which is never replaced (the next free `-2`, `-3`, ... is used). |
+| `--as` | `import`: the folder name to import under; lowercase letters, digits and hyphens, starting with a letter or digit. Default: the campaign name inside the file. |
+
+**export** writes one ZIP: `manifest.json` first, then the campaign under `campaign/`, and the general `adventures/player-options.md` as `player-options.md` when there is one. Every file is stored byte for byte (no line-ending or encoding change), empty folders are kept, and the manifest lists each file's size and SHA-256 with the module the campaign runs (read from the `**Module folder**:` line of `module-progress.md`). The default file name is `<NAME>-<YYYYMMDDHHmm>.zip` in local time to the minute, for example `the-silver-egg-202610220605.zip`; a second export in the same minute is `...-2.zip`. The file is written under a `.partial-` name and renamed when complete, so a file with its final name is always whole. Nothing under `adventures/` changes. The export holds the whole campaign, spoilers included (`story/dm-notes.md`). A published module is not exported: `modules/` is copyrighted and stays on its machine.
+
+**import** checks the whole file before it writes anything: it is a ZIP with a manifest that has every field, its format is not newer than this `dmc`'s, every path is safe on every operating system (relative, `/` separators, no `..`, no `<>:"|?*`, no trailing dot or space, no `CON`, `NUL` and the other reserved names, no two paths that differ only by case), and the entries match the manifest exactly. It then extracts into `adventures/.dmc-import-<random>/`, checking each file's size and SHA-256 as it is written, and commits with renames on one volume: the general player options first, only when `adventures/player-options.md` does not exist, then the campaign folder. A campaign therefore appears whole or not at all. It never changes an existing campaign or an existing `adventures/player-options.md`, never replaces a folder of the same name, and never writes `adventures/.active-campaign`: to play the copy, start a session and ask DMC to resume it.
+
+**show** prints what a file holds, from its manifest alone, and writes nothing.
+
+```
+$ dmc campaign export the-silver-egg
+exported the-silver-egg: 78 files and the general player options to <root>/exports/the-silver-egg-202610220712.zip
+$ dmc campaign show exports/the-silver-egg-202610220712.zip
+the-silver-egg: exported 2026-10-22 14:12 UTC by dmc 0.0.0-dev, format 1
+78 files, 1.3 MB, plus the general player options
+module: peril-in-pinebrook (in modules/)
+$ dmc campaign import exports/the-silver-egg-202610220712.zip --as silver-egg-copy
+imported silver-egg-copy: 78 files to <root>/adventures/silver-egg-copy
+general player options: kept your existing adventures/player-options.md
+to play it, start a session and ask DMC to resume silver-egg-copy
+```
+
+`export` prints one line (`and the general player options` is left out when there is no general file). `import` prints up to four lines: the result; one for the general player options (`written to adventures/player-options.md` or `kept your existing adventures/player-options.md`, absent when the export holds none); one when the module is not in `modules/` (`module <folder> is not in modules/: ingest it from your own copy before play`, or `this is a module campaign, but its module-progress.md names no module folder`); and how to play it. `show` prints two or three: name, time (UTC), `dmc` version and format; file count, size and whether the general player options are included; and, for a module campaign, `module: <folder> (in modules/)`, `(not in modules/)` or `module: unknown (module-progress.md names no module folder)`. The size is in bytes below 1 KB, KB (1024 bytes) below 1 MB, else MB, with one decimal and a point.
+
+| Message (after `dmc campaign: `) | Exit |
+|---|---|
+| `give export, import or show (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
+| `the following arguments are required: name` (or `file`), `unrecognized arguments: ...`, `argument --out: expected one argument` | 2 |
+| `--as must be lowercase letters, digits and hyphens, starting with a letter or digit` | 2 |
+| `no campaign "<name>" in adventures/ (there are: a, b)` (`(there are none)` when empty; folders starting with `.` are not campaigns) | 1 |
+| `will not write an export inside adventures/: choose another --out` | 1 |
+| `<path> is not an existing folder or a file name ending in .zip: choose another --out` (and `--out is empty: ...`) | 1 |
+| `<path> exists: add --force to replace it, or choose another --out` | 1 |
+| `<relative path> is a link: exports hold only the campaign's own files` (a symbolic link or a junction) | 1 |
+| `<relative path> cannot be exported: <reason>` (a path an import would refuse) | 1 |
+| `could not export: <reason>` (nothing is left under the final name) | 1 |
+| `cannot read <path>: <reason>` (`no such file`, or the system's reason) | 1 |
+| `<path> is not a dmc campaign export` (not a ZIP, no valid manifest, a field missing or of the wrong type) | 1 |
+| `<path> was made by a newer dmc (format <n>): update dmc and try again` | 1 |
+| `adventures/<name> already exists: import under another name with --as NAME` | 1 |
+| `<path> holds an entry that cannot be imported: <entry> (<reason>)` (an unsafe or unportable path, a campaign name that is not one plain folder name, a duplicate when case is ignored) | 1 |
+| `<path> is damaged: <entry> is not in the manifest`, `... is missing`, `... appears twice`, `... is larger than the size in the manifest`, `... is smaller than ...`, `... does not match its checksum in the manifest` | 1 |
+| `could not import: <reason>` (a write failed; the staging folder is deleted and nothing is left under the target name) | 1 |
+
+If cleaning up after a failure fails, one more line on stderr names the leftover staging folder (`dmc campaign: could not delete <folder>; it is safe to delete.`), as `dmc pdf` does; a successful import whose staging folder cannot be deleted says `dmc campaign: done, but could not delete <folder>; it is safe to delete.`
 
 ## context-check
 

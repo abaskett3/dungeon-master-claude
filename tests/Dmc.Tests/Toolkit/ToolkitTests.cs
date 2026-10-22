@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Dmc.Campaign;
 using Dmc.Commands;
 using Dmc.Digest;
 using Dmc.Tests.Distribution;
@@ -92,6 +93,7 @@ public sealed partial class ToolkitTests
     /// <summary>The subcommands of the commands that have their own, taken from the parsers.</summary>
     static readonly Dictionary<string, string[]> Choices = new()
     {
+        ["campaign"] = CampaignArguments.Commands,
         ["digest"] = DigestArguments.Commands,
         ["pdf"] = PdfCommand.Commands,
     };

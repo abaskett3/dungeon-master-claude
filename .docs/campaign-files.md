@@ -6,12 +6,16 @@ This document is for anyone who reads or edits a campaign's files by hand, chang
 
 `feedback/` sits at the toolkit root, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
 
+`exports/` sits at the toolkit root too. `dmc campaign export` writes its ZIP files there, one per export (`<campaign>-<YYYYMMDDHHmm>.zip`). Git ignores it. Each file holds a whole campaign, `story/dm-notes.md` and other spoilers included, and is not part of any campaign; keep copies outside `adventures/`, where DMC would search them.
+
 ```
+exports/                     one ZIP per dmc campaign export, at the toolkit root (not in git; whole campaigns, spoilers included)
 adventures/
   player-options.md          the player's preferences for every campaign
   .active-campaign           the folder name of the campaign being played (one line)
   .reviewed-sessions         session ids already reviewed by /review-transcript
   .transcript-review/        output of dmc digest show, one folder for all campaigns (rewritten on each review)
+  .dmc-import-<id>/          staging folder of a running dmc campaign import (deleted when it ends; a leftover is safe to delete)
   <campaign>/
     player-options.md        this campaign's settings and overrides
     game-state.md            the present moment

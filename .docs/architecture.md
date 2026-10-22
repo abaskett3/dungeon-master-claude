@@ -12,7 +12,7 @@ This document is for contributors who want to understand how the parts of the to
 | Campaign files | `adventures/<campaign>/` | The source of truth for one campaign. The conversation is only a cache of them. Described in [campaign-files.md](campaign-files.md). Ignored by git. |
 | Modules and rules | `modules/`, `rules/` | The player's own copies of published adventures (with their digests) and of the rules reference (with its index). Ignored by git. |
 | Feedback | `feedback/` | One file per piece of feedback about how DMC itself runs the game, written in play by `record-feedback` and by `review-transcript`, read only by `review-feedback`. Outside every campaign; nothing in play loads it. Ignored by git. |
-| `dmc` | `bin/dmc` (`bin/dmc.exe` on Windows), source in `src/Dmc.Cli/` | One self-contained native program for what a model should not do by itself: `roll`, `map`, `pdf`, `digest`, `context-check`, `play`. Described in [dmc-reference.md](dmc-reference.md). |
+| `dmc` | `bin/dmc` (`bin/dmc.exe` on Windows), source in `src/Dmc.Cli/` | One self-contained native program for what a model should not do by itself: `roll`, `map`, `pdf`, `digest`, `campaign`, `context-check`, `play`. Described in [dmc-reference.md](dmc-reference.md). |
 | Hooks and permissions | `.claude/settings.json`, `.claude/play-settings.json` | Settings Claude Code applies: the allow list (campaign and feedback edits, `./bin/dmc`, `get-dmc`), the compaction hooks, the missing-`dmc` notice, and for play the break reminder, the Stop hook that redraws the map after each reply, the switched-off tools and the deny rules for shell deletes (`rm`, `Remove-Item` and their aliases), so a play session cannot delete a campaign file through the shell. |
 | Launchers | `play.ps1`, `play.sh` | Start a play session: fetch `dmc`, then hand over to `dmc play`, or start Claude Code themselves when `dmc` cannot be had. |
 | Installer and pin | `tools/get-dmc.ps1`, `tools/get-dmc.sh`, `tools/dmc-release.json` | Download the pinned `dmc` release for this computer into `bin/`, after checking its SHA-256 against the pin. |
@@ -31,7 +31,7 @@ flowchart LR
     rules[CLAUDE.md<br/>skills, templates] -- instructions --> cc
     settings[.claude/settings.json<br/>play-settings.json] -- hooks, permissions --> cc
     cc -- Read / Edit / Write --> files[(campaign files<br/>adventures/)]
-    cc -- ./bin/dmc roll, map, pdf, digest --> bin
+    cc -- ./bin/dmc roll, map, pdf, digest, campaign --> bin
     settings -- context-check before each message --> bin
     settings -- redraw after each reply --> bin
     bin -- live.html, live-data.js --> browser([Player's browser])

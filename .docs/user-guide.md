@@ -212,7 +212,24 @@ This keeps the break reminder and the play settings. Run a launcher once first, 
 
 Campaigns are ordinary text files under `adventures/`. You can read and edit your character sheet and the options by hand. To keep surprises, stay out of `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md` and the NPC sheets. [campaign-files.md](campaign-files.md) describes every file.
 
-Feedback about DMC is under `feedback/` at the toolkit root, outside every campaign. Git ignores `adventures/`, `modules/`, `rules/` and `feedback/`, so the toolkit can be shared without your saves or books. Back up `adventures/` separately, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
+Feedback about DMC is under `feedback/` at the toolkit root, outside every campaign. Git ignores `adventures/`, `modules/`, `rules/` and `feedback/`, so the toolkit can be shared without your saves or books. To back up a campaign, restore one or move to another computer, see [Back up, copy or move a campaign](#back-up-copy-or-move-a-campaign). Keep a backup outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
+
+### Back up, copy or move a campaign
+
+`dmc campaign` puts a whole campaign into one file and brings it back:
+
+```
+./bin/dmc campaign export the-silver-egg
+./bin/dmc campaign show exports/the-silver-egg-202610220605.zip
+./bin/dmc campaign import exports/the-silver-egg-202610220605.zip --as silver-egg-copy
+```
+
+- **Back up.** `export` writes `exports/<campaign>-<date and time>.zip` at the toolkit root (git ignores it) and changes nothing in `adventures/`. Keep a copy somewhere else too. A second export in the same minute is numbered `-2`.
+- **Restore, or make a copy.** `import` creates `adventures/<name>` from an export. It never replaces a campaign: if the name is taken, it says so, and you choose another with `--as`. It checks every file against the checksums in the file first, so a damaged export is refused and nothing is left half done. It never touches your general `adventures/player-options.md` (it writes one only if you have none) and never changes which campaign is active: start a session and ask DMC to resume the new name.
+- **Move to another computer.** Copy the `.zip` across (the file name does not matter), put the toolkit there, and import it. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/ingest-module`.
+- **Look first.** `show` says what a file holds (campaign, date, files, size, module) and writes nothing.
+
+An export holds everything in the campaign, including `story/dm-notes.md`, so do not open it before you have played the story, and do not send it to anyone who will play it. To bring in a campaign played elsewhere (a chat export or transcript), use `/new-campaign` instead. Every message and option is in [dmc-reference.md](dmc-reference.md#campaign).
 
 ## Troubleshooting
 

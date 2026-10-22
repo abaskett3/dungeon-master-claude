@@ -166,18 +166,19 @@ play.ps1, play.sh    start a play session: fetch dmc, then Sonnet, high effort, 
 .claude/play-settings.json  settings for play only
 .specify/            Spec Kit's templates, scripts and install state (toolkit work only)
 specs/               specs, plans and task lists Spec Kit writes, one folder per feature, created when the first feature is specified (toolkit work only)
-bin/                 dmc, the toolkit's program: dice, maps, PDF reading, session digest, break reminder (not in git)
+bin/                 dmc, the toolkit's program: dice, maps, PDF reading, session digest, campaign export and import, break reminder (not in git)
 tools/               get-dmc.ps1 and get-dmc.sh, which download dmc; dmc-release.json, the release they install
 src/Dmc.Cli/         dmc's source code (C#, .NET 10)
 tests/Dmc.Tests/     checks that dmc, the skills and the settings still work
 templates/           blank campaign files and character sheets
 adventures/          your campaigns (not in git)
+exports/             campaign exports made by dmc campaign export, one ZIP each (not in git)
 feedback/            feedback about DMC, one file per entry, outside any campaign (not in git)
 modules/             ingested published modules (not in git)
 rules/               optional local rules reference (not in git)
 ```
 
-The toolkit is a git repository. Your campaigns, modules, rules files and feedback are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up `adventures/` separately if you want a copy of your campaigns, and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
+The toolkit is a git repository. Your campaigns, modules, rules files and feedback are ignored by it, so you can commit, push and share the toolkit without including your saves or any books. Back up a campaign with `./bin/dmc campaign export <name>` (see [the user guide](.docs/user-guide.md#back-up-copy-or-move-a-campaign)), and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ### Tests
 

@@ -523,6 +523,39 @@ public sealed class CampaignExportTests
         AssertRefused(root, "story/junction is a link: exports hold only the campaign's own files");
     }
 
+    [TestMethod]
+    public void AnOutPathTheSystemCannotReadIsOneLine()
+    {
+        using var root = new TempRoot();
+        WriteCampaign(root.Folder);
+        var caught = Assert.ThrowsExactly<DmcException>(() => Export(root, output: root.At("a b.zip")));
+        StringAssert.StartsWith(caught.Message, "could not export: ");
+        AssertNothingWritten(root);
+    }
+
+    [TestMethod]
+    public void ACampaignFolderThatIsAJunctionIsRefused()
+    {
+        if (!OperatingSystem.IsWindows())
+            Assert.Inconclusive("Junctions are a Windows feature; Windows runs this");
+        using var root = new TempRoot();
+        string real = WriteCampaign(root.Folder, "real-camp");
+        var made = TestEnv.Run("cmd.exe", ["/c", "mklink", "/J", root.Campaign("linked-camp"), real]);
+        Assert.AreEqual(0, made.ExitCode, made.ToString());
+        AssertRefused(root, "linked-camp is a link: exports hold only the campaign's own files", name: "linked-camp");
+    }
+
+    [TestMethod]
+    public void AGeneralPlayerOptionsFileThatIsALinkIsRefused()
+    {
+        using var root = new TempRoot();
+        WriteCampaign(root.Folder);
+        string outside = root.At("secret.md");
+        File.WriteAllText(outside, "not part of any campaign");
+        MakeLink(() => File.CreateSymbolicLink(root.At("adventures", "player-options.md"), outside));
+        AssertRefused(root, "adventures/player-options.md is a link: exports hold only the campaign's own files");
+    }
+
     /// <summary>Makes a link, or skips the test where this account may not (Windows without developer mode); on CI the account may, so a failure there fails the test.</summary>
     /// <param name="make">Creates the link.</param>
     static void MakeLink(Action make)

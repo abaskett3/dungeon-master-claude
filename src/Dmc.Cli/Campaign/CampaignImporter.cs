@@ -47,7 +47,7 @@ internal static class CampaignImporter
     public static ImportResult Import(string root, ImportRequest request, TextWriter? err = null)
     {
         if (request.As is not null && !CampaignArguments.IsCampaignName(request.As))
-            throw Argparse.Usage("--as must be lowercase letters, digits and hyphens, starting with a letter or digit");
+            throw Argparse.Usage(CampaignArguments.AsMessage);
 
         // Checks 1 to 4: nothing is created for an archive that fails them.
         var summary = ExportSummary.Open(request.File);
@@ -93,7 +93,7 @@ internal static class CampaignImporter
 
     /// <summary>
     /// Extracts the campaign into <c>&lt;staging&gt;/campaign</c> and the general player options into
-    /// <c>&lt;staging&gt;/player-options.md</c>, verifying each file as it is written (check 5). Timestamps and attributes are not set.
+    /// <c>&lt;staging&gt;/player-options.md</c>, verifying each file as it is written (check 5). Every file is given the export's time as its modification time; attributes are not set.
     /// </summary>
     /// <param name="summary">The export, already checked.</param>
     /// <param name="staging">The staging folder, which exists.</param>
@@ -101,6 +101,9 @@ internal static class CampaignImporter
     static void Extract(ExportSummary summary, string staging)
     {
         string campaign = Path.Combine(staging, "campaign");
+        // Every file gets the export's time, the same one: the archive keeps no per-file times, and files written in archive order would otherwise
+        // look newer or older than each other, which the map redraw (live.json against live-data.js) reads as a change.
+        ExportSummary.TryParseTimestamp(summary.Manifest.ExportedAt, out var stamp);
         Directory.CreateDirectory(campaign);
         try
         {
@@ -110,9 +113,9 @@ internal static class CampaignImporter
                 entries.GetValueOrDefault(entry) ?? throw new DmcException($"{summary.Path} is damaged: {entry} is missing");
 
             if (summary.Manifest.PlayerOptions is { } options)
-                ExtractFile(summary.Path, Find(ExportSummary.PlayerOptionsEntry), options, ArchivePaths.Combine(staging, ExportSummary.PlayerOptionsEntry));
+                ExtractFile(summary.Path, Find(ExportSummary.PlayerOptionsEntry), options, ArchivePaths.Combine(staging, ExportSummary.PlayerOptionsEntry), stamp);
             foreach (var file in summary.Manifest.Files)
-                ExtractFile(summary.Path, Find(ExportSummary.CampaignPrefix + file.Path), file, ArchivePaths.Combine(campaign, file.Path));
+                ExtractFile(summary.Path, Find(ExportSummary.CampaignPrefix + file.Path), file, ArchivePaths.Combine(campaign, file.Path), stamp);
             foreach (string folder in summary.Manifest.Folders)
                 Directory.CreateDirectory(ArchivePaths.Combine(campaign, folder));
         }
@@ -130,8 +133,9 @@ internal static class CampaignImporter
     /// <param name="entry">The archive entry.</param>
     /// <param name="record">What the manifest says the file is.</param>
     /// <param name="destination">Where to write it; its folder is made.</param>
+    /// <param name="stamp">The modification time to give the file once it is written (UTC).</param>
     /// <exception cref="DmcException">The entry is larger or smaller than declared, or its SHA-256 differs.</exception>
-    static void ExtractFile(string archive, ZipArchiveEntry entry, FileEntry record, string destination)
+    static void ExtractFile(string archive, ZipArchiveEntry entry, FileEntry record, string destination, DateTime stamp)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -159,6 +163,7 @@ internal static class CampaignImporter
             throw new DmcException($"{archive} is damaged: {entry.FullName} is smaller than the size in the manifest");
         if (Convert.ToHexStringLower(hash.GetHashAndReset()) != record.Sha256)
             throw new DmcException($"{archive} is damaged: {entry.FullName} does not match its checksum in the manifest");
+        File.SetLastWriteTimeUtc(destination, stamp);
     }
 
     /// <summary>

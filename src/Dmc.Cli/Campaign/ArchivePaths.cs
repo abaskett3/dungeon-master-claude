@@ -17,6 +17,8 @@ internal static class ArchivePaths
         "CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        // The console devices, and the superscript digits Windows also reads as port numbers.
+        "CONIN$", "CONOUT$", "COM¹", "COM²", "COM³", "LPT¹", "LPT²", "LPT³",
     };
 
     /// <summary>Why a path cannot be imported.</summary>

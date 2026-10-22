@@ -53,6 +53,10 @@ public sealed class ArchivePathsTests
     [DataRow("aux", "reserved name aux")]
     [DataRow("story/PRN.md", "reserved name PRN")]
     [DataRow("lpt9.tar.gz", "reserved name lpt9")]
+    [DataRow("CONIN$.md", "reserved name CONIN$")]
+    [DataRow("story/conout$", "reserved name conout$")]
+    [DataRow("com¹.txt", "reserved name com¹")]
+    [DataRow("LPT³", "reserved name LPT³")]
     [DataRow("con .txt", "reserved name con")] // Windows ignores the spaces before the dot
     public void AnUnportablePathIsRefusedWithItsReason(string path, string reason) =>
         Assert.AreEqual(reason, ArchivePaths.Refusal(path));

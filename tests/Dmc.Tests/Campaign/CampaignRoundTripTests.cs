@@ -111,6 +111,20 @@ public sealed class CampaignRoundTripTests
     }
 
     [TestMethod]
+    public void EveryFileGetsTheTimeOfTheExport()
+    {
+        using var source = new TempRoot();
+        using var target = new TempRoot();
+        string zip = Archive(source, target.Folder, Encoding.UTF8.GetBytes(GeneralOptions));
+        Import(target, zip);
+
+        var stamp = new DateTime(2026, 10, 21, 19, 4, 5, DateTimeKind.Utc);
+        foreach (string file in Directory.EnumerateFiles(target.Campaign(CampaignName), "*", SearchOption.AllDirectories))
+            Assert.AreEqual(stamp, File.GetLastWriteTimeUtc(file), file);
+        Assert.AreEqual(stamp, File.GetLastWriteTimeUtc(Path.Combine(target.Adventures, "player-options.md")));
+    }
+
+    [TestMethod]
     public void NothingIsLeftBesideTheCampaign()
     {
         using var source = new TempRoot();

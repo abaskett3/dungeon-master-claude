@@ -44,6 +44,12 @@ internal sealed class ExportSummary
     /// <summary>The largest manifest read: far more than a campaign of thousands of files needs, and a bound on what a crafted archive can make us read.</summary>
     const int MaxManifestBytes = 16 * 1024 * 1024;
 
+    /// <summary>The most files an export may declare: far more than any campaign, and a bound on what a crafted manifest can make import create.</summary>
+    const int MaxFiles = 100_000;
+
+    /// <summary>The most bytes an export may declare in all (1 GiB): a campaign is a few MB, and extraction stops at each declared size, so this bounds what a crafted manifest can make import write.</summary>
+    const long MaxTotalBytes = 1L << 30;
+
     /// <summary>The path of the export file as the user gave it, for the messages.</summary>
     public string Path { get; }
 
@@ -268,7 +274,17 @@ internal sealed class ExportSummary
     /// <exception cref="DmcException">The first path that cannot be imported.</exception>
     static void CheckPaths(string path, Manifest manifest)
     {
-        if (manifest.Module?.Folder is { } module)
+        if (manifest.Files.Count > MaxFiles)
+            throw Unportable(path, ManifestEntry, $"more than {MaxFiles} files");
+        long total = manifest.PlayerOptions?.Size ?? 0;
+        foreach (var file in manifest.Files)
+        {
+            total += file.Size;
+            if (total > MaxTotalBytes || total < 0)
+                throw Unportable(path, ManifestEntry, "more than 1 GB in all");
+        }
+
+        if (manifest.Module?.Folder is { Length: > 0 } module)
         {
             string? why = ArchivePaths.Refusal(module) ?? (module.Contains('/') ? "contains /" : null);
             if (why is not null)

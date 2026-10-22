@@ -335,6 +335,35 @@ public sealed class CampaignImportRefusalTests
         AssertRefused(scene, $"{scene.Zip} holds an entry that cannot be imported: module folder ../../etc (contains ..)");
     }
 
+    [TestMethod]
+    public void AManifestThatDeclaresMoreThanAGigabyteInAll()
+    {
+        using var scene = new Scene().Build(p => p.FileRecord("game-state.md")["size"] = 2L << 30);
+        AssertRefused(scene, $"{scene.Zip} holds an entry that cannot be imported: manifest.json (more than 1 GB in all)");
+    }
+
+    [TestMethod]
+    public void AManifestThatDeclaresSizesThatOverflowWhenAdded()
+    {
+        using var scene = new Scene().Build(p =>
+        {
+            p.FileRecord("game-state.md")["size"] = long.MaxValue;
+            p.FileRecord("story/canon.md")["size"] = long.MaxValue;
+        });
+        AssertRefused(scene, $"{scene.Zip} holds an entry that cannot be imported: manifest.json (more than 1 GB in all)");
+    }
+
+    [TestMethod]
+    public void AManifestThatDeclaresTooManyFiles()
+    {
+        using var scene = new Scene().Build(p =>
+        {
+            for (int i = 0; i < 100_000; i++)
+                p.Files.Add(new JsonObject { ["path"] = $"f/{i}.md", ["size"] = 1, ["sha256"] = Sha([1]) });
+        });
+        AssertRefused(scene, $"{scene.Zip} holds an entry that cannot be imported: manifest.json (more than 100000 files)");
+    }
+
     // ---------- the archive and the manifest disagree ----------
 
     [TestMethod]

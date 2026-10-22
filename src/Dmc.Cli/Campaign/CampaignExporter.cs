@@ -50,10 +50,14 @@ internal static class CampaignExporter
         DateTime moment = (now ?? DateTime.UtcNow).ToUniversalTime();
         string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, FindCampaign(adventures, request.Name));
-        var destination = Plan(root, adventures, request, moment);
+        // The campaign folder itself may be a link or junction; Walk checks only what is inside it.
+        if (new DirectoryInfo(campaign).LinkTarget is not null)
+            throw new DmcException($"{request.Name} is a link: exports hold only the campaign's own files");
 
         try
         {
+            // Inside the try: a --out the system cannot make sense of (a ":" in a name on Windows, a NUL) throws ArgumentException or NotSupportedException.
+            var destination = Plan(root, adventures, request, moment);
             var files = new List<Item>();
             var folders = new List<string>();
             Walk(campaign, "", files, folders);
@@ -78,7 +82,7 @@ internal static class CampaignExporter
             string archive = Write(destination, request, manifest, files, folders, general, moment);
             return new ExportResult(archive, files.Count, general is not null);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             throw new DmcException($"could not export: {e.Message.TrimEnd('.', '\r', '\n', ' ')}");
         }
@@ -177,8 +181,12 @@ internal static class CampaignExporter
     /// <param name="adventures">The <c>adventures/</c> folder.</param>
     static byte[]? ReadGeneralOptions(string adventures)
     {
-        string path = Path.Combine(adventures, ExportSummary.PlayerOptionsEntry);
-        return File.Exists(path) ? File.ReadAllBytes(path) : null;
+        var file = new FileInfo(Path.Combine(adventures, ExportSummary.PlayerOptionsEntry));
+        if (!file.Exists)
+            return null;
+        if (file.LinkTarget is not null)
+            throw new DmcException($"adventures/{ExportSummary.PlayerOptionsEntry} is a link: exports hold only the campaign's own files");
+        return File.ReadAllBytes(file.FullName);
     }
 
     /// <summary>The module the campaign runs, from its <c>module-progress.md</c> (research R8): null without the file, a module with no folder when the file names none.</summary>

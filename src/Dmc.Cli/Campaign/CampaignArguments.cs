@@ -34,6 +34,9 @@ internal static class CampaignArguments
     /// <summary>The message for a missing or unknown verb (exit code 2).</summary>
     const string NeedVerb = "give export, import or show (try dmc campaign --help)";
 
+    /// <summary>The message for an <c>--as</c> that is not a valid campaign name (exit code 2); <see cref="CampaignImporter"/> says the same when it is called with one.</summary>
+    internal const string AsMessage = "--as must be lowercase letters, digits and hyphens, starting with a letter or digit";
+
     /// <summary>The options each verb accepts.</summary>
     static string[] OptionsOf(string verb) => verb switch
     {
@@ -111,7 +114,7 @@ internal static class CampaignArguments
             else
             {
                 if (!IsCampaignName(value))
-                    throw Argparse.Usage("--as must be lowercase letters, digits and hyphens, starting with a letter or digit");
+                    throw Argparse.Usage(AsMessage);
                 rename = value;
             }
         }

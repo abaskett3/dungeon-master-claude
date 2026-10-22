@@ -89,6 +89,14 @@ public sealed class CampaignShowTests
     }
 
     [TestMethod]
+    public void AnEmptyModuleFolderIsTheUnnamedModule()
+    {
+        using var root = new TempRoot();
+        string zip = Archive(root, mutate: p => p.Manifest["module"] = new JsonObject { ["folder"] = "" });
+        Assert.AreEqual("module: unknown (module-progress.md names no module folder)", Show(root, zip)[2]);
+    }
+
+    [TestMethod]
     public void NeverMoreThanThreeLines()
     {
         using var root = new TempRoot();

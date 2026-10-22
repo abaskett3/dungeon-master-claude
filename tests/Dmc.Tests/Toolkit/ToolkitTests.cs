@@ -385,6 +385,7 @@ public sealed partial class ToolkitTests
                 Assert.IsFalse(Regex.IsMatch(tool, pattern), $"play-settings.json denies {tool} ({rule}), which play needs");
         }
         var overrides = settings["skillOverrides"]?.AsObject();
+        // SkillNames() excludes the speckit-* skills, which play hides on purpose (PlaySettingsHidesEverySpecKitSkill).
         foreach (string skill in SkillNames())
             Assert.AreEqual("on", (string?)overrides?[skill] ?? "on", $"play-settings.json hides /{skill}");
         // The project's settings.json still applies under --settings, and its allow list is the one to keep up to date.

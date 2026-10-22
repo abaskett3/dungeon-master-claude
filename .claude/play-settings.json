@@ -38,6 +38,7 @@
       "PushNotification",
       "ReportFindings",
       "ShareOnboardingGuide",
+      "Skill(speckit-*)",
       "Bash(rm *)",
       "Bash(rmdir *)",
       "Bash(unlink *)",

@@ -298,3 +298,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **What the deny rules do and do not stop:** The `Skill(speckit-*)` deny rules stop DMC invoking a Spec Kit skill by its own call. They are not assumed to stop a command the player types (a user report says a `Skill` deny did not block a typed slash command), and they do not remove the commands from the `/` list; `disable-model-invocation` is what keeps the descriptions out of context. See the preceding entry for the syntax and the unconfirmed points.
 - **Reason:** The toolkit can gain a spec, plan and task workflow for its own development without costing the player anything in context or install. Installing into `.claude/skills/` with the descriptions suppressed and the skills denied is the lightest route; a plugin folder is kept in reserve for when a second player makes the command list matter.
 - **Source:** Issue #51 (decided by the user, 2026-10-18) and its sub-issues #56, #57, #60.
+
+## Line endings of the Spec Kit skill files (Spec Kit, Phase 1)
+
+- **Date:** 2026-10-21
+- **Decision:** `.gitattributes` pins `.claude/skills/speckit-*/SKILL.md` to `text eol=lf`.
+- **Reason:** Spec Kit records a hash of each skill file's bytes in `.specify/integrations/*.manifest.json`. The committed files are LF and match those hashes. Without the rule, a Windows checkout with `core.autocrlf=true` writes CRLF, so the files look locally modified to `specify integration upgrade claude --integration-options="--events false --no-model-invocation"`. With it, every checkout is LF and matches the manifest.
+- **Limits:** The `specify` tool could not be run in the sandbox; the committed files' hashes were checked against the manifest by hand and `git check-attr` confirms the rule applies.
+- **Source:** Issue #59, part of #51.

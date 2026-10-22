@@ -161,10 +161,9 @@ CLAUDE.md            DMC's instructions
 README.md            this file
 .docs/               product documents: guide, architecture, dmc reference, decisions, roadmap (start at .docs/README.md)
 play.ps1, play.sh    start a play session: fetch dmc, then Sonnet, high effort, play settings
-.claude/skills/      the commands above
+.claude/skills/      the commands above, and Spec Kit's speckit- planning commands (toolkit work only, not play)
 .claude/settings.json  permissions for saving and dmc, compaction reminders
 .claude/play-settings.json  settings for play only
-.claude/skills/speckit-*   Spec Kit's planning commands, for toolkit work only, not play
 .specify/            Spec Kit's templates, scripts and install state (toolkit work only)
 specs/               specs, plans and task lists Spec Kit writes, one folder per feature (toolkit work only)
 bin/                 dmc, the toolkit's program: dice, maps, PDF reading, session digest, break reminder (not in git)

@@ -288,3 +288,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The block exists so that DMC does not wander into Spec Kit during play. A deny rule is the documented, checked-by-the-tool way to refuse DMC's own call; the player's typed commands are theirs to run and are not worth blocking. `skillOverrides: off` is the stronger option if the description cost or the `/` list matters, and is the fallback if the live check fails.
 - **Limits:** The three unconfirmed points above. The rule syntax and the prefix wildcard rest on changelog entries, not on the reference page.
 - **Source:** Issue #55, part of #51.
+
+## Line endings of the Spec Kit skill files (Spec Kit, Phase 1)
+
+- **Date:** 2026-10-21
+- **Decision:** `.gitattributes` pins `.claude/skills/speckit-*/SKILL.md` to `text eol=lf`.
+- **Reason:** Spec Kit records a hash of each skill file's bytes in `.specify/integrations/*.manifest.json`. The committed files are LF and match those hashes. Without the rule, a Windows checkout with `core.autocrlf=true` writes CRLF, so the files look locally modified to `specify integration upgrade claude --integration-options="--events false --no-model-invocation"`. With it, every checkout is LF and matches the manifest.
+- **Limits:** The `specify` tool could not be run in the sandbox; the committed files' hashes were checked against the manifest by hand and `git check-attr` confirms the rule applies.
+- **Source:** Issue #59, part of #51.

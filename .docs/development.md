@@ -163,7 +163,9 @@ specify self upgrade --tag vX.Y.Z
 specify integration upgrade claude --integration-options="--events false --no-model-invocation"
 ```
 
-**What resets `--no-model-invocation`, and how to reapply it.** Per Spec Kit's [integrations reference](https://github.com/github/spec-kit/blob/main/docs/reference/integrations.md) ("Claude: user-invocable-only skills"), `specify preset add/remove/update`, `specify integration use claude` and some `switch` paths reset `disable-model-invocation` to the default. Reapply it with `specify integration upgrade claude --force --integration-options="--events false --no-model-invocation"`. The toolkit test `ToolkitTests` checks that every `speckit-*` skill still has `disable-model-invocation: true`, so a silent reset fails the build.
+**What resets `--no-model-invocation`, and how to reapply it.** Per Spec Kit's [integrations reference](https://github.com/github/spec-kit/blob/main/docs/reference/integrations.md) ("Claude: user-invocable-only skills"), `specify preset add/remove/update`, `specify integration use claude` and some `switch` paths reset `disable-model-invocation` to the default. Reapply it with `specify integration upgrade claude --force --integration-options="--events false --no-model-invocation"`. The toolkit test `EverySpecKitSkillDisablesModelInvocation` checks that every `speckit-*` skill still has `disable-model-invocation: true`, so a silent reset fails the build. `PlaySettingsDeniesEverySpecKitSkill` checks that `.claude/play-settings.json` denies each one, and `SpecKitAddsNoHookAndNoClaudeMdBlock` that `.claude/settings.json` and `CLAUDE.md` carry nothing from Spec Kit. The other toolkit tests skip the `speckit-*` folders: they are not DMC's skills or prompts.
+
+**Line endings.** `.gitattributes` pins `.claude/skills/speckit-*/SKILL.md` to LF, because Spec Kit hashes those files' bytes in `.specify/integrations/*.manifest.json` and a CRLF checkout would look like a local modification at upgrade time (see [decisions.md](decisions.md)).
 
 **Extensions left out, and why.** `init` does not install the opt-in extensions, and none is wanted here:
 

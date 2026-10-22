@@ -582,6 +582,19 @@ public sealed partial class ToolkitTests
                 $"play-settings.json does not deny Skill({name})");
     }
 
+    /// <summary>
+    /// <c>play-settings.json</c> sets <c>skillOverrides</c> to <c>off</c> for every Spec Kit skill present, which hides it
+    /// from the <c>/</c> menu as well as from the model (issue #78). <c>skillOverrides</c> matches skill names only, with no
+    /// wildcard, so a skill added by an upgrade needs its own entry.
+    /// </summary>
+    [TestMethod]
+    public void PlaySettingsHidesEverySpecKitSkill()
+    {
+        var overrides = Settings("play-settings.json")["skillOverrides"]?.AsObject();
+        foreach (string name in SpecKitSkillNames())
+            Assert.AreEqual("off", (string?)overrides?[name], $"play-settings.json must set skillOverrides {name} to off");
+    }
+
     /// <summary>Spec Kit leaves no hook in <c>settings.json</c> and no <c>SPECKIT START</c> block in <c>CLAUDE.md</c>.</summary>
     [TestMethod]
     public void SpecKitAddsNoHookAndNoClaudeMdBlock()

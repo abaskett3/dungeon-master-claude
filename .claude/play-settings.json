@@ -18,7 +18,17 @@
     "morning": "off",
     "skill-creator": "off",
     "import-memory": "off",
-    "plugin-authoring": "off"
+    "plugin-authoring": "off",
+    "speckit-analyze": "off",
+    "speckit-checklist": "off",
+    "speckit-clarify": "off",
+    "speckit-constitution": "off",
+    "speckit-converge": "off",
+    "speckit-implement": "off",
+    "speckit-plan": "off",
+    "speckit-specify": "off",
+    "speckit-tasks": "off",
+    "speckit-taskstoissues": "off"
   },
   "permissions": {
     "deny": [

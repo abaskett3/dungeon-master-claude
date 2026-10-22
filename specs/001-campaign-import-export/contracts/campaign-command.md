@@ -63,12 +63,13 @@ Line 3 is absent for a campaign without a module and says `(in modules/)` when i
 | Export: a path in the campaign that an import would refuse | 1 | `<relative path> cannot be exported: <reason>` |
 | Export: a read or write fails | 1 | `could not export: <reason>`; no file is left under the final name |
 | Export: a symbolic link or junction in the campaign | 1 | `<relative path> is a link: exports hold only the campaign's own files` |
+| Export: the campaign folder itself, or the general `adventures/player-options.md`, is a link | 1 | `<name> is a link: ...` or `adventures/player-options.md is a link: ...`, ending as the row above |
 | Import or show: file missing or unreadable | 1 | `cannot read <path>: <reason>` |
 | Import or show: not a ZIP, or no valid manifest | 1 | `<path> is not a dmc campaign export` |
 | Import or show: newer format | 1 | `<path> was made by a newer dmc (format <n>): update dmc and try again` |
 | Import: name taken | 1 | `adventures/<name> already exists: import under another name with --as NAME` |
 | Import: `--as` not a valid name | 2 | `--as must be lowercase letters, digits and hyphens, starting with a letter or digit` |
-| Import: unsafe or unportable path | 1 | `<path> holds an entry that cannot be imported: <entry> (<reason>)` |
+| Import: unsafe or unportable path, or a manifest declaring more than 100,000 files or 1 GB in all | 1 | `<path> holds an entry that cannot be imported: <entry> (<reason>)`; for the caps the entry is `manifest.json` and the reason `more than 100000 files` or `more than 1 GB in all` |
 | Import: archive and manifest disagree, or a size or checksum differs | 1 | `<path> is damaged: <entry> <what differs>` |
 | Import: a write fails | 1 | `could not import: <reason>`; nothing is left under the target name |
 
@@ -80,3 +81,4 @@ When cleaning up after a failure itself fails, one more line on stderr names the
 - `import` never changes an existing campaign folder or an existing `adventures/player-options.md`, and on any failure leaves no folder under the target name.
 - `import` never writes `adventures/.active-campaign`.
 - A round trip `export` then `import --as other` produces a folder identical to the original in every file's bytes and in its empty folders, on any supported system.
+- File times are not part of the round trip: every file `import` writes gets the export time (`exportedAt`) as its last-write time, so the map redraw, which compares modification times, cannot see an extracted `live.json` as newer than its picture.

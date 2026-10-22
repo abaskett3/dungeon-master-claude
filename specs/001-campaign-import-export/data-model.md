@@ -44,7 +44,7 @@ Validation at import, all before anything is committed (FR-009):
 
 1. `manifest.json` exists, parses, and has every field with the right type; otherwise "not a dmc campaign export".
 2. `formatVersion` ≤ the reader's version; otherwise "made by a newer dmc".
-3. Every path passes the rules of research R6, and no two differ only by case.
+3. Every path passes the rules of research R6, and no two differ only by case. The manifest declares at most 100,000 files and 1 GB in all (sizes added up, overflow counted as over); anything larger is refused as an entry that cannot be imported, so a hand-made manifest cannot promise an unbounded extraction.
 4. The archive's entries and the manifest's lists match exactly, both ways.
 5. While extracting, each file's byte count and SHA-256 match its entry; reading stops at the declared size.
 

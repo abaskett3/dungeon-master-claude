@@ -22,7 +22,7 @@ The `Campaign` tests cover the round trip, every refusal in the contract's failu
 2. **Show.** `artifacts/bin/dmc campaign show exports/the-silver-egg-<stamp>.zip`
    Expect two or three lines: name, date, version, file count, module.
 3. **Import under a new name.** Rename a copy of the export to `backup.zip` first, to see that the file name does not matter, then `artifacts/bin/dmc campaign import backup.zip --as silver-egg-copy`
-   Expect the four-line report with `kept your existing adventures/player-options.md`.
+   Expect the three-line report with `kept your existing adventures/player-options.md` (four lines when the campaign's module is not in `modules/`).
 4. **Compare.** The two folders are identical:
    - bash: `diff -r adventures/the-silver-egg adventures/silver-egg-copy && echo same`
    - PowerShell: `Compare-Object (Get-ChildItem -Recurse -File adventures/the-silver-egg | Get-FileHash | % Hash) (Get-ChildItem -Recurse -File adventures/silver-egg-copy | Get-FileHash | % Hash)` prints nothing.

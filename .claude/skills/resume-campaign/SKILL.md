@@ -9,7 +9,7 @@ Rebuild your picture of the campaign from the files. Do not rely on anything you
 
 ## 1. Find the campaign
 
-Use the campaign the player named. Otherwise read `adventures/.active-campaign`. If neither gives one, list the folders in `adventures/` and ask. Write the chosen folder name to `adventures/.active-campaign`.
+Use the campaign the player named. Otherwise read `adventures/.active-campaign`. If neither gives one, list the folders in `adventures/` whose names do not start with a dot (staging folders left by an interrupted `dmc` command) and ask. Write the chosen folder name to `adventures/.active-campaign`.
 
 ## 2. Read, in this order
 

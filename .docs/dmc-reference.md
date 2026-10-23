@@ -302,6 +302,8 @@ Times are UTC; "ctx" is the number of tokens sent to the model on that call. Err
 
 ## campaign
 
+Added in release 0.1.4.
+
 ```
 dmc campaign export NAME [--out PATH] [--force]
 dmc campaign import FILE [--as NAME]

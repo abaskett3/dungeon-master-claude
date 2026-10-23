@@ -30,7 +30,7 @@ No new behavior is added for Windows or Linux. Earlier releases are not touched.
 
 **Performance Goals**: N/A. SC-004 asks that the Mac refusal arrive within 5 seconds; it is a local check before any network use.
 
-**Constraints**: Warnings are errors in `src/Dmc.Cli`, so removing `[assembly: SupportedOSPlatform("macos")]` must not leave a CA1416 warning. A failure of `get-dmc` stays one line `get-dmc: <message>` on stderr, exit 1. Release 0.1.3's published `osx-arm64` archive is not altered.
+**Constraints**: Warnings are errors in `src/Dmc.Cli`, so removing `[assembly: SupportedOSPlatform("macos")]` must not leave a CA1416 warning. A failure of `get-dmc` stays one line `get-dmc: <message>` on stderr, exit 1. Release 0.1.4's published `osx-arm64` archive is not altered.
 
 **Scale/Scope**: About 28 files with a match for macOS, of which roughly 20 change; no new files outside `specs/` and `.docs/`.
 
@@ -77,7 +77,7 @@ specs/002-remove-macos-support/
 └── release/write-pin.sh     # drop osx-arm64 and osx-x64 from the platforms it knows; header comment
 
 tools/
-├── dmc-release.json         # drop the "osx-arm64" hash (the existing pin, tag dmc-v0.1.3, keeps its other four)
+├── dmc-release.json         # drop the "osx-arm64" hash (the existing pin, tag dmc-v0.1.4, keeps its other four)
 ├── get-dmc.sh               # Darwin -> macOS refusal; drop Rosetta, osx-x64 and the osx shasum branch; header and message wording
 └── get-dmc.ps1              # $IsMacOS -> macOS refusal (plus the DMC_GET_TEST_SYSTEM test hook); drop osx-x64; header wording
 

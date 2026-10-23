@@ -114,7 +114,7 @@ These are ordinary text files. You can read and edit your character sheet or the
 ./bin/dmc campaign import exports/the-silver-egg-<date and time>.zip --as silver-egg-copy
 ```
 
-`export` writes to `exports/` (git ignores it), `import` never replaces a campaign, and `show` writes nothing. The export holds spoilers (`story/dm-notes.md`), so do not send it to someone who will play the campaign. `campaign` arrived after `dmc` 0.1.3; with an older `bin/dmc`, `dmc` answers `unknown command "campaign"` (see [Back up, copy or move a campaign](.docs/user-guide.md#back-up-copy-or-move-a-campaign)). All options and messages are in [dmc-reference.md](.docs/dmc-reference.md#campaign).
+`export` writes to `exports/` (git ignores it), `import` never replaces a campaign, and `show` writes nothing. The export holds spoilers (`story/dm-notes.md`), so do not send it to someone who will play the campaign. `campaign` is in `dmc` 0.1.4 and later; with an older `bin/dmc`, `dmc` answers `unknown command "campaign"` (see [Back up, copy or move a campaign](.docs/user-guide.md#back-up-copy-or-move-a-campaign)). All options and messages are in [dmc-reference.md](.docs/dmc-reference.md#campaign).
 
 ### Long sessions
 

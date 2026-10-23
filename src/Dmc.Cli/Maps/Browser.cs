@@ -2,12 +2,12 @@ using System.Diagnostics;
 
 namespace Dmc.Maps;
 
-/// <summary>Opens a page in the default browser: shell execute on Windows, <c>open</c> on macOS, <c>xdg-open</c> on Linux.</summary>
+/// <summary>Opens a page in the default browser: shell execute on Windows, <c>xdg-open</c> on Linux.</summary>
 public static class Browser
 {
     /// <summary>The program and arguments that open an address on this OS.</summary>
     /// <remarks>
-    /// On macOS and Linux the opener runs under <c>sh</c>, in the background, with all three of its streams sent to
+    /// On Linux the opener runs under <c>sh</c>, in the background, with all three of its streams sent to
     /// <c>/dev/null</c>: it must not write into the pipes of the program that started it (whose reader may be gone by
     /// then, and a write to a closed pipe kills the writer), and it must not leave anything on this program's output.
     /// </remarks>
@@ -19,7 +19,7 @@ public static class Browser
         var start = new ProcessStartInfo("/bin/sh") { UseShellExecute = false };
         start.ArgumentList.Add("-c");
         start.ArgumentList.Add("\"$0\" \"$1\" >/dev/null 2>&1 </dev/null &");
-        start.ArgumentList.Add(OperatingSystem.IsMacOS() ? "open" : "xdg-open");
+        start.ArgumentList.Add("xdg-open");
         start.ArgumentList.Add(address);
         return start;
     }

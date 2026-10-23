@@ -13,7 +13,8 @@ This guide is for the player: how to start DMC, play, save, take breaks and fix 
 |---|---|
 | Windows | x64 or Arm |
 | Linux | x64 or Arm, with glibc 2.34 or later (Ubuntu 22.04 or newer) |
-| macOS | Apple Silicon only, not Intel Macs |
+
+macOS is not supported: `dmc` is no longer built for it.
 
 Nothing else needs installing. The helper program `dmc`, which rolls DMC's dice, draws maps, reads PDFs and reminds DMC to take breaks, is downloaded by the launcher the first time.
 
@@ -24,7 +25,7 @@ Open a terminal in the toolkit folder and run the launcher:
 | Shell | Command |
 |---|---|
 | PowerShell on Windows | `./play.ps1` |
-| macOS, Linux or Git Bash | `./play.sh` |
+| Linux or Git Bash | `./play.sh` |
 
 If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy Bypass -File .\play.ps1` instead.
 

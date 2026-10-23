@@ -51,6 +51,6 @@ DMC is mostly text: `CLAUDE.md` sets the rules of conduct, twelve skills under `
 - **It does not run a module from memory.** It runs from the ingested digest and the original pages, and does not railroad: leaving the script is recorded, not blocked.
 - **It does not upload anything.** Maps are local HTML files with no server; session digests are written to `adventures/.transcript-review/`, one local folder shared by all campaigns and rewritten on each review, and feedback entries to `feedback/`, which is never rewritten; PDFs are read on the player's machine.
 - **It does not need Python, .NET or any other runtime on the player's machine.** `dmc` is a self-contained native program, downloaded and checked against a committed SHA-256.
-- **It is not signed.** No code signing or notarization; the macOS Gatekeeper and Windows SmartScreen checks on fresh machines were deliberately skipped (see [decisions.md](decisions.md)). It is not built for Intel Macs.
+- **It is not signed.** No code signing or notarization; the Windows SmartScreen check on fresh machines was deliberately skipped (see [decisions.md](decisions.md)).
 - **It does not prevent context compaction.** It saves as it goes so that a compaction loses nothing, and offers breaks so that long conversations are rare.
 - **It is not a rules engine.** `dmc` rolls, draws and reads; the rules are applied by DMC, following the edition set in the player options.

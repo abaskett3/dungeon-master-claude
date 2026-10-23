@@ -283,7 +283,7 @@ public sealed class PdfFileTests
     [TestMethod]
     public void OpenSslIsFoundOnThisMachineOrNotWithoutCrashing()
     {
-        // Only that the probe answers: it is a load attempt, and on Windows and macOS it is never asked.
+        // Only that the probe answers: it is a load attempt, and on Windows it is never asked.
         _ = PdfFile.HasLibssl();
     }
 }

@@ -6,7 +6,8 @@
 # The archive comes from this repository's GitHub Release, over HTTPS only. Its SHA-256 is checked against the pin
 # before anything in it is unpacked or run; on a mismatch nothing is installed.
 #
-# On Windows (Git Bash, MSYS, Cygwin) this hands over to tools/get-dmc.ps1.
+# On Windows (Git Bash, MSYS, Cygwin) this hands over to tools/get-dmc.ps1. On macOS, which dmc is no longer built
+# for, it stops at once with one line, before it reads the pin or touches bin/.
 #
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub. The
 # SHA-256 check still applies.
@@ -55,24 +56,17 @@ case "$system" in
         exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$root/tools/get-dmc.ps1")"
         ;;
     Linux) os=linux ;;
-    Darwin) os=osx ;;
-    *) fail "dmc is not built for ${system:-this system}: it runs on Windows, Linux and macOS" ;;
+    Darwin) fail "dmc is not supported on macOS: it runs on Windows and Linux" ;;
+    *) fail "dmc is not built for ${system:-this system}: it runs on Windows and Linux" ;;
 esac
 
 machine="$(uname -m 2>/dev/null)"
-# A shell running under Rosetta on Apple Silicon says x86_64; the Mac itself is arm64.
-if [ "$os" = osx ] && [ "$machine" = x86_64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ]; then
-    machine=arm64
-fi
 case "$machine" in
     x86_64 | amd64) arch=x64 ;;
     aarch64 | arm64) arch=arm64 ;;
     *) fail "dmc is not built for ${machine:-this} processors on $system: it needs x86-64 or Arm64" ;;
 esac
 rid="$os-$arch"
-if [ "$rid" = osx-x64 ]; then
-    fail "dmc is not built for Intel Macs: on macOS it needs Apple Silicon"
-fi
 
 [ -f "$pin" ] || fail "tools/dmc-release.json is missing"
 tag="$(pinned_tag)"
@@ -107,9 +101,7 @@ else
 fi
 
 # The hash is read from standard input, so the file's name cannot change how it is printed.
-if [ "$os" = osx ] && command -v shasum >/dev/null 2>&1; then
-    actual="$(shasum -a 256 < "$work/$asset")"
-elif command -v sha256sum >/dev/null 2>&1; then
+if command -v sha256sum >/dev/null 2>&1; then
     actual="$(sha256sum < "$work/$asset")"
 elif command -v shasum >/dev/null 2>&1; then
     actual="$(shasum -a 256 < "$work/$asset")"

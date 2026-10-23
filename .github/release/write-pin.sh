@@ -9,7 +9,7 @@
 # and writes one key per line, which tools/get-dmc.sh relies on (it reads the file without a JSON parser).
 #
 # Inputs:    <tag> (dmc-vX.Y.Z); <folder> holding one *.sha256 file for each archive of that tag (the platforms it
-#            knows are win-x64, win-arm64, linux-x64, linux-arm64, osx-arm64 and osx-x64); the existing pin file, whose
+#            knows are win-x64, win-arm64, linux-x64 and linux-arm64); the existing pin file, whose
 #            "about" line is kept. <pin file> defaults to tools/dmc-release.json, relative to the working folder.
 # Outputs:   the pin file, rewritten with the tag and the hashes of the archives found. Nothing is printed on success.
 # Exit code: 0 when the pin was written. 1 with one line "write-pin: <what went wrong>" on stderr when the tag is not a
@@ -41,7 +41,7 @@ if [ -z "$about" ]; then
 fi
 
 entries=()
-for rid in win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64 osx-x64; do
+for rid in win-x64 win-arm64 linux-x64 linux-arm64; do
     seen=""
     for extension in zip tar.gz; do
         file="$folder/$tag-$rid.$extension.sha256"

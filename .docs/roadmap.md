@@ -43,6 +43,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code review runs on Copilot PRs | In review | `claude-code-review.yml` passes `github_token` and `allowed_bots: 'Copilot'`. Untested on a Copilot PR until merged and #69 is re-run. See [decisions.md](decisions.md). |
 | Spec Kit installed for toolkit work, blocked in play, issue #51 Phase 1 | Done | Spec Kit v1.2.1 in `.claude/skills/speckit-*`, `.specify/` and `specs/`; descriptions suppressed with `disable-model-invocation`, hidden from play's `/` menu with `skillOverrides: off` (#78) and denied in `.claude/play-settings.json`. Checked in play (#61). See [development.md](development.md#spec-driven-changes) and [decisions.md](decisions.md). |
 | Spec Kit constitution, issue #51 Phase 2 | In review | `.specify/memory/constitution.md` v1.0.0: five principles, build and output constraints, workflow and governance, each pointing at the file that holds the rule. See [development.md](development.md#spec-driven-changes) and [decisions.md](decisions.md). |
+| macOS support removed, issue #124 | In review | `dmc` is no longer built, tested or documented for macOS: the release and CI workflows, the pin (four archives) and the code drop `osx-arm64`, and `get-dmc` refuses on a Mac in one line. Releases up to 0.1.4 keep their macOS archive. See [decisions.md](decisions.md) and [releases.md](releases.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -109,4 +110,4 @@ Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](
 
 ## Skipped
 
-- **Gatekeeper and SmartScreen checks.** Testing the unsigned `dmc` on a fresh Mac and a fresh Windows PC was left open through issue #3 and skipped by the user's decision; problems will be handled if they are reported.
+- **Gatekeeper and SmartScreen checks.** Testing the unsigned `dmc` on a fresh Mac and a fresh Windows PC was left open through issue #3 and skipped by the user's decision; problems will be handled if they are reported. The Mac half no longer applies: macOS is not supported (issue #124).

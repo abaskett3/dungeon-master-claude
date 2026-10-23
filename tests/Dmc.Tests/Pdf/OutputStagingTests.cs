@@ -62,7 +62,7 @@ public sealed class OutputStagingTests
         using var temp = new TempFolder();
         string output = Path.Combine(temp.Path, "out");
         File.WriteAllText(output, "a file");
-        // An IOException on Windows, a DirectoryNotFoundException (an IOException too) on Linux and macOS.
+        // An IOException on Windows, a DirectoryNotFoundException (an IOException too) on Linux.
         Assert.Throws<IOException>(() => new OutputStaging(output));
         Assert.AreEqual("a file", File.ReadAllText(output));
         CollectionAssert.AreEqual(new[] { "out" }, Directory.GetFileSystemEntries(temp.Path).Select(Path.GetFileName).ToArray());

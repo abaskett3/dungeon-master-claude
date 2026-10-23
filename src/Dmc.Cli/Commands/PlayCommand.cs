@@ -60,7 +60,7 @@ public sealed class PlayCommand : ICommand
     /// PowerShell prompt runs for <c>claude</c>.
     /// </summary>
     /// <param name="path">The PATH variable's value, or null if unset.</param>
-    /// <param name="windows">True for the Windows rules (see the summary); false for Linux and macOS.</param>
+    /// <param name="windows">True for the Windows rules (see the summary); false for Linux.</param>
     /// <exception cref="DmcException">
     /// Nothing named <c>claude</c> is on the PATH (exit code 127); or only a <c>claude.cmd</c> or <c>.bat</c> is, with no
     /// <c>claude.ps1</c> beside it (exit code 1).

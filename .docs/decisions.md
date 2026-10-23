@@ -30,10 +30,10 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The PNG exists for DMC to look at, and an image costs tokens by its pixels. This was the one deliberate difference in the `map` port.
 - **Source:** PR #9 ("user decision, to save image tokens").
 
-## Intel Macs not built
+## Intel Macs not built (superseded 2026-10-23 by "macOS is no longer supported")
 
 - **Date:** 2026-10-15
-- **Decision:** Releases are built for `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64` and `osx-arm64`, not `osx-x64`.
+- **Decision (superseded 2026-10-23: no `osx-arm64` build any more):** Releases are built for `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64` and `osx-arm64`, not `osx-x64`.
 - **Reason:** The plan made Intel Macs optional; it would be the one target that neither the tests nor the spike ever ran, and the Intel runner image is the last of its kind. Adding it later is one matrix row.
 - **Source:** PR #14 ("RIDs").
 
@@ -96,7 +96,7 @@ This log is for contributors who want to know why the toolkit is the way it is b
 ## Skip the Gatekeeper and SmartScreen checks
 
 - **Date:** 2026-10-17
-- **Decision:** Do not test an unsigned `dmc` on a fresh Mac (Gatekeeper) or a fresh Windows PC (SmartScreen, Defender) before relying on it. Deal with any such problem if it is reported.
+- **Decision (the Mac half is superseded 2026-10-23, as macOS is no longer supported):** Do not test an unsigned `dmc` on a fresh Mac (Gatekeeper) or a fresh Windows PC (SmartScreen, Defender) before relying on it. Deal with any such problem if it is reported.
 - **Reason:** The user's call. Archives fetched by `curl` or `Invoke-WebRequest` are expected to carry no quarantine mark, and the release workflow runs every archive on its own platform's runner, but a runner is not a fresh consumer machine. Code signing stays out of scope unless a problem appears.
 - **Source:** Left open in issue #3's Phase 0 comment and in PR #14 ("Still open"); the user's decision on 2026-10-17, given in a session rather than in an issue or PR.
 
@@ -346,3 +346,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** A crafted archive must not place a file outside the new folder ("zip slip"). Checking the Windows rules everywhere makes the promise that an export moves between systems true in both directions: an export made on Linux that Windows could not store is refused on Linux, with the same words. Sanitising names would silently break "byte for byte". A symbolic link would export a file from outside the campaign.
 - **Limits:** `LinkTarget` is null for a Windows cloud placeholder (a file with the reparse-point attribute but no target), which is exported as the plain file it presents as. Path length is not limited by the checks; a name no file system can hold fails at the write, as one line, and leaves nothing.
 - **Source:** Issue #81; `research.md` R6.
+
+## macOS is no longer supported (issue #124)
+
+- **Date:** 2026-10-23
+- **Decision:** `dmc` is no longer built, released, tested or documented for macOS. The release workflow and the CI matrix drop `osx-arm64`, the pin lists four archives (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`), and `get-dmc.sh` and `get-dmc.ps1` refuse on a Mac with one line, `get-dmc: dmc is not supported on macOS: it runs on Windows and Linux`, before they read the pin or touch `bin/`. `get-dmc.ps1` takes a test-only `DMC_GET_TEST_SYSTEM=macOS` to make the refusal testable. Supersedes "Intel Macs not built" and the Mac half of "Skip the Gatekeeper and SmartScreen checks".
+- **Reason:** Build and CI cost: a macOS runner, an archive with its own packing rules, a hash in the pin and a row in the test matrix, for a platform the user chose to stop carrying.
+- **Limits:** Releases up to `dmc-v0.1.4` keep their `osx-arm64` archive and are not changed. A Mac that already has one of them keeps a working `dmc` (the launchers start it if it runs) but gets no update. Code that only a Mac needed is gone, so coming back means a new runner row, a packing branch, a platform declaration and an opener, which is more than the "one matrix row" the Intel Mac entry once estimated.
+- **Source:** Issue #124; `specs/002-remove-macos-support/` (spec, plan, research R1 to R8).

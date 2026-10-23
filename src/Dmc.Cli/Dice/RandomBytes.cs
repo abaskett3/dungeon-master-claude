@@ -15,8 +15,8 @@ public interface IRandomBytes
 /// <para>
 /// On Linux the bytes come from <c>/dev/urandom</c>, as <c>roll.sh</c> reads them, 64 at a time. <see cref="RandomNumberGenerator"/>
 /// is OpenSSL's <c>RAND_bytes</c> there, and where libssl is missing (a bare <c>debian:12-slim</c>) the runtime
-/// aborts the whole process, which no <c>catch</c> can stop (Phase 0 spike, finding 1). Everywhere else it is
-/// <see cref="RandomNumberGenerator"/>: BCrypt on Windows, the Security framework on macOS.
+/// aborts the whole process, which no <c>catch</c> can stop (Phase 0 spike, finding 1). On Windows it is
+/// <see cref="RandomNumberGenerator"/>, which is BCrypt there.
 /// </para>
 /// </summary>
 public sealed class OsRandomBytes : IRandomBytes, IDisposable

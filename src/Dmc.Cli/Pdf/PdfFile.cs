@@ -14,7 +14,7 @@ public static class PdfFile
     /// <param name="path">The PDF file.</param>
     /// <param name="libsslAvailable">
     /// Whether OpenSSL can be loaded, for a test to say so on any OS. Null: on Linux ask the system, elsewhere never
-    /// check (Windows and macOS do not use OpenSSL).
+    /// check (Windows does not use OpenSSL).
     /// </param>
     /// <exception cref="DmcException">The PDF needs a password, is encrypted on a machine without libssl, or cannot be read.</exception>
     public static PdfDocument Open(string path, Func<bool>? libsslAvailable = null)

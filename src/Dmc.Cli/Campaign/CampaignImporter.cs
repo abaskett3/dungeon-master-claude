@@ -203,7 +203,7 @@ internal static class CampaignImporter
 
         try
         {
-            // Moving a folder onto an empty one succeeds on Linux and macOS, so look again immediately before.
+            // Moving a folder onto an empty one succeeds on Linux, so look again immediately before.
             if (Directory.Exists(target) || File.Exists(target))
                 throw new IOException($"adventures/{Path.GetFileName(target)} appeared while the import was running");
             Directory.Move(Path.Combine(staging, "campaign"), target);

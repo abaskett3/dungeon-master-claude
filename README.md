@@ -104,6 +104,18 @@ DMC writes to these files as you play, not only when you save, so closing the te
 
 These are ordinary text files. You can read and edit your character sheet or the options by hand. Stay out of `story/dm-notes.md`, `story/dm-notes-archive.md` and the NPC sheets if you want to be surprised.
 
+### Back up, copy or move a campaign
+
+`dmc campaign` puts a whole campaign into one checked ZIP file and brings it back:
+
+```
+./bin/dmc campaign export the-silver-egg
+./bin/dmc campaign show exports/the-silver-egg-<date and time>.zip
+./bin/dmc campaign import exports/the-silver-egg-<date and time>.zip --as silver-egg-copy
+```
+
+`export` writes to `exports/` (git ignores it), `import` never replaces a campaign, and `show` writes nothing. The export holds spoilers (`story/dm-notes.md`), so do not send it to someone who will play the campaign. `campaign` arrived after `dmc` 0.1.3; with an older `bin/dmc`, `dmc` answers `unknown command "campaign"` (see [Back up, copy or move a campaign](.docs/user-guide.md#back-up-copy-or-move-a-campaign)). All options and messages are in [dmc-reference.md](.docs/dmc-reference.md#campaign).
+
 ### Long sessions
 
 Every message re-reads the whole conversation, so a long one uses more of your usage limit with each message, and details blur as it grows. DMC therefore keeps sessions short and reloads from the files, which are always up to date.

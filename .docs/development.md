@@ -112,6 +112,8 @@ A change that touches only `*.md` or `*.txt` files does not start it, so a docum
 - **One review per PR.** Run Claude Code's built-in code-review command once, on the finished PR. Check the fixes for its findings by hand, and review again only if a fix turns into a redesign. Check that the documentation is current, whether or not the review found anything.
 - **Merging.** CI must pass. The user merges.
 
+Every toolkit change also goes through Spec Kit, tracked by one issue that links to its `specs/NNN-<name>/` folder, with the tasks kept in `tasks.md` and not turned into issues; see [Spec-driven changes](#spec-driven-changes) § How a change goes through it (issue #66).
+
 ### Documentation goes with every change
 
 Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull requests" bullets) requires every change to update its documentation in the same PR; a PR that leaves it stale is not finished:
@@ -137,7 +139,13 @@ Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull reque
 
 [GitHub Spec Kit](https://github.com/github/spec-kit) is installed for toolkit work only, so a planning session can produce a spec, plan and task list (`/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`) and an implementing session can run `/speckit-implement` and `/speckit-converge` against them. Play never touches it: the `speckit-*` skills are installed with `disable-model-invocation: true` so their descriptions stay out of the model's context (confirmed in a play session, issue #61). `.claude/play-settings.json` sets `skillOverrides` to `off` for each of them, which the Claude Code docs say hides them from the `/` menu and from the model (issue #78; not yet re-checked in play, see #61), and denies them as a second guard, though the deny is not assumed to stop a command the player types. `skillOverrides` takes plain skill names, no wildcard, so a skill added by an upgrade needs its own entry; `PlaySettingsHidesEverySpecKitSkill` fails until it has one. See [decisions.md](decisions.md) for the install decision and what the block does and does not stop.
 
-The skills live in `.claude/skills/speckit-*/SKILL.md` and the templates, scripts and install state in `.specify/`, both tracked in git (except the machine-local files `.specify/.gitignore` lists, such as `feature.json`). Each feature's spec, plan and tasks go in `specs/NNN-<name>/`, a folder that does not exist until the first `/speckit-specify` creates it. Using the skills needs only PowerShell (the scripts are PowerShell, `--script ps`). Playing needs none of this.
+The skills live in `.claude/skills/speckit-*/SKILL.md` and the templates, scripts and install state in `.specify/`, both tracked in git (except the machine-local files `.specify/.gitignore` lists, such as `feature.json`). Each feature's spec, plan and tasks go in `specs/NNN-<name>/`, which `/speckit-specify` creates. Using the skills needs only PowerShell (the scripts are PowerShell, `--script ps`). Playing needs none of this.
+
+**How a change goes through it (issue #66).** Decided by the user after two pilots, `specs/001-campaign-import-export/` (PR #120) and `specs/002-remove-macos-support/` (PR #159); see [decisions.md](decisions.md):
+
+- **Every toolkit change**, a prompt edit included: a planning session runs `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`; an implementing session runs `/speckit-implement`, then `/speckit-converge` until it adds no tasks. The usual rules of [Git and pull requests](#git-and-pull-requests) apply on top.
+- **One issue per change** is the tracking point. Its description links to `specs/NNN-<name>/` and summarises the spec. The tasks stay a checklist in `tasks.md`: do not run `/speckit-taskstoissues` or open an issue per task. The PR says `Closes #N` for that one issue.
+- **A spec is frozen once its converge pass has merged.** Until then `spec.md`, `plan.md`, `tasks.md` and the rest are kept in line with what ships, as converge does; after that the folder is a record of the change, like an entry in [decisions.md](decisions.md), and is not edited. A later change to the same feature gets its own `specs/NNN-<name>/` and may point back at the earlier one. The current behaviour lives in `.docs/`, the code and the prompts, not in old specs.
 
 **The constitution.** `.specify/memory/constitution.md` is what `/speckit-plan` and `/speckit-analyze` check a feature against. It was written from this repository's existing rules (issue #62), following Spec Kit's [existing-projects guide](https://github.com/github/spec-kit/blob/main/docs/guides/existing-projects.md) ("Do not invent standards"): the two principles and § Git and GitHub of `CLAUDE.md`, § Writing prompts, § Skip locally, fail on CI and § Documentation goes with every change here, and four entries of [decisions.md](decisions.md) (native AOT and nothing for players to install, one-line errors and small output, every change updates its documentation, and the Spec Kit install). It points at those files instead of repeating them, so each rule keeps one home: to change a rule, change its home file, and touch the constitution only when a pointer moves.
 
@@ -173,7 +181,7 @@ specify integration upgrade claude --integration-options="--events false --no-mo
 
 - `git`: numbered feature branches, which duplicate `CLAUDE.md` § Git and GitHub.
 - `agent-context`: writes a `<!-- SPECKIT START -->` block into `CLAUDE.md`, which is loaded on every play turn and would cost the player context.
-- `github`: turns tasks into issues; the issue stays the tracking point and links to `specs/NNN-*/`.
+- `github`: turns tasks into issues; the issue stays the tracking point and links to `specs/NNN-*/`. The core skill `/speckit-taskstoissues` does the same and is installed with the others, but is not used (see above).
 
 ## Writing prompts
 

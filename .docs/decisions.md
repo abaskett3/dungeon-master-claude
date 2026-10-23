@@ -323,6 +323,17 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** Three things are not taken from the repository: the versioning policy in the governance section (MAJOR, MINOR, PATCH), which is Spec Kit's own convention; the section structure (principles, constraints, workflow, governance), which is the template's; and Principle II's wording "cost the player context or an install", which generalises the Spec Kit install entry's reason ("without costing the player anything in context or install") and the two sources beside it. The pointers can go stale when a source is renamed; no test checks them.
 - **Source:** Issue #62, part of #51.
 
+## Spec Kit is kept for every toolkit change; one issue per change; specs are frozen after converge (Spec Kit, Phase 3)
+
+- **Date:** 2026-10-23
+- **Decision:** The user's three decisions after the pilot (issue #66):
+  1. **Keep Spec Kit, for every toolkit change**, prompt edits included: specify, clarify, plan, tasks and analyze in a planning session; implement, then converge until it adds no tasks.
+  2. **One issue per change is the tracking point.** It links to `specs/NNN-<name>/`; the tasks stay a checklist in `tasks.md`. `/speckit-taskstoissues` and the `github` extension are not used, and no issue is opened per task.
+  3. **A spec is frozen once its converge pass has merged.** Until then the spec folder is kept in line with what ships; after that it is a record, like an entry in this log, and a later change gets its own folder.
+- **Reason:** Two features went through the whole workflow: `001-campaign-import-export` (PR #120: 36 files, +4,515 lines) and `002-remove-macos-support` (PR #159: 36 files, +789 lines). `/speckit-converge` caught drift between the documents and what shipped three times, none of which the code review had reported: the plan still said `CLAUDE.md` was unchanged after a clause was added (PR #158), the Native AOT task was left open after the release had checked it (PR #157), and the roadmap row was stale and the specs named pin 0.1.3 where 0.1.4 shipped (PR #160). The user chose every change over large ones only. Per-task issues were the main ceremony: the pilots opened 38 (#82 to #119) and 29 (#125 to #153), each closed by one keyword line in the PR, and they duplicate `tasks.md`. In both pilots the specs were edited after the feature PR (#157, #158, #160), so they behave as living documents until converge is done; freezing them afterwards keeps one home for current behaviour (`.docs/`, the code, the prompts), as `.docs/development.md` § Writing prompts asks.
+- **Limits:** The token cost compared with a normal change was not recorded during the pilots (issue #65 asked for it), so the decision rests on what converge caught, not on cost. Both pilots were large; whether the full workflow is worth it on a one-line prompt fix is untested and is the first thing to revisit. The `speckit-taskstoissues` skill stays installed (removing it would be undone by every upgrade), and the play settings still hide and deny it.
+- **Source:** Issues #51, #63 to #66; PRs #120, #157, #158, #159, #160; `specs/001-campaign-import-export/`, `specs/002-remove-macos-support/`.
+
 ## A campaign export is a ZIP with a manifest of sizes and checksums (campaign export, issue #81)
 
 - **Date:** 2026-10-22

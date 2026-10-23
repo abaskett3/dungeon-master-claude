@@ -45,6 +45,8 @@ Sources: `.docs/development.md` § Skip locally, fail on CI; `CLAUDE.md` § Git 
 - Git and GitHub rules (branches, personal and copyrighted files, commits, pull requests, linking issues, one
   review per PR, merging) are in `CLAUDE.md` § Git and GitHub, summarised in `.docs/development.md` § Git and pull
   requests.
+- Which changes go through Spec Kit, how a spec relates to its issue, and when a spec is frozen are in
+  `.docs/development.md` § Spec-driven changes ("How a change goes through it").
 - The toolkit tests check the prompts: commands, paths and skill names a prompt names must be real. Source:
   `.docs/development.md` § Writing prompts.
 
@@ -58,4 +60,4 @@ changed. Its version follows Spec Kit's convention: MAJOR for a principle remove
 principle or section added, PATCH for clarifications. The constitution's origin is described in
 `.docs/development.md` § Spec-driven changes.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-22
+**Version**: 1.0.1 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-23

@@ -228,6 +228,7 @@ Feedback about DMC is under `feedback/` at the toolkit root, outside every campa
 - **Restore, or make a copy.** `import` creates `adventures/<name>` from an export. It never replaces a campaign: if the name is taken, it says so, and you choose another with `--as`. It checks every file against the checksums in the file first, so a damaged export is refused and nothing is left half done. It never touches your general `adventures/player-options.md` (it writes one only if you have none) and never changes which campaign is active: start a session and ask DMC to resume the new name.
 - **Move to another computer.** Copy the `.zip` across (the file name does not matter), put the toolkit there, and import it. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/ingest-module`.
 - **Look first.** `show` says what a file holds (campaign, date, files, size, module) and writes nothing.
+- **Needs a `dmc` newer than 0.1.3.** `campaign` is in the first release after 0.1.3. With an older `bin/dmc`, the command answers `unknown command "campaign"`: `./play.ps1` or `./play.sh` installs the pinned release, so it is available once a release with `campaign` is pinned. A build made from the source (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, see [development.md](development.md)) has it now: run `artifacts/bin/dmc campaign ...` in place of `./bin/dmc campaign ...`.
 
 An export holds everything in the campaign, including `story/dm-notes.md`, so do not open it before you have played the story, and do not send it to anyone who will play it. To bring in a campaign played elsewhere (a chat export or transcript), use `/new-campaign` instead. Every message and option is in [dmc-reference.md](dmc-reference.md#campaign).
 
@@ -235,6 +236,7 @@ An export holds everything in the campaign, including `story/dm-notes.md`, so do
 
 | What you see | What it means and what to do |
 |---|---|
+| `dmc: unknown command "campaign" (try roll, ...)` | Your `bin/dmc` is 0.1.3 or older, which has no `campaign`. See [Back up, copy or move a campaign](#back-up-copy-or-move-a-campaign) for what to run until a release with it is pinned. |
 | PowerShell: running scripts is disabled on this system | The execution policy blocks local scripts. Start with `powershell -ExecutionPolicy Bypass -File .\play.ps1`. |
 | `play: dmc is not available, so Claude Code starts without it, ...` | `get-dmc` could not install `dmc`; the line above it says why. Fix the cause, then run `bash tools/get-dmc.sh` (in PowerShell, `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`), or ask DMC to. |
 | DMC says `bin/dmc` is missing or does not run | The start-of-session check found no working `dmc`. Let DMC run `get-dmc` when it asks; it is on the allow list. |

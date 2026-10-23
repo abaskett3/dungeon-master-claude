@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Dmc.Tests.Campaign;
 using Dmc.Tests.Digest;
 using Dmc.Tests.Map;
 using Dmc.Tests.Pdf;
@@ -130,6 +131,42 @@ public sealed partial class ErrorPathTests
         AssertOneLine(result, test.Describe("digest"));
         Assert.IsFalse(Directory.Exists(Path.Combine(folder, "out")), "a failed run must not write an output folder");
     });
+
+    /// <summary>The campaign cases that must fail, as test data.</summary>
+    public static IEnumerable<object[]> CampaignErrors { get; } =
+        CampaignCases.ErrorCases().Concat(CampaignCases.DmcOnlyErrorCases()).Select(c => new object[] { c }).ToArray();
+
+    /// <summary>The paths of everything under a folder, relative to it, in ordinal order.</summary>
+    static string[] Entries(string folder) =>
+        [.. Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.AllDirectories)
+            .Select(e => Path.GetRelativePath(folder, e)).Order(StringComparer.Ordinal)];
+
+    /// <summary>
+    /// Every bad argument, missing or unreadable export file and file that is not an export prints one line and no stack trace,
+    /// and leaves the working folder exactly as the case made it. (The binary's toolkit root is the real repository, so a case
+    /// never gets as far as writing there.)
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(CampaignErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfCampaignPrintsOneLine(CommandCase test)
+    {
+        string before = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(before);
+        try
+        {
+            test.Seed?.Invoke(before);
+            string[] seeded = Entries(before);
+            test.Run("campaign", (result, folder) =>
+            {
+                AssertOneLine(result, test.Describe("campaign"));
+                CollectionAssert.AreEqual(seeded, Entries(folder), "a failed run must not write anything");
+            });
+        }
+        finally
+        {
+            Directory.Delete(before, recursive: true);
+        }
+    }
 
     [TestMethod]
     public void PlayWithoutClaudePrintsOneLine()

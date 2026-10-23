@@ -17,6 +17,7 @@ public static class CommandTable
         new RedrawCommand(),
         new PdfCommand(),
         new DigestCommand(),
+        new CampaignCommand(),
         new PlayCommand(),
     ];
 }

@@ -2,6 +2,9 @@
 adventures/*
 !adventures/.gitkeep
 
+# Campaign exports (dmc campaign export) hold whole campaigns, spoilers included: personal data, kept out of git
+exports/*
+
 # Published modules are copyrighted: neither the source files nor the digests are shared
 modules/*
 !modules/.gitkeep

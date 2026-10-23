@@ -15,7 +15,7 @@ The toolkit currently assumes one human player. State and sheets are kept per ch
 
 ## Starting a session
 
-1. If `adventures/.active-campaign` exists, it names the current campaign folder. Otherwise list the folders in `adventures/` and ask which to play, or offer `/new-campaign`.
+1. If `adventures/.active-campaign` exists, it names the current campaign folder. Otherwise list the folders in `adventures/` whose names do not start with a dot (those are the toolkit's own staging folders) and ask which to play, or offer `/new-campaign`.
 2. Follow the `resume-campaign` skill to load the campaign before narrating anything.
 3. Never start narrating from memory or from guesswork. If the files are missing something you need, ask the player.
 

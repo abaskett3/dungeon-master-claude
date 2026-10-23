@@ -51,5 +51,5 @@ no `bin/` folder created.
 ## 5. Release and CI (needs GitHub)
 
 - Push the branch: the Tests workflow shows two `dotnet (...)` jobs (ubuntu-latest, windows-latest) and no macOS one.
-- Run the release workflow as a dry run: it builds four archives, `write-pin.sh` writes four keys, and the pin
-  check passes with `length == 4`. Earlier releases (`dmc-v0.1.3`) still list their `osx-arm64` archive.
+- The Release workflow starts by itself as a dry run on a PR that touches `release.yml`, `tools/` or `.github/release/` (or run it by hand with `workflow_dispatch`): it builds four archives, `write-pin.sh` writes four keys, and the pin
+  check passes with `length == 4`. Earlier releases (`dmc-v0.1.4` and before) still list their `osx-arm64` archive.

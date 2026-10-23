@@ -13,7 +13,7 @@ The feature changes one data file and no stored user data. Campaigns, modules an
 **Validation**: `write-pin.sh` writes only those four keys and fails if its folder holds a `.sha256` file for any
 other archive; the release workflow checks `(.sha256 | length) == 4`.
 
-**State transition**: the existing pin (`dmc-v0.1.3`, five hashes) loses its `osx-arm64` line in this change. The next
+**State transition**: the existing pin (`dmc-v0.1.4`, five hashes) loses its `osx-arm64` line in this change. The next
 release's pin pull request writes the four-key form for the new tag.
 
 ## Supported system
@@ -25,7 +25,7 @@ manifest. `osx-arm64` is removed from all three; `osx-x64` was never built.
 ## Release archive
 
 Unchanged in form: four files at the top level (`dmc`/`dmc.exe` and three native libraries) plus a `.sha256` file.
-Releases already published, including `dmc-v0.1.3`'s `osx-arm64` archive, are not modified or withdrawn.
+Releases already published, including `dmc-v0.1.4`'s `osx-arm64` archive, are not modified or withdrawn.
 
 ## Decision-log entry
 

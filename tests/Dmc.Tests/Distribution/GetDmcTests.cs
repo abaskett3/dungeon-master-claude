@@ -88,8 +88,8 @@ public sealed class GetDmcTests
     [TestMethod]
     [DataRow("Linux", "x86_64", "linux-x64")]
     [DataRow("Linux", "aarch64", "linux-arm64")]
-    [DataRow("Darwin", "arm64", "osx-arm64")]
-    [DataRow("Darwin", "x86_64", "not built for Intel Macs")]
+    [DataRow("Darwin", "arm64", MacOsRefusal)]
+    [DataRow("Darwin", "x86_64", MacOsRefusal)]
     [DataRow("Linux", "armv7l", "not built for armv7l processors")]
     [DataRow("FreeBSD", "amd64", "not built for FreeBSD")]
     public void BashPicksTheArchiveForThisSystem(string system, string machine, string expected)
@@ -112,6 +112,30 @@ public sealed class GetDmcTests
         finally
         {
             Directory.Delete(fake, recursive: true);
+        }
+    }
+
+    /// <summary>The PowerShells get-dmc.ps1 is run with: PowerShell 7 everywhere, Windows PowerShell 5.1 on Windows.</summary>
+    public static IEnumerable<object[]> PowerShells { get; } =
+        OperatingSystem.IsWindows() ? [["pwsh"], ["powershell"]] : [["pwsh"]];
+
+    /// <summary>What both scripts say on macOS, which dmc is no longer built for.</summary>
+    const string MacOsRefusal = "dmc is not supported on macOS: it runs on Windows and Linux";
+
+    /// <summary>
+    /// macOS is refused by every shell, before the pin is read or anything is downloaded. PowerShell cannot be made to
+    /// say it runs on a Mac, so <c>DMC_GET_TEST_SYSTEM=macOS</c> stands in; the archives are there to show that none is
+    /// looked at. The bash script's refusal is tested above, with a fake <c>uname</c>.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(PowerShells))]
+    public void PowerShellRefusesMacOsBeforeAnythingIsRead(string shell)
+    {
+        var (toolkit, assets) = JunkReleases();
+        using (toolkit)
+        {
+            var result = RunScript(shell, toolkit, "tools/get-dmc", environment: From(assets, ("DMC_GET_TEST_SYSTEM", "macOS")));
+            AssertRefused(result, toolkit, MacOsRefusal);
         }
     }
 
@@ -155,7 +179,7 @@ public sealed class GetDmcTests
     /// <summary>A toolkit pinning every runtime identifier to a hash that its archive, which is junk, does not have.</summary>
     static (ToolkitCopy, string Assets) JunkReleases()
     {
-        string[] rids = ["win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-arm64"];
+        string[] rids = ["win-x64", "win-arm64", "linux-x64", "linux-arm64"];
         var toolkit = new ToolkitCopy(JunkTag, rids.ToDictionary(r => r, _ => new string('a', 64)));
         string assets = Path.Combine(toolkit.Root, "assets");
         Directory.CreateDirectory(assets);

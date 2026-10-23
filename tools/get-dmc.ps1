@@ -1,19 +1,21 @@
 # Install dmc, the toolkit's helper program, into bin/: the release pinned in tools/dmc-release.json, for this
-# computer. Run it as ./tools/get-dmc.ps1 (Windows PowerShell 5.1 or PowerShell 7, on Windows, Linux or macOS). It
+# computer. Run it as ./tools/get-dmc.ps1 (Windows PowerShell 5.1 or PowerShell 7, on Windows or Linux). It
 # prints nothing when bin/dmc is already that release, one line when it installs it, and one line on stderr (exit
-# code 1) when it cannot.
+# code 1) when it cannot. On macOS, which dmc is no longer built for, it stops at once with one line, before it reads
+# the pin or touches bin/.
 #
 # The archive comes from this repository's GitHub Release, over HTTPS only. Its SHA-256 is checked against the pin
 # before anything in it is unpacked or run; on a mismatch nothing is installed.
 #
 # For the tests only: DMC_GET_TEST_ASSETS names a local folder to take the archive from instead of GitHub (the
-# SHA-256 check still applies), and DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64).
+# SHA-256 check still applies), DMC_GET_TEST_MACHINE stands in for the Windows machine type (AMD64, ARM64), and
+# DMC_GET_TEST_SYSTEM=macOS makes the script behave as on a Mac (PowerShell cannot be made to say it runs on one).
 #
 # Usage:     no arguments; the working folder does not matter.
 #              Windows:        powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1
-#              Linux, macOS:   pwsh -File tools/get-dmc.ps1
+#              Linux:          pwsh -File tools/get-dmc.ps1
 # Inputs:    tools/dmc-release.json (the tag, and one SHA-256 for each platform); bin/dmc or bin/dmc.exe, to see which
-#            version is there. On Linux and macOS it needs tar.
+#            version is there. On Linux it needs tar.
 # Outputs:   bin/dmc.exe (or bin/dmc) and the native libraries from the archive, beside it. Nothing is written outside
 #            bin/, and the temporary folder it works in (bin/.get-dmc.*) is removed on every exit. On Windows a dmc.exe that
 #            is running cannot be deleted, so it is renamed to *.old and deleted on a later run.
@@ -43,6 +45,11 @@ function Fail([string] $message) {
 }
 
 function Get-Platform {
+    # macOS is not built for: say so before anything else. $IsMacOS does not exist in Windows PowerShell 5.1.
+    # DMC_GET_TEST_SYSTEM is for the tests.
+    if ($env:DMC_GET_TEST_SYSTEM -eq 'macOS' -or ($PSVersionTable.PSEdition -eq 'Core' -and $IsMacOS)) {
+        Fail 'dmc is not supported on macOS: it runs on Windows and Linux'
+    }
     # $IsWindows does not exist in Windows PowerShell 5.1, which runs only on Windows.
     $onWindows = $PSVersionTable.PSEdition -ne 'Core' -or $IsWindows
     if ($onWindows) {
@@ -65,13 +72,12 @@ function Get-Platform {
         }
     }
     $machine = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-    $os = if ($IsMacOS) { 'osx' } elseif ($IsLinux) { 'linux' } else { Fail 'dmc is not built for this system: it runs on Windows, Linux and macOS' }
+    $os = if ($IsLinux) { 'linux' } else { Fail 'dmc is not built for this system: it runs on Windows and Linux' }
     switch ($machine) {
         'X64' { $arch = 'x64' }
         'Arm64' { $arch = 'arm64' }
         default { Fail "dmc is not built for $machine processors: it needs x86-64 or Arm64" }
     }
-    if ("$os-$arch" -eq 'osx-x64') { Fail 'dmc is not built for Intel Macs: on macOS it needs Apple Silicon' }
     return "$os-$arch"
 }
 

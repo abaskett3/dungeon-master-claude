@@ -7,7 +7,7 @@ This document is for contributors changing `dmc`, the launchers, the skills, the
 - The [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). `global.json` asks for 10.0.300 or a later feature band.
 - Git, and for the tests that use them, bash (Git Bash on Windows) and PowerShell. Tests for a tool that is missing are skipped locally.
 - For the map page tests, Playwright's Chromium (below).
-- Nothing else for the default build. Native AOT builds also need a C++ toolchain: Visual Studio's "Desktop development with C++" workload on Windows, `clang` and `zlib1g-dev` on Linux, or the Xcode command line tools on macOS.
+- Nothing else for the default build. Native AOT builds also need a C++ toolchain: Visual Studio's "Desktop development with C++" workload on Windows, `clang` and `zlib1g-dev` on Linux.
 
 ## Repository layout
 
@@ -31,7 +31,7 @@ This document is for contributors changing `dmc`, the launchers, the skills, the
 dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
 ```
 
-Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64`, `linux-arm64` or `osx-arm64`.
+Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64` or `linux-arm64`.
 
 - **The default build** is a self-contained single-file program without AOT. It needs no C++ toolchain and no flags. It starts in about 160 ms on Windows.
 - **The release build** adds `-p:PublishAot=true`: Native AOT, which starts in under 30 ms. CI and the release workflow build this way, and any test that measures time must use it.
@@ -86,7 +86,7 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 ## CI
 
-`.github/workflows/tests.yml` runs for every push to `main` and every pull request that changes more than Markdown and text files, on `ubuntu-latest` (linux-x64), `windows-latest` (win-x64) and `macos-latest` (osx-arm64), each:
+`.github/workflows/tests.yml` runs for every push to `main` and every pull request that changes more than Markdown and text files, on `ubuntu-latest` (linux-x64) and `windows-latest` (win-x64), each:
 
 1. installs the .NET 10 SDK, and on Linux `clang` and `zlib1g-dev` for Native AOT;
 2. publishes `dmc` with Native AOT into `artifacts/bin`;

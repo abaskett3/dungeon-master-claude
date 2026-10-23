@@ -17,7 +17,7 @@ This document is for contributors who want to understand how the parts of the to
 | Launchers | `play.ps1`, `play.sh` | Start a play session: fetch `dmc`, then hand over to `dmc play`, or start Claude Code themselves when `dmc` cannot be had. |
 | Installer and pin | `tools/get-dmc.ps1`, `tools/get-dmc.sh`, `tools/dmc-release.json` | Download the pinned `dmc` release for this computer into `bin/`, after checking its SHA-256 against the pin. |
 | Release workflow | `.github/workflows/release.yml`, `.github/release/write-pin.sh` | Builds, checks and publishes a release from a `dmc-vX.Y.Z` tag, then opens the pull request that pins it. Described in [releases.md](releases.md). |
-| Tests and CI | `tests/Dmc.Tests/`, `.github/workflows/tests.yml` | Check `dmc`, the launchers, `get-dmc`, the settings and the prompts on Windows, Linux and macOS. Described in [development.md](development.md). |
+| Tests and CI | `tests/Dmc.Tests/`, `.github/workflows/tests.yml` | Check `dmc`, the launchers, `get-dmc`, the settings and the prompts on Windows and Linux. Described in [development.md](development.md). |
 
 ## How they fit
 

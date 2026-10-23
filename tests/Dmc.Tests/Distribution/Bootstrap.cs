@@ -21,7 +21,7 @@ public static class Bootstrap
 
     /// <summary>The runtime identifier of this computer, as get-dmc picks it.</summary>
     public static string Rid { get; } =
-        (OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux") + "-"
+        (OperatingSystem.IsWindows() ? "win" : "linux") + "-"
         + (RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64");
 
     /// <summary>The file name of the program: <c>dmc.exe</c> on Windows, <c>dmc</c> elsewhere.</summary>

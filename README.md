@@ -5,7 +5,7 @@ Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **
 ## What you need
 
 - [Claude Code](https://claude.com/claude-code), signed in.
-- This folder, on Windows (x64 or Arm), Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04) or macOS on Apple Silicon.
+- This folder, on Windows (x64 or Arm) or Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04). macOS is not supported.
 
 Nothing else needs installing. The dice roller, the maps, PDF reading, the break reminder and the session review are one small program, `dmc`, which the launcher downloads into `bin/` the first time (checking it against the checksum committed in `tools/dmc-release.json`) and keeps up to date. If you start Claude Code some other way and `bin/dmc` is missing, DMC fetches it itself with `bash tools/get-dmc.sh`, or in PowerShell `powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1`, which works whatever the execution policy. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
 
@@ -25,7 +25,7 @@ A Markdown or text copy of the SRD works too, and is faster to search. The SRD d
 
 ## Quick start
 
-1. Open a terminal in this folder and start DMC with `./play.ps1` in PowerShell on Windows, or `./play.sh` on macOS, Linux or Git Bash. It starts Claude Code on Sonnet at `high` effort with the settings made for play. If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy Bypass -File .\play.ps1`.
+1. Open a terminal in this folder and start DMC with `./play.ps1` in PowerShell on Windows, or `./play.sh` on Linux or Git Bash. It starts Claude Code on Sonnet at `high` effort with the settings made for play. If PowerShell says running scripts is disabled, use `powershell -ExecutionPolicy Bypass -File .\play.ps1`.
 2. Type `/new-campaign`. DMC asks how you like to play, helps you build a character and sets up the campaign files.
 3. Play. Say what your character does in plain language.
 4. When the conversation gets long, DMC offers a break at a natural pause. Say yes, and when it confirms the save, type `/clear` and then `/resume-campaign`. You carry on from where you were.
@@ -201,7 +201,7 @@ dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
 dotnet test
 ```
 
-Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64`, `linux-arm64` or `osx-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. `bin/` is the player's install, which `get-dmc` owns, so publish your own builds to `artifacts/bin/` (the tests insist that program says `dmc 0.0.0-dev`, as every build that is not a release does, and no release does). A build of your own put in `bin/` is replaced by the pinned release the next time `./play.ps1` or `./play.sh` runs, because players run the pinned release. A release gets its version from its tag, so the project file never holds one. To test a different program, set `DMC_BIN` to its path and the tests run that, whatever version it prints. The tests never touch `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows, Linux and macOS for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
+Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64` or `linux-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. `bin/` is the player's install, which `get-dmc` owns, so publish your own builds to `artifacts/bin/` (the tests insist that program says `dmc 0.0.0-dev`, as every build that is not a release does, and no release does). A build of your own put in `bin/` is replaced by the pinned release the next time `./play.ps1` or `./play.sh` runs, because players run the pinned release. A release gets its version from its tag, so the project file never holds one. To test a different program, set `DMC_BIN` to its path and the tests run that, whatever version it prints. The tests never touch `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows and Linux for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
 
 A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds it for every system, publishes it and opens a pull request that pins it in `tools/dmc-release.json`.
 

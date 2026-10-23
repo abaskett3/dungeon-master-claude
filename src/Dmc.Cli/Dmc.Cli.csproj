@@ -29,8 +29,7 @@
 
       Release and CI  dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin -p:PublishAot=true
                       Native AOT: starts in under 30 ms, needs Visual Studio's C++ workload on Windows, clang and
-                      zlib1g-dev on Linux, and the Xcode command line tools on macOS. Any test that measures time
-                      must use this build.
+                      zlib1g-dev on Linux. Any test that measures time must use this build.
 
     Plain "dotnet build" and "dotnet test" use neither: they build an ordinary framework-dependent assembly.
   -->

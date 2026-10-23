@@ -60,7 +60,7 @@ public sealed class ContextCheckCommand : ICommand
 
     /// <summary>
     /// Python's <c>os.path.expanduser</c> for the forms that matter. <c>~</c> and <c>~/x</c> everywhere; <c>~\x</c>
-    /// only on Windows, where <c>ntpath</c> takes both separators. On Linux and macOS (<c>posixpath</c>) a
+    /// only on Windows, where <c>ntpath</c> takes both separators. On Linux (<c>posixpath</c>) a
     /// backslash is an ordinary character, so <c>~\x</c> is a file name in the current folder.
     /// </summary>
     /// <param name="path">A file path, possibly starting with <c>~</c>. Other forms (<c>~user</c>) are left as they are.</param>

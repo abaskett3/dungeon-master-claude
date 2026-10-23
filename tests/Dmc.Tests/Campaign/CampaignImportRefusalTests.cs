@@ -210,7 +210,7 @@ public sealed class CampaignImportRefusalTests
     [TestMethod]
     public void TheNameIsTakenByAnEmptyFolder()
     {
-        // Moving a folder onto an empty one succeeds in the operating system on Linux and macOS; the import must still refuse.
+        // Moving a folder onto an empty one succeeds in the operating system on Linux; the import must still refuse.
         using var scene = new Scene().Build();
         Directory.CreateDirectory(scene.Target.Campaign(CampaignName));
         AssertRefused(scene, $"adventures/{CampaignName} already exists: import under another name with --as NAME");

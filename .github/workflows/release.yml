@@ -12,9 +12,9 @@ name: Release
 # src/Dmc.Cli/Dmc.Cli.csproj, or one of the build settings every release build uses (Directory.Build.props,
 # Directory.Packages.props, global.json), and a manual run (workflow_dispatch), both dry runs.
 #
-# An archive holds exactly dmc and its native libraries: the pack step copies only the program and the *.dll, *.so and
-# *.dylib files of the publish folder, so neither symbols nor the XML documentation file could get into it, and it fails
-# the build unless there are exactly four files.
+# An archive holds exactly dmc and its native libraries: the pack step copies only the program and the *.dll and *.so
+# files of the publish folder, so neither symbols nor the XML documentation file could get into it, and it fails
+# the build unless there are exactly four files. There is no macOS build: dmc is released for Windows and Linux only.
 
 on:
   push:
@@ -104,8 +104,6 @@ jobs:
             os: ubuntu-22.04
           - rid: linux-arm64
             os: ubuntu-22.04-arm
-          - rid: osx-arm64
-            os: macos-latest
     defaults:
       run:
         shell: bash
@@ -132,8 +130,8 @@ jobs:
           case "$RID" in win-*) exe=dmc.exe ;; esac
           mkdir -p pack dist
           cp "publish/$exe" pack/
-          # The native libraries only: not the symbol files (.pdb, .dbg, .dSYM).
-          find publish -maxdepth 1 -type f \( -name '*.dll' -o -name '*.so' -o -name '*.dylib' \) -exec cp {} pack/ \;
+          # The native libraries only: not the symbol files (.pdb, .dbg).
+          find publish -maxdepth 1 -type f \( -name '*.dll' -o -name '*.so' \) -exec cp {} pack/ \;
           ls -l pack
           count="$(ls pack | wc -l | tr -d ' ')"
           if [ "$count" -ne 4 ]; then
@@ -145,17 +143,12 @@ jobs:
               asset="$TAG-$RID.zip"
               pwsh -NoProfile -Command "Compress-Archive -Path pack/* -DestinationPath dist/$asset"
               ;;
-            osx-*)
-              asset="$TAG-$RID.tar.gz"
-              # No AppleDouble files or extended attributes in the archive.
-              COPYFILE_DISABLE=1 tar --no-mac-metadata -czf "dist/$asset" -C pack $(ls pack)
-              ;;
             *)
               asset="$TAG-$RID.tar.gz"
               tar --owner=0 --group=0 -czf "dist/$asset" -C pack $(ls pack)
               ;;
           esac
-          if command -v sha256sum > /dev/null; then hash="$(sha256sum < "dist/$asset")"; else hash="$(shasum -a 256 < "dist/$asset")"; fi
+          hash="$(sha256sum < "dist/$asset")"
           printf '%s  %s\n' "${hash%% *}" "$asset" > "dist/$asset.sha256"
           cat "dist/$asset.sha256"
           echo "ASSET=$asset" >> "$GITHUB_ENV"
@@ -252,7 +245,7 @@ jobs:
           fi
           cat dist/*.sha256 > dist/SHA256SUMS.txt
           {
-            echo "dmc $VERSION, the toolkit's helper program, built with Native AOT for Windows, Linux and macOS."
+            echo "dmc $VERSION, the toolkit's helper program, built with Native AOT for Windows and Linux. macOS is no longer built."
             echo
             echo "Players do not download these by hand: \`./play.ps1\`, \`./play.sh\` and \`tools/get-dmc\` fetch the right one into \`bin/\` and check its SHA-256 against \`tools/dmc-release.json\` first."
             echo
@@ -270,7 +263,7 @@ jobs:
           # The pin is written from what the release really holds: downloaded back and hashed here.
           mkdir -p published hashes
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir published --pattern "$TAG-*"
-          for rid in win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64; do
+          for rid in win-x64 win-arm64 linux-x64 linux-arm64; do
             found="$(find published -maxdepth 1 \( -name "$TAG-$rid.zip" -o -name "$TAG-$rid.tar.gz" \) | wc -l | tr -d ' ')"
             if [ "$found" -ne 1 ]; then
               echo "::error::$TAG on GitHub has $found archives for $rid, not 1. Delete the release (gh release delete $TAG --yes, keeping the tag) and re-run this workflow."
@@ -329,11 +322,11 @@ jobs:
           set -euo pipefail
           dist="$RUNNER_TEMP/dist"
           ls -l "$dist"
-          for rid in win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64; do
+          for rid in win-x64 win-arm64 linux-x64 linux-arm64; do
             if ! ls "$dist/$TAG-$rid".*.sha256 > /dev/null 2>&1; then echo "::error::No archive for $rid."; exit 1; fi
           done
           bash .github/release/write-pin.sh "$TAG" "$dist"
-          jq -e --arg tag "$TAG" '.tag == $tag and (.sha256 | length) == 5' tools/dmc-release.json > /dev/null
+          jq -e --arg tag "$TAG" '.tag == $tag and (.sha256 | length) == 4' tools/dmc-release.json > /dev/null
           git diff
           mkdir -p "$RUNNER_TEMP/pin"
           cp tools/dmc-release.json "$RUNNER_TEMP/pin/"

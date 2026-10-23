@@ -59,7 +59,7 @@ public sealed class BrowserTests
         Assert.AreEqual("/bin/sh", start.FileName);
         string script = start.ArgumentList[1];
         StringAssert.Contains(script, ">/dev/null 2>&1 </dev/null &");
-        Assert.AreEqual(OperatingSystem.IsMacOS() ? "open" : "xdg-open", start.ArgumentList[2]);
+        Assert.AreEqual("xdg-open", start.ArgumentList[2]);
         Assert.AreEqual("file:///x/live.html", start.ArgumentList[3]);
     }
 
@@ -69,7 +69,7 @@ public sealed class BrowserTests
         if (OperatingSystem.IsWindows())
             return; // shell execute: nothing to fake
         // A stand-in opener that writes the address it was given, and also writes plenty to stdout and stderr.
-        string opener = Path.Combine(_folder, OperatingSystem.IsMacOS() ? "open" : "xdg-open");
+        string opener = Path.Combine(_folder, "xdg-open");
         string marker = Path.Combine(_folder, "opened.txt");
         File.WriteAllText(opener, "#!/bin/sh\nsleep 1\necho noise\necho noise >&2\nprintf '%s' \"$1\" > \"" + marker + "\"\n");
         File.SetUnixFileMode(opener, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);

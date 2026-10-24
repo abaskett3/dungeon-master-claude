@@ -172,6 +172,36 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    /// <summary>Every way <c>install</c>, <c>refresh</c> and <c>folder</c> fail without writing anything prints one line, no stack trace and a non-zero exit code.</summary>
+    [TestMethod]
+    public void EveryErrorOfInstallRefreshAndFolderPrintsOneLine()
+    {
+        DmcFolders.NeedNoRecordedFolders();
+        string work = DmcFolders.NewTemp();
+        try
+        {
+            File.WriteAllText(Path.Combine(work, "afile"), "x");
+            Directory.CreateDirectory(Path.Combine(work, "plain"));
+            string[][] cases =
+            [
+                ["install", "--bogus"], ["install", "--path"], ["install", "--path="], ["install", "--path", Path.Combine(work, "afile")],
+                ["install", "--path", TestEnv.Root], ["install", "--path", Path.Combine(TestEnv.Root, "kit", "x")],
+                ["refresh", "--bogus"], ["refresh", Path.Combine(work, "plain")], ["refresh", Path.Combine(work, "missing")], ["refresh", "--all", "x"],
+                ["refresh"], ["folder", "x"], ["folder"],
+            ];
+            foreach (string[] args in cases)
+            {
+                var result = TestEnv.Run(DmcRunner.Binary(), args, cwd: work, environment: new Dictionary<string, string?> { ["CLAUDECODE"] = null, ["CLAUDE_PROJECT_DIR"] = null });
+                AssertOneLine(result, "dmc " + string.Join(' ', args));
+            }
+            Assert.AreEqual(2, Entries(work).Length, "nothing was written: the two things the test made");
+        }
+        finally
+        {
+            DmcFolders.Delete(work);
+        }
+    }
+
     [TestMethod]
     public void PlayWithoutClaudePrintsOneLine()
     {

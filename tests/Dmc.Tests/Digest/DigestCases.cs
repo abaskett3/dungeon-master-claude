@@ -400,6 +400,7 @@ public sealed class DigestCaseTests
     [TestMethod]
     public void WithNoDmcFolderTheDefaultLogFolderIsOneLine()
     {
+        DmcFolders.NeedNoRecordedFolders();
         string folder = DmcFolders.NewTemp();
         try
         {

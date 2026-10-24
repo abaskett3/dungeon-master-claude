@@ -44,6 +44,18 @@ public static class DmcFolders
         return folder;
     }
 
+    /// <summary>
+    /// For a test that runs the published <c>dmc</c> and expects it to find no DMC folder: skips it when <c>dmc.json</c> beside the
+    /// binary already lists folders (a developer who tried <c>artifacts/bin/dmc install</c> has one), because the binary would then fall
+    /// back to a recorded folder. CI never has one.
+    /// </summary>
+    public static void NeedNoRecordedFolders()
+    {
+        string record = Path.Combine(Path.GetDirectoryName(DmcRunner.Binary())!, "dmc.json");
+        if (File.Exists(record) && DmcFolder.Recorded(Path.GetDirectoryName(record)!).Any(DmcFolder.IsDmcFolder))
+            Assert.Inconclusive($"{record} lists DMC folders, so the binary would find one: delete it to run this test");
+    }
+
     /// <summary>Deletes a folder and everything in it, clearing read-only attributes first; does nothing when it is not there.</summary>
     /// <param name="folder">The folder.</param>
     public static void Delete(string folder)

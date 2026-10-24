@@ -34,9 +34,9 @@ for the same reason. Every task names its PR in its phase heading.
 
 **Purpose**: Start from a known-good state.
 
-- [ ] T001 Confirm the branch for PR 1 is a fresh branch from `origin/main` (not `main`; `git fetch` first), and that `specs/003-separate-player-install/` is on it (commit the spec folder first if it is not yet on `main`).
-- [ ] T002 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test` once before any change and note the result in the PR description draft, so a later failure can be told from one that was already there.
-- [ ] T003 Ask the user whether #67 (closed as not planned) should be reopened before PR 1 is opened; do what they say. Do not reopen it unasked.
+- [x] T001 Confirm the branch for PR 1 is a fresh branch from `origin/main` (not `main`; `git fetch` first), and that `specs/003-separate-player-install/` is on it (commit the spec folder first if it is not yet on `main`).
+- [x] T002 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test` once before any change and note the result in the PR description draft, so a later failure can be told from one that was already there.
+- [x] T003 Ask the user whether #67 (closed as not planned) should be reopened before PR 1 is opened; do what they say. Do not reopen it unasked.
 
 ---
 
@@ -50,8 +50,8 @@ lookup. Nothing in Phases 3 to 8 can start before this phase is done.
 T004 and T005 are the first commit of PR 1, before any other change, so the rest of PR 1 is checked against
 constitution 2.0.0 (user, 2026-10-24).
 
-- [ ] T004 Add a decision entry to `.docs/decisions.md`: "Players install `dmc`, which writes and updates a DMC folder" (Date 2026-10-24; Decision: the route in [plan.md](plan.md) § Summary; Reason: separate development from play, the user's direction in spec Clarifications 2026-10-24; Alternatives: a Claude Code plugin, #67's kit-per-session design, a player repository, an MCP server, an Agent SDK app, with one line each from research R1; Source: #67 and this spec). Mark the clause "players install nothing but Claude Code" in § .NET 10 Native AOT on every platform as superseded by it.
-- [ ] T005 Amend `.specify/memory/constitution.md`: Principle II becomes "Toolkit work MUST NOT cost the player context: the rules loaded into every play session stay lean. Players install Claude Code and `dmc`, and nothing else." with sources `.docs/development.md` § Writing prompts and the T004 entry (drop the pointer to the Spec Kit install entry); version 1.0.1 → 2.0.0; Last Amended = the PR date. Change nothing else.
+- [x] T004 Add a decision entry to `.docs/decisions.md`: "Players install `dmc`, which writes and updates a DMC folder" (Date 2026-10-24; Decision: the route in [plan.md](plan.md) § Summary; Reason: separate development from play, the user's direction in spec Clarifications 2026-10-24; Alternatives: a Claude Code plugin, #67's kit-per-session design, a player repository, an MCP server, an Agent SDK app, with one line each from research R1; Source: #67 and this spec). Mark the clause "players install nothing but Claude Code" in § .NET 10 Native AOT on every platform as superseded by it.
+- [x] T005 Amend `.specify/memory/constitution.md`: Principle II becomes "Toolkit work MUST NOT cost the player context: the rules loaded into every play session stay lean. Players install Claude Code and `dmc`, and nothing else." with sources `.docs/development.md` § Writing prompts and the T004 entry (drop the pointer to the Spec Kit install entry); version 1.0.1 → 2.0.0; Last Amended = the PR date. Change nothing else.
 
 ### `kit/`: the source of the generated files (research R2, data-model § Kit)
 

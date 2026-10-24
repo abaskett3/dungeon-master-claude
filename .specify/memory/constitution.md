@@ -13,10 +13,10 @@ enjoyable for the player. Where the two pull against each other, neither is sacr
 Source: `CLAUDE.md`, the two things that matter above everything else.
 
 ### II. Play pays nothing for toolkit work
-Toolkit work MUST NOT cost the player context or an install: `CLAUDE.md` is loaded into every session and stays
-lean, and players install nothing but Claude Code.
-Sources: `.docs/development.md` § Writing prompts; `.docs/decisions.md` § .NET 10 Native AOT on every platform;
-`.docs/decisions.md` § Spec Kit installed in `.claude/skills/` and blocked in play.
+Toolkit work MUST NOT cost the player context: the rules loaded into every play session stay lean. Players install
+Claude Code and `dmc`, and nothing else.
+Sources: `.docs/development.md` § Writing prompts; `.docs/decisions.md` § Players install `dmc`, which writes and
+updates a DMC folder.
 
 ### III. Each rule has one home
 A rule MUST be written in the one place it belongs, and other places point to it.
@@ -60,4 +60,4 @@ changed. Its version follows Spec Kit's convention: MAJOR for a principle remove
 principle or section added, PATCH for clarifications. The constitution's origin is described in
 `.docs/development.md` § Spec-driven changes.
 
-**Version**: 1.0.1 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-23
+**Version**: 2.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-24

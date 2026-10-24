@@ -122,8 +122,7 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// The commands a player runs in a terminal, never DMC in play: the prompts may name them for the player, the kit's settings
-    /// deny them to DMC, and the program refuses them inside a Claude Code session. <c>update</c> arrives with the next change
-    /// (PR 2 of #67), so it is accepted as a name before the command exists.
+    /// deny them to DMC, and the program refuses them inside a Claude Code session.
     /// </summary>
     static readonly string[] PlayerCommands = ["install", "update", "refresh"];
 
@@ -132,7 +131,7 @@ public sealed partial class ToolkitTests
     [TestMethod]
     public void EveryDmcCommandInThePromptsIsARealSubcommandAndTheOnesDmcRunsNeedNoPermissionPrompt()
     {
-        var known = CommandTable.All.Select(c => c.Name).Append("update").ToHashSet();
+        var known = CommandTable.All.Select(c => c.Name).ToHashSet();
         var used = new HashSet<string>();
         foreach (string file in PromptFiles())
         {

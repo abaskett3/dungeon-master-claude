@@ -10,7 +10,7 @@ These documents are for anyone who wants to understand Dungeon Master Claude as 
 | [dmc-reference.md](dmc-reference.md) | Every `dmc` subcommand and option, with output, exit codes and examples from real runs |
 | [campaign-files.md](campaign-files.md) | The campaign folder, what each file holds, which file wins, the map format and module folders |
 | [development.md](development.md) | Building, tests, CI, the git and PR process, and the conventions for writing prompts |
-| [releases.md](releases.md) | How a release is cut and pinned, how `get-dmc` installs it, the platforms, and what to do when a release fails |
+| [releases.md](releases.md) | How a release is cut, signed and published, how the install line and `dmc update` check it, the release keys and the repository settings they need, the platforms, and what to do when a release fails |
 | [decisions.md](decisions.md) | A log of the main decisions, with dates, reasons and sources |
 | [roadmap.md](roadmap.md) | What is done, what comes next and what has been set aside |
 

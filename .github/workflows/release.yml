@@ -1,12 +1,20 @@
 name: Release
 
 # Builds dmc with Native AOT on each platform's own runner, packs each build as a four-file archive (dmc and its three
-# native libraries), checks that get-dmc installs and runs it, publishes the archives as a GitHub Release, and opens
-# the pull request that pins that release in tools/dmc-release.json (issue #3, "Build and release").
+# native libraries), proves that the install line (tools/install.ps1, tools/install.sh) installs it into a temporary DMC
+# folder and that dmc update refuses a release the project did not sign, then signs the checksum list and publishes the
+# archives, the list, its signature and the two install scripts as an immutable GitHub Release (issue #67, research R16).
 #
-# Only pushing a tag dmc-vX.Y.Z publishes anything. A pull request that changes the release files, or a manual run,
-# is a dry run: it builds, packs, hashes and installs everything the same way, writes the pin file it would propose,
-# and uploads it all as workflow artifacts. A dry run creates no release, pushes nothing and opens no pull request.
+# Only pushing a tag dmc-vX.Y.Z (on main) publishes anything. A pull request that changes the release files, or a manual run,
+# is a dry run: it builds, packs, hashes, installs and signs everything the same way (with a throwaway key made in the run,
+# never the project's) and uploads the result as workflow artifacts. A dry run creates no release and uses no secret.
+#
+# How a release is trusted: the publish job runs in the environment "release", which waits for the maintainer's approval and
+# holds the secret DMC_RELEASE_SIGNING_KEY (the active private key). It signs SHA256SUMS.txt with .github/release/sign.sh,
+# which also checks that the key is one of the two public keys built into dmc (src/Dmc.Cli/Install/ReleaseKeys.cs), creates
+# the release as a DRAFT, attaches every file, checks the draft holds them all, and only then publishes it, so the release
+# locks (GitHub's immutable releases) with every file in place. dmc update verifies the signature with the built-in keys.
+# Every third-party action is pinned to a full commit SHA, with its version in a comment.
 #
 # Triggers: a pushed tag dmc-v*, which releases; a pull request that touches this file, .github/release/, tools/,
 # src/Dmc.Cli/Dmc.Cli.csproj, or one of the build settings every release build uses (Directory.Build.props,
@@ -51,7 +59,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       publish: ${{ steps.version.outputs.publish }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -65,7 +73,7 @@ jobs:
               echo "::error::A release tag is dmc-vX.Y.Z, not $tag."
               exit 1
             fi
-            # The pin pull request goes to main, so the release must be built from main.
+            # A release is built from main: the rulesets protect it, and the tag must not name some other branch's commit.
             if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
               echo "::error::$tag is not on main. Tag a commit of main."
               exit 1
@@ -86,7 +94,9 @@ jobs:
           echo "$tag (publish: $publish)"
 
   # On each platform's own runner: publishes dmc with Native AOT, packs the four-file archive and its SHA-256, installs it
-  # with get-dmc.sh and get-dmc.ps1, runs it, checks that a corrupted archive is refused, and uploads the archive as an artifact.
+  # with the install line (tools/install.sh and tools/install.ps1) into a temporary DMC folder from local assets and checks
+  # the result (the files, the manifest, the program, its libraries), runs dmc from where the install put it, checks that a
+  # corrupted archive is refused and that dmc update refuses a release signed by a throwaway key, and uploads the archive.
   build:
     name: ${{ matrix.rid }}
     needs: prepare
@@ -112,10 +122,10 @@ jobs:
       TAG: ${{ needs.prepare.outputs.tag }}
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
       - name: Install the Native AOT toolchain (Linux)
@@ -152,76 +162,178 @@ jobs:
           printf '%s  %s\n' "${hash%% *}" "$asset" > "dist/$asset.sha256"
           cat "dist/$asset.sha256"
           echo "ASSET=$asset" >> "$GITHUB_ENV"
-      - name: Install the archive with get-dmc and run it
+      - name: Install the archive with the install line and check the result
         run: |
           set -euo pipefail
-          # get-dmc takes the archive from dist/ instead of the release (DMC_GET_TEST_ASSETS), with a pin of this
-          # one archive written by the same script as the pin pull request.
-          bash .github/release/write-pin.sh "$TAG" dist
-          cat tools/dmc-release.json
-          assets="$PWD/dist"
-          if [ "$RUNNER_OS" = Windows ]; then assets="$(cygpath -w "$assets")"; fi
-          export DMC_GET_TEST_ASSETS="$assets"
-          expected="get-dmc: installed dmc $VERSION ($RID) in bin/"
+          # Everything the installers do happens in temporary folders: the home folder, the program folder and the DMC folder.
+          native() { if [ "$RUNNER_OS" = Windows ]; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
 
-          check_install() { # $1: what ran; $2: its output
-            if [ "$2" != "$expected" ]; then echo "::error::$1 printed '$2', not '$expected'"; exit 1; fi
+          # The release folder the install line reads instead of GitHub (DMC_INSTALL_TEST_ASSETS): this archive, a checksum
+          # list that names it, and the releases API's answer with its digest. Every hash check applies to it as to a download.
+          assets="$RUNNER_TEMP/assets"
+          mkdir -p "$assets"
+          cp "dist/$ASSET" "$assets/"
+          cp "dist/$ASSET.sha256" "$assets/SHA256SUMS.txt"
+          hash="$(cut -d' ' -f1 "dist/$ASSET.sha256")"
+          printf '{"tag_name":"%s","assets":[{"name":"%s","digest":"sha256:%s"}]}\n' "$TAG" "$ASSET" "$hash" > "$assets/latest.json"
+
+          # run_installer <label> <installer> <assets folder> <DMC folder>: runs one installer with a home folder of its own.
+          run_installer() {
+            local home="$RUNNER_TEMP/home-$1"
+            mkdir -p "$home"
+            export DMC_INSTALL_TEST_ASSETS="$(native "$3")" HOME="$home" USERPROFILE="$(native "$home")" \
+              LOCALAPPDATA="$(native "$home/AppData/Local")" XDG_DATA_HOME="$home/.local/share"
+            case "$2" in
+              sh) sh tools/install.sh --path "$(native "$4")" ;;
+              pwsh) pwsh -NoProfile -File tools/install.ps1 -Path "$(native "$4")" ;;
+              powershell) powershell -NoProfile -ExecutionPolicy Bypass -File tools/install.ps1 -Path "$(native "$4")" ;;
+            esac
           }
-          check_silent() {
-            if [ -n "$2" ]; then echo "::error::$1 printed '$2' with dmc already current"; exit 1; fi
-          }
 
-          rm -rf bin
-          # On Windows, get-dmc.sh hands over to get-dmc.ps1 in Windows PowerShell 5.1.
-          check_install "get-dmc.sh" "$(bash tools/get-dmc.sh)"
-          check_silent "get-dmc.sh" "$(bash tools/get-dmc.sh 2>&1)"
-          rm -rf bin
-          check_install "get-dmc.ps1 (pwsh)" "$(pwsh -NoProfile -File tools/get-dmc.ps1)"
-          check_silent "get-dmc.ps1 (pwsh)" "$(pwsh -NoProfile -File tools/get-dmc.ps1 2>&1)"
-          ls -l bin
+          if [ "$RUNNER_OS" = Windows ]; then installers="pwsh powershell"; else installers="sh pwsh"; fi
+          for installer in $installers; do
+            folder="$RUNNER_TEMP/dmc-$installer"
+            home="$RUNNER_TEMP/home-$installer"
+            echo "::group::install.$installer"
+            out="$(run_installer "$installer" "$installer" "$assets" "$folder")"
+            printf '%s\n' "$out"
+            echo "::endgroup::"
+            case "$out" in *"dmc install: DMC folder ready at "*) ;; *) echo "::error::$installer did not report the DMC folder"; exit 1 ;; esac
 
-          ./bin/dmc --version
-          [ "$(./bin/dmc --version)" = "dmc $VERSION" ]
-          ./bin/dmc roll 1d20+5 4d6kh3
-          # The map picture loads SkiaSharp and HarfBuzzSharp, and a page image loads PDFium, from bin/.
-          smoke="$RUNNER_TEMP/smoke"
-          mkdir -p "$smoke"
-          printf '%s' '{"title": "Smoke", "grid": ["#####", "#...#", "#####"], "tokens": [{"id": "@", "name": "Hero", "kind": "pc", "at": "B2"}]}' > "$smoke/live.json"
-          ./bin/dmc map "$smoke/live.json" --png
-          test -s "$smoke/live.png"
-          ./bin/dmc pdf render tests/Dmc.Tests/Pdf/Fixtures/owner-only.pdf --pages 1 --out "$smoke/pdf"
-          test -s "$smoke/pdf/pages/page-001.jpg"
+            # The DMC folder: the generated files, the manifest of this version, empty player folders, and nothing else.
+            for f in CLAUDE.md .claude/settings.json .dmc/manifest.json templates/feedback.md \
+                     .claude/skills/dmc-resume-campaign/SKILL.md .claude/skills/dmc-draw-map/map-format.md; do
+              [ -f "$folder/$f" ] || { echo "::error::$installer: $f is missing from the DMC folder"; exit 1; }
+            done
+            grep -q "\"dmc\": \"$VERSION\"" "$folder/.dmc/manifest.json" || { echo "::error::$installer: the manifest does not say $VERSION"; exit 1; }
+            for d in adventures feedback modules rules; do
+              { [ -d "$folder/$d" ] && [ -z "$(ls -A "$folder/$d")" ]; } || { echo "::error::$installer: $d/ is not an empty folder"; exit 1; }
+            done
+            listing="$(ls -A "$folder" | LC_ALL=C sort | tr '\n' ' ')"
+            if [ "$listing" != ".claude .dmc CLAUDE.md adventures feedback modules rules templates " ]; then
+              echo "::error::$installer: the DMC folder holds '$listing'"
+              exit 1
+            fi
 
-          # An archive that does not match the pin is refused, and bin/ is left as it was.
-          mkdir -p "$smoke/bad"
-          cp "dist/$ASSET" "$smoke/bad/$ASSET"
-          printf 'x' >> "$smoke/bad/$ASSET"
-          rm -rf bin
-          bad="$smoke/bad"
-          if [ "$RUNNER_OS" = Windows ]; then bad="$(cygpath -w "$bad")"; fi
-          if out="$(DMC_GET_TEST_ASSETS="$bad" bash tools/get-dmc.sh 2>&1)"; then
-            echo "::error::get-dmc installed an archive that does not match its SHA-256"; exit 1
+            # The program, installed where the contract says, and reachable by name.
+            if [ "$RUNNER_OS" = Windows ]; then
+              program="$home/AppData/Local/Programs/dmc/dmc.exe"
+              pwsh -NoProfile -Command "if (([Environment]::GetEnvironmentVariable('Path','User') -split ';') -notcontains '$(native "$home/AppData/Local/Programs/dmc")') { exit 1 }" \
+                || { echo "::error::$installer: the program folder is not on the user's Path"; exit 1; }
+            else
+              program="$home/.local/share/dmc/dmc"
+              [ -L "$home/.local/bin/dmc" ] || { echo "::error::$installer: ~/.local/bin/dmc is not a link"; exit 1; }
+            fi
+            [ -f "$program" ] || { echo "::error::$installer: dmc was not installed at $program"; exit 1; }
+            [ "$("$program" --version | tr -d '\r')" = "dmc $VERSION" ]
+            [ -z "$(DMC_INSTALL_TEST_ASSETS= HOME="$home" USERPROFILE="$(native "$home")" "$program" refresh "$(native "$folder")")" ] \
+              || { echo "::error::$installer: a refresh right after the install had something to do"; exit 1; }
+
+            # dmc runs from where the install put it: dice, a map (SkiaSharp and HarfBuzzSharp) and a page image (PDFium), whose
+            # libraries the install copied beside it.
+            "$program" roll 1d20+5 4d6kh3
+            smoke="$RUNNER_TEMP/smoke-$installer"
+            mkdir -p "$smoke"
+            printf '%s' '{"title": "Smoke", "grid": ["#####", "#...#", "#####"], "tokens": [{"id": "@", "name": "Hero", "kind": "pc", "at": "B2"}]}' > "$smoke/live.json"
+            "$program" map "$(native "$smoke/live.json")" --png
+            test -s "$smoke/live.png"
+            "$program" pdf render tests/Dmc.Tests/Pdf/Fixtures/owner-only.pdf --pages 1 --out "$(native "$smoke/pdf")"
+            test -s "$smoke/pdf/pages/page-001.jpg"
+          done
+
+          # An archive that does not match the checksum list is refused, and no DMC folder is made.
+          bad="$RUNNER_TEMP/bad-assets"
+          mkdir -p "$bad"
+          cp "$assets"/* "$bad/"
+          printf 'x' >> "$bad/$ASSET"
+          first="${installers%% *}"
+          badfolder="$RUNNER_TEMP/dmc-bad"
+          if out="$(run_installer bad "$first" "$bad" "$badfolder" 2>&1)"; then
+            echo "::error::the install line installed an archive that does not match its SHA-256"; exit 1
           fi
           echo "$out"
-          case "$out" in *"does not match its SHA-256"*) ;; *) echo "::error::unexpected refusal: $out"; exit 1 ;; esac
-          if [ -e bin/dmc ] || [ -e bin/dmc.exe ]; then echo "::error::a refused archive left dmc in bin/"; exit 1; fi
-
-          git checkout -- tools/dmc-release.json
-          rm -rf bin
-      - uses: actions/upload-artifact@v7
+          case "$out" in *"does not match the release's SHA-256 checksums"*) ;; *) echo "::error::unexpected refusal: $out"; exit 1 ;; esac
+          if [ -e "$badfolder" ]; then echo "::error::a refused archive left a DMC folder"; exit 1; fi
+      - name: Check that dmc update refuses a release the project did not sign
+        run: |
+          set -euo pipefail
+          native() { if [ "$RUNNER_OS" = Windows ]; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+          exe=dmc
+          case "$RID" in win-*) exe=dmc.exe ;; esac
+          # A release newer than this build, signed by a throwaway key made here: the keys built into dmc are not it.
+          next=dmc-v999.0.0
+          case "$RID" in win-*) asset="$next-$RID.zip" ;; *) asset="$next-$RID.tar.gz" ;; esac
+          upd="$RUNNER_TEMP/update-assets"
+          mkdir -p "$upd"
+          cp "dist/$ASSET" "$upd/$asset"
+          hash="$(sha256sum < "$upd/$asset")"
+          hash="${hash%% *}"
+          printf '%s  %s\n' "$hash" "$asset" > "$upd/SHA256SUMS.txt"
+          printf '{"tag_name":"%s","assets":[{"name":"%s","digest":"sha256:%s"}]}\n' "$next" "$asset" "$hash" > "$upd/latest.json"
+          openssl ecparam -name prime256v1 -genkey -noout -out "$RUNNER_TEMP/throwaway.pem"
+          openssl dgst -sha256 -sign "$RUNNER_TEMP/throwaway.pem" -out "$upd/SHA256SUMS.txt.sig" "$upd/SHA256SUMS.txt"
+          home="$RUNNER_TEMP/home-update"
+          mkdir -p "$home"
+          export DMC_UPDATE_TEST_ASSETS="$(native "$upd")" HOME="$home" USERPROFILE="$(native "$home")" LOCALAPPDATA="$(native "$home/AppData/Local")"
+          expect_refusal() { # $1: the message dmc update must give
+            if out="$(publish/$exe update 2>&1)"; then echo "::error::dmc update installed a release it should have refused"; exit 1; fi
+            echo "$out"
+            [ "$(printf '%s' "$out" | tr -d '\r')" = "dmc update: $1" ] || { echo "::error::unexpected: $out"; exit 1; }
+          }
+          expect_refusal "release 999.0.0 is not signed by the DMC release key: nothing was installed"
+          rm "$upd/SHA256SUMS.txt.sig"
+          expect_refusal "release 999.0.0 has no signature: nothing was installed"
+          [ "$(publish/$exe --version | tr -d '\r')" = "dmc $VERSION" ]
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dmc-${{ matrix.rid }}
           path: dist/
           if-no-files-found: error
           overwrite: true
 
-  # Tag pushes only: creates the GitHub Release from the archives (keeping one that is already published), then hashes
-  # what the release really holds, for the pin.
-  release:
-    name: GitHub Release
+  # Dry runs only: the signing steps of a release, with a throwaway key made in the run. It signs the archives' checksum
+  # list with .github/release/sign.sh (which checks the signature with the key's public half, and that a changed list no
+  # longer verifies) and uploads the result with the install scripts, so a pull request shows what a release would carry.
+  dry-run:
+    name: Dry run of the signing
+    needs: [prepare, build]
+    if: needs.prepare.outputs.publish != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: dmc-*
+          path: dist
+          merge-multiple: true
+      - name: Sign with a throwaway key
+        run: |
+          set -euo pipefail
+          openssl ecparam -name prime256v1 -genkey -noout -out "$RUNNER_TEMP/throwaway.pem"
+          bash .github/release/sign.sh dist "$RUNNER_TEMP/throwaway.pem"
+          cat dist/SHA256SUMS.txt
+          [ "$(wc -l < dist/SHA256SUMS.txt | tr -d ' ')" -eq 4 ]
+          mkdir -p dry-run
+          cp dist/*.zip dist/*.tar.gz dist/SHA256SUMS.txt dist/SHA256SUMS.txt.sig tools/install.ps1 tools/install.sh dry-run/
+          ls -l dry-run
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dry-run-release
+          path: dry-run/
+          if-no-files-found: error
+          overwrite: true
+
+  # Tag pushes only, in the environment "release", which waits for the maintainer's approval and holds the signing key:
+  # signs the checksum list, creates the release as a draft, attaches every file, checks the draft, publishes it. A release
+  # that is already published is kept (GitHub's immutable releases cannot be changed anyway): a re-run does nothing.
+  publish:
+    name: Publish the release
     needs: [prepare, build]
     if: needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
     env:
@@ -229,25 +341,60 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: dmc-*
           path: dist
           merge-multiple: true
-      - name: Publish the release
+      - name: Look for an earlier attempt
+        id: existing
         run: |
           set -euo pipefail
-          # A re-run (after a failed pin job, say) keeps a release that is already published: its archives are what
-          # players download, so the pin is written from them below, and this run's builds are not uploaded.
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "::notice::$TAG is already published. Its archives are kept, and the pin is written from them."
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > /dev/null 2>&1; then
+            echo "::notice::$TAG is already published. It is kept as it is."
+            echo "published=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          cat dist/*.sha256 > dist/SHA256SUMS.txt
+          echo "published=false" >> "$GITHUB_OUTPUT"
+          # A draft left by an attempt that failed before it published: removed, so that this run makes a whole one.
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id"); do
+            echo "::notice::Removing the draft $id that an earlier attempt left."
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
+          done
+      - name: Sign the checksum list
+        if: steps.existing.outputs.published != 'true'
+        env:
+          DMC_RELEASE_SIGNING_KEY: ${{ secrets.DMC_RELEASE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DMC_RELEASE_SIGNING_KEY" ]; then
+            echo "::error::The secret DMC_RELEASE_SIGNING_KEY is not set in the environment release (.docs/releases.md)."
+            exit 1
+          fi
+          # The key exists only in this file, readable by this job's user, and only while the script runs.
+          umask 077
+          key="$RUNNER_TEMP/release-key.pem"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$DMC_RELEASE_SIGNING_KEY" > "$key"
+          bash .github/release/sign.sh dist "$key" src/Dmc.Cli/Install/ReleaseKeys.cs
+          cat dist/SHA256SUMS.txt
+      - name: Create the draft release and attach every file
+        if: steps.existing.outputs.published != 'true'
+        run: |
+          set -euo pipefail
+          [ "$(wc -l < dist/SHA256SUMS.txt | tr -d ' ')" -eq 4 ]
           {
-            echo "dmc $VERSION, the toolkit's helper program, built with Native AOT for Windows and Linux. macOS is no longer built."
+            echo "dmc $VERSION, the toolkit's helper program, built with Native AOT for Windows and Linux."
             echo
-            echo "Players do not download these by hand: \`./play.ps1\`, \`./play.sh\` and \`tools/get-dmc\` fetch the right one into \`bin/\` and check its SHA-256 against \`tools/dmc-release.json\` first."
+            echo "Install, from a terminal:"
+            echo
+            echo "- Windows (PowerShell): \`irm https://github.com/$GITHUB_REPOSITORY/releases/latest/download/install.ps1 | iex\`"
+            echo "- Linux: \`curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/latest/download/install.sh | sh\`"
+            echo
+            echo "Update an installed dmc with \`dmc update\`. It installs a release only if \`SHA256SUMS.txt\` carries a valid signature in \`SHA256SUMS.txt.sig\` from the DMC release key, and the download matches it."
             echo
             echo "SHA-256:"
             echo
@@ -255,118 +402,25 @@ jobs:
             cat dist/SHA256SUMS.txt
             echo '```'
           } > notes.md
-          gh release create "$TAG" dist/*.zip dist/*.tar.gz dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --title "dmc $VERSION" --notes-file notes.md
-      - name: Hash the archives on the release
+          gh release create "$TAG" dist/*.zip dist/*.tar.gz dist/SHA256SUMS.txt dist/SHA256SUMS.txt.sig tools/install.ps1 tools/install.sh \
+            --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "dmc $VERSION" --notes-file notes.md
+      - name: Check the draft, then publish it
+        if: steps.existing.outputs.published != 'true'
         run: |
           set -euo pipefail
-          # The pin is written from what the release really holds: downloaded back and hashed here.
-          mkdir -p published hashes
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir published --pattern "$TAG-*"
-          for rid in win-x64 win-arm64 linux-x64 linux-arm64; do
-            found="$(find published -maxdepth 1 \( -name "$TAG-$rid.zip" -o -name "$TAG-$rid.tar.gz" \) | wc -l | tr -d ' ')"
-            if [ "$found" -ne 1 ]; then
-              echo "::error::$TAG on GitHub has $found archives for $rid, not 1. Delete the release (gh release delete $TAG --yes, keeping the tag) and re-run this workflow."
-              exit 1
-            fi
-          done
-          for file in published/*; do
-            asset="$(basename "$file")"
-            hash="$(sha256sum < "$file")"
-            printf '%s  %s\n' "${hash%% *}" "$asset" > "hashes/$asset.sha256"
-          done
-          cat hashes/*.sha256
-      - uses: actions/upload-artifact@v7
-        with:
-          name: release-hashes
-          path: hashes/
-          if-no-files-found: error
-          overwrite: true
-
-  # Writes tools/dmc-release.json with write-pin.sh and checks it. On a release it also pushes the branch pin-<tag> and opens
-  # the pull request that pins it; on a dry run it only uploads the pin file it would propose.
-  pin:
-    name: Pin pull request
-    needs: [prepare, build, release]
-    # After the release on a tag; straight after the builds on a dry run, where the release job is skipped.
-    if: always() && needs.build.result == 'success' && (needs.release.result == 'success' || (needs.release.result == 'skipped' && needs.prepare.outputs.publish != 'true'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    env:
-      TAG: ${{ needs.prepare.outputs.tag }}
-      VERSION: ${{ needs.prepare.outputs.version }}
-      PUBLISH: ${{ needs.prepare.outputs.publish }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # On a release the pin goes onto main. No credentials are left in .git/config, where write-pin.sh (from a
-          # pull request, on a dry run) could read them: the push below names its token itself.
-          ref: ${{ needs.prepare.outputs.publish == 'true' && 'main' || '' }}
-          persist-credentials: false
-      # On a release, the hashes of the archives on the release (which a re-run keeps); on a dry run, of this run's.
-      - uses: actions/download-artifact@v8
-        if: env.PUBLISH == 'true'
-        with:
-          name: release-hashes
-          path: ${{ runner.temp }}/dist
-      - uses: actions/download-artifact@v8
-        if: env.PUBLISH != 'true'
-        with:
-          pattern: dmc-*
-          path: ${{ runner.temp }}/dist
-          merge-multiple: true
-      - name: Write the pin
-        run: |
-          set -euo pipefail
-          dist="$RUNNER_TEMP/dist"
-          ls -l "$dist"
-          for rid in win-x64 win-arm64 linux-x64 linux-arm64; do
-            if ! ls "$dist/$TAG-$rid".*.sha256 > /dev/null 2>&1; then echo "::error::No archive for $rid."; exit 1; fi
-          done
-          bash .github/release/write-pin.sh "$TAG" "$dist"
-          jq -e --arg tag "$TAG" '.tag == $tag and (.sha256 | length) == 4' tools/dmc-release.json > /dev/null
-          git diff
-          mkdir -p "$RUNNER_TEMP/pin"
-          cp tools/dmc-release.json "$RUNNER_TEMP/pin/"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: pin
-          path: ${{ runner.temp }}/pin/
-          overwrite: true
-      # Safe to re-run: it force-pushes its own branch pin-<tag>, and leaves an open pull request open. DMC_PIN_PR_TOKEN
-      # (optional, a token that may push and open pull requests) makes the pull request run the tests; one opened with
-      # the workflow's own token does not.
-      - name: Open the pull request
-        if: env.PUBLISH == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.DMC_PIN_PR_TOKEN || github.token }}
-        run: |
-          set -euo pipefail
-          if git diff --quiet; then
-            echo "::notice::main already pins $TAG. Nothing to do."
-            exit 0
+          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id" | head -n 1)"
+          [ -n "$id" ] || { echo "::error::The draft release for $TAG is not there."; exit 1; }
+          # Four archives, the checksum list and its signature, and the two install scripts.
+          names="$(gh api "repos/$GITHUB_REPOSITORY/releases/$id" --jq '.assets[].name' | sort)"
+          expected="$(printf '%s\n' SHA256SUMS.txt SHA256SUMS.txt.sig "$TAG-linux-arm64.tar.gz" "$TAG-linux-x64.tar.gz" "$TAG-win-arm64.zip" "$TAG-win-x64.zip" install.ps1 install.sh | sort)"
+          if [ "$names" != "$expected" ]; then
+            echo "::error::The draft holds $(printf '%s' "$names" | tr '\n' ' '), not $(printf '%s' "$expected" | tr '\n' ' '). Nothing was published."
+            exit 1
           fi
-          branch="pin-$TAG"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -C "$branch"
-          git add tools/dmc-release.json
-          git commit -m "Pin dmc $VERSION" -m "Written by the release workflow for $TAG: the tag and the SHA-256 of each archive in tools/dmc-release.json."
-          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
-          open="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --base main --state open --json url --jq '.[0].url // ""')"
-          if [ -n "$open" ]; then
-            echo "::notice::The pin pull request is already open: $open. Its branch now holds this run's commit."
-            exit 0
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -F draft=false -f make_latest=true > /dev/null
+          echo "Published $TAG."
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.immutable')" = true ]; then
+            echo "::notice::$TAG is published and immutable."
+          else
+            echo "::warning::$TAG is published but is not immutable: turn on immutable releases in the repository settings (.docs/releases.md)."
           fi
-          {
-            echo "Pins the release [$TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG) in \`tools/dmc-release.json\`, written by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID))."
-            echo
-            echo "- \`tools/dmc-release.json\`: the tag and the SHA-256 of each archive on the release. Once this is merged, \`./play.ps1\` and \`./play.sh\` fetch dmc into \`bin/\` with \`tools/get-dmc\` and start play through \`bin/dmc play\`."
-            echo
-            echo "Each archive was installed with get-dmc and run on its own platform's runner before the release was published."
-            echo
-            echo "If no checks ran on this pull request (a pull request opened with the workflow's own token does not start other workflows), close and reopen it to run the tests before merging."
-          } > body.md
-          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "Pin dmc $VERSION" --body-file body.md

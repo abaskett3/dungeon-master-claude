@@ -17,11 +17,18 @@ This guide is for the player: how to start DMC, play, save, take breaks and fix 
 
 macOS is not supported: `dmc` is no longer built for it.
 
-Until the first release of this change, `dmc` comes from a local build of the source (see the README: it needs the .NET 10 SDK), and the install line that downloads a release arrives with the release. Nothing else needs installing.
+Install `dmc` with one line, in a terminal:
+
+```
+Windows (PowerShell):  irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex
+Linux:                 curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh
+```
+
+Nothing else needs installing. (The line works from the first release of the separated install; before it, `dmc` comes from a local build of the source, see the README: it needs the .NET 10 SDK.)
 
 ### Installing
 
-Run `dmc install` in a terminal (from a local build: `artifacts/bin/dmc install --force`). It asks where to put your DMC folder:
+The install line downloads the latest release of `dmc` and runs `dmc install` for you; it checks the download against the checksums the release lists and against the digest GitHub reports for it before it unpacks anything (if GitHub's limit for requests without sign-in has been reached, it checks the list alone and says so in one line). You can give the folder in the line: in PowerShell `& ([scriptblock]::Create((irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1))) -Path D:\Games\dmc`, on Linux `curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh -s -- --path ~/games/dmc`. On Windows, use the PowerShell line (`install.sh` refuses there). You can also run `dmc install` yourself (from a local build: `artifacts/bin/dmc install --force`). It asks where to put your DMC folder:
 
 ```
 DMC folder [C:\Users\you\dmc]:
@@ -34,6 +41,12 @@ Press Enter for the default, or type a folder (`~` means your home folder). `dmc
 3. makes empty `adventures/`, `feedback/`, `modules/` and `rules/` folders, if you have none. It writes nothing in them.
 
 `dmc install` refuses a folder inside the toolkit's source repository, and a folder where a file it would write already exists (it names the file: move it, or choose another folder). It refuses to run inside a Claude Code session; run it in a terminal.
+
+### Updating
+
+Run `dmc update` in a terminal. It replaces `dmc` with the latest release, then rewrites the rules, skills, settings and templates of every DMC folder you installed: the same refresh `dmc play` does, with the same promise (nothing of yours is touched; a file you edited by hand is kept under `.dmc/replaced/`). It installs a release only if the release's checksum list carries a valid signature from the DMC release key built into your `dmc` and the download matches that list and GitHub's own digest; otherwise it changes nothing and says why in one line. It says `dmc X.Y.Z is already the latest` when there is nothing newer, and it refuses inside a Claude Code session and for a development build.
+
+Changes made to the toolkit's repository never reach you before a release, and you choose when to update: `dmc play` refreshes your folder from the `dmc` you have, and never downloads anything.
 
 ### Starting a session
 

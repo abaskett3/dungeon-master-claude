@@ -22,5 +22,6 @@ public static class CommandTable
         new InstallCommand(),
         new FolderCommand(),
         new RefreshCommand(),
+        new UpdateCommand(),
     ];
 }

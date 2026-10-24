@@ -166,7 +166,7 @@ is in Phase 9.)
 
 - [x] T046 [P] Update `.docs/architecture.md`, `.docs/campaign-files.md`, `.docs/dmc-reference.md` (new `install`, `refresh`, `folder`; the new `play`; `digest --folder`), `.docs/product-overview.md` and `.docs/roadmap.md` (status of #67 Phase 1) for everything in Phases 2 to 7. Point player-facing text at `dmc install`; the install line itself comes in Phase 9.
 - [x] T047 [P] Update `README.md` for the interim state: playing needs `dmc install` from a local build until the first release of this change; list the `dmc-` skills; remove `play.ps1`/`play.sh` instructions.
-- [ ] T048 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test`; all pass.
+- [x] T048 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test`; all pass.
 - [ ] T049 Open PR 1 with the full description `CLAUDE.md` § Git and GitHub requires (what, why, sources, testing including T035, documents changed) and the line `Part of #67`. Then `gh pr view <n> --json body` and check the body landed and contains no `Closes`, `Fixes` or `Resolves` #67; check `git log origin/main..HEAD` messages too.
 - [ ] T050 Run Claude Code's code-review command once on PR 1; fix its findings and check the fixes yourself; check the documentation is current; CI passes.
 - [ ] T051 🧑 HUMAN (H8) Ask the user to merge PR 1.

@@ -16,15 +16,21 @@ public sealed class ReleaseKeys
     /// The active public key, PEM <c>SubjectPublicKeyInfo</c>: the key whose private half is the secret
     /// <c>DMC_RELEASE_SIGNING_KEY</c> of the GitHub environment <c>release</c>. A placeholder until the maintainer makes the
     /// keys (human step H1, <c>.docs/releases.md</c> § Release keys): while it is one, no release verifies and
-    /// <c>ReleaseKeysTests</c> fails.
+    /// <c>ReleaseKeysTests</c> fails. To replace it, paste the PEM of <c>active.pub.pem</c> in place of the placeholder text,
+    /// every line indented at least as far as the closing quotes (a raw string literal drops that indentation). The release
+    /// workflow checks that the key in the secret is one of the keys written here, by its base64 body.
     /// </summary>
-    public const string ActivePublicKey = "REPLACE WITH THE ACTIVE PUBLIC KEY (H1)";
+    public const string ActivePublicKey = """
+        REPLACE WITH THE ACTIVE PUBLIC KEY (H1): paste all of active.pub.pem here, from -----BEGIN PUBLIC KEY----- to -----END PUBLIC KEY-----
+        """;
 
     /// <summary>
     /// The backup public key, PEM <c>SubjectPublicKeyInfo</c>: its private half is kept offline by the maintainer and signs
     /// the next release by hand if the active key is lost or exposed. A placeholder until human step H1.
     /// </summary>
-    public const string BackupPublicKey = "REPLACE WITH THE BACKUP PUBLIC KEY (H1)";
+    public const string BackupPublicKey = """
+        REPLACE WITH THE BACKUP PUBLIC KEY (H1): paste all of backup.pub.pem here, from -----BEGIN PUBLIC KEY----- to -----END PUBLIC KEY-----
+        """;
 
     /// <summary>The object identifier of the curve P-256 (prime256v1, secp256r1), the only curve a release key may use.</summary>
     const string P256 = "1.2.840.10045.3.1.7";

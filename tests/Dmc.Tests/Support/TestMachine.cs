@@ -72,13 +72,18 @@ public sealed class TestMachine : IDisposable
     /// <summary>The terminal the machine offers when standard input is not one; null for none (the answer then is the default).</summary>
     public TextReader? Terminal { get; set; }
 
+    /// <summary>The stand-in native library's file name: <c>native.dll</c> on Windows, <c>native.so</c> elsewhere (the real system).</summary>
+    public static string NativeLibrary => OperatingSystem.IsWindows() ? "native.dll" : "native.so";
+
     /// <summary>Makes the folders, the stand-in program and its stand-in library, with <c>PATH</c> set to something harmless.</summary>
     public TestMachine()
     {
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(RunningFolder);
         File.WriteAllText(RunningExecutable, "stand-in for dmc");
-        File.WriteAllText(Path.Combine(RunningFolder, Windows ? "native.dll" : "native.so"), "stand-in for a native library");
+        // Named for the real system: the constructor runs before an initializer sets Windows, and the libraries beside
+        // the running program are always the real system's.
+        File.WriteAllText(Path.Combine(RunningFolder, NativeLibrary), "stand-in for a native library");
         File.WriteAllText(Path.Combine(RunningFolder, "notes.pdb"), "not a library: never copied");
         Cwd = Root;
         Environment["PATH"] = Path.Combine(Root, "elsewhere");

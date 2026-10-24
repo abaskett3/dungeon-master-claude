@@ -247,7 +247,7 @@ public sealed class InstallTests
             "dmc install: open a new terminal, then run dmc play",
         }, ran.Lines);
         Assert.IsTrue(File.Exists(Path.Combine(program, "dmc.exe")));
-        Assert.IsTrue(File.Exists(Path.Combine(program, "native.dll")), "the native libraries come along");
+        Assert.IsTrue(File.Exists(Path.Combine(program, TestMachine.NativeLibrary)), "the native libraries come along");
         Assert.IsFalse(File.Exists(Path.Combine(program, "notes.pdb")), "and nothing else");
         CollectionAssert.AreEqual(new[] { folder }, DmcFolder.Recorded(program).ToArray(), "recorded beside the installed program");
     }

@@ -1,15 +1,17 @@
 # Campaign files
 
-This document is for anyone who reads or edits a campaign's files by hand, changes the templates, or needs to know which file holds which fact. The rules for when DMC writes each file are in [CLAUDE.md](../CLAUDE.md) § Campaign files and § Saving as you go, and in the skills; this document describes the files.
+This document is for anyone who reads or edits a campaign's files by hand, changes the templates, or needs to know which file holds which fact. The rules for when DMC writes each file are in [kit/dm-rules.md](../kit/dm-rules.md) (a DMC folder's `CLAUDE.md`) § Campaign files and § Saving as you go, and in the skills (`kit/skills/`); this document describes the files.
 
 ## Layout
 
-`feedback/` sits at the toolkit root, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
+Everything below is in a **DMC folder**, the folder a player plays in (written by `dmc install`). Next to the player's folders it holds the files `dmc` writes and keeps up to date: `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/dmc-*/` and `templates/` (their source is `kit/` in the repository), and `.dmc/manifest.json`, which lists them with their hashes and makes the folder a DMC folder. `dmc install`, `dmc refresh` and `dmc play` write only those, and never anything under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/`; a generated file the player edited is kept under `.dmc/replaced/<yyyyMMdd-HHmmss>/` before it is replaced. The player's own files (their `.claude/settings.local.json`, their own skills) are never touched.
 
-`exports/` sits at the toolkit root too. `dmc campaign export` writes its ZIP files there, one per export (`<campaign>-<YYYYMMDDHHmm>.zip`). Git ignores it. Each file holds a whole campaign, `story/dm-notes.md` and other spoilers included, and is not part of any campaign; keep copies outside `adventures/`, where DMC would search them.
+`feedback/` sits in the DMC folder, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
+
+`exports/` sits in the DMC folder too. `dmc campaign export` writes its ZIP files there, one per export (`<campaign>-<YYYYMMDDHHmm>.zip`). Each file holds a whole campaign, `story/dm-notes.md` and other spoilers included, and is not part of any campaign; keep copies outside `adventures/`, where DMC would search them.
 
 ```
-exports/                     one ZIP per dmc campaign export, at the toolkit root (not in git; whole campaigns, spoilers included)
+exports/                     one ZIP per dmc campaign export, in the DMC folder (whole campaigns, spoilers included)
 adventures/
   player-options.md          the player's preferences for every campaign
   .active-campaign           the folder name of the campaign being played (one line)
@@ -41,7 +43,7 @@ adventures/
     import/                  only for a campaign imported from elsewhere: the export, kept as the record
 ```
 
-All of `adventures/` is ignored by git. A new campaign is a copy of `templates/campaign/`; the archives, `import/` and the map outputs are created when first needed.
+`adventures/` is the player's, and `dmc` never writes it (a DMC folder is not a git checkout). A new campaign is a copy of `templates/campaign/` (generated from `kit/templates/campaign/`); the archives, `import/` and the map outputs are created when first needed.
 
 ## What each file holds
 
@@ -82,11 +84,11 @@ When sources still disagree, this order decides, from `CLAUDE.md`:
 1. **Player options:** the campaign's file, then the general file, then the defaults in `CLAUDE.md`.
 2. **Facts:** the campaign files, then the module as written (where play has not diverged from it), then the 5e rules in the campaign's edition, then new invention, which must not contradict the others.
 3. **Files against memory:** the files win over DMC's recollection, over the player's recollection, and over a compacted summary of the conversation.
-4. **Files against each other:** when `resume-campaign` or the full save's consistency check finds two files that disagree, DMC tells the player what disagrees, proposes the most likely truth, and fixes the files only once the player confirms. It never picks one silently.
+4. **Files against each other:** when `dmc-resume-campaign` or the full save's consistency check finds two files that disagree, DMC tells the player what disagrees, proposes the most likely truth, and fixes the files only once the player confirms. It never picks one silently.
 
 ## The map files
 
-A map is a small JSON file that `dmc map` checks, draws and measures. The full format is in [`.claude/skills/draw-map/map-format.md`](../.claude/skills/draw-map/map-format.md); this is a summary.
+A map is a small JSON file that `dmc map` checks, draws and measures. The full format is in [`kit/skills/dmc-draw-map/map-format.md`](../kit/skills/dmc-draw-map/map-format.md) (`.claude/skills/dmc-draw-map/map-format.md` in a DMC folder); this is a summary.
 
 - **A place file**, `maps/<place>.json`, holds a layout and no creatures: `title`, `cell_ft`, `grid` and optional `legend`, `labels`, `notes`, `edges`, `north` and `scale_note`.
 - **The scene file**, `maps/live.json`, puts creatures on a place: `"base"` names the place file (without `.json`, in the same folder) and `"tokens"` lists the creatures. Any key the scene sets replaces the place's, except that a scene cannot change its place's scale.
@@ -116,10 +118,10 @@ A campaign is a module campaign when its folder holds `module-progress.md`, whic
 
 ## The rules folder
 
-`rules/` holds the player's optional rules reference, normally the SRD, and is ignored by git. `/setup-rules` writes `rules/index.md` (which document and edition, a section table with page ranges, a finer breakdown of the long alphabetical sections, and the pages most needed in play). For a PDF it first runs `dmc pdf text`, which writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`.
+`rules/` holds the player's optional rules reference, normally the SRD, and is the player's. `/dmc-setup-rules` writes `rules/index.md` (which document and edition, a section table with page ranges, a finer breakdown of the long alphabetical sections, and the pages most needed in play). For a PDF it first runs `dmc pdf text`, which writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`.
 
 ## Feedback entries
 
-`feedback/` at the toolkit root holds feedback about how DMC itself runs the game, one file per entry, `feedback/YYYY-MM-DD-<slug>.md`, from [`templates/feedback.md`](../templates/feedback.md). It is outside `adventures/` and every campaign, ignored by git (only `feedback/.gitkeep` is tracked) because entries quote the player and can hold spoilers, and nothing in play reads it: resume and full save never touch it. The `record-feedback` skill writes entries in play; `review-transcript` writes them from the session logs; `review-feedback` reads them and updates their status.
+`feedback/` in the DMC folder holds feedback about how DMC itself runs the game, one file per entry, `feedback/YYYY-MM-DD-<slug>.md`, from [`kit/templates/feedback.md`](../kit/templates/feedback.md) (`templates/feedback.md` in the folder). It is outside `adventures/` and every campaign, and entries quote the player and can hold spoilers, and nothing in play reads it: resume and full save never touch it, and `dmc install`, `refresh` and `play` never write it. The `dmc-record-feedback` skill writes entries in play; `review-transcript` writes them from the session logs; `review-feedback` reads them and updates their status.
 
-The frontmatter has `status` (`open`, `filed #N`, `fixed in PR #N`, `not a toolkit problem: <why>` or `moved to player options`), `category`, `source` (`player`, `DMC` or `transcript review`) and `recorded`. A worker finds the open entries with one search for `^status: open`; there is no index. `feedback/.ignore` (`!*`) is tracked so that the Grep tool, which skips git-ignored files, can search the entries. The sections are What happened, What the player said, What should happen instead, Occurrences (a repeat adds a line, not a file), Done in play (a rewind, a ruling, or a stopgap preference line to remove once the fix ships), Context (optional pointers into a campaign) and Worker notes. An entry is written so that it makes sense if the campaign has been deleted. Entries are never deleted: a closed status is the record.
+The frontmatter has `status` (`open`, `filed #N`, `fixed in PR #N`, `not a toolkit problem: <why>` or `moved to player options`), `category`, `source` (`player`, `DMC` or `transcript review`), `recorded` and `dmc`, the version number of `dmc` when the entry was recorded (`dmc: 0.2.0`, from `dmc --version` without the leading `dmc `), so a worker knows which release's prompts the entry is about. A worker finds the open entries with one search for `^status: open`; there is no index. (In the repository, `feedback/.ignore` (`!*`) is tracked so that the Grep tool, which skips git-ignored files, can search the entries there; a DMC folder is not a git checkout and needs no such file.) The sections are What happened, What the player said, What should happen instead, Occurrences (a repeat adds a line, not a file), Done in play (a rewind, a ruling, or a stopgap preference line to remove once the fix ships), Context (optional pointers into a campaign) and Worker notes. An entry is written so that it makes sense if the campaign has been deleted. Entries are never deleted: a closed status is the record.

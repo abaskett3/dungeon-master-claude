@@ -1,6 +1,6 @@
 # Roadmap
 
-This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-10-17; the PRs and issues named are on GitHub.
+This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-10-24; the PRs and issues named are on GitHub.
 
 ## Status by area
 
@@ -45,6 +45,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Spec Kit constitution, issue #51 Phase 2 | Done | `.specify/memory/constitution.md` v1.0.0 (1.0.1 since #66 added a pointer): five principles, build and output constraints, workflow and governance, each pointing at the file that holds the rule. See [development.md](development.md#spec-driven-changes) and [decisions.md](decisions.md). |
 | Spec Kit pilot and decision, issue #51 Phase 3 (#66) | Done | Piloted on campaign export (PR #120) and macOS removal (PR #159). Kept for every toolkit change except prompt and context tuning from feedback (one bullet in `CLAUDE.md` § Git and GitHub); one issue per change, tasks stay in `tasks.md`; a spec is frozen once a converge pass adds no tasks. See [development.md](development.md#spec-driven-changes) and [decisions.md](decisions.md). |
 | macOS support removed, issue #124 (PR #159) | Done, in the next release | `dmc` is no longer built, tested or documented for macOS: the release and CI workflows, the pin (four archives) and the code drop `osx-arm64`, and `get-dmc` refuses on a Mac in one line. Releases up to 0.1.4 keep their macOS archive. See [decisions.md](decisions.md) and [releases.md](releases.md). |
+| Separate the player install from the toolkit source, issue #67, PR 1 of 3 (the kit and the DMC folder) | Done in PR 1, awaiting merge | `kit/` holds the source of the rules, skills (renamed `dmc-<name>`), settings and templates, embedded in `dmc`; `dmc install`, `dmc refresh`, `dmc folder` and the new `dmc play` write and keep a DMC folder by a manifest, never touching the player's files; `Toolkit.Root` and the stale-binary check, `play.ps1`, `play.sh` and their tests are gone; the repository's `CLAUDE.md` is developer-only; the constitution is 2.0.0 (players install Claude Code and `dmc`). Spec: `specs/003-separate-player-install/`. PR 2 (`dmc update`, signed releases, the install line) and PR 3 (the switch-over) follow. See [decisions.md](decisions.md). |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |

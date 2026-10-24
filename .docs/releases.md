@@ -4,6 +4,8 @@ This document is for the maintainer who cuts a `dmc` release, and for anyone who
 
 ## How `dmc` reaches players
 
+> **Interim, during issue #67.** The separate player install is delivered in three pull requests. After the first, the launchers (`play.ps1`, `play.sh`), the stale-binary check and the tests of `get-dmc` and the launchers are gone, and players install with `dmc install` from a local build; this document still describes the release workflow, the pin and `get-dmc`, which the second pull request replaces (signed releases, `dmc update`, an install line). Read the launcher and stale-binary parts below as history until then.
+
 Players never build `dmc`. A release is published on GitHub from a tag; a pull request then pins it in `tools/dmc-release.json` (its tag and the SHA-256 of each archive); and once that pull request is merged, `get-dmc` installs exactly that release on each player's computer the next time a launcher runs. The pin is the only thing that decides which `dmc` players run.
 
 ```

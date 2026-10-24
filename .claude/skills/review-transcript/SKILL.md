@@ -7,12 +7,16 @@ description: Review the recorded play sessions of a campaign to find where DMC m
 
 This is toolkit work, not play: drop the DM role. The reader is the toolkit's author, so spoilers from `dm-notes.md` and the modules are fine here unless they say otherwise.
 
-This skill finds problems in the session logs and records them as feedback entries in `feedback/`, the same place `record-feedback` writes to during play. It does not find the cause in the prompts, propose fixes or edit anything: `review-feedback` does that. A finding is a problem that would be wrong for any player, not this player's taste (section 5).
+This skill finds problems in the session logs and records them as feedback entries in `feedback/`, the same place `dmc-record-feedback` writes to during play. It does not find the cause in the prompts, propose fixes or edit anything: `review-feedback` does that. A finding is a problem that would be wrong for any player, not this player's taste (section 5).
+
+## Which DMC folder
+
+The sessions were played in a DMC folder, not in this repository. Take its path from the user's request; without one, run `dmc folder`, which prints the DMC folder on this computer (if it fails, ask the user where it is). `feedback/` and `adventures/` below mean that folder's. The prompts under review are in `kit/` in this repository: `kit/dm-rules.md` (the DMC folder's `CLAUDE.md`), `kit/skills/`, `kit/templates/` and `kit/settings.json`.
 
 ## 1. Pick the sessions
 
 ```
-./bin/dmc digest list --campaign <folder>
+dmc digest list --folder <dmc folder> --campaign <campaign>
 ```
 
 Use the campaign and sessions the user named. Otherwise take the sessions for the active campaign that are not yet listed in `adventures/.reviewed-sessions`. The newest session in the list is usually this review itself; leave it out. Sessions with only a message or two are rarely worth reading.
@@ -22,10 +26,10 @@ A transcript that did not come from Claude Code (for example a chat export in a 
 ## 2. Build the digest
 
 ```
-./bin/dmc digest show <id> [<id> ...]
+dmc digest show --folder <dmc folder> <id> [<id> ...]
 ```
 
-This writes to `adventures/.transcript-review/`:
+This writes to `adventures/.transcript-review/` in the DMC folder:
 
 - `stats.md`: the numbers for each session.
 - `<id>-turns.txt`: every player message with the context size at that point and the size and tool calls of the reply. A `!` marks wording that often goes with friction; it is a hint, and it misses most of it.
@@ -98,7 +102,7 @@ The test: would the same behaviour have been wrong for a different player with d
 
 Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions` first, so that an interrupted review is not repeated. Then Grep `^status: (open|filed)` in `feedback/` and Grep `^# ` in `feedback/`, looking only at the titles in files from that list, so that a problem already recorded gets a new occurrence and not a second file.
 
-Write each inconsistency or mistake as an entry from `templates/feedback.md` with `source: transcript review`, in `feedback/YYYY-MM-DD-<slug>.md`. Describe the behaviour generally, so that it makes sense without the adventure. Put the Claude Code session id, the time and the quote or the numbers under Occurrences. If an open entry covers the problem, add an occurrence to it instead.
+Write each inconsistency or mistake as an entry from `kit/templates/feedback.md` (in this repository), setting `dmc:` to the version the session was played with if the log shows it and leaving it as the template has it otherwise, with `source: transcript review`, in `feedback/YYYY-MM-DD-<slug>.md`. Describe the behaviour generally, so that it makes sense without the adventure. Put the Claude Code session id, the time and the quote or the numbers under Occurrences. If an open entry covers the problem, add an occurrence to it instead.
 
 Group the context and token numbers in one entry per cause, with a small table. Anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session) is an entry too, in the category `other`, saying so.
 

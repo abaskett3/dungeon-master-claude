@@ -6,11 +6,12 @@ namespace Dmc.Digest;
 /// <param name="Command">list or show.</param>
 /// <param name="Campaign">Only sessions that touched this campaign; null or empty for all.</param>
 /// <param name="After">Only sessions that ended on or after this date (text, compared with the first 10 characters of the end time).</param>
-/// <param name="Logs">The folder of session logs; null or empty for this toolkit's Claude Code logs.</param>
-/// <param name="Out">The output folder of <c>show</c>; null or empty for <c>adventures/.transcript-review</c>.</param>
+/// <param name="Logs">The folder of session logs; null or empty for the Claude Code logs of the DMC folder.</param>
+/// <param name="Out">The output folder of <c>show</c>; null or empty for <c>adventures/.transcript-review</c> in the DMC folder.</param>
 /// <param name="Sessions">The starts of session ids <c>show</c> was given; none means every session.</param>
+/// <param name="Folder">The DMC folder whose Claude Code logs are read and whose <c>adventures/</c> holds the default output folder; null or empty for the folder <see cref="DmcFolder.Find()"/> finds.</param>
 internal sealed record DigestRequest(string Command, string? Campaign, string? After, string? Logs, string? Out,
-    IReadOnlyList<string> Sessions);
+    IReadOnlyList<string> Sessions, string? Folder = null);
 
 /// <summary>
 /// Reads the command line the way <c>transcript_digest.py</c>'s <c>argparse</c> did, with its messages (apart from the
@@ -32,7 +33,7 @@ internal static class DigestArguments
     internal static readonly string[] Commands = [List, Show];
 
     /// <summary>The options <c>list</c> accepts.</summary>
-    static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs"];
+    static readonly string[] ListOptions = ["--help", "--campaign", "--after", "--logs", "--folder"];
 
     /// <summary>The options <c>show</c> accepts: those of <c>list</c> and <c>--out</c>.</summary>
     static readonly string[] ShowOptions = [.. ListOptions, "--out"];
@@ -124,7 +125,7 @@ internal static class DigestArguments
     {
         bool show = command == Show;
         var (kinds, classified) = Sort(args, show ? ShowOptions : ListOptions);
-        string? campaign = null, after = null, logs = null, output = null;
+        string? campaign = null, after = null, logs = null, output = null, folder = null;
         var sessions = new List<string>();
         bool sessionsOpen = show; // the session ids are taken once
 
@@ -193,12 +194,13 @@ internal static class DigestArguments
                 case "--campaign": campaign = value; break;
                 case "--after": after = value; break;
                 case "--logs": logs = value; break;
+                case "--folder": folder = value; break;
                 default: output = value; break;
             }
         }
 
         int rest = TakePlain(start);
         extras.AddRange(args[rest..]);
-        return new DigestRequest(command, campaign, after, logs, output, sessions);
+        return new DigestRequest(command, campaign, after, logs, output, sessions, folder);
     }
 }

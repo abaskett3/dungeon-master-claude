@@ -51,9 +51,9 @@ internal static partial class Report
             var prev = calls[i - 1].Kinds;
             var before = new HashSet<string>(calls.Take(i - 1).SelectMany(c => c.Kinds));
             string cls;
-            if (turn.Skills.Contains(Session.SaveSkill))
+            if (Session.UsedAny(turn.Skills, Session.SaveSkills))
                 cls = "save";
-            else if (turn.Skills.Contains(Session.ResumeSkill))
+            else if (Session.UsedAny(turn.Skills, Session.ResumeSkills))
                 cls = "resume";
             else if (prev.Contains("write") && before.Contains("write"))
                 cls = "write";
@@ -112,7 +112,7 @@ internal static partial class Report
         for (int n = 1; n <= s.Turns.Count; n++)
         {
             var turn = s.Turns[n - 1];
-            if (turn.Skills.Contains(Session.SaveSkill))
+            if (Session.UsedAny(turn.Skills, Session.SaveSkills))
             {
                 string reread = string.Join(", ", RereadAfterWrite(turn));
                 lines.Add($"- **Full save at player message {n}**: {turn.Calls.Count} calls; files read again after writing: {(reread.Length > 0 ? reread : "none")}.");

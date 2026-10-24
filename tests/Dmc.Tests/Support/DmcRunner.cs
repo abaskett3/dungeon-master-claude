@@ -24,8 +24,7 @@ public static class DmcRunner
 
     /// <summary>
     /// Run the published binary. It must exist: publish it first with
-    /// <c>dotnet publish src/Dmc.Cli -r &lt;rid&gt; -o artifacts/bin</c> (not into <c>bin/</c>, which is the player's install
-    /// that <c>get-dmc</c> owns). Set <c>DMC_BIN</c> to test a binary somewhere else.
+    /// <c>dotnet publish src/Dmc.Cli -r &lt;rid&gt; -o artifacts/bin</c> (into <c>artifacts/bin</c>, which no installer owns). Set <c>DMC_BIN</c> to test a binary somewhere else.
     /// </summary>
     /// <param name="args">The command line, without the program name.</param>
     /// <param name="stdin">What the process reads from standard input; empty when null.</param>
@@ -41,7 +40,7 @@ public static class DmcRunner
 
     /// <summary>
     /// Full path of the published binary: <c>DMC_BIN</c> if set, whatever it prints; otherwise <c>artifacts/bin/dmc</c>,
-    /// which must be there, not older than the sources, and a development build (a release there would be tests of the
+    /// which must be there, not older than the sources (and the files under <c>kit/</c>, which are embedded in it), and a development build (a release there would be tests of the
     /// wrong program).
     /// </summary>
     /// <remarks>The tests are skipped, or fail on CI, when the binary is missing (see <see cref="TestEnv.Need"/>).</remarks>
@@ -72,7 +71,7 @@ public static class DmcRunner
     static readonly Lazy<string> _printed = new(() =>
         TestEnv.Run(Path.Combine(TestEnv.Root, "artifacts", "bin", OperatingSystem.IsWindows() ? "dmc.exe" : "dmc"), ["--version"]).Stdout.Trim());
 
-    /// <summary>The most recently changed source file of the CLI project (<c>.cs</c>, <c>.csproj</c> and the shared <c>Directory.*.props</c>; not <c>obj/</c> or <c>bin/</c>), with its time.</summary>
+    /// <summary>The most recently changed source file of the CLI project (<c>.cs</c>, <c>.csproj</c> and the shared <c>Directory.*.props</c>; not <c>obj/</c> or <c>bin/</c>) or file under <c>kit/</c> (embedded in the program), with its time.</summary>
     static (DateTime Time, string Path) NewestSource()
     {
         string[] extensions = [".cs", ".csproj", ".props"];
@@ -81,6 +80,7 @@ public static class DmcRunner
         return Directory.EnumerateFiles(Path.Combine(TestEnv.Root, "src"), "*", SearchOption.AllDirectories)
             .Where(f => extensions.Contains(Path.GetExtension(f)) && !f.Contains(build) && !f.Contains(output))
             .Concat(Directory.EnumerateFiles(TestEnv.Root, "Directory.*.props"))
+            .Concat(Directory.EnumerateFiles(Path.Combine(TestEnv.Root, "kit"), "*", SearchOption.AllDirectories))
             .Select(f => (Time: File.GetLastWriteTimeUtc(f), Path: f))
             .MaxBy(x => x.Time);
     }

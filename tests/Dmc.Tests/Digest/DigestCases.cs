@@ -354,31 +354,63 @@ public sealed class DigestCaseTests
     }
 
     /// <summary>
-    /// With no <c>--logs</c>, <c>dmc digest</c> looks in <c>$CLAUDE_CONFIG_DIR/projects/&lt;this folder, with every character
+    /// With no <c>--logs</c>, <c>dmc digest</c> looks in <c>$CLAUDE_CONFIG_DIR/projects/&lt;the DMC folder, with every character
     /// outside A-Za-z0-9 turned into "-"&gt;</c>: the error names that folder when it is missing, and the table lists its logs
-    /// when it is there. The variable is set in the test process, which the binary inherits.
+    /// when it is there. The DMC folder is the current folder (a temporary one with a manifest) or, with <c>--folder</c>,
+    /// the one named. The variable is set in the test process, which the binary inherits.
     /// </summary>
     [TestMethod]
-    public void TheDefaultLogFolderIsClaudeCodesFolderForThisToolkit()
+    public void TheDefaultLogFolderIsClaudeCodesFolderForTheDmcFolder()
     {
         using var config = new TempFolder();
-        string project = Path.Combine(config.Path, "projects", LogFolder.ProjectName(TestEnv.Root));
+        string dmcFolder = DmcFolders.MakeDmcFolder(DmcFolders.NewTemp());
+        string other = DmcFolders.MakeDmcFolder(DmcFolders.NewTemp());
+        string project = Path.Combine(config.Path, "projects", LogFolder.ProjectName(dmcFolder));
         Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", config.Path);
         try
         {
-            var missing = DmcRunner.BlackBox(["digest", "list"]);
+            var missing = DmcRunner.BlackBox(["digest", "list"], cwd: dmcFolder);
             Assert.AreEqual(1, missing.ExitCode, missing.ToString());
             Assert.AreEqual($"dmc digest: No session logs found at {project}. Pass --logs DIR.\n", missing.Stderr);
 
             WriteLogFolder(Directory.CreateDirectory(project).FullName);
-            var found = DmcRunner.BlackBox(["digest", "list"]);
+            var found = DmcRunner.BlackBox(["digest", "list"], cwd: dmcFolder);
             Assert.AreEqual(0, found.ExitCode, found.ToString());
             StringAssert.StartsWith(found.Stdout, "id ");
             StringAssert.Contains(found.Stdout, SessionId[..8]);
+
+            // --folder names the folder, wherever the command is run from.
+            var named = DmcRunner.BlackBox(["digest", "list", "--folder", dmcFolder], cwd: other);
+            Assert.AreEqual(0, named.ExitCode, named.ToString());
+            StringAssert.Contains(named.Stdout, SessionId[..8]);
+            var notThere = DmcRunner.BlackBox(["digest", "list", "--folder", Path.Combine(other, "nope")], cwd: other);
+            Assert.AreEqual(1, notThere.ExitCode, notThere.ToString());
+            StringAssert.StartsWith(notThere.Stderr, "dmc digest: ");
+            Assert.HasCount(1, notThere.StderrLines);
         }
         finally
         {
             Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", null);
+            DmcFolders.Delete(dmcFolder);
+            DmcFolders.Delete(other);
+        }
+    }
+
+    /// <summary>With no DMC folder (not the current one, none recorded, none given) a default log folder cannot be found: one line says so.</summary>
+    [TestMethod]
+    public void WithNoDmcFolderTheDefaultLogFolderIsOneLine()
+    {
+        string folder = DmcFolders.NewTemp();
+        try
+        {
+            var result = DmcRunner.BlackBox(["digest", "list"], cwd: folder);
+            Assert.AreEqual(1, result.ExitCode, result.ToString());
+            Assert.AreEqual("dmc digest: no DMC folder: run dmc install\n", result.Stderr);
+            Assert.AreEqual("", result.Stdout);
+        }
+        finally
+        {
+            DmcFolders.Delete(folder);
         }
     }
 }

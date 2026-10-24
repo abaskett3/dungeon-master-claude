@@ -5,10 +5,12 @@
     <AssemblyName>dmc</AssemblyName>
     <RootNamespace>Dmc</RootNamespace>
     <!-- Every build that is not a release says so: "dmc" with the version option prints "dmc 0.0.0-dev", which no release ever prints,
-         so get-dmc replaces it with the pinned release and the stale-binary warning leaves it alone. A release gets its
-         exact version from its tag (release.yml builds it with -p:Version=X.Y.Z); nothing writes it back here. -->
+         so "dmc install" copies a development build as the program only when forced. A release
+         gets its exact version from its tag (release.yml builds it with -p:Version=X.Y.Z); nothing writes it back here. -->
     <Version>0.0.0-dev</Version>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The LibraryImport source generator (Install/UserPath.cs: SendMessageTimeout) writes unsafe marshalling code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Run the AOT, trim and single-file analyzers on every build, so a local build already shows what a release
          build would complain about. -->
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
@@ -59,6 +61,11 @@
     <!-- Liberation Sans (SIL OFL 1.1; the licence sits next to the fonts), embedded so that the map PNG has text on a
          machine with no fonts installed. -->
     <EmbeddedResource Include="Maps\Fonts\*.ttf" LogicalName="Dmc.Maps.Fonts.%(Filename)%(Extension)" />
+    <!-- Everything under kit/ at the repository root, the source of the files dmc writes into a DMC folder (CLAUDE.md, the
+         settings, the player skills and the templates), embedded under the logical name kit/<path>. The glob takes files in
+         dot-folders too. RecursiveDir ends in the platform's separator, so code reading the names turns "\" into "/"
+         (Kit/GeneratedFiles.cs). -->
+    <EmbeddedResource Include="..\..\kit\**\*" LogicalName="kit/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

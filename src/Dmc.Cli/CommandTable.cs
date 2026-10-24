@@ -19,5 +19,8 @@ public static class CommandTable
         new DigestCommand(),
         new CampaignCommand(),
         new PlayCommand(),
+        new InstallCommand(),
+        new FolderCommand(),
+        new RefreshCommand(),
     ];
 }

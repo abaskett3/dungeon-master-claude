@@ -51,12 +51,24 @@ internal static class Digester
         return x.Length.CompareTo(y.Length);
     }
 
+    /// <summary>The DMC folder a request is about: <c>--folder</c> if it was given, else the one <see cref="DmcFolder.Find()"/> finds.</summary>
+    /// <param name="request">The request; only <see cref="DigestRequest.Folder"/> is read.</param>
+    /// <exception cref="DmcException"><c>--folder</c> names a folder that does not exist, or none was given and there is no DMC folder (<c>no DMC folder: run dmc install</c>).</exception>
+    static string DmcFolderOf(DigestRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Folder))
+            return DmcFolder.Require();
+        if (!Directory.Exists(request.Folder))
+            throw new DmcException($"{request.Folder} is not a folder");
+        return Path.GetFullPath(request.Folder);
+    }
+
     /// <summary>The sessions the request asks for, oldest first (by the time the log was last written).</summary>
     /// <param name="request">Which sessions: by id prefix, by campaign touched, and by end date, each only if given; and which folder.</param>
     /// <exception cref="DmcException">The log folder does not exist.</exception>
     static List<Session> Load(DigestRequest request)
     {
-        string folder = string.IsNullOrEmpty(request.Logs) ? LogFolder.Default() : request.Logs;
+        string folder = string.IsNullOrEmpty(request.Logs) ? LogFolder.Default(DmcFolderOf(request)) : request.Logs;
         if (!Directory.Exists(folder))
             throw new DmcException($"No session logs found at {folder}. Pass --logs DIR.");
 
@@ -117,7 +129,7 @@ internal static class Digester
         if (sessions.Count == 0)
             throw new DmcException("No matching sessions with player messages.");
 
-        string outDir = string.IsNullOrEmpty(request.Out) ? Path.Combine(Toolkit.Root, "adventures", ".transcript-review") : request.Out;
+        string outDir = string.IsNullOrEmpty(request.Out) ? Path.Combine(DmcFolderOf(request), "adventures", ".transcript-review") : request.Out;
         Directory.CreateDirectory(outDir);
         string today = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var report = new List<string> { "# Transcript statistics", "", $"Generated {today} by dmc digest.", "" };

@@ -11,7 +11,7 @@ namespace Dmc.Commands;
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
 /// but a mistake is one line and exit code 2, never the usage text. The work is in <c>Dmc.Campaign</c>, which takes the
-/// toolkit root as a parameter so a test can aim it at a temporary folder; only this class passes <see cref="Toolkit.Root"/>.
+/// DMC folder as a parameter so a test can aim it at a temporary folder; only this class finds the folder, with <see cref="DmcFolder.Require"/> (a command run where there is no DMC folder fails with <c>no DMC folder: run dmc install</c>).
 /// </remarks>
 public sealed class CampaignCommand : ICommand
 {
@@ -31,7 +31,7 @@ usage: dmc campaign export NAME [--out PATH] [--force]
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
 
   export  writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
-          adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ under the toolkit root.
+          adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
   import  checks the whole file, then creates adventures/<name> from it, all or nothing. It never changes an existing
           campaign, never replaces an existing adventures/player-options.md and never changes the active campaign.
   show    prints what a file holds (name, date, files, module) and writes nothing.
@@ -39,7 +39,7 @@ Moves a whole campaign in and out of one ZIP file: a backup, a copy under anothe
   NAME    a folder under adventures/
   FILE    an export file; its name does not matter, the campaign name is read from inside it
   --out   export: an existing folder (the default file name is used inside it), or a file path ending in .zip
-          (default: exports/ under the toolkit root, made when needed; never inside adventures/)
+          (default: exports/ in the DMC folder, made when needed; never inside adventures/)
   --force export: replace an existing file named by --out; the default name is never replaced, the next free -2, -3 ... is used
   --as    import: the folder name to import under (lowercase letters, digits and hyphens; default: the name inside the file)
 
@@ -74,7 +74,7 @@ A published module is not exported; ingest it again from your own copy.
     /// <param name="io">Standard output gets the result line.</param>
     static int RunExport(ExportRequest request, Io io)
     {
-        var result = CampaignExporter.Export(Toolkit.Root, request);
+        var result = CampaignExporter.Export(DmcFolder.Require(), request);
         string options = result.GeneralOptions ? " and the general player options" : "";
         io.Out.WriteLine($"exported {request.Name}: {result.Files} files{options} to {result.Archive}");
         return 0;
@@ -85,7 +85,7 @@ A published module is not exported; ingest it again from your own copy.
     /// <param name="io">Standard output gets the result lines.</param>
     static int RunImport(ImportRequest request, Io io)
     {
-        var result = CampaignImporter.Import(Toolkit.Root, request, io.Err);
+        var result = CampaignImporter.Import(DmcFolder.Require(), request, io.Err);
         io.Out.WriteLine($"imported {result.Name}: {result.Files} files to {result.Folder}");
         switch (result.Options)
         {
@@ -111,7 +111,7 @@ A published module is not exported; ingest it again from your own copy.
     static int RunShow(ShowRequest request, Io io)
     {
         // Every line is built before any is printed, so a file that is refused prints only the refusal.
-        foreach (string line in ExportSummary.Open(request.File).ShowLines(Toolkit.Root).ToList())
+        foreach (string line in ExportSummary.Open(request.File).ShowLines(DmcFolder.Require()).ToList())
             io.Out.WriteLine(line);
         return 0;
     }

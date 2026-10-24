@@ -4,14 +4,14 @@ using Dmc.Tests.Support;
 namespace Dmc.Tests.Map;
 
 /// <summary>
-/// The map format description lives in <c>.claude/skills/draw-map/map-format.md</c> (it used to be the comment at the
+/// The map format description lives in <c>kit/skills/dmc-draw-map/map-format.md</c>, which a DMC folder gets as <c>.claude/skills/dmc-draw-map/map-format.md</c> (it used to be the comment at the
 /// top of <c>map_render.py</c>). It must exist, agree with the code, and be what the skill and <c>dmc map --help</c> point to.
 /// </summary>
 [TestClass]
 public sealed class MapFormatDocTests
 {
-    /// <summary>A file of the draw-map skill's folder, as text.</summary>
-    static string Skill(string name) => File.ReadAllText(Path.Combine(TestEnv.Root, ".claude", "skills", "draw-map", name));
+    /// <summary>A file of the draw-map skill's folder in <c>kit/</c>, as text.</summary>
+    static string Skill(string name) => File.ReadAllText(Path.Combine(TestEnv.Root, "kit", "skills", "dmc-draw-map", name));
 
     /// <summary>The format file names every scale, symbol, terrain, kind and top-level key (turn order included).</summary>
     [TestMethod]
@@ -34,7 +34,7 @@ public sealed class MapFormatDocTests
     public void TheSkillPointsToTheFormatFile()
     {
         string skill = Skill("SKILL.md");
-        StringAssert.Contains(skill, ".claude/skills/draw-map/map-format.md");
+        StringAssert.Contains(skill, ".claude/skills/dmc-draw-map/map-format.md");
         Assert.DoesNotContain("comment at the top", skill);
     }
 
@@ -44,7 +44,7 @@ public sealed class MapFormatDocTests
         foreach (var result in new[] { DmcRunner.InProcess(["map", "--help"]), DmcRunner.InProcess(["map", "x.json", "-h"]), DmcRunner.BlackBox(["map", "--help"]) })
         {
             Assert.AreEqual(0, result.ExitCode, result.ToString());
-            StringAssert.Contains(result.Stdout, ".claude/skills/draw-map/map-format.md");
+            StringAssert.Contains(result.Stdout, ".claude/skills/dmc-draw-map/map-format.md");
             Assert.AreEqual("", result.Stderr);
             Assert.DoesNotContain("\r", result.Stdout); // the help text has "\n" line endings whatever the checkout's
         }

@@ -18,10 +18,10 @@ internal enum ModuleKind
     Named,
 }
 
-/// <summary>The module an export needs, and whether this toolkit has it.</summary>
+/// <summary>The module an export needs, and whether this DMC folder has it.</summary>
 /// <param name="Kind">Whether there is a module, and whether its folder is known.</param>
 /// <param name="Folder">The folder under <c>modules/</c>; null unless <paramref name="Kind"/> is <see cref="ModuleKind.Named"/>.</param>
-/// <param name="Installed">True when <c>modules/&lt;folder&gt;/index.md</c> exists under the toolkit root that was asked; false otherwise.</param>
+/// <param name="Installed">True when <c>modules/&lt;folder&gt;/index.md</c> exists under the DMC folder that was asked; false otherwise.</param>
 internal readonly record struct ModuleState(ModuleKind Kind, string? Folder, bool Installed);
 
 /// <summary>
@@ -114,8 +114,8 @@ internal sealed class ExportSummary
         return new ExportSummary(path, manifest);
     }
 
-    /// <summary>The module this export needs, and whether <c>modules/&lt;folder&gt;/index.md</c> exists under a toolkit root (research R8).</summary>
-    /// <param name="root">The toolkit root to look in.</param>
+    /// <summary>The module this export needs, and whether <c>modules/&lt;folder&gt;/index.md</c> exists under a DMC folder (research R8).</summary>
+    /// <param name="root">The DMC folder to look in.</param>
     public ModuleState Module(string root)
     {
         if (Manifest.Module is null)
@@ -128,10 +128,10 @@ internal sealed class ExportSummary
 
     /// <summary>
     /// The lines <c>dmc campaign show</c> prints: who and when, how much, and (for a module campaign) which module and whether
-    /// this toolkit has it. Two or three lines, built from the manifest alone. Control characters in the manifest's text
+    /// this DMC folder has it. Two or three lines, built from the manifest alone. Control characters in the manifest's text
     /// print as <c>?</c>, so a crafted manifest cannot add lines.
     /// </summary>
-    /// <param name="root">The toolkit root, to look for the module in.</param>
+    /// <param name="root">The DMC folder, to look for the module in.</param>
     public IEnumerable<string> ShowLines(string root)
     {
         TryParseTimestamp(Manifest.ExportedAt, out var exported);

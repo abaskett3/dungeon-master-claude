@@ -143,8 +143,8 @@ public sealed partial class ErrorPathTests
 
     /// <summary>
     /// Every bad argument, missing or unreadable export file and file that is not an export prints one line and no stack trace,
-    /// and leaves the working folder exactly as the case made it. (The binary's toolkit root is the real repository, so a case
-    /// never gets as far as writing there.)
+    /// and leaves the working folder exactly as the case made it. (The binary's DMC folder is a temporary one, set through
+    /// <c>CLAUDE_PROJECT_DIR</c>, so a case never gets as far as writing in a real one.)
     /// </summary>
     [TestMethod]
     [DynamicData(nameof(CampaignErrors), DynamicDataDisplayName = nameof(CaseName))]
@@ -152,6 +152,8 @@ public sealed partial class ErrorPathTests
     {
         string before = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(before);
+        string dmcFolder = DmcFolders.MakeDmcFolder(DmcFolders.NewTemp());
+        Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", dmcFolder);
         try
         {
             test.Seed?.Invoke(before);
@@ -164,7 +166,9 @@ public sealed partial class ErrorPathTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", null);
             Directory.Delete(before, recursive: true);
+            DmcFolders.Delete(dmcFolder);
         }
     }
 
@@ -173,9 +177,11 @@ public sealed partial class ErrorPathTests
     {
         string empty = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(empty);
+        // A current DMC folder, so that the refresh before the start has nothing to say: the one line is Claude Code's absence.
+        string dmcFolder = DmcFolders.MakeCurrentDmcFolder(DmcFolders.NewTemp());
         try
         {
-            var result = TestEnv.Run(DmcRunner.Binary(), ["play", "--continue"],
+            var result = TestEnv.Run(DmcRunner.Binary(), ["play", "--continue"], cwd: dmcFolder,
                 environment: new Dictionary<string, string?> { ["PATH"] = empty });
             AssertOneLine(result, "dmc play with no claude on the PATH");
             Assert.AreEqual(127, result.ExitCode, "the shell's code for a command that is not found");
@@ -184,6 +190,7 @@ public sealed partial class ErrorPathTests
         finally
         {
             Directory.Delete(empty, recursive: true);
+            DmcFolders.Delete(dmcFolder);
         }
     }
 

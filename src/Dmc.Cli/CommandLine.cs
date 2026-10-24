@@ -15,8 +15,7 @@ public static class CommandLine
 
     /// <summary>
     /// Runs one <c>dmc</c> invocation. <c>--version</c> and <c>-h</c>/<c>--help</c>/<c>help</c> are answered here; any
-    /// other first argument must name a command. Unless the command is <see cref="ICommand.NeverFails"/>, the
-    /// stale-binary warning is checked first. A <see cref="DmcException"/> prints as <c>dmc &lt;command&gt;: message</c>
+    /// other first argument must name a command. A <see cref="DmcException"/> prints as <c>dmc &lt;command&gt;: message</c>
     /// and exits with its own code; any other exception prints the same way with the exception's type name added, and
     /// exits 1. A never-fails command swallows every exception and exits 0 with nothing printed.
     /// </summary>
@@ -55,8 +54,6 @@ public static class CommandLine
 
         try
         {
-            if (!command.NeverFails)
-                StaleBinaryCheck.Run(io.Err);
             return command.Run(args[1..], io);
         }
         catch (Exception) when (command.NeverFails)

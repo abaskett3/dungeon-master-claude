@@ -298,7 +298,8 @@ public sealed class PlayTests
             Assert.AreEqual(Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(workedIn).TrimEnd(Path.DirectorySeparatorChar));
             CollectionAssert.AreEqual(ClaudeArgs("--continue", "two words"), args);
             string programFolder = Path.GetDirectoryName(DmcRunner.Binary())!;
-            StringAssert.StartsWith(path, programFolder + Path.PathSeparator);
+            // The fake claude put first on the PATH the binary inherited comes right after the program folder (a shim may add its own folder before both).
+            StringAssert.Contains(path, programFolder + Path.PathSeparator + claude);
         }
         finally
         {

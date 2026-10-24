@@ -95,7 +95,7 @@ public sealed class TestMachine : IDisposable
     /// <param name="files">The generated files it writes; a small fixed set when null.</param>
     internal Machine Machine(string version = "1.2.3", IReadOnlyList<GeneratedFile>? files = null)
     {
-        Environment["LOCALAPPDATA"] ??= Path.Combine(Home, "AppData", "Local");
+        Environment.TryAdd("LOCALAPPDATA", Path.Combine(Home, "AppData", "Local"));
         return new Machine(name => Environment.GetValueOrDefault(name), Cwd, Home, Windows, RunningFolder, RunningExecutable,
             version, files ?? Files(), () => Now, Windows ? UserPath : null, () => Terminal);
     }

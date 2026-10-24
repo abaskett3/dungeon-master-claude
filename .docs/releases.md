@@ -50,7 +50,7 @@ openssl ecparam -name prime256v1 -genkey -noout -out backup.pem
 openssl ec -in backup.pem -pubout -out backup.pub.pem
 ```
 
-- **The public keys** (`active.pub.pem`, `backup.pub.pem`) go into `src/Dmc.Cli/Install/ReleaseKeys.cs`, in the constants `ActivePublicKey` and `BackupPublicKey`: replace the placeholder text with the whole PEM, header and footer lines included, every line indented as far as the closing quotes. They are public; they are part of the source. `ReleaseKeysTests` fails until both are real keys.
+- **The public keys** (`active.pub.pem`, `backup.pub.pem`) go into `src/Dmc.Cli/Install/ReleaseKeys.cs`, in the constants `ActivePublicKey` and `BackupPublicKey`: the whole PEM, header and footer lines included, every line indented as far as the closing quotes. They are public; they are part of the source. `ReleaseKeysTests` fails unless both are real, distinct P-256 keys.
 - **The active private key** (`active.pem`) goes into the environment `release` as the secret `DMC_RELEASE_SIGNING_KEY` (the whole file, as text) and nowhere else. Then delete the local copy, or keep it only where you keep secrets.
 - **The backup private key** (`backup.pem`) is kept offline, by you, and never uploaded anywhere. It exists only for the recovery below.
 

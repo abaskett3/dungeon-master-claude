@@ -14,22 +14,27 @@ public sealed class ReleaseKeys
 {
     /// <summary>
     /// The active public key, PEM <c>SubjectPublicKeyInfo</c>: the key whose private half is the secret
-    /// <c>DMC_RELEASE_SIGNING_KEY</c> of the GitHub environment <c>release</c>. A placeholder until the maintainer makes the
-    /// keys (human step H1, <c>.docs/releases.md</c> § Release keys): while it is one, no release verifies and
-    /// <c>ReleaseKeysTests</c> fails. To replace it, paste the PEM of <c>active.pub.pem</c> in place of the placeholder text,
-    /// every line indented at least as far as the closing quotes (a raw string literal drops that indentation). The release
-    /// workflow checks that the key in the secret is one of the keys written here, by its base64 body.
+    /// <c>DMC_RELEASE_SIGNING_KEY</c> of the GitHub environment <c>release</c>, made by the maintainer in human step H1
+    /// (<c>.docs/releases.md</c> § Release keys). Every line is indented at least as far as the closing quotes, which a raw
+    /// string literal drops. The release workflow checks that the key in the secret is one of the keys written here, by its
+    /// base64 body.
     /// </summary>
     public const string ActivePublicKey = """
-        REPLACE WITH THE ACTIVE PUBLIC KEY (H1): paste all of active.pub.pem here, from -----BEGIN PUBLIC KEY----- to -----END PUBLIC KEY-----
+        -----BEGIN PUBLIC KEY-----
+        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhFOH7kDjqnwSpSEN1vqq7dQ4xjJt
+        Q5e/2DgwDxm1iiCCcuv2J7234D7a5zPNw13i93+Tp1RRCU+bnbTRihWqHg==
+        -----END PUBLIC KEY-----
         """;
 
     /// <summary>
     /// The backup public key, PEM <c>SubjectPublicKeyInfo</c>: its private half is kept offline by the maintainer and signs
-    /// the next release by hand if the active key is lost or exposed. A placeholder until human step H1.
+    /// the next release by hand if the active key is lost or exposed. Made in human step H1.
     /// </summary>
     public const string BackupPublicKey = """
-        REPLACE WITH THE BACKUP PUBLIC KEY (H1): paste all of backup.pub.pem here, from -----BEGIN PUBLIC KEY----- to -----END PUBLIC KEY-----
+        -----BEGIN PUBLIC KEY-----
+        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVihFONt4Xx0dKHiKP33CIYSDiSo1
+        os40NspD2lovzevm0hQtJftpcvTFSQOFVIl/7NjNxgc9Ldx5RBBJNR/OAw==
+        -----END PUBLIC KEY-----
         """;
 
     /// <summary>The object identifier of the curve P-256 (prime256v1, secp256r1), the only curve a release key may use.</summary>
@@ -50,7 +55,7 @@ public sealed class ReleaseKeys
 
     /// <summary>
     /// Whether a signature of some data is valid under any of the keys: ECDSA P-256 with SHA-256, DER-encoded
-    /// (<see cref="DSASignatureFormat.Rfc3279DerSequence"/>). A key that cannot be read, such as a placeholder, never verifies
+    /// (<see cref="DSASignatureFormat.Rfc3279DerSequence"/>). A key that cannot be read never verifies
     /// anything; a signature that is not well formed does not verify either.
     /// </summary>
     /// <param name="data">The signed bytes, <c>SHA256SUMS.txt</c> exactly as it was downloaded.</param>
@@ -77,7 +82,7 @@ public sealed class ReleaseKeys
     /// <summary>Reads a public key from its PEM text.</summary>
     /// <param name="pem">The PEM <c>SubjectPublicKeyInfo</c> text.</param>
     /// <returns>The key, which the caller disposes.</returns>
-    /// <exception cref="CryptographicException">The text is not a PEM public key, or is not an elliptic-curve key (<see cref="ArgumentException"/> when it holds no PEM at all, as for a placeholder).</exception>
+    /// <exception cref="CryptographicException">The text is not a PEM public key, or is not an elliptic-curve key (<see cref="ArgumentException"/> when it holds no PEM at all).</exception>
     internal static ECDsa Parse(string pem)
     {
         var key = ECDsa.Create();

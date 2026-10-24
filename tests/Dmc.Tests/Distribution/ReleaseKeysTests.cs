@@ -9,9 +9,7 @@ namespace Dmc.Tests.Distribution;
 /// <summary>
 /// The release keys built into <c>dmc</c> (research R16, FR-027): the two built-in public keys are real P-256 keys and are not a
 /// test key, and the check accepts a DER ECDSA SHA-256 signature by either key of a set and nothing else, including a signature
-/// made by <c>openssl dgst -sha256 -sign</c>, which is what the release workflow uses. The built-in keys are placeholders until
-/// the maintainer pastes the real ones (human step H1); <see cref="BothBuiltInKeysParseAndAreDistinct"/> fails until then, which
-/// is the intended gate before PR 2 merges.
+/// made by <c>openssl dgst -sha256 -sign</c>, which is what the release workflow uses.
 /// </summary>
 [TestClass]
 public sealed class ReleaseKeysTests

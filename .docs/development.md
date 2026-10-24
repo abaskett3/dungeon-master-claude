@@ -69,8 +69,6 @@ pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium
 
 The tests never touch `adventures/`.
 
-`ReleaseKeysTests.BothBuiltInKeysParseAndAreDistinct` and `NeitherBuiltInKeyIsTheTestKey` fail while `src/Dmc.Cli/Install/ReleaseKeys.cs` holds the placeholder keys; they pass once the maintainer's two public keys are pasted there (see [releases.md](releases.md#release-keys)).
-
 ### Layers
 
 | Layer | Where | What it checks |

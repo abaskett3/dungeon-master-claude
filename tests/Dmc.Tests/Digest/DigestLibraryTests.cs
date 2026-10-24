@@ -403,6 +403,32 @@ public sealed class DigestCallsPerMessageTests
             StringAssert.Contains(text, expected);
     }
 
+    /// <summary>
+    /// The player skills are called <c>dmc-campaign-full-save</c> and <c>dmc-resume-campaign</c> since they moved to the DMC
+    /// folder, and the logs of sessions played before keep the old names: both are a full save and a resume, so the same log
+    /// with either spelling gives the same statistics.
+    /// </summary>
+    [TestMethod]
+    public void TheRenamedSaveAndResumeSkillsAreClassedLikeTheOldOnes()
+    {
+        var renamed = CallRecords().Select(r => (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse(
+            r.ToJsonString().Replace("campaign-full-save", "dmc-campaign-full-save", StringComparison.Ordinal)
+                .Replace("\"resume-campaign\"", "\"dmc-resume-campaign\"", StringComparison.Ordinal))!).ToList();
+        var session = new Session(WriteLog(_folder, renamed, "dddd6666-0000"));
+        Assert.IsTrue(session.Turns[4].Skills.Contains("dmc-campaign-full-save"));
+        Assert.IsFalse(session.Turns[4].Skills.Contains("campaign-full-save"));
+        CollectionAssert.AreEquivalent(new[] { "dmc-resume-campaign" }, session.Turns[5].Skills.Select(k => k.Display).ToArray());
+        // The lines that count the full save and the resume are the same; only the skill names differ.
+        static string[] Classified(string stats) => stats.Split('\n').Where(l => l.StartsWith("  - Full save", StringComparison.Ordinal) || l.StartsWith("  - Resume", StringComparison.Ordinal) || l.Contains("Full save at", StringComparison.Ordinal)).ToArray();
+        CollectionAssert.AreEqual(Classified(Report.Stats(_s)), Classified(Report.Stats(session)));
+        StringAssert.Contains(Report.Stats(session), "Full save at player message 5");
+        foreach (string name in new[] { "campaign-full-save", "dmc-campaign-full-save" })
+            Assert.IsTrue(Session.UsedAny([name], Session.SaveSkills), name);
+        foreach (string name in new[] { "resume-campaign", "dmc-resume-campaign" })
+            Assert.IsTrue(Session.UsedAny([name], Session.ResumeSkills), name);
+        Assert.IsFalse(Session.UsedAny(["draw-map", "dmc-draw-map"], Session.SaveSkills));
+    }
+
     [TestMethod]
     public void StatsWithoutExtraCallsOrEdits()
     {

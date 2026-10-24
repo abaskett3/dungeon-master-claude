@@ -132,6 +132,17 @@ public sealed class ContextCheckEdgeTests
             ContextCheckContract.Assistant(10000, sidechain: true).ToJsonString(), Assistant(142000),
             User(), Assistant(150000), User(), Assistant(170000))));
 
+    // The skill is /dmc-resume-campaign in a DMC folder and was /resume-campaign before: the baseline needs no marker for the
+    // resume, so both give the same answer (and a log of either kind keeps working).
+    [TestMethod]
+    public void TheRenamedResumeSkillGivesTheSameBaselineAsTheOldOne()
+    {
+        string[] rest = [Meta, Assistant(31000), ToolResult, Assistant(120000), Assistant(142000), User(), Assistant(150000), User(), Assistant(170000)];
+        var expected = new ContextReading(170000, 142000);
+        Assert.AreEqual(expected, Reading(Write([Command("dmc-resume-campaign"), .. rest])));
+        Assert.AreEqual(expected, Reading(Write([Command("resume-campaign"), .. rest])));
+    }
+
     // Two resumes: a resume after the first player message, which the player runs mid-session, does not move the
     // baseline, so it cannot hide that the context has grown.
     [TestMethod]

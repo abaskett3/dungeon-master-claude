@@ -191,7 +191,7 @@ kit/                 the source of everything dmc writes into a DMC folder, embe
 .claude/settings.json  permissions for toolkit work
 .specify/            Spec Kit's templates, scripts and install state (toolkit work only)
 specs/               specs, plans and task lists Spec Kit writes, one folder per change (toolkit work only)
-tools/               get-dmc.ps1 and get-dmc.sh, dmc-release.json: the release machinery that the next change replaces
+tools/               install.ps1 and install.sh: the install line, attached to every release
 src/Dmc.Cli/         dmc's source code (C#, .NET 10)
 tests/Dmc.Tests/     checks that dmc, the skills and the settings still work
 ```
@@ -223,7 +223,7 @@ Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-
 
 To try a change to the rules, a skill or a template, edit `kit/`, publish, and run `artifacts/bin/dmc install --path <scratch folder>` (or `artifacts/bin/dmc refresh <scratch folder>` on one you made before), then play there in a new session. The program you installed with `--force` is not changed by that: a development build installs itself only when asked.
 
-A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds it for every system, publishes it and opens a pull request that pins it in `tools/dmc-release.json`.
+A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds and checks it for every system, then, once the maintainer approves, signs its checksum list and publishes an immutable release. Players take it with the install line or `dmc update`. See [releases.md](.docs/releases.md).
 
 ## Tips
 

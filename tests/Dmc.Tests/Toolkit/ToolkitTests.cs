@@ -591,8 +591,8 @@ public sealed partial class ToolkitTests
     [TestMethod]
     public void ShellScriptsHaveUnixLineEndingsAndAreExecutable()
     {
-        // The release workflow still runs these until it is rewritten (PR 2 of #67).
-        string[] scripts = ["tools/get-dmc.sh", ".github/release/write-pin.sh"];
+        // The install line for Linux, which every release carries, and the script that signs a release's checksum list.
+        string[] scripts = ["tools/install.sh", ".github/release/sign.sh"];
         foreach (string script in scripts)
             Assert.DoesNotContain((byte)'\r', File.ReadAllBytes(Path.Combine(TestEnv.Root, script)), $"{script} has Windows line endings");
         StringAssert.Contains(Read(".gitattributes"), "*.sh text eol=lf");

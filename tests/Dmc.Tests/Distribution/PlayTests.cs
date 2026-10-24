@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using Dmc.Commands;
 using Dmc.Kit;
 using Dmc.Tests.Support;
@@ -12,7 +10,7 @@ namespace Dmc.Tests.Distribution;
 /// <c>dmc play</c> (contract <c>dmc-play.md</c>): the folder it plays in, the refresh before the start, the <c>PATH</c> it
 /// gives Claude Code, the fixed arguments and the player's own, and what it says when it cannot start. In-process over a
 /// <see cref="TestMachine"/> that records the process it would start, and once through the published binary with a fake
-/// <c>claude</c>. Also the pin file's format, which stays until the release workflow stops using it.
+/// <c>claude</c>.
 /// </summary>
 [TestClass]
 public sealed class PlayTests
@@ -309,31 +307,13 @@ public sealed class PlayTests
     }
 
     /// <summary>
-    /// The pin is in the form get-dmc.sh reads. The project's version stays the development one, which no release has:
-    /// the release workflow gets a release's version from its tag and never writes it into the project, so a build
-    /// made here cannot pass for the pinned release. (The pin goes with <c>get-dmc</c> when the release workflow is rewritten.)
+    /// The project's version stays the development one, which no release has: the release workflow gets a release's version
+    /// from its tag and never writes it into the project, so a build made here cannot pass for a release.
     /// </summary>
     [TestMethod]
-    public void ThePinIsReadableAndTheProjectsVersionIsTheDevelopmentOne()
+    public void TheProjectsVersionIsTheDevelopmentOne()
     {
-        string text = File.ReadAllText(Path.Combine(TestEnv.Root, "tools", "dmc-release.json"));
-        using var pin = JsonDocument.Parse(text);
         string project = File.ReadAllText(Path.Combine(TestEnv.Root, "src", "Dmc.Cli", "Dmc.Cli.csproj"));
         StringAssert.Contains(project, "<Version>0.0.0-dev</Version>");
-        string tag = pin.RootElement.GetProperty("tag").GetString()!;
-        var hashes = pin.RootElement.GetProperty("sha256").EnumerateObject().ToArray();
-        if (tag.Length == 0)
-        {
-            Assert.IsEmpty(hashes, "no hashes without a tag");
-            return;
-        }
-        StringAssert.Matches(tag, new Regex(@"^dmc-v\d+\.\d+\.\d+$"));
-        var lines = text.ReplaceLineEndings("\n").Split('\n');
-        Assert.IsTrue(lines.Any(l => Regex.IsMatch(l, $"^\\s*\"tag\"\\s*:\\s*\"{tag}\"")), "the tag on a line of its own");
-        foreach (var hash in hashes)
-        {
-            Assert.IsTrue(lines.Any(l => Regex.IsMatch(l, $"^\\s*\"{hash.Name}\"\\s*:\\s*\"[0-9a-f]{{64}}\"")),
-                $"the SHA-256 of {hash.Name} on a line of its own");
-        }
     }
 }

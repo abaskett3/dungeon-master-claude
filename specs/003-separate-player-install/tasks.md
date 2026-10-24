@@ -179,7 +179,7 @@ is in Phase 9.)
 
 **Independent Test**: quickstart §3, §1 step 1, and §2 step 2's update.
 
-- [ ] T052 Start PR 2 on a fresh branch from `origin/main` after PR 1 has merged.
+- [x] T052 Start PR 2 on a fresh branch from `origin/main` after PR 1 has merged.
 - [ ] T053 🧑 HUMAN (H1) [US3] Ask the user to make two ECDSA P-256 key pairs (active and backup) with the commands T060 writes into `.docs/releases.md` (`openssl ecparam -name prime256v1 -genkey -noout -out <name>.pem` and `openssl ec -in <name>.pem -pubout -out <name>.pub.pem`), keep the backup private key offline, and paste the two **public** keys. Never ask for or accept a private key.
 - [ ] T054 [US3] Create `src/Dmc.Cli/Install/ReleaseKeys.cs` with the two public keys from T053 (PEM `SubjectPublicKeyInfo`), and `Verify(byte[] data, byte[] derSignature)` = true if either key verifies with `ECDsa.VerifyData(data, sig, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence)`. A constructor taking other keys is `internal`, for tests only; nothing reads keys from the environment or a file.
 - [ ] T055 [US3] Create `src/Dmc.Cli/Install/ReleaseSource.cs`: the latest release from `https://api.github.com/repos/abaskett3/dungeon-master-claude/releases/latest` (or `DMC_UPDATE_TEST_ASSETS`, whose `latest.json` holds the tag and asset digests), read with `JsonDocument`; download with a stall timeout; `SHA256SUMS.txt` and `SHA256SUMS.txt.sig` verified with `ReleaseKeys`; the archive for this RID checked against the signed list and the API's `digest` (`sha256:<hex>`); unpack (`ZipFile`, or `TarFile` with `GZipStream`) into `<program folder>/.update-<random>/`. No setting skips any check (FR-028).

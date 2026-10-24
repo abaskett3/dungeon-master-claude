@@ -3,6 +3,7 @@ status: open
 category: other
 source: player
 recorded: YYYY-MM-DD
+dmc: X.Y.Z
 ---
 <!--
 One file per piece of feedback about how DMC itself runs the game, saved as feedback/YYYY-MM-DD-<slug>.md. It must make sense without the adventure: a worker has to understand it and act on it even if the campaign has been deleted. It is not for the player's tastes (those are lines in a player-options.md): the test is whether the same behaviour would have been wrong for a different player with different preferences.
@@ -18,6 +19,7 @@ category (pick one; the frontmatter above holds placeholders to replace):
   maps         a map that disagreed with the state, was drawn late, or was not drawn
   bookkeeping  a campaign file overwritten, left stale or deleted; a fact not saved
   other        anything else about DMC itself
+dmc: the version number of dmc when the entry was recorded, from `dmc --version` without the leading "dmc " (for example 0.2.0)
 source:
   player             the player said it in play
   DMC                DMC's own slip forced a rewind or a rebuilt file

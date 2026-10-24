@@ -1,11 +1,11 @@
 ---
-name: record-feedback
+name: dmc-record-feedback
 description: The one and only way to record feedback about how DMC itself runs the game. Invoke it whenever the player says something is wrong with DMC (a mistake, an inconsistency, context use, combat procedure, pacing, what DMC offers), corrects a DMC slip, or says "feedback:", and when a slip of your own forced a rewind or a rebuilt file. Never record such feedback by hand, or anywhere else. A preference about the player's own game is a player option, not feedback.
 ---
 
 # Record feedback
 
-Feedback is something wrong with how DMC itself operates, which DMC should change. It has exactly one route, so it is never lost: this skill writes it to `feedback/` at the toolkit root, one file per piece of feedback. It never goes into `game-state.md`, `dm-notes.md`, `canon.md`, the session logs, a `player-options.md` or a new file in the campaign folder, and never as a note on another entry. Invoke this skill; do not run its steps by hand. A worker acts on the entries later with `review-feedback`. During play you only record: never edit `CLAUDE.md`, the skills, the templates or the hooks mid-game.
+Feedback is something wrong with how DMC itself operates, which DMC should change. It has exactly one route, so it is never lost: this skill writes it to `feedback/` in the DMC folder, one file per piece of feedback. It never goes into `game-state.md`, `dm-notes.md`, `canon.md`, the session logs, a `player-options.md` or a new file in the campaign folder, and never as a note on another entry. Invoke this skill; do not run its steps by hand. A worker acts on the entries later with `review-feedback`. During play you only record: never edit `CLAUDE.md`, the skills, the templates or the hooks mid-game.
 
 ## 1. Classify
 
@@ -27,6 +27,7 @@ Create `feedback/YYYY-MM-DD-<slug>.md` from `templates/feedback.md` with one Wri
 - Quote the player exactly under What the player said. For a slip of your own, write "none".
 - Occurrences: date, campaign folder, story session number, the in-game moment, and the quote to search for in the session log.
 - Set `source:` to `player`, or `DMC` for a slip of your own, and pick the `category:` the template defines.
+- Set `dmc:` to the version number alone: run `dmc --version` and drop the leading `dmc ` (`dmc: 0.2.0`); it is the only shell command this step runs.
 - Done in play: a rewind or ruling you made, or "none".
 - Point at campaign files only under Context.
 

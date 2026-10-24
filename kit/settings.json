@@ -1,0 +1,134 @@
+{
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
+  "skillOverrides": {
+    "docs": "off",
+    "docx": "off",
+    "pptx": "off",
+    "xlsx": "off",
+    "pdf": "off",
+    "google-workspace": "off",
+    "computer-use": "off",
+    "built-in-browser": "off",
+    "chrome-browser": "off",
+    "deep-research": "off",
+    "morning": "off",
+    "skill-creator": "off",
+    "import-memory": "off",
+    "plugin-authoring": "off"
+  },
+  "permissions": {
+    "allow": [
+      "Edit(adventures/**)",
+      "Edit(feedback/**)",
+      "Edit(modules/**)",
+      "Edit(rules/**)",
+      "Bash(dmc *)",
+      "PowerShell(dmc *)"
+    ],
+    "deny": [
+      "mcp__*",
+      "ListMcpResourcesTool",
+      "ReadMcpResourceTool",
+      "Artifact*",
+      "NotebookEdit",
+      "LSP",
+      "EnterWorktree",
+      "ExitWorktree",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "ScheduleWakeup",
+      "RemoteTrigger",
+      "PushNotification",
+      "ReportFindings",
+      "ShareOnboardingGuide",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "Bash(mv *)",
+      "Bash(git clean *)",
+      "Bash(find * -delete*)",
+      "Bash(xargs rm*)",
+      "Bash(xargs * rm*)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(rm *)",
+      "PowerShell(del *)",
+      "PowerShell(erase *)",
+      "PowerShell(rd *)",
+      "PowerShell(ri *)",
+      "PowerShell(rmdir *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(mi *)",
+      "PowerShell(move *)",
+      "PowerShell(mv *)",
+      "PowerShell(git clean *)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/.claude/**)",
+      "Edit(/templates/**)",
+      "Edit(/.dmc/**)",
+      "Write(/CLAUDE.md)",
+      "Write(/.claude/**)",
+      "Write(/templates/**)",
+      "Write(/.dmc/**)",
+      "Bash(dmc update*)",
+      "Bash(dmc install*)",
+      "Bash(dmc refresh*)",
+      "PowerShell(dmc update*)",
+      "PowerShell(dmc install*)",
+      "PowerShell(dmc refresh*)"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"DMC campaign in progress. In the summary, preserve exactly: the active campaign folder name, the current scene and location, the in-world date and time, whose turn it is and the full combat tracker if a fight is running, any pending roll or unanswered question to the player, and every change to HP, spell slots, conditions, inventory, gold, quests or established facts that has not yet been written to the campaign files. List those unsaved changes explicitly under a heading UNSAVED CHANGES.\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"DMC: the conversation was just compacted. Before narrating anything: write any UNSAVED CHANGES from the summary to the campaign files, then follow the dmc-resume-campaign skill to reload the campaign from disk. Where the summary and the files disagree about anything already saved, the files are correct.\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dmc --version >/dev/null 2>&1 || echo \"DMC: dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall DMC with the install line in its README\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(dmc redraw 2>&1); s=$?; if [ \"$s\" = 2 ]; then printf '%s\\n' \"$out\" >&2; exit 2; fi; exit 0",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dmc context-check 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

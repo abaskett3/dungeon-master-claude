@@ -1,5 +1,5 @@
 ---
-name: rewind-campaign
+name: dmc-rewind-campaign
 description: Take the active campaign back to an earlier moment by agreement with the player, undoing everything after it, and bring every campaign file into line with that moment. Use when the player asks to rewind, redo or undo more than the last exchange, or when a DM mistake has to be unwound.
 ---
 
@@ -51,4 +51,4 @@ Then search the campaign folder for the names of things that existed only in the
 
 ## 5. Resume
 
-Run the consistency check from `campaign-full-save` (step 7). Then tell the player, out of character and briefly: the moment the game is back at, the party's condition, and any figure you had to reconstruct that they may want to correct. Restate the scene and ask what they do.
+Run the consistency check from `dmc-campaign-full-save` (step 7). Then tell the player, out of character and briefly: the moment the game is back at, the party's condition, and any figure you had to reconstruct that they may want to correct. Restate the scene and ask what they do.

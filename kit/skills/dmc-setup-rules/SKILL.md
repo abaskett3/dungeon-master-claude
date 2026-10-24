@@ -1,5 +1,5 @@
 ---
-name: setup-rules
+name: dmc-setup-rules
 description: Index a local copy of the D&D 5e SRD (or other rules reference) in the rules/ folder so DMC can look rules up by page or search instead of relying on memory. Use after the player adds a rules file to rules/, or when rules/ has files but no index.
 ---
 
@@ -14,7 +14,7 @@ List `rules/`. If it holds nothing but `.gitkeep`, tell the player how to add th
 Note the format of each file:
 
 - **Markdown or text**: searchable directly with Grep. An index is still useful for knowing which file covers what.
-- **PDF**: run `./bin/dmc pdf text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. (Without `dmc`, skip this step.) To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `./bin/dmc pdf render <pdf> --pages N`. A PDF still needs a page index to be usable.
+- **PDF**: run `dmc pdf text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. (Without `dmc`, skip this step.) To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `dmc pdf render <pdf> --pages N`. A PDF still needs a page index to be usable.
 
 ## 2. Build `rules/index.md`
 

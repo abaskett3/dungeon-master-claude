@@ -1,5 +1,5 @@
 ---
-name: resume-campaign
+name: dmc-resume-campaign
 description: Load a saved campaign from disk and recap it for the player. Use at the start of every play session, after a context compaction or /clear, or whenever DMC is unsure of the current state of the game.
 ---
 
@@ -26,9 +26,9 @@ Open each file with the Read tool, one call per file (several calls can go in on
 
    Either way, read the log once; do not read it again in section 3, "Check the state".
 7. `story/canon.md`, by its size. Count its lines with the Grep tool (pattern `^`, count mode).
-   - **Under about 230 lines** (the archive level of `campaign-full-save`, step 4): read it whole.
+   - **Under about 230 lines** (the archive level of `dmc-campaign-full-save`, step 4): read it whole.
    - **Past that**: do not read it whole. Find its section headings with Grep (pattern `^## `, line numbers on, `head_limit` 0). Read these sections whole, whatever the scene, because leaving one out is how a ruling or a promise gets contradicted: **Rulings**, and **Prices, debts and promises**. Read any other section whose comment under its heading says "Always read". Then search the rest, case-insensitive, for the names, places and threads in `game-state.md`'s Scene block (Location, Present, What is happening, The player was about to), its Active quests and its Pending lines: one Grep call, the terms joined with `|`, `head_limit` 0 so nothing is cut off, lines shown. Use the distinctive word of a name (a surname, a place) and put a backslash before any of `. ( ) [ ] { } * + ? ^ $ | \`; if the pattern is rejected, search the terms one at a time. Search again whenever a subject comes up that you have not read (CLAUDE.md § Accuracy). Do not archive anything now: that belongs to the full save, which may rightly keep a long canon when every subject in it is still live.
-8. Any map in `maps/` for the current location, except one that Pending in `game-state.md` lists as from the undone stretch of a rewind (never load or draw it). If a fight is running or the scene names a map, run `./bin/dmc map adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `draw-map` skill), and check its positions against the combat tracker.
+8. Any map in `maps/` for the current location, except one that Pending in `game-state.md` lists as from the undone stretch of a rewind (never load or draw it). If a fight is running or the scene names a map, run `dmc map adventures/<campaign>/maps/live.json --open` so the player has it on screen again (see the `dmc-draw-map` skill), and check its positions against the combat tracker.
 9. If `module-progress.md` exists, this is a published-module campaign: read it, then the module's `index.md`, then the section of the chapter digest it names under "Digest to read before continuing". If that chapter has not been ingested, say so and ingest it before play. If its chapter status shows the module finished, read neither `index.md` nor the digest.
 
 Read other NPC sheets and older session logs only when they become relevant. Do not read `story/canon-archive.md` or `story/dm-notes-archive.md`: they hold what can no longer come up, and are searched when a subject returns.

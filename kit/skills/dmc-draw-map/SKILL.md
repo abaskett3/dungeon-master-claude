@@ -1,5 +1,5 @@
 ---
-name: draw-map
+name: dmc-draw-map
 description: Draw a map of the current room, battlefield, building, town or region as a picture in the player's browser, so they can see where things are, and save it if the place may be revisited. Use at the start of combat, when positions matter, when anyone moves in a fight, when the player asks for a map or seems confused about the layout.
 ---
 
@@ -76,7 +76,7 @@ T  tree            o  pillar/boulder  _  table/low cover
 
 Tokens: `id` is one or two characters (`@` for the player character, a letter for each named ally or NPC, a number for each enemy). `kind` is `pc`, `ally`, `enemy` or `neutral`. `at` is the top-left cell; `size` is the width in cells (2 Large, 3 Huge, 4 Gargantuan); above 5 ft it counts as 1, and several tokens may share a cell. `note` is a short status the player can see (prone, on the ledge, 10 ft up). `down` greys out a creature that is dead or unconscious.
 
-The full format is in `.claude/skills/draw-map/map-format.md`.
+The full format is in `.claude/skills/dmc-draw-map/map-format.md`.
 
 ## What must not be in these files
 
@@ -89,7 +89,7 @@ Draw only what exists now. Something the party is thinking of placing (a triplin
 Run `dmc map` on the scene (or on a place file, to show a place with nobody on it):
 
 ```
-./bin/dmc map adventures/<campaign>/maps/live.json --png
+dmc map adventures/<campaign>/maps/live.json --png
 ```
 
 - It refuses a map with a mistake in it (rows of different lengths, an unknown symbol, a creature in a wall or off the edge, two creatures on one cell) and says what is wrong. Fix the file and run it again.

@@ -1,5 +1,5 @@
 ---
-name: ingest-module
+name: dmc-ingest-module
 description: Read a published D&D adventure module (PDF, text, Markdown, HTML or EPUB) and turn it into an indexed DM digest under modules/, so DMC can run it accurately and track progress through it. Use when the player wants to play a published module, supplies a module file, or when a chapter needed for play has not been ingested yet.
 ---
 
@@ -20,8 +20,8 @@ If `modules/<module>/index.md` already exists, read its ingest status and contin
 Reading the source:
 
 - **PDF**: extract it with `dmc pdf`, then read the output. This works whatever the file's size (the Read tool refuses PDFs over 100 MB) and gives you both the words and the pictures.
-  1. `./bin/dmc pdf info <pdf>` lists every page with its amount of text and number of images, and names the pages that have little or no text (scans, maps, full-page art).
-  2. `./bin/dmc pdf all <pdf>` writes `source/extracted/all-text.txt` (every page, split by `===== PDF PAGE N =====` lines), `source/extracted/text/page-NNN.txt` and `source/extracted/pages/page-NNN.jpg` (a picture of each page). For a long book, do a chapter at a time with `--pages 1-40`. Use `--dpi 160` for a page whose small print or map labels are hard to read at the default.
+  1. `dmc pdf info <pdf>` lists every page with its amount of text and number of images, and names the pages that have little or no text (scans, maps, full-page art).
+  2. `dmc pdf all <pdf>` writes `source/extracted/all-text.txt` (every page, split by `===== PDF PAGE N =====` lines), `source/extracted/text/page-NNN.txt` and `source/extracted/pages/page-NNN.jpg` (a picture of each page). For a long book, do a chapter at a time with `--pages 1-40`. Use `--dpi 160` for a page whose small print or map labels are hard to read at the default.
   3. Read the text files for the words. **Look at the page images too**, with the Read tool, one page per call: see "Pictures" below.
   - If `dmc` is unavailable, fall back to the Read tool's `pages` parameter (at most 20 pages per call; it shows pages as images as well as text) and tell the player that a PDF over 100 MB needs `dmc`.
 - **Markdown, text, HTML**: read directly, in sections. Open any image files they link to.
@@ -76,7 +76,7 @@ Write in your own words, as terse DM notes, not a copy of the text. Each digest 
   - whether there is read-aloud text, and its page (leave the wording in the source; read it from there at the table)
 - **NPCs in this chapter**: who, where, what they want, what they know, what they will do.
 - **Clues and information**: what the party can learn here and where each clue points.
-- **Maps**: the page of each map, plus an ASCII sketch of the layout with the area numbers for DM use. A player-facing version is drawn later with the `draw-map` skill, showing only what has been seen.
+- **Maps**: the page of each map, plus an ASCII sketch of the layout with the area numbers for DM use. A player-facing version is drawn later with the `dmc-draw-map` skill, showing only what has been seen.
 - **Milestones**: level-ups or story beats that end the chapter.
 
 Copy numbers exactly: DCs, damage, quantities, HP, prices, distances. A wrong number here becomes a wrong fact in play.

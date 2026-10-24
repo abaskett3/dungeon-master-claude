@@ -1,49 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Edit(adventures/**)",
-      "Edit(feedback/**)",
-      "Edit(modules/**)",
-      "Edit(rules/**)",
-      "Bash(./bin/dmc *)",
-      "PowerShell(./bin/dmc *)",
-      "PowerShell(.\\bin\\dmc *)",
-      "Bash(./bin/dmc.exe *)",
-      "PowerShell(./bin/dmc.exe *)",
-      "PowerShell(.\\bin\\dmc.exe *)",
-      "Bash(bash tools/get-dmc.sh*)",
-      "PowerShell(powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1*)"
-    ]
-  },
-  "hooks": {
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"DMC campaign in progress. In the summary, preserve exactly: the active campaign folder name, the current scene and location, the in-world date and time, whose turn it is and the full combat tracker if a fight is running, any pending roll or unanswered question to the player, and every change to HP, spell slots, conditions, inventory, gold, quests or established facts that has not yet been written to the campaign files. List those unsaved changes explicitly under a heading UNSAVED CHANGES.\""
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"DMC: the conversation was just compacted. Before narrating anything: write any UNSAVED CHANGES from the summary to the campaign files, then follow the resume-campaign skill to reload the campaign from disk. Where the summary and the files disagree about anything already saved, the files are correct.\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/bin/dmc\" --version >/dev/null 2>&1 || echo \"DMC: bin/dmc is missing or does not run, so dice, maps and PDF reading will not work until it is fetched: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) once, before the first roll.\""
-          }
-        ]
-      }
+      "Bash(dmc folder)",
+      "Bash(dmc digest *)",
+      "PowerShell(dmc folder)",
+      "PowerShell(dmc digest *)"
     ]
   }
 }

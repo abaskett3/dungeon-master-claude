@@ -1,5 +1,5 @@
 ---
-name: campaign-full-save
+name: dmc-campaign-full-save
 description: Write the complete current state of the campaign to disk and verify it, so a new session could resume with no other context. Use when the player asks to save, when stopping play, before /compact or /clear, and at natural breaks in a long session.
 ---
 
@@ -11,11 +11,11 @@ The campaign folder is `adventures/<name>/`, where `<name>` is in `adventures/.a
 
 ## 1. Game state
 
-Follow the `update-game-state` skill so `game-state.md` matches this exact moment, including a fight in progress. This file is read whole at every resume: after the update, aim for under about 100 lines, one fact per line, with anything that is history (it belongs in the session log) cut.
+Follow the `dmc-update-game-state` skill so `game-state.md` matches this exact moment, including a fight in progress. This file is read whole at every resume: after the update, aim for under about 100 lines, one fact per line, with anything that is history (it belongs in the session log) cut.
 
 ## 2. Character sheets
 
-For each PC, companion and NPC who appeared since the last full save, follow the `character-sheet-update` skill. Check for anything gained, lost, learned or changed: items, gold, XP or level, spells, relationships, attitudes, goals, injuries, what each NPC now knows.
+For each PC, companion and NPC who appeared since the last full save, follow the `dmc-character-sheet-update` skill. Check for anything gained, lost, learned or changed: items, gold, XP or level, spells, relationships, attitudes, goals, injuries, what each NPC now knows.
 
 Add a line to `character-sheets/minor-npcs.md` for any named bit-part character met. Promote anyone who has become recurring to their own sheet.
 
@@ -67,4 +67,4 @@ Set the "Last full save" line in `game-state.md` to the real-world date and time
 
 If this save is a planned break (the player accepted a break offer and will start a fresh session), also add this line under Pending in `game-state.md`: `Planned break: restate the immediate situation only.`
 
-Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence, and any discrepancy you corrected. Do not list every file. For a planned break, end by telling them it is safe to type `/clear` and then `/resume-campaign`.
+Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence, and any discrepancy you corrected. Do not list every file. For a planned break, end by telling them it is safe to type `/clear` and then `/dmc-resume-campaign`.

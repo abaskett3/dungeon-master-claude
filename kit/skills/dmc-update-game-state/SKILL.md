@@ -1,5 +1,5 @@
 ---
-name: update-game-state
+name: dmc-update-game-state
 description: Bring the active campaign's game-state.md in line with the present moment of play (location, time, HP, resources, conditions, combat tracker, quests). Use after any change to those things, at the end of each combat round, and as part of a full save.
 ---
 

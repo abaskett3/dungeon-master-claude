@@ -63,7 +63,7 @@ Checked against the constitution **as amended by this feature** (research R13). 
 | IV. Documentation goes with every change | Each phase's PR updates its documents (below); `.docs/decisions.md` records the route, the superseded entries (R12) and the trust trade (R8); new scripts and workflows carry header comments; every new member an XML doc comment. | Pass, verified in each PR |
 | V. Tests skip locally, fail on CI | The bootstrap tests need PowerShell and bash, like `GetDmcTests` today, and follow the rule (R15). | Pass |
 | Build: Native AOT, warnings as errors | Only AOT-safe APIs (Technical Context). | Pass |
-| Build: one-line errors, small output | Every message one line; install at most three lines, refresh at most two per folder (contracts). | Pass |
+| Build: one-line errors, small output | Every message one line; install at most three lines (plus the refresh's on a reinstall), refresh at most two per folder (contracts). | Pass |
 | Workflow: Git, Spec Kit, one review per PR | Tracking issue #67 (reopened, or a new one: the user decides); PRs as below. | Pass |
 | Workflow: the toolkit tests check the prompts | They move to `kit/` and gain the checks in R15. | Pass |
 

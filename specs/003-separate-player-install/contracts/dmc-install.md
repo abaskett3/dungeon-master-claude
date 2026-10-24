@@ -29,7 +29,7 @@ dmc install: open a new terminal, then run dmc play            (or, Linux, when 
 dmc install: add ~/.local/bin to your PATH (for example in ~/.profile), then run dmc play
 ```
 
-At most three lines; exit 0.
+At most three lines, plus the refresh's lines (at most two) when it writes over an existing DMC folder; exit 0.
 
 ## Errors (one line on stderr, `dmc install: <message>`, exit 1)
 

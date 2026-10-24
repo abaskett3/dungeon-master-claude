@@ -6,10 +6,10 @@ This reference is for anyone who runs `dmc` by hand, writes prompts that call it
 
 | Who | Path |
 |---|---|
-| The player's install, which `get-dmc` owns | `./bin/dmc` (`bin/dmc.exe` on Windows; `./bin/dmc` also works in PowerShell and Git Bash) |
-| A developer's build | `artifacts/bin/dmc` (see [development.md](development.md)) |
+| A player | `dmc`, found on the `PATH`: `dmc install` copies the program to `%LOCALAPPDATA%\Programs\dmc` (Windows, on the user's `Path`) or `~/.local/share/dmc` (Linux, linked as `~/.local/bin/dmc`). `dmc play` also puts the program's folder first on the `PATH` of the Claude Code session it starts. |
+| A developer's build | `artifacts/bin/dmc` (see [development.md](development.md)). `artifacts/bin/dmc install --force` installs it as the player's `dmc`. |
 
-The prompts always write `./bin/dmc <command> ...`. Every such form is on the allow list in `.claude/settings.json`, so DMC never meets a permission prompt for it.
+The prompts write `dmc <command> ...`. `Bash(dmc *)` and `PowerShell(dmc *)` are on the allow list in the DMC folder's `.claude/settings.json` (from `kit/settings.json`), so DMC never meets a permission prompt for it. The same file denies `dmc install`, `dmc refresh` and `dmc update` to DMC.
 
 ```
 $ dmc --help
@@ -19,9 +19,12 @@ usage: dmc <command> [args]
   map           draw a map for the player's browser: dmc map <map.json> [--png] [--open] [--measure A B]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
-  digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]
+  digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
   campaign      export or import a whole campaign as one file: dmc campaign export|import|show NAME-or-FILE [--out PATH] [--force] [--as NAME]
-  play          start a play session: claude --model sonnet --effort high --settings .claude/play-settings.json [args]
+  play          start a play session in your DMC folder: claude --model sonnet --effort high [args]
+  install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
+  folder        print the DMC folder this command would use
+  refresh       bring a DMC folder's rules, skills, settings and templates up to date: dmc refresh [FOLDER | --all]
   --version     print the version
 
 $ dmc --version
@@ -36,9 +39,9 @@ A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.
 
 ```
 $ dmc
-dmc: no command given (try roll, context-check, map, pdf, digest, campaign, play, --version)
+dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, --version)
 $ dmc foo
-dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, campaign, play, --version)
+dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, --version)
 ```
 
 **Arguments.** `map`, `pdf`, `digest` and `campaign` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
@@ -50,20 +53,12 @@ dmc: unknown command "foo" (try roll, context-check, map, pdf, digest, campaign,
 | 0 | Success. `context-check` always exits 0. |
 | 1 | A failure the user can fix: a bad dice expression, a map with a mistake in it, a missing or unreadable file, no command or an unknown command. |
 | 2 | A mistake in the arguments (missing, unknown or malformed), and `roll` when the operating system's random source cannot be read. |
-| 127 | `play`: Claude Code is not on the PATH. The launchers `play.ps1` and `play.sh` exit 127 for the same reason. |
+| 127 | `play`: Claude Code is not on the PATH. |
 | other | `play` passes on Claude Code's own exit code. |
 
 **Output.** UTF-8 with no byte-order mark, and LF line ends on every system. A character that cannot be encoded prints as `?`.
 
-**Stale-binary warning.** When `tools/dmc-release.json` pins a release and this `dmc` is a different release, every command except `context-check` first prints one line on stderr and carries on:
-
-```
-dmc: this is dmc 0.1.1, but the toolkit pins dmc-v0.1.2: run bash tools/get-dmc.sh (in PowerShell, powershell -ExecutionPolicy Bypass -File tools/get-dmc.ps1) to update it
-```
-
-It says nothing when the pin is missing, unreadable or empty, and nothing for a developer build (`0.0.0-dev`), which is not a release.
-
-**Toolkit root.** `dmc` finds `tools/`, `adventures/` and the Claude Code logs relative to its own location, never the current folder: the parent of `bin/` for a player's install, or the nearest folder within three levels up that holds `tools/dmc-release.json` for a developer build.
+**The DMC folder.** `dmc` finds `adventures/` and the Claude Code logs in the DMC folder, never relative to its own location: `CLAUDE_PROJECT_DIR` if that is a DMC folder (Claude Code sets it for hooks), else the current folder if it is one, else the first folder recorded in `dmc.json` beside the program that is still a DMC folder. A folder is a DMC folder when it has `.dmc/manifest.json`. A command that needs a folder and finds none fails with `dmc <command>: no DMC folder: run dmc install`. `dmc folder` prints the folder it finds.
 
 ## roll
 
@@ -184,7 +179,7 @@ dmc redraw < hook-input.json
 
 Added in release 0.1.3. The play settings' `Stop` hook runs this when DMC has finished a reply. Claude Code passes a JSON object on stdin; `dmc` reads `stop_hook_active` from it (see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks), "Stop"). Run by hand at a terminal it does not wait for input, and acts as if `stop_hook_active` were false. It then:
 
-1. finds the active campaign (`adventures/.active-campaign`) and its `maps/` folder, under the toolkit root;
+1. finds the active campaign (`adventures/.active-campaign`) and its `maps/` folder, in the DMC folder;
 2. does nothing, silently, if there is no active campaign, or no `live-data.js` yet and no `live.json` (DMC has not shown a map). With no page yet but a `live.json`, it draws that;
 3. picks what to draw. A fight always uses `maps/live.json`, so if that is newer than `live-data.js` it is drawn, whatever the page showed before. Otherwise, if the record `maps/live-source.txt` (written by `dmc map`) names another file, such as a place DMC drew by hand for the player, that file is drawn again if it, or the base place the record gives, is newer than `live-data.js`. With no record (a page drawn by an older `dmc`) only `live.json` is checked, and a change to its base place alone is not noticed;
 4. draws it exactly as `dmc map` does, which also rewrites the record, and refreshes `live.png` too if one already sits beside `live.html`. When it draws `live.json` and the page did not show it (no page yet, or the record names another file, as after a place map), it also opens `live.html` in the browser, as `dmc map --open` does (from release 0.1.4). It opens the page on that switch only, not on every redraw, so a page already showing the scene gets no second tab. It prints nothing even when it draws. If nothing is newer it does nothing, silently.
@@ -197,9 +192,9 @@ If `dmc map` would refuse the file, nothing is drawn and `dmc redraw` prints one
 dmc redraw: live.json was not drawn, so the player's map is out of date: token @ (Thorin) is on A1, which is a wall. Fix it now; if it is still refused it will be reported again when your next reply ends.
 ```
 
-When the input has `"stop_hook_active": true` (Claude Code is already continuing because a Stop hook asked it to), the file is still drawn if it is now fine, but a refusal is not reported a second time: it exits 0 with nothing printed, so a file DMC cannot fix cannot make it loop. Nothing is lost by that silence: a file that is still refused stays newer than the picture, so the Stop hook of the next reply, a new turn, finds it again and exits 2 again. The message says this. On any other failure `dmc redraw` prints nothing and exits 0, and it skips the stale-binary warning, like `context-check`.
+When the input has `"stop_hook_active": true` (Claude Code is already continuing because a Stop hook asked it to), the file is still drawn if it is now fine, but a refusal is not reported a second time: it exits 0 with nothing printed, so a file DMC cannot fix cannot make it loop. Nothing is lost by that silence: a file that is still refused stays newer than the picture, so the Stop hook of the next reply, a new turn, finds it again and exits 2 again. The message says this. On any other failure `dmc redraw` prints nothing and exits 0, like `context-check`.
 
-The hook command in `.claude/play-settings.json` is `out=$("$CLAUDE_PROJECT_DIR/bin/dmc" redraw 2>&1); s=$?; if [ "$s" = 2 ]; then printf '%s\n' "$out" >&2; exit 2; fi; exit 0`. Only exit 2 gets through, so a `dmc` that does not know `redraw` (0.1.2 prints `dmc: unknown command "redraw"` and exits 1), a missing `bin/dmc` (exit 127) and a file that is not a program (exit 126) all end in a silent exit 0. A command-line option such as `dmc map --pending` would not have been safe: 0.1.2 treats it as a usage mistake, exit code 2, which would have blocked every reply.
+The hook command in `kit/settings.json` (a DMC folder's `.claude/settings.json`) is `out=$(dmc redraw 2>&1); s=$?; if [ "$s" = 2 ]; then printf '%s\n' "$out" >&2; exit 2; fi; exit 0`. Only exit 2 gets through, so a `dmc` that does not know `redraw` (0.1.2 prints `dmc: unknown command "redraw"` and exits 1), a missing `dmc` (exit 127) and a file that is not a program (exit 126) all end in a silent exit 0. A command-line option such as `dmc map --pending` would not have been safe: 0.1.2 treats it as a usage mistake, exit code 2, which would have blocked every reply.
 
 ## pdf
 
@@ -269,8 +264,8 @@ A PDF with only an owner password (print or copy restrictions) is read. A page t
 ## digest
 
 ```
-dmc digest list [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR]
-dmc digest show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]
+dmc digest list [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR]
+dmc digest show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
 ```
 
 Condenses Claude Code's session logs, which are far too big to read, for the `review-transcript` skill. Claude Code keeps them under `~/.claude/projects/<project>/` (or `$CLAUDE_CONFIG_DIR/projects/<project>/`), where `<project>` is the toolkit's path with every character outside `A-Z`, `a-z` and `0-9` replaced by `-`.
@@ -280,8 +275,9 @@ Condenses Claude Code's session logs, which are far too big to read, for the `re
 | `SESSION` | The start of a session id, as `list` shows it. With none, `show` takes every session that touched the campaign (or every session). |
 | `--campaign` | Only sessions that touched `adventures/<NAME>/`. |
 | `--after` | Only sessions that ended on or after this date (UTC). |
-| `--logs` | Folder of session `.jsonl` files. Default: this toolkit's Claude Code logs. |
-| `--out` | Output folder of `show`. Default `adventures/.transcript-review` under the toolkit root, one folder whatever the campaign, not in git. Each run rewrites `stats.md` and the files of the sessions it digests; files left by earlier runs for other sessions are not deleted. |
+| `--folder` | The DMC folder whose Claude Code logs are read and whose `adventures/` holds the default output folder. Default: the folder `dmc folder` prints. An error (`dmc digest: <folder> is not a folder`) when it does not exist. |
+| `--logs` | Folder of session `.jsonl` files. Default: the Claude Code logs of the DMC folder. |
+| `--out` | Output folder of `show`. Default `adventures/.transcript-review` in the DMC folder, one folder whatever the campaign, not in git. Each run rewrites `stats.md` and the files of the sessions it digests; files left by earlier runs for other sessions are not deleted. |
 
 `list` prints a table, one session per row: id, start and end (UTC), size in KB, number of player messages, peak context, campaign and the first message.
 
@@ -316,7 +312,7 @@ Moves a whole campaign in and out of one file: a backup, a copy under another na
 |---|---|
 | `NAME` | `export`: a folder under `adventures/`. |
 | `FILE` | `import`, `show`: an export file. Its name does not matter: the campaign name is read from the manifest inside it, so a renamed export imports the same. |
-| `--out` | `export`: an existing folder (the default file name is used inside it) or a file path ending in `.zip`. Default: `exports/` under the toolkit root, made when needed. Never inside `adventures/`. |
+| `--out` | `export`: an existing folder (the default file name is used inside it) or a file path ending in `.zip`. Default: `exports/` in the DMC folder, made when needed. Never inside `adventures/`. |
 | `--force` | `export`: replace an existing file named by `--out`. It has no effect on the default name, which is never replaced (the next free `-2`, `-3`, ... is used). |
 | `--as` | `import`: the folder name to import under; lowercase letters, digits and hyphens, starting with a letter or digit. Default: the campaign name inside the file. |
 
@@ -388,7 +384,7 @@ The bands are counted from the first band, so a break the player declined is off
 
 This changed after release 0.1.2, so it reaches players with the next release. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
-It never fails: on any error (input that is not JSON, a missing or unreadable log) it prints nothing and exits 0. It also skips the stale-binary warning, so the hook stays silent.
+It never fails: on any error (input that is not JSON, a missing or unreadable log) it prints nothing and exits 0. 
 
 ## play
 
@@ -396,17 +392,104 @@ It never fails: on any error (input that is not JSON, a missing or unreadable lo
 dmc play [args...]
 ```
 
-Starts Claude Code for a play session from the toolkit root, as
+Starts a play session in the DMC folder (contract `dmc-play.md` of the spec in `specs/003-separate-player-install/`). It does these in order:
+
+1. removes what an earlier update left in the program's folder (`*.old`, `.update-*`), quietly;
+2. finds the DMC folder: the current folder if it is one, else the first folder in `dmc.json` that still is. `CLAUDE_PROJECT_DIR` does not choose it (that variable is for hooks);
+3. refreshes the folder first if its manifest's version is not this `dmc`'s, or a generated file is missing or differs from the program's copy, printing the refresh's own lines (see [refresh](#refresh)). A hand-edited generated file is put back, and the edited copy is kept in `.dmc/replaced/<stamp>/`;
+4. finds Claude Code;
+5. starts it in the DMC folder, with this program's folder first on the child's `PATH`, as
 
 ```
-claude --model sonnet --effort high --settings .claude/play-settings.json [args...]
+claude --model sonnet --effort high [args...]
 ```
 
-with every argument passed on unchanged (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code. The launchers hand over to it once a release is pinned. When no `dmc` can be had they start Claude Code themselves, and if `claude` is not on the PATH then, `play.sh` exits 127 (its shell's own message) and `play.ps1` prints `play: Claude Code (claude) is not on the PATH: install it, then run this again` and exits 127; if `claude` is found but cannot be started (blocked, damaged, a shim that throws) it prints `play: Claude Code could not be started: <reason>` and exits 1. Either way a script that checks the exit code sees the failure.
+with every argument passed on unchanged and last (`dmc play --continue` works, and `dmc play --help` is Claude Code's help). The rules, skills and settings load because the folder is a Claude Code project, so no `--settings` is passed. It waits for Claude Code, ignores Ctrl+C while it runs (Claude Code handles it), and exits with Claude Code's exit code.
 
 On Windows it starts `claude.exe` from the PATH, or failing that npm's `claude.ps1` through PowerShell. It never starts npm's `claude.cmd` through `cmd.exe`, which would re-parse the arguments.
 
 | Message | Exit |
 |---|---|
+| `dmc play: no DMC folder: run dmc install` | 1 |
 | `dmc play: Claude Code (claude) is not on the PATH: install it, then run this again` | 127 |
-| `dmc play: only <path>\claude.cmd was found, and dmc does not start Claude Code through cmd.exe: install Claude Code's claude.exe, or start play with ./play.ps1` | 1 |
+| `dmc play: only <path>\claude.cmd was found, and dmc does not start Claude Code through cmd.exe: install Claude Code's claude.exe` | 1 |
+| the refresh's message, such as `dmc play: cannot write <path>: <reason>` | 1 |
+
+`dmc play` is not refused inside a Claude Code session: it refreshes before Claude Code starts, so there is no session yet.
+
+## install
+
+```
+dmc install [--path FOLDER] [--force]
+```
+
+Installs `dmc` for the current user and writes a DMC folder (contract `dmc-install.md`). In order:
+
+1. **Refuses first** inside a Claude Code session (`CLAUDECODE` set): `dmc install: cannot run inside a Claude Code session: run it in a terminal`. Nothing is read or written.
+2. Removes leftovers of an earlier update from the program folder, quietly.
+3. **The folder.** `--path FOLDER` if given; otherwise it asks `DMC folder [<home>/dmc]: ` and Enter takes the default. A leading `~` means the home folder, and a relative answer is relative to the current folder. When standard input is not a terminal (Linux, `curl ... | sh`) the answer is read from `/dev/tty`; with no terminal at all the default is used without asking. On Windows the console is standard input.
+4. Refuses a folder that is a file, or inside a checkout of the source repository (a `kit/dm-rules.md` in it or above it), and, before writing anything, a first install over a folder where a file it would write already exists and was not written by `dmc` (it names the first).
+5. **The program.** A release build that is not already running from the program folder copies itself and its native libraries (every `*.dll` or `*.so` beside it) there: `%LOCALAPPDATA%\Programs\dmc` on Windows, which is added to the user's `Path` (registry value `Path` under `HKEY_CURRENT_USER\Environment`, kept as an expandable string, followed by a `WM_SETTINGCHANGE` broadcast); `~/.local/share/dmc` on Linux, with the link `~/.local/bin/dmc`. A development build (`0.0.0-dev`) copies itself only with `--force`.
+6. **The folder's files.** Writes the generated files and `.dmc/manifest.json` with the same rules as [refresh](#refresh); over a folder that already has a manifest it behaves as `dmc refresh`. Makes `adventures/`, `feedback/`, `modules/` and `rules/` if missing, and writes nothing in them.
+7. **Records** the folder in `dmc.json` beside the program (once; order kept): in the program folder when the program was installed or already runs from there, otherwise beside the running build.
+
+```
+dmc install: installed dmc 0.2.0 in <program folder>          (only when the program was copied)
+dmc install: DMC folder ready at <folder>
+dmc install: open a new terminal, then run dmc play            (when the program was copied; on Linux, when ~/.local/bin is not on the PATH:)
+dmc install: add ~/.local/bin to your PATH (for example in ~/.profile), then run dmc play
+```
+
+At most three lines, and, over a folder that already had a manifest, the refresh's lines (at most two, prefixed `dmc install:`) before the second one. Errors, each one line on stderr, exit 1 unless said:
+
+| Message | When |
+|---|---|
+| `dmc install: cannot run inside a Claude Code session: run it in a terminal` | `CLAUDECODE` is set |
+| `dmc install: <folder> is inside the DMC source repository: choose another folder` | a `kit/dm-rules.md` in or above the folder |
+| `dmc install: <file> already exists and was not written by dmc: move it, or choose another folder` | a first install over a foreign file |
+| `dmc install: <folder> is a file, not a folder` | the folder is a file |
+| `dmc install: cannot write <path>: <reason>` | a folder, the link or a file cannot be written |
+| `dmc install: could not add <program folder> to your PATH: <reason>` | Windows, after the folder is written |
+| `dmc install: unrecognized arguments: <argument>`, `argument --path: expected one argument` | usage mistakes, exit 2 |
+
+## refresh
+
+```
+dmc refresh [FOLDER | --all]
+```
+
+Rewrites the generated files of a DMC folder from the copy inside this `dmc`, and nothing else (contract `dmc-refresh.md`). The folder is the one given, or with `--all` every folder in `dmc.json` that is still a DMC folder, or else the folder `dmc folder` finds. For each file of the program's table (`kit/dm-rules.md` is `CLAUDE.md`, `kit/settings.json` is `.claude/settings.json`, `kit/skills/**` is `.claude/skills/**`, `kit/templates/**` is `templates/**`):
+
+| State of the file | What happens |
+|---|---|
+| missing | written |
+| same as the program's copy | left |
+| same as the manifest's hash (an older generated version) | replaced |
+| different from both (edited by hand) | copied to `.dmc/replaced/<yyyyMMdd-HHmmss>/<path>`, then replaced |
+| in the old manifest, not in the program, unchanged | removed (and the folder it leaves empty under `.claude/skills/`) |
+| in the old manifest, not in the program, edited | moved to `.dmc/replaced/` |
+| exists, no manifest at all (a first install) | refused, naming it; nothing is written |
+
+The manifest is written last, so an interrupted refresh leaves the old one and the next refresh repairs the folder. Nothing under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/` is ever written, replaced or removed, whatever the table or a manifest says. Like `install`, it refuses first inside a Claude Code session.
+
+| Output (stdout, at most two lines per folder) | When |
+|---|---|
+| nothing | nothing to do |
+| `dmc refresh: <folder>: <n> files updated for dmc X.Y.Z` | files written, replaced or removed |
+| `dmc refresh: <folder>: <n> edited files kept in .dmc/replaced/<stamp>/` | hand edits were kept |
+
+| Message (stderr, exit 1 unless said) | When |
+|---|---|
+| `dmc refresh: cannot run inside a Claude Code session: run it in a terminal` | `CLAUDECODE` is set |
+| `dmc refresh: <folder> is not a DMC folder: run dmc install` | the folder given has no manifest |
+| `dmc refresh: no DMC folder: run dmc install` | no folder given and none found |
+| `dmc refresh: cannot write <path>: <reason>` | the old manifest stays, so the next refresh repairs the folder |
+| `dmc refresh: unrecognized arguments: <argument>`, `a folder and --all cannot be used together` | usage mistakes, exit 2 |
+
+## folder
+
+```
+dmc folder
+```
+
+Prints the DMC folder `dmc` would use (see [The DMC folder](#rules-that-apply-to-every-command)), one line, exit 0; or `dmc folder: no DMC folder: run dmc install` on stderr, exit 1. The developer skills `review-feedback` and `review-transcript` use it, and `dmc digest` when it is given no `--folder`.

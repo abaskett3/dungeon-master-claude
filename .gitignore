@@ -23,8 +23,8 @@ rules/*
 scripts/.pylib/
 __pycache__/
 
-# .NET build output. bin/ at the root is the player's install of dmc, which tools/get-dmc owns (a build of your own
-# put there is replaced by the pinned release); a developer publishes to artifacts/bin.
+# .NET build output. A developer publishes dmc to artifacts/bin; bin/ at the root, where an older checkout's launcher
+# put the player's dmc, stays ignored.
 bin/
 obj/
 artifacts/

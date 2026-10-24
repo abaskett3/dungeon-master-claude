@@ -141,8 +141,8 @@ is in Phase 9.)
 
 **Independent Test**: quickstart §5.
 
-- [ ] T041 [US5] Remove `play.ps1` and `play.sh` (`git rm`), `tests/Dmc.Tests/Distribution/LauncherTests.cs` and `tests/Dmc.Tests/Distribution/GetDmcTests.cs`, and what `tests/Dmc.Tests/Distribution/Bootstrap.cs` only kept for them (`DMC_TEST_RELEASE_DIR`, the release-versioned build, the pin it writes). Once the launchers and the `get-dmc` line in the rules are gone, nothing a player runs calls `get-dmc`, so its tests would only cost CI time (user, 2026-10-24). The scripts, the pin and `write-pin.sh` stay until T061, because the release workflow's archive check still runs them on a tag and is rewritten in PR 2; remove launcher checks from the toolkit tests; update `tests/Dmc.Tests/Support/DmcRunner.cs`'s comment (no `get-dmc` owning `bin/`).
-- [ ] T042 [P] [US5] Update `.gitignore`: the `bin/` comment no longer mentions `get-dmc` (keep ignoring `bin/` and `artifacts/`).
+- [x] T041 [US5] Remove `play.ps1` and `play.sh` (`git rm`), `tests/Dmc.Tests/Distribution/LauncherTests.cs` and `tests/Dmc.Tests/Distribution/GetDmcTests.cs`, and what `tests/Dmc.Tests/Distribution/Bootstrap.cs` only kept for them (`DMC_TEST_RELEASE_DIR`, the release-versioned build, the pin it writes). Once the launchers and the `get-dmc` line in the rules are gone, nothing a player runs calls `get-dmc`, so its tests would only cost CI time (user, 2026-10-24). The scripts, the pin and `write-pin.sh` stay until T061, because the release workflow's archive check still runs them on a tag and is rewritten in PR 2; remove launcher checks from the toolkit tests; update `tests/Dmc.Tests/Support/DmcRunner.cs`'s comment (no `get-dmc` owning `bin/`).
+- [x] T042 [P] [US5] Update `.gitignore`: the `bin/` comment no longer mentions `get-dmc` (keep ignoring `bin/` and `artifacts/`).
 - [ ] T043 [US5] In `.docs/development.md`: how to try a change (edit `kit/`, publish, `artifacts/bin/dmc install --path <scratch>` or `refresh <scratch>`, play there in a new session; `--force` installs the build as the program); the repository layout table (`kit/`, the developer `CLAUDE.md`, `.claude/skills/` now developer-only); remove `play.ps1`/`bin/` text that no longer holds (the `get-dmc` and pin text goes in Phase 9); the Spec Kit paragraph no longer needs the play block (the Spec Kit skills never reach a DMC folder) and points at the T004 entry.
 
 **Checkpoint**: quickstart §5 steps 1 to 4 pass.
@@ -155,7 +155,7 @@ is in Phase 9.)
 
 **Independent Test**: quickstart §6.
 
-- [ ] T044 [US6] In `.docs/user-guide.md` add "Moving campaigns from a repository checkout": back up first; `dmc install` (or `--path`); then the PowerShell and bash commands that move `adventures/*`, `feedback/*` (except `.gitkeep`, `.ignore`), `modules/*` and `rules/*` from the checkout into the DMC folder; old session logs stay under the checkout's Claude Code project folder and `dmc digest --logs <folder>` reads them.
+- [x] T044 [US6] In `.docs/user-guide.md` add "Moving campaigns from a repository checkout": back up first; `dmc install` (or `--path`); then the PowerShell and bash commands that move `adventures/*`, `feedback/*` (except `.gitkeep`, `.ignore`), `modules/*` and `rules/*` from the checkout into the DMC folder; old session logs stay under the checkout's Claude Code project folder and `dmc digest --logs <folder>` reads them.
 - [ ] T045 🧑 HUMAN (H6) [US6] Ask the user to back up and then run the T044 commands themselves on their real campaigns (DMC never runs them), resume the active campaign with `dmc play`, and confirm the recap matches.
 
 **Checkpoint**: the maintainer plays from a DMC folder.

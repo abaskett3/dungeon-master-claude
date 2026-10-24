@@ -6,7 +6,7 @@ This reference is for anyone who runs `dmc` by hand, writes prompts that call it
 
 | Who | Path |
 |---|---|
-| A player | `dmc`, found on the `PATH`: `dmc install` copies the program to `%LOCALAPPDATA%\Programs\dmc` (Windows, on the user's `Path`) or `~/.local/share/dmc` (Linux, linked as `~/.local/bin/dmc`). `dmc play` also puts the program's folder first on the `PATH` of the Claude Code session it starts. |
+| A player | `dmc`, found on the `PATH`: `dmc install` copies the program to `%LOCALAPPDATA%\Programs\dmc` (Windows, on the user's `Path`) or `~/.local/share/dmc` (Linux, linked as `~/.local/bin/dmc`). `dmc play` also puts the program's folder first on the `PATH` of the Claude Code session it starts. The first install is the install line of the README (`tools/install.ps1`, `tools/install.sh`), which downloads a release, checks it and runs `dmc install`; later, `dmc update` replaces the program. |
 | A developer's build | `artifacts/bin/dmc` (see [development.md](development.md)). `artifacts/bin/dmc install --force` installs it as the player's `dmc`. |
 
 The prompts write `dmc <command> ...`. `Bash(dmc *)` and `PowerShell(dmc *)` are on the allow list in the DMC folder's `.claude/settings.json` (from `kit/settings.json`), so DMC never meets a permission prompt for it. The same file denies `dmc install`, `dmc refresh` and `dmc update` to DMC.
@@ -25,6 +25,7 @@ usage: dmc <command> [args]
   install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
   folder        print the DMC folder this command would use
   refresh       bring a DMC folder's rules, skills, settings and templates up to date: dmc refresh [FOLDER | --all]
+  update        replace dmc with the latest release and refresh your DMC folders: dmc update
   --version     print the version
 
 $ dmc --version
@@ -39,9 +40,9 @@ A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.
 
 ```
 $ dmc
-dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, --version)
+dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, update, --version)
 $ dmc foo
-dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, --version)
+dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, update, --version)
 ```
 
 **Arguments.** `map`, `pdf`, `digest` and `campaign` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
@@ -493,3 +494,40 @@ dmc folder
 ```
 
 Prints the DMC folder `dmc` would use (see [The DMC folder](#rules-that-apply-to-every-command)), one line, exit 0; or `dmc folder: no DMC folder: run dmc install` on stderr, exit 1. The developer skills `review-feedback` and `review-transcript` use it, and `dmc digest` when it is given no `--folder`.
+
+## update
+
+```
+dmc update
+```
+
+Replaces the installed program in place with the latest release, then rewrites the generated files of every DMC folder (contract `dmc-update.md`; the trust model is in [releases.md](releases.md#how-a-release-is-trusted) and [decisions.md](decisions.md)). In order:
+
+1. **Refuses first** inside a Claude Code session (`CLAUDECODE` set), then a development build (`0.0.0-dev`), before anything is read. Leftovers of an earlier update (`*.old`, `.update-*`) are removed if possible.
+2. Reads the latest release of `abaskett3/dungeon-master-claude` from the GitHub API (HTTPS). Its tag is `dmc-vX.Y.Z`. If that is not newer than this `dmc` (compared as numbers), it says so and stops, after refreshing any recorded DMC folder that is not what this program would write.
+3. Downloads `SHA256SUMS.txt` and `SHA256SUMS.txt.sig` and verifies the signature (ECDSA P-256 over SHA-256, DER) with the two public keys built into `dmc`; either key is enough. Then downloads the archive for this machine (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`): 15 seconds to connect, no data for 30 seconds ends it, 10 minutes at most. Its SHA-256 must match both the signed list and the `digest` the API reports for the asset, before anything is unpacked. No setting and no environment variable skips a check or changes the keys.
+4. Unpacks into `<program folder>/.update-<random>/`, runs the new `dmc --version` (it must say `dmc X.Y.Z`), swaps the files (each old file is renamed to `*.old`, the new ones are moved in, the program last; a failure moves back what was moved), then runs the new `dmc refresh --all` and passes its lines through. Before the swap nothing has changed. Player files are never touched.
+
+For the tests, `DMC_UPDATE_TEST_ASSETS=<folder>` takes the release from a local folder instead of GitHub: `latest.json` (the shape of the API's answer: `tag_name` and `assets` with `name` and `digest`), the archives, `SHA256SUMS.txt` and its `.sig`. The signature and hash checks still apply.
+
+| Output (stdout) | Exit |
+|---|---|
+| `dmc update: installed dmc X.Y.Z (was A.B.C)`, then the refresh's lines | 0 |
+| `dmc update: dmc X.Y.Z is already the latest` (X.Y.Z is this program's version), then the lines of refreshing any stale folder | 0 |
+
+| Message (stderr) | When |
+|---|---|
+| `dmc update: cannot run inside a Claude Code session: run it in a terminal` | `CLAUDECODE` is set |
+| `dmc update: this is a development build (0.0.0-dev): install a release to update` | a build that is not a release |
+| `dmc update: could not reach GitHub: <reason>` | no network, the API or a download fails, stalls or answers with an error (including its limit for requests without sign-in), the answer is not a release, or the latest tag is not `dmc-vX.Y.Z` |
+| `dmc update: the latest release has no archive for <rid>` | the release has no archive for this machine |
+| `dmc update: release X.Y.Z has no signature: nothing was installed` | the release has no `SHA256SUMS.txt.sig` (or no `SHA256SUMS.txt`) |
+| `dmc update: release X.Y.Z is not signed by the DMC release key: nothing was installed` | the signature is invalid or made by an unknown key |
+| `dmc update: the download does not match the signed checksums (or GitHub's digest): nothing was installed` | the archive's hash differs from the signed list or the digest, or either does not name it |
+| `dmc update: could not unpack <archive>: <reason>` | the archive (whose hash matched) cannot be unpacked |
+| `dmc update: the new dmc does not run: nothing was installed` | the new program is missing, fails, or says another version |
+| `dmc update: cannot write <folder>: <reason>` | the program folder is not writable, or the swap failed (and was undone) |
+| `dmc update: installed dmc X.Y.Z, but the DMC folder was not refreshed: <reason>; dmc play will refresh it` | the new program's refresh failed; the program stays installed |
+| `dmc update: unrecognized arguments: <argument>` | usage mistake, exit 2 |
+
+All of them exit 1 unless said.

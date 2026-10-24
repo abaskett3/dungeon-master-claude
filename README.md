@@ -10,14 +10,23 @@ This repository is the source of DMC. You play in a **DMC folder** that `dmc ins
 - Windows (x64 or Arm) or Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04). macOS is not supported.
 - `dmc`, the toolkit's small program: the dice roller, the maps, PDF reading, the break reminder, the session review, and the installer that writes your DMC folder. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
 
-**Until the first release of this change,** `dmc` comes from a local build, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). From a clone of this repository:
+Install `dmc` with one line, in a terminal. It downloads the latest release, checks it, installs it and writes your DMC folder (it asks where; Enter takes `~/dmc`):
+
+```
+Windows (PowerShell):  irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex
+Linux:                 curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh
+```
+
+To choose the folder in the line: `& ([scriptblock]::Create((irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1))) -Path D:\Games\dmc` or `curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh -s -- --path ~/games/dmc`. Open a new terminal afterwards, so that `dmc` is found by name. Later, `dmc update` replaces `dmc` with the latest release and brings your DMC folders up to date; it installs a release only if its checksums carry a valid signature from the DMC release key built into `dmc`.
+
+**From source** (the line works from the first release of the separated install; before it, or to try your own change), `dmc` comes from a local build, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). From a clone of this repository:
 
 ```
 dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
 artifacts/bin/dmc install --force
 ```
 
-Use your system's runtime identifier in place of `win-x64` (`win-arm64`, `linux-x64` or `linux-arm64`). `dmc install` asks where to put your DMC folder (Enter takes `~/dmc`; `--path <folder>` answers for you), copies `dmc` into your user folder, puts it on your `PATH` and writes the folder. `--force` installs this build as your `dmc`; a release build is installed without it. Open a new terminal afterwards, so that `dmc` is found by name. An install line that downloads a release comes with the first release.
+Use your system's runtime identifier in place of `win-x64` (`win-arm64`, `linux-x64` or `linux-arm64`). `dmc install` asks where to put your DMC folder (Enter takes `~/dmc`; `--path <folder>` answers for you), copies `dmc` into your user folder, puts it on your `PATH` and writes the folder. `--force` installs this build as your `dmc`; a release build is installed without it. Open a new terminal afterwards, so that `dmc` is found by name.
 
 Python is no longer needed. No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 

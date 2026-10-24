@@ -17,7 +17,7 @@ internal sealed record ExportResult(string Archive, int Files, bool GeneralOptio
 /// to a ZIP with a <c>manifest.json</c> of every file's size and SHA-256 (research R2, R3). Every file is read once, into memory,
 /// and the same bytes give the checksum and go into the archive, so a file that changes during the export cannot make the
 /// two disagree. The archive is written under a <c>.partial-</c> name and renamed when complete, so a file under the final
-/// name is always whole (R7). Nothing under <c>adventures/</c> is ever changed. The library takes the toolkit root as a
+/// name is always whole (R7). Nothing under <c>adventures/</c> is ever changed. The library takes the DMC folder as a
 /// parameter, so a test can aim it at a temporary folder.
 /// </summary>
 internal static class CampaignExporter
@@ -40,7 +40,7 @@ internal static class CampaignExporter
     sealed record Destination(string Folder, string? File, string Stem);
 
     /// <summary>Exports a campaign.</summary>
-    /// <param name="root">The toolkit root: <c>adventures/</c> is read here, and <c>exports/</c> is written here by default.</param>
+    /// <param name="root">The DMC folder: <c>adventures/</c> is read here, and <c>exports/</c> is written here by default.</param>
     /// <param name="request">What was asked.</param>
     /// <param name="now">The moment of the export; the clock when null. It is read once: the file name and the manifest's <c>exportedAt</c> come from this one value.</param>
     /// <returns>The file written and what it holds.</returns>
@@ -104,7 +104,7 @@ internal static class CampaignExporter
     }
 
     /// <summary>Decides where the archive goes, and refuses a destination that cannot be used. Makes nothing.</summary>
-    /// <param name="root">The toolkit root.</param>
+    /// <param name="root">The DMC folder.</param>
     /// <param name="adventures">The <c>adventures/</c> folder.</param>
     /// <param name="request">What was asked.</param>
     /// <param name="moment">The moment of the export (UTC), for the default name.</param>

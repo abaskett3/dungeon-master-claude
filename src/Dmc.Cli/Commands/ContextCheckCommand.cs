@@ -21,7 +21,7 @@ public sealed class ContextCheckCommand : ICommand
     /// <inheritdoc />
     public string Summary => "read the hook's JSON on stdin; print a line when the context is large (never fails)";
 
-    /// <summary>True: this runs in a hook, so it prints nothing and exits 0 on any failure, and skips the stale-binary check.</summary>
+    /// <summary>True: this runs in a hook, so it prints nothing and exits 0 on any failure.</summary>
     public bool NeverFails => true;
 
     /// <summary>

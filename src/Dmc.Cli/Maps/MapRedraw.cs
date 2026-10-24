@@ -2,7 +2,7 @@ namespace Dmc.Maps;
 
 /// <summary>
 /// What <c>dmc redraw</c> needs to know: which campaign is active, whether the map the player's page shows has changed
-/// since it was drawn, and how to draw it again. Everything is found from the toolkit root and the files in the active
+/// since it was drawn, and how to draw it again. Everything is found from the DMC folder and the files in the active
 /// campaign's <c>maps/</c> folder.
 /// </summary>
 /// <remarks>
@@ -40,7 +40,7 @@ public static class MapRedraw
     /// modification time than <c>live-data.js</c>, so a file edited in the same clock tick as the drawing is not seen;
     /// the next edit is. With nothing changed this costs the reads of two tiny files and a few <c>stat</c> calls.
     /// </summary>
-    /// <param name="root">The toolkit root, the folder that holds <c>adventures/</c>.</param>
+    /// <param name="root">The DMC folder, the folder that holds <c>adventures/</c>.</param>
     /// <returns>The full path of the map file, or null.</returns>
     public static string? Pending(string root)
     {

@@ -3,16 +3,16 @@ using Dmc.Maps;
 
 namespace Dmc.Digest;
 
-/// <summary>Where Claude Code keeps the session logs of this toolkit (<c>log_dir</c> of <c>transcript_digest.py</c>).</summary>
+/// <summary>Where Claude Code keeps the session logs of a DMC folder (<c>log_dir</c> of <c>transcript_digest.py</c>).</summary>
 internal static class LogFolder
 {
     /// <summary>
-    /// <c>$CLAUDE_CONFIG_DIR</c> (or <c>~/.claude</c> when it is unset or empty), then <c>projects</c>, then the toolkit's
+    /// <c>$CLAUDE_CONFIG_DIR</c> (or <c>~/.claude</c> when it is unset or empty), then <c>projects</c>, then the DMC folder's
     /// path with every character outside <c>A-Za-z0-9</c> replaced by "-". A character is one UTF-16 unit, so a letter
     /// outside the BMP is two "-": that is how Claude Code names the folder (JavaScript's <c>replace(/[^a-zA-Z0-9]/g, "-")</c>
     /// works on UTF-16 units), so that dmc finds the folder where the script, which counts code points, does not.
     /// </summary>
-    /// <param name="root">The toolkit root (<see cref="Toolkit.Root"/> in the real program).</param>
+    /// <param name="root">The DMC folder (<see cref="DmcFolder.Require"/> in the real program).</param>
     /// <param name="environment">Reads an environment variable; null for one that is not set. A test passes its own.</param>
     public static string Of(string root, Func<string, string?> environment)
     {
@@ -21,8 +21,9 @@ internal static class LogFolder
         return Path.Combine(baseFolder, "projects", ProjectName(root));
     }
 
-    /// <summary>The log folder of this toolkit, from the real environment.</summary>
-    public static string Default() => Of(Toolkit.Root, Environment.GetEnvironmentVariable);
+    /// <summary>The log folder of a DMC folder, from the real environment.</summary>
+    /// <param name="folder">The DMC folder whose Claude Code sessions are wanted: <c>--folder</c>, or <see cref="DmcFolder.Require"/> when none is given.</param>
+    public static string Default(string folder) => Of(folder, Environment.GetEnvironmentVariable);
 
     /// <summary>The folder name Claude Code gives a project: its path with every character outside <c>A-Za-z0-9</c> replaced by "-".</summary>
     /// <param name="root">The project's path.</param>
@@ -39,7 +40,7 @@ internal static class LogFolder
     /// <c>HOME</c> elsewhere, so that a test or a launcher can point it somewhere; the account's folder if those are unset.
     /// </summary>
     /// <param name="environment">Reads an environment variable; null for one that is not set.</param>
-    static string HomeFolder(Func<string, string?> environment)
+    internal static string HomeFolder(Func<string, string?> environment)
     {
         if (OperatingSystem.IsWindows())
         {

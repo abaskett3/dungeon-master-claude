@@ -79,11 +79,19 @@ internal sealed partial class Session
     /// <summary>The file whose edits are counted separately in the statistics.</summary>
     public const string StateFile = "game-state.md";
 
-    /// <summary>The skill that marks a message as a full save.</summary>
-    public const string SaveSkill = "campaign-full-save";
+    /// <summary>
+    /// The skill that marks a message as a full save: <c>dmc-campaign-full-save</c> since the player skills were renamed for
+    /// the DMC folder, and <c>campaign-full-save</c> in the logs of the sessions played before that, which still digest.
+    /// </summary>
+    public static readonly string[] SaveSkills = ["dmc-campaign-full-save", "campaign-full-save"];
 
-    /// <summary>The skill that marks a message as a resume.</summary>
-    public const string ResumeSkill = "resume-campaign";
+    /// <summary>The skill that marks a message as a resume: <c>dmc-resume-campaign</c>, or <c>resume-campaign</c> in an older log.</summary>
+    public static readonly string[] ResumeSkills = ["dmc-resume-campaign", "resume-campaign"];
+
+    /// <summary>Whether a turn used one of these skills, by the skill's name as the log spells it.</summary>
+    /// <param name="skills">The skills the turn used.</param>
+    /// <param name="names">The names that count: <see cref="SaveSkills"/> or <see cref="ResumeSkills"/>.</param>
+    public static bool UsedAny(HashSet<PyKey> skills, string[] names) => names.Any(n => skills.Contains(n));
 
     /// <summary>The log file's path.</summary>
     public string Path { get; }

@@ -6,7 +6,7 @@ namespace Dmc.Commands;
 /// <c>dmc map &lt;map.json&gt; [--png] [--open] [--measure FROM TO]</c>: replaced <c>scripts/map_render.py</c>. It checks a
 /// map file, draws it as <c>live.html</c> and <c>live-data.js</c> next to it, and prints the distances between the
 /// creatures, and records the file's name in <c>live-source.txt</c> so that <c>dmc redraw</c> knows which file the page shows.
-/// The format of a map file is in <c>.claude/skills/draw-map/map-format.md</c>.
+/// The format of a map file is in <c>.claude/skills/dmc-draw-map/map-format.md</c>.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (an option may be shortened to a unique prefix, and
@@ -30,7 +30,7 @@ usage: dmc map <map.json> [--png] [--open]
        dmc map <map.json> --measure FROM TO
 
 Draws a place or scene file as live.html and live-data.js next to it, and prints the distance between every pair of
-creatures. The format of the file is in .claude/skills/draw-map/map-format.md.
+creatures. The format of the file is in .claude/skills/dmc-draw-map/map-format.md.
 
   --png      also write live.png, the same picture, for DMC to look at with Read
   --open     also open live.html in the default browser

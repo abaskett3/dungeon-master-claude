@@ -5,7 +5,7 @@ internal abstract record CampaignRequest;
 
 /// <summary><c>dmc campaign export NAME [--out PATH] [--force]</c>.</summary>
 /// <param name="Name">A folder under <c>adventures/</c>.</param>
-/// <param name="Out">An existing folder, or a file path ending in <c>.zip</c>; null for <c>exports/</c> under the toolkit root.</param>
+/// <param name="Out">An existing folder, or a file path ending in <c>.zip</c>; null for <c>exports/</c> under the DMC folder.</param>
 /// <param name="Force">Allow replacing an existing file named by <paramref name="Out"/>.</param>
 internal sealed record ExportRequest(string Name, string? Out, bool Force) : CampaignRequest;
 

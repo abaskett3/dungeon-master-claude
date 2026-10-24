@@ -18,7 +18,7 @@ namespace Dmc.ContextCheck;
 /// </para>
 /// <list type="number">
 /// <item>The baseline is the context of the last assistant call before the first player message in that part. After
-/// a <c>/clear</c> and a <c>/resume-campaign</c> that is the end of the recap; after a compaction, the end of the
+/// a <c>/clear</c> and a <c>/dmc-resume-campaign</c> (<c>/resume-campaign</c> in a log from before the rename) that is the end of the recap; after a compaction, the end of the
 /// reload that follows it, if it comes before the player's next message.</item>
 /// <item>If no call comes before that message, it is the context of the first reply to it.</item>
 /// <item>If no player message has come yet, nothing has been added since loading, and it is the latest context.</item>

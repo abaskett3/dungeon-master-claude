@@ -5,10 +5,10 @@ namespace Dmc.Tests.Campaign;
 
 /// <summary>
 /// What <c>dmc campaign</c> prints and returns, checked twice (see the two subclasses below): against the library code in
-/// this process, and against the published <c>dmc</c> binary, the way DMC runs it. Only what is safe against the real
-/// repository is checked here: <c>show</c> reads one file and writes nothing, and the help text is text. The success paths of
-/// <c>export</c> and <c>import</c> write under the toolkit root, which the binary resolves to the real repository, so they
-/// stay in the in-process tests that aim the library at a temporary root.
+/// this process, and against the published <c>dmc</c> binary, the way DMC runs it. Only what writes nothing is checked here:
+/// <c>show</c> reads one file, and the help text is text. Both runs find the DMC folder through <c>CLAUDE_PROJECT_DIR</c>,
+/// which the test sets to its temporary folder (a DMC folder by its manifest) and which the binary inherits. The success paths of
+/// <c>export</c> and <c>import</c> stay in the in-process tests that aim the library at a temporary DMC folder.
 /// </summary>
 public abstract class CampaignCommandContract
 {
@@ -30,6 +30,8 @@ public abstract class CampaignCommandContract
     {
         _folder = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_folder);
+        DmcFolders.MakeDmcFolder(_folder);
+        Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", _folder);
         string campaign = WriteCampaign(_folder);
         _zip = Path.Combine(_folder, "export.zip");
         BuildArchive(_zip, PartsWith(campaign));
@@ -42,9 +44,13 @@ public abstract class CampaignCommandContract
         return parts;
     }
 
-    /// <summary>Deletes the working folder.</summary>
+    /// <summary>Deletes the working folder and forgets it as the project folder.</summary>
     [TestCleanup]
-    public void RemoveFolder() => DeleteTree(_folder);
+    public void RemoveFolder()
+    {
+        Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", null);
+        DeleteTree(_folder);
+    }
 
     [TestMethod]
     public void ShowPrintsTheContractLines()

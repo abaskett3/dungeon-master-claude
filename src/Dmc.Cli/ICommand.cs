@@ -14,7 +14,7 @@ public interface ICommand
 
     /// <summary>
     /// True for a command that runs in a hook and must never get in the way: on any failure it prints nothing
-    /// and exits 0, and it skips the stale-binary check.
+    /// and exits 0.
     /// </summary>
     bool NeverFails => false;
 

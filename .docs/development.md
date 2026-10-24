@@ -1,6 +1,6 @@
 # Development
 
-This document is for contributors changing `dmc`, the launchers, the skills, the templates or `CLAUDE.md`. Playing needs none of it. The binding rules for toolkit work are in [CLAUDE.md](../CLAUDE.md) § Git and GitHub; this document explains the setup and the conventions around them.
+This document is for contributors changing `dmc`, the kit (the Dungeon Master rules, the player skills, the templates and the play settings), the developer instructions in `CLAUDE.md` or the review skills. Playing needs none of it: players install `dmc`, which writes a DMC folder (see [architecture.md](architecture.md)). The binding rules for toolkit work are in [CLAUDE.md](../CLAUDE.md) § Git and GitHub; this document explains the setup and the conventions around them.
 
 ## Requirements
 
@@ -13,17 +13,17 @@ This document is for contributors changing `dmc`, the launchers, the skills, the
 
 | Path | Holds |
 |---|---|
-| `CLAUDE.md`, `.claude/skills/`, `templates/` | The prompts: DMC's operating rules, the skills and the blank campaign files |
-| `.claude/settings.json`, `.claude/play-settings.json` | Permissions and hooks for every session, and the extra settings for play |
-| `play.ps1`, `play.sh` | The launchers |
-| `tools/` | `get-dmc.ps1`, `get-dmc.sh` and the release pin `dmc-release.json` |
+| `kit/` | The source of everything `dmc` writes into a DMC folder, embedded in `dmc`: `dm-rules.md` (becomes `CLAUDE.md`), `settings.json` (becomes `.claude/settings.json`), `skills/dmc-*/` (become `.claude/skills/dmc-*/`) and `templates/` |
+| `CLAUDE.md` | Instructions for working on the toolkit: the git rules. The Dungeon Master rules are in `kit/dm-rules.md` and are not loaded as instructions in a session here |
+| `.claude/skills/`, `.claude/settings.json` | Developer-only: the `review-feedback` and `review-transcript` skills (they take a DMC folder), Spec Kit's `speckit-*` skills, and the permissions development needs |
+| `tools/` | `get-dmc.ps1`, `get-dmc.sh` and the release pin `dmc-release.json`: the release machinery, replaced by the next change of #67 |
 | `src/Dmc.Cli/` | `dmc`'s source (C#, .NET 10) |
 | `tests/Dmc.Tests/` | The tests (MSTest and Playwright) |
 | `.github/workflows/` | `tests.yml` (CI) and `release.yml` (releases); `.github/release/write-pin.sh` |
 | `Directory.Build.props`, `Directory.Packages.props`, `global.json`, `dmc.sln` | Shared build settings, centrally pinned package versions, the SDK pin, the solution |
 | `.docs/` | These documents |
 | `.claude/skills/speckit-*`, `.specify/`, `specs/` | Spec Kit: the planning skills, its templates and state, and the specs it writes; toolkit work only, never play (see [Spec-driven changes](#spec-driven-changes)) |
-| `adventures/`, `modules/`, `rules/`, `bin/`, `artifacts/` | Personal, copyrighted or built files; all ignored by git |
+| `adventures/`, `feedback/`, `modules/`, `rules/`, `exports/`, `bin/`, `artifacts/` | Personal, copyrighted or built files; all ignored by git. The repository is not a place to play: the maintainer's own campaigns move to a DMC folder (see [user-guide.md](user-guide.md#moving-campaigns-from-a-repository-checkout)) |
 
 ## Building
 
@@ -40,7 +40,17 @@ Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-
 
 **Versions.** Every build that is not a release says `dmc 0.0.0-dev`. That version is set in `src/Dmc.Cli/Dmc.Cli.csproj`, and no release ever has it. A release gets its version from its tag (`-p:Version=X.Y.Z`); nothing writes a release version back into the project file.
 
-**`bin/` belongs to the launchers.** `bin/` is the player's install, which `get-dmc` owns. Publish your own builds to `artifacts/bin/`. A build put in `bin/` is replaced by the pinned release the next time `./play.ps1` or `./play.sh` runs, because its version (`0.0.0-dev`) never matches the pin. A developer build in `artifacts/bin/` finds the toolkit root by looking up to three folders above itself for `tools/dmc-release.json`, and gets no stale-binary warning.
+**Your build and the installed `dmc` are separate.** Publish your own builds to `artifacts/bin/`. `dmc install` copies the running program as the player's `dmc` only for a release build; a development build does it only with `--force`, so trying a change does not replace the `dmc` you play with. A development build records the DMC folders it makes in `dmc.json` beside itself (in `artifacts/bin/`), not in the installed program's folder.
+
+**Trying a change to the rules, a skill, a template or the settings.** Edit the file under `kit/`, publish, and write a scratch DMC folder from the build, then play there in a new session:
+
+```
+dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
+artifacts/bin/dmc install --path <scratch folder>      (or: artifacts/bin/dmc refresh <scratch folder>, on one made before)
+cd <scratch folder>; dmc play      (or: claude --model sonnet, with dmc on the PATH)
+```
+
+`kit/` is embedded in the program, so an edit needs the publish before the install or refresh sees it. `--force` additionally installs the build as your `dmc`. Run `install` and `refresh` in a terminal: they refuse inside a Claude Code session (`CLAUDECODE` is set), so a session here cannot change a DMC folder's rules. The `--path` folder must be outside any checkout of this repository: `dmc install` refuses a folder with a `kit/dm-rules.md` in or above it.
 
 ## Tests
 
@@ -68,11 +78,12 @@ The tests never touch `adventures/`.
 | Case lists | `MapCases.cs`, `PdfCases.cs`, `DigestCases.cs` | Many inputs per command, run through the published binary; inputs that should work must exit 0 with empty stderr and write the expected files |
 | Error-path guard | `TokenCost/ErrorPathTests.cs` | Every error path of every command prints exactly one line, no stack trace, a non-zero exit code, and writes nothing. `context-check` prints nothing and exits 0 for every bad input |
 | Output bytes | `TokenCost/OutputBytesTests.cs` | No byte-order mark, LF line ends, non-ASCII output as expected |
-| Distribution | `Distribution/` | `dmc play`, the stale-binary warning, the pin file, `get-dmc` in bash, PowerShell 7 and Windows PowerShell 5.1 (install, silence when current, refusal of a bad archive, choice of archive per system), and the launchers in every case: no pin, pinned, `dmc` unavailable, `dmc` that does not run |
-| Toolkit | `Toolkit/ToolkitTests.cs` | The prompts and settings: every `dmc` command in `CLAUDE.md`, the README, the skills and the templates is a real subcommand and matches an allow rule for Bash and PowerShell; paths under `templates/`, `tools/`, `.claude/skills/` and `.docs/` exist; every `/skill-name` is a real skill and the README lists them all; hooks are well formed and silent when they should be; the play settings configure a `Stop` hook that runs `dmc redraw`, exits 2 only for a refused map file and stays silent with an older, missing or broken `dmc`; `play-settings.json` denies the shell deletes (`Bash(rm *)`, `PowerShell(Remove-Item *)` and the aliases) and `settings.json` does not; the launchers fetch `dmc` first; shell scripts keep LF and are executable; nothing personal is tracked (`adventures/`, `modules/`, `rules/` and `feedback/` hold only a `.gitkeep`); `settings.json` allows editing `feedback/`; the feedback template has the keys and sections `record-feedback` fills in; resume and full save never mention `feedback/`; only `review-feedback` mentions `gh issue` or `gh pr`; nothing points at the deleted Python scripts |
+| Kit | `Kit/` | The table from `kit/` to a DMC folder and its guard (nothing under a player folder), the manifest (round trip, `/` paths, lowercase hex), and every state of a generated file in a refresh: missing, current, older, edited by hand (kept in `.dmc/replaced/`), dropped, in the way of a first install, an interrupted refresh, and a hash of every player file before and after |
+| Distribution | `Distribution/` | `dmc install` (the folder asked for and taken, `--path`, `~`, no terminal, refusals, the player folders made empty, a second install as a refresh, a development build without `--force`, the Windows `Path` through a fake, refusal inside a Claude Code session), `dmc refresh`, `dmc folder` and `DmcFolder.Find`, and `dmc play` (the folder, the refresh before the start, the `PATH`, the fixed arguments), in-process over temporary folders and fakes and through the published binary; SC-002 as a hash of a filled folder before and after |
+| Toolkit | `Toolkit/ToolkitTests.cs` | `kit/` and the prompts: every file under `kit/` is embedded and in the table, none lands under a player folder, every player skill is `dmc-<name>` and every skill a kit prompt names exists; no kit file names `./bin/dmc`, `get-dmc`, `play.ps1`, `play.sh` or `tools/`; every `dmc` command in the prompts is a real subcommand, and the ones DMC runs match an allow rule for Bash and PowerShell (`install`, `update` and `refresh` are for the player and denied to DMC); paths under `templates/` and `.claude/skills/` resolve in `kit/`; every `/skill-name` is a real skill and the README lists them all; the kit settings deny edits of the generated files (`Edit` and `Write` on `/CLAUDE.md`, `/.claude/**`, `/templates/**`, `/.dmc/**`), `dmc update`, `install` and `refresh`, and the shell deletes, and the campaign allow rules do not start with `/`; hooks are well formed and silent when they should be, with `dmc` found on the `PATH`; the `Stop` hook runs `dmc redraw`, exits 2 only for a refused map file and stays silent with an older, missing or broken `dmc`; the repository's `CLAUDE.md` has no Dungeon Master section and `.claude/skills/` no player skill; the review skills name `dmc folder`; shell scripts keep LF and are executable; nothing personal is tracked (`adventures/`, `modules/`, `rules/` and `feedback/` hold only a `.gitkeep`); the feedback template has the keys (`dmc:` included) and sections `dmc-record-feedback` fills in; resume and full save never mention `feedback/`; only `review-feedback` mentions `gh issue` or `gh pr`; nothing points at the deleted Python scripts |
 | Map page | `Playwright/MapPageTests.cs` | `live.html` opened from `file://` in Chromium: the SVG and tooltips render, a rewritten `live-data.js` shows within the two-second poll, and the PNG is the size of the SVG |
 
-The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `templates/`, the files DMC reads as instructions. They do not scan the documents in `.docs/` themselves, which may name the deleted scripts in their history; they only check that a `.docs/` path named in those prompts exists.
+The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README.md` and `.claude/skills/` (what a developer's session reads). They do not scan the documents in `.docs/` themselves, which may name the deleted scripts in their history; they only check that a `.docs/` path named in those prompts exists.
 
 ### Skip locally, fail on CI
 
@@ -80,9 +91,9 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 ### Which binary the black-box tests run
 
-- By default, `artifacts/bin/dmc`. It must exist, must not be older than any source file (`.cs`, `.csproj`, `.props`), and must print `dmc 0.0.0-dev`; otherwise the test fails with one line saying to republish into `artifacts/bin`.
+- By default, `artifacts/bin/dmc`. It must exist, must not be older than any source file (`.cs`, `.csproj`, `.props`) or any file under `kit/` (they are embedded), and must print `dmc 0.0.0-dev`; otherwise the test fails with one line saying to republish into `artifacts/bin`.
 - `DMC_BIN` names another program to test, whatever version it prints.
-- Installing a release in the distribution tests needs a program that prints a release version. CI publishes a second AOT copy with `-p:Version=9.9.9` and names its folder in `DMC_TEST_RELEASE_DIR`. Locally, without that variable, the tests build such a copy themselves from a copy of the sources (about 15 seconds).
+- The tests that run `dmc install` or `dmc refresh` through the binary pass `CLAUDECODE` unset and a temporary home, and put back the `dmc.json` a development build writes beside itself in `artifacts/bin/`. Tests that expect no DMC folder to be found are skipped if that file lists one (a developer who tried `artifacts/bin/dmc install` has one).
 
 ## CI
 
@@ -90,11 +101,10 @@ The toolkit tests scan `CLAUDE.md`, `README.md`, `.claude/skills/` and `template
 
 1. installs the .NET 10 SDK, and on Linux `clang` and `zlib1g-dev` for Native AOT;
 2. publishes `dmc` with Native AOT into `artifacts/bin`;
-3. publishes a second copy with `-p:Version=9.9.9` into `artifacts/release`;
-4. builds the tests and installs Playwright's Chromium through `pwsh`;
-5. runs `dotnet test` with `DMC_TEST_RELEASE_DIR` set.
+3. builds the tests and installs Playwright's Chromium through `pwsh`;
+4. runs `dotnet test`.
 
-A change that touches only `*.md` or `*.txt` files does not start it, so a documentation change (`.docs/`, the roadmap) costs no runner time. `CLAUDE.md`, `README.md`, `.claude/skills/` and `templates/` always start it, because the toolkit tests read them as DMC's instructions. The `paths` filter is not tested; check it on the next documentation-only PR. The repository has no required status checks, so a skipped run never blocks a merge.
+A change that touches only `*.md` or `*.txt` files does not start it, so a documentation change (`.docs/`, the roadmap) costs no runner time. `CLAUDE.md`, `README.md`, `.claude/skills/` and `kit/` always start it, because the toolkit tests read them as instructions. The `paths` filter is not tested; check it on the next documentation-only PR. The repository has no required status checks, so a skipped run never blocks a merge.
 
 `.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Build.props`, `Directory.Packages.props`, `global.json`). On a pull request it is a dry run: it builds, packs and installs every platform's archive with `get-dmc` and publishes nothing. See [releases.md](releases.md).
 
@@ -136,7 +146,7 @@ Since PR #22, `CLAUDE.md` § Git and GitHub (the "Documentation" and "Pull reque
 
 ## Spec-driven changes
 
-[GitHub Spec Kit](https://github.com/github/spec-kit) is installed for toolkit work only, so a planning session can produce a spec, plan and task list (`/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`) and an implementing session can run `/speckit-implement` and `/speckit-converge` against them. Play never touches it: the `speckit-*` skills are installed with `disable-model-invocation: true` so their descriptions stay out of the model's context (confirmed in a play session, issue #61). `.claude/play-settings.json` sets `skillOverrides` to `off` for each of them, which the Claude Code docs say hides them from the `/` menu and from the model (issue #78; not yet re-checked in play, see #61), and denies them as a second guard, though the deny is not assumed to stop a command the player types. `skillOverrides` takes plain skill names, no wildcard, so a skill added by an upgrade needs its own entry; `PlaySettingsHidesEverySpecKitSkill` fails until it has one. See [decisions.md](decisions.md) for the install decision and what the block does and does not stop.
+[GitHub Spec Kit](https://github.com/github/spec-kit) is installed for toolkit work only, so a planning session can produce a spec, plan and task list (`/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`) and an implementing session can run `/speckit-implement` and `/speckit-converge` against them. Play never touches it: Spec Kit's skills, scripts and templates stay in this repository and never reach a DMC folder (the generated files come from `kit/` only), so the play settings no longer hide or deny them (the entries of `skillOverrides` and `Skill(speckit-*)` went with the move to `kit/settings.json`). The `speckit-*` skills are still installed with `disable-model-invocation: true` so their descriptions stay out of a developer's context. See [decisions.md](decisions.md), "Players install `dmc`, which writes and updates a DMC folder", for the route that made the play block unnecessary, and the earlier Spec Kit entries for what the block did.
 
 The skills live in `.claude/skills/speckit-*/SKILL.md` and the templates, scripts and install state in `.specify/`, both tracked in git (except the machine-local files `.specify/.gitignore` lists, such as `feature.json`). Each feature's spec, plan and tasks go in `specs/NNN-<name>/`, which `/speckit-specify` creates. Using the skills needs only PowerShell (the scripts are PowerShell, `--script ps`). Playing needs none of this.
 
@@ -147,7 +157,7 @@ The skills live in `.claude/skills/speckit-*/SKILL.md` and the templates, script
 - **One issue per specced change** is the tracking point. Its description links to `specs/NNN-<name>/` and summarises the spec. The tasks stay a checklist in `tasks.md`: do not run `/speckit-taskstoissues` or open an issue per task. The PR says `Closes #N` for that one issue (a plan split into phases links its issues as [Git and pull requests](#git-and-pull-requests) says).
 - **A spec is frozen once converge is done.** Converge runs again after the feature's PR merges and after each PR it leads to (both pilots needed this: PRs #157, #158, #160); the spec is frozen when a pass adds no tasks and its PR has merged. Until then `spec.md`, `plan.md`, `tasks.md` and the rest are kept in line with what ships, as converge does; after that the folder is a record of the change, like an entry in [decisions.md](decisions.md), and is not edited. A later change to the same feature gets its own `specs/NNN-<name>/` and may point back at the earlier one. The current behaviour lives in `.docs/`, the code and the prompts, not in old specs.
 
-**The constitution.** `.specify/memory/constitution.md` is what `/speckit-plan` and `/speckit-analyze` check a feature against. It was written from this repository's existing rules (issue #62), following Spec Kit's [existing-projects guide](https://github.com/github/spec-kit/blob/main/docs/guides/existing-projects.md) ("Do not invent standards"): the two principles and § Git and GitHub of `CLAUDE.md`, § Writing prompts, § Skip locally, fail on CI and § Documentation goes with every change here, and four entries of [decisions.md](decisions.md) (native AOT and nothing for players to install, one-line errors and small output, every change updates its documentation, and the Spec Kit install). It points at those files instead of repeating them, so each rule keeps one home: to change a rule, change its home file, and touch the constitution only when a pointer moves.
+**The constitution.** `.specify/memory/constitution.md` is what `/speckit-plan` and `/speckit-analyze` check a feature against. It was written from this repository's existing rules (issue #62), following Spec Kit's [existing-projects guide](https://github.com/github/spec-kit/blob/main/docs/guides/existing-projects.md) ("Do not invent standards"): the two principles and § Git and GitHub of `CLAUDE.md`, § Writing prompts, § Skip locally, fail on CI and § Documentation goes with every change here, and four entries of [decisions.md](decisions.md) (native AOT and nothing for players to install, one-line errors and small output, every change updates its documentation, and the Spec Kit install). It points at those files instead of repeating them, so each rule keeps one home: to change a rule, change its home file, and touch the constitution only when a pointer moves. It is version 2.0.0 since the separate player install (issue #67): Principle II now says that toolkit work must not cost the player context, and that players install Claude Code and `dmc` and nothing else, which the decision "Players install `dmc`, which writes and updates a DMC folder" records.
 
 **Optional requirements, only for installing or upgrading Spec Kit** (never for using the skills, never for play): Python 3.11+, [uv](https://docs.astral.sh/uv/), and `specify-cli` pinned at 1.2.1:
 
@@ -173,7 +183,7 @@ specify self upgrade --tag vX.Y.Z
 specify integration upgrade claude --integration-options="--events false --no-model-invocation"
 ```
 
-**What resets `--no-model-invocation`, and how to reapply it.** Per Spec Kit's [integrations reference](https://github.com/github/spec-kit/blob/main/docs/reference/integrations.md) ("Claude: user-invocable-only skills"), `specify preset add/remove/update`, `specify integration use claude` and some `switch` paths reset `disable-model-invocation` to the default. Reapply it with `specify integration upgrade claude --force --integration-options="--events false --no-model-invocation"`. The toolkit test `EverySpecKitSkillDisablesModelInvocation` checks that every `speckit-*` skill still has `disable-model-invocation: true`, so a silent reset fails the build. `PlaySettingsDeniesEverySpecKitSkill` checks that `.claude/play-settings.json` denies each one, and `SpecKitAddsNoHookAndNoClaudeMdBlock` that `.claude/settings.json` and `CLAUDE.md` carry nothing from Spec Kit. The other toolkit tests skip the `speckit-*` folders: they are not DMC's skills or prompts.
+**What resets `--no-model-invocation`, and how to reapply it.** Per Spec Kit's [integrations reference](https://github.com/github/spec-kit/blob/main/docs/reference/integrations.md) ("Claude: user-invocable-only skills"), `specify preset add/remove/update`, `specify integration use claude` and some `switch` paths reset `disable-model-invocation` to the default. Reapply it with `specify integration upgrade claude --force --integration-options="--events false --no-model-invocation"`. The toolkit test `EverySpecKitSkillDisablesModelInvocation` checks that every `speckit-*` skill still has `disable-model-invocation: true`, so a silent reset fails the build. `SpecKitAddsNoHookAndNoClaudeMdBlockAndNothingInTheKit` checks that `.claude/settings.json` and `CLAUDE.md` carry nothing from Spec Kit and that no file of `kit/` names it. The other toolkit tests skip the `speckit-*` folders: they are not DMC's skills or prompts.
 
 **Line endings.** `.gitattributes` pins `.claude/skills/speckit-*/SKILL.md` to LF, because Spec Kit hashes those files' bytes in `.specify/integrations/*.manifest.json` and a CRLF checkout would look like a local modification at upgrade time (see [decisions.md](decisions.md)). The same manifest also hashes `.specify/scripts/powershell/*.ps1`, `.specify/templates/*.md` and `.specify/.gitignore`, which `.gitattributes` does not pin; on a Windows checkout with `core.autocrlf=true` they may be rewritten as CRLF, so if an upgrade reports them as modified, extend the rule to them.
 
@@ -187,19 +197,20 @@ specify integration upgrade claude --integration-options="--events false --no-mo
 
 `CLAUDE.md`, the skills and the templates are instructions to a model, and they have their own costs and conventions.
 
-- **`CLAUDE.md` is loaded into every session**, so every line in it is paid for in every exchange of every game. Keep it lean: put procedures in skills, which load only when they apply, and put rarely needed reference material (the map format, for example) in a separate file a skill points to. When `CLAUDE.md` must grow, look for something to cut or move.
+- **`kit/dm-rules.md` becomes the DMC folder's `CLAUDE.md`, which is loaded into every play session**, so every line in it is paid for in every exchange of every game. Keep it lean: put procedures in skills, which load only when they apply, and put rarely needed reference material (the map format, for example) in a separate file a skill points to. When the rules must grow, look for something to cut or move.
 - **Give each rule one home.** Write a rule in the one place it belongs, and have other places point to it ("in the order `CLAUDE.md` § Maps gives") instead of repeating it. Two copies drift apart.
 - **Preferences are not rules.** How long one player likes replies, or how hard they like fights, belongs in `player-options.md`. The test, from the `record-feedback` and `review-feedback` skills: would the same behaviour have been wrong for a different player with different preferences? Only then is it a toolkit rule.
-- **Feedback is recorded first, and tuned in one place.** Feedback about how DMC itself runs the game is recorded in `feedback/` (see [campaign-files.md](campaign-files.md#feedback-entries)), by `record-feedback` in play and by `review-transcript` from the session logs. `review-feedback` is the only skill that reviews it, finds the cause in the prompts, and files issues or makes the changes. During play nothing edits the toolkit. A toolkit test keeps `gh issue` and `gh pr` out of every other skill.
+- **Feedback is recorded first, and tuned in one place.** Feedback about how DMC itself runs the game is recorded in `feedback/` of the DMC folder (see [campaign-files.md](campaign-files.md#feedback-entries)), by `dmc-record-feedback` in play and by `review-transcript` from the session logs. `review-feedback` is the only skill that reviews it, finds the cause in the prompts, and files issues or makes the changes. During play nothing edits the toolkit. A toolkit test keeps `gh issue` and `gh pr` out of every other skill.
 - **Prefer a mechanism to a paragraph** when the problem is that DMC forgets: a hook, a template field or a `dmc` feature is more reliable than another sentence.
 - **Write for a reader with none of the history.** Say what to do and why; leave out the session that prompted it.
-- **The toolkit tests check the prompts.** Every `./bin/dmc` command must be a real subcommand and match an allow rule; every path under `templates/`, `tools/`, `.claude/skills/` or `.docs/` must exist; a backticked `/word-word` is read as a skill name and must be a real one, so name Claude Code's own commands in words rather than as `/code-review`.
+- **The toolkit tests check the prompts.** Every `dmc` command in a prompt must be a real subcommand, and the ones DMC runs must match an allow rule; every path under `templates/` or `.claude/skills/` in a kit prompt must exist in `kit/` (a DMC folder has no `tools/` or `.docs/`); a backticked `/word-word` is read as a skill name and must be a real one, so name Claude Code's own commands in words rather than as `/code-review`.
 
 ## Adding to `dmc`
 
 - A subcommand is one class in `src/Dmc.Cli/Commands/` implementing `ICommand` (name, one-line summary, `Run`), added to `CommandTable.All`. It parses its own arguments and calls library code that the tests can call in-process.
-- Throw `DmcException` for a failure the user can fix; `CommandLine` prints it as one line with the exit code it carries. A command that runs in a hook sets `NeverFails`, which swallows every failure and skips the stale-binary check.
+- Throw `DmcException` for a failure the user can fix; `CommandLine` prints it as one line with the exit code it carries. A command that runs in a hook sets `NeverFails`, which swallows every failure and prints nothing.
 - Add a contract test (run in-process and on the binary) and rows in the error-path guard.
-- If a prompt is to call it, write the `./bin/dmc ...` form in the prompt; the existing `./bin/dmc *` allow rules cover it, and the toolkit tests check it.
-- A change the player's `bin/dmc` must have reaches players only through a release, and a prompt that calls a new subcommand breaks until that release is pinned. Say so in the PR, as PR #18 did.
+- If a prompt is to call it, write the `dmc ...` form in the prompt; the existing `dmc *` allow rules cover it, and the toolkit tests check it. A command only a player should run (like `install`) is denied to DMC in `kit/settings.json` and refuses to run when `CLAUDECODE` is set.
+- The generated files are inside `dmc`, so a change to `kit/` or to a command reaches players only with a new `dmc`, and a refresh of their DMC folder. Say so in the PR, as PR #18 did.
+- A command that writes into a DMC folder goes through `GeneratedFiles.Guard` and `Refresher`: never write a path under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/`. Take the home folder, the environment, the clock and the registry as parameters, as `Machine` does, so a test cannot touch the real ones.
 - Pin any package below 1.0 exactly in `Directory.Packages.props`.

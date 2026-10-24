@@ -22,7 +22,7 @@ internal enum OptionsOutcome
 /// <param name="Folder">The full path of the campaign that was created.</param>
 /// <param name="Files">How many files it holds.</param>
 /// <param name="Options">What happened to the general player options.</param>
-/// <param name="Module">The module the campaign needs, and whether this toolkit has it.</param>
+/// <param name="Module">The module the campaign needs, and whether this DMC folder has it.</param>
 internal sealed record ImportResult(string Name, string Folder, int Files, OptionsOutcome Options, ModuleState Module);
 
 /// <summary>
@@ -30,7 +30,7 @@ internal sealed record ImportResult(string Name, string Folder, int Files, Optio
 /// archive is checked first (<see cref="ExportSummary.Open"/>), then extracted into a staging folder inside
 /// <c>adventures/</c> while every file's size and SHA-256 are checked as it is written, and only then committed with renames
 /// on one volume: the general player options if none exists, then the campaign folder. Nothing that exists is ever
-/// replaced, and <c>adventures/.active-campaign</c> is never written. The library takes the toolkit root as a parameter, so
+/// replaced, and <c>adventures/.active-campaign</c> is never written. The library takes the DMC folder as a parameter, so
 /// a test can aim it at a temporary folder.
 /// </summary>
 internal static class CampaignImporter
@@ -39,7 +39,7 @@ internal static class CampaignImporter
     internal const string StagingPrefix = ".dmc-import-";
 
     /// <summary>Imports an export file as a new campaign.</summary>
-    /// <param name="root">The toolkit root: the campaign is made in <c>adventures/</c> here, and <c>modules/</c> is looked in for its module.</param>
+    /// <param name="root">The DMC folder: the campaign is made in <c>adventures/</c> here, and <c>modules/</c> is looked in for its module.</param>
     /// <param name="request">What was asked.</param>
     /// <param name="err">Where to say that clean-up failed and left a staging folder behind (the message names it); nowhere when null.</param>
     /// <returns>What was made.</returns>

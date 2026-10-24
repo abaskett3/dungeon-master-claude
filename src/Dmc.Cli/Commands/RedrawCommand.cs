@@ -28,7 +28,7 @@ namespace Dmc.Commands;
 /// refreshed too, which costs nothing when something is drawn anyway.
 /// </para>
 /// </remarks>
-/// <param name="root">The toolkit root, the folder that holds <c>adventures/</c>; <see cref="Toolkit.Root"/> when null. A test passes a temporary folder.</param>
+/// <param name="root">The DMC folder, the folder that holds <c>adventures/</c>; <see cref="DmcFolder.Require"/> when null (found when the command runs, so a hook run where there is no DMC folder fails quietly like every other failure of this command). A test passes a temporary folder.</param>
 /// <param name="open">Opens a URL in the browser. <see cref="Browser.Open"/> in the real program; a test passes one that only records the URL.</param>
 public sealed class RedrawCommand(string? root = null, Action<string>? open = null) : ICommand
 {
@@ -36,7 +36,7 @@ public sealed class RedrawCommand(string? root = null, Action<string>? open = nu
     readonly Action<string> _open = open ?? Browser.Open;
 
     /// <summary>The folder that holds <c>adventures/</c>.</summary>
-    readonly string _root = root ?? Toolkit.Root;
+    string Root => root ?? DmcFolder.Require();
 
     /// <inheritdoc />
     public string Name => "redraw";
@@ -44,7 +44,7 @@ public sealed class RedrawCommand(string? root = null, Action<string>? open = nu
     /// <inheritdoc />
     public string Summary => "Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)";
 
-    /// <summary>True: this runs in a hook, so it skips the stale-binary check and any failure but a refused map file prints nothing and exits 0.</summary>
+    /// <summary>True: this runs in a hook, so any failure but a refused map file prints nothing and exits 0.</summary>
     public bool NeverFails => true;
 
     /// <summary>
@@ -58,7 +58,7 @@ public sealed class RedrawCommand(string? root = null, Action<string>? open = nu
     public int Run(string[] args, Io io)
     {
         bool active = !io.InIsTerminal && StopHookActive(io.In.ReadToEnd());
-        string? path = MapRedraw.Pending(_root);
+        string? path = MapRedraw.Pending(Root);
         if (path is null)
             return 0;
         try

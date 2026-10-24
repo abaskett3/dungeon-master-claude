@@ -3,7 +3,7 @@ using Dmc.Digest;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]</c>: replaced
+/// <c>dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]</c>: replaced
 /// <c>scripts/transcript_digest.py</c>. Claude Code records every session of this project as a JSONL file that is far too big
 /// to read; this turns the sessions into a readable transcript plus the numbers needed to judge how the toolkit's prompts
 /// performed, for the <c>review-transcript</c> skill.
@@ -18,16 +18,16 @@ public sealed class DigestCommand : ICommand
     public string Name => "digest";
 
     /// <inheritdoc />
-    public string Summary => "condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]";
+    public string Summary => "condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]";
 
     /// <summary>The text <c>--help</c> prints: usage, what the output files are, and the units used in them.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
-usage: dmc digest list [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR]
-       dmc digest show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--logs DIR] [--out DIR]
+usage: dmc digest list [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR]
+       dmc digest show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
 
 Condenses Claude Code session logs into something small enough to review. Claude Code records every session of
-this project as a JSONL file under ~/.claude/projects/<project>/ (or $CLAUDE_CONFIG_DIR/projects/<project>/).
+a DMC folder as a JSONL file under ~/.claude/projects/<project>/ (or $CLAUDE_CONFIG_DIR/projects/<project>/).
 Those files are far too big to read directly. "show" turns them into a readable transcript plus the numbers
 needed to judge how the toolkit's prompts performed. The review-transcript skill uses it.
 
@@ -36,8 +36,9 @@ needed to judge how the toolkit's prompts performed. The review-transcript skill
 
   --campaign  only sessions that touched adventures/<NAME>/
   --after     only sessions that ended on or after this date (YYYY-MM-DD, UTC)
-  --logs      folder of session .jsonl files (default: this project's Claude Code logs)
-  --out       output folder of "show" (default adventures/.transcript-review, overwritten on each run, not in the repository)
+  --folder    the DMC folder whose logs and adventures/ are used (default: the folder "dmc folder" prints)
+  --logs      folder of session .jsonl files (default: the Claude Code logs of the DMC folder)
+  --out       output folder of "show" (default adventures/.transcript-review in the DMC folder, overwritten on each run)
 
 Output of "show":
   DIR/stats.md              the numbers for each session (also printed)

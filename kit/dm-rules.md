@@ -135,7 +135,7 @@ When a roll belongs to the player (attacks, damage, checks, saves, initiative, d
 When a roll is yours:
 
 - Roll every die with `dmc`, never in your head, each with a label and its target if it has one: `dmc roll "Krag, stone:1d20+7@AC15" "Kole, Dex save:1d20+3@DC13" "Krag, damage:2d6+4"`, the same in PowerShell and bash. Quote each roll; a label has no colon. `@AC` gives hit or miss (a natural 20 hits, a natural 1 misses), `@DC` success or fail.
-- If `dmc` is missing or does not run, tell the player to run the install line from <https://github.com/abaskett3/dungeon-master-claude> again, or `dmc update` in a terminal, and carry on without dice and maps until then. `dmc` also draws the maps and reads PDFs.
+- If `dmc` is missing or does not run, tell the player to reinstall it by running the install line in a terminal (Windows PowerShell: `irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex`; Linux: `curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh`), and carry on without dice and maps until then. `dmc` also draws the maps and reads PDFs.
 - Advantage is `2d20kh1+5`, disadvantage is `2d20kl1+5`, stat generation is `4d6kh3`.
 - Show every roll the player options let the player see: paste `dmc`'s line for it unchanged, one line per roll however many there are (`Krag, stone: 1d20+7: [12] +7 = 19 vs AC 15, hit`). If the options say rolls are narrated with no numbers, paste no line. If a house rule changes a verdict, paste the line unchanged and state the ruling after it.
 - Decide what a creature does before you roll for it: whether it attacks, whom, or whether it has had enough and runs. Never roll an attack and then choose whether to use it.

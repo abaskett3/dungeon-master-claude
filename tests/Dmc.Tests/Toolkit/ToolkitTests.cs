@@ -180,7 +180,7 @@ public sealed partial class ToolkitTests
             Assert.IsTrue(Allowed(AllowRules, "PowerShell", command), command);
         }
         string rules = Read("kit/dm-rules.md");
-        StringAssert.Contains(rules, "tell the player to run the install line from <https://github.com/abaskett3/dungeon-master-claude> again, or `dmc update` in a terminal");
+        StringAssert.Contains(rules, "tell the player to reinstall it by running the install line in a terminal (Windows PowerShell: `irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex`; Linux: `curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh`)");
     }
 
     [TestMethod]
@@ -331,7 +331,7 @@ public sealed partial class ToolkitTests
             var told = RunHook(commands[0], dmc);
             Assert.AreEqual(0, told.ExitCode, told.ToString());
             Assert.HasCount(1, told.StdoutLines, $"{dmc}: {told}");
-            StringAssert.Contains(told.Stdout, "dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall DMC with the install line from https://github.com/abaskett3/dungeon-master-claude");
+            StringAssert.Contains(told.Stdout, "dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall it in a terminal with the install line (Windows PowerShell: irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex; Linux: curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh)");
             Assert.AreEqual("", told.Stderr, dmc.ToString());
         }
         var working = RunHook(commands[0], BinDmc.Published);
@@ -603,10 +603,15 @@ public sealed partial class ToolkitTests
                 $"{script} is not executable in git:\n{string.Join('\n', git)}");
     }
 
-    /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked: players keep them in a DMC folder, and a maintainer's old checkout keeps its own git-ignored.</summary>
+    /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked, and <c>.gitignore</c> still ignores them, so a <c>git add .</c> in a maintainer's old checkout cannot pick up their files: players keep them in a DMC folder.</summary>
     [TestMethod]
-    public void PersonalFilesStayOutOfGit() =>
+    public void PersonalFilesStayOutOfGit()
+    {
         CollectionAssert.AreEqual(Array.Empty<string>(), GitLsFiles(["adventures", "exports", "feedback", "modules", "rules", "bin"]));
+        string[] ignored = Read(".gitignore").Split('\n').Select(l => l.Trim()).ToArray();
+        foreach (string entry in new[] { "adventures/*", "exports/*", "feedback/*", "modules/*", "rules/*", "bin/" })
+            CollectionAssert.Contains(ignored, entry, $".gitignore must ignore {entry}");
+    }
 
     /// <summary>The files git tracks under these paths (<c>git ls-files</c>, from the repository root). The test is skipped, or fails on CI, outside a git checkout.</summary>
     static string[] GitLsFiles(string[] args)

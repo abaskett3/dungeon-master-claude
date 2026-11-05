@@ -104,7 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "dmc --version >/dev/null 2>&1 || echo \"DMC: dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall DMC with the install line from https://github.com/abaskett3/dungeon-master-claude\""
+            "command": "dmc --version >/dev/null 2>&1 || echo \"DMC: dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall it in a terminal with the install line (Windows PowerShell: irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex; Linux: curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh)\""
           }
         ]
       }

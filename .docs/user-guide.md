@@ -267,19 +267,20 @@ An export holds everything in the campaign, including `story/dm-notes.md`, so do
 
 Before DMC had a DMC folder, you played in a checkout of the toolkit's repository, and your campaigns, feedback, modules and rules files were in its `adventures/`, `feedback/`, `modules/` and `rules/` folders (git ignored them). To play from a DMC folder instead, move them across. **DMC never runs these commands: you run them yourself, in your own terminal.**
 
-1. **Back up first.** Copy the four folders somewhere safe, outside the checkout. Check the copy is there before you go on.
+1. **Back up first.** Copy those of the four folders the checkout has somewhere safe, outside the checkout. Check the copy is there before you go on.
 2. **Install.** Run `dmc install` (or `dmc install --path <folder>`) and note the folder it prints.
-3. **Move the files.** Set the two folders at the top and run the commands for your shell. They move everything in `adventures/`, `modules/` and `rules/`, and everything in `feedback/`. They leave behind any `.gitkeep` or `.ignore` placeholder an older checkout still has.
+3. **Move the files.** Set the two folders at the top and run the commands for your shell. They move everything in `adventures/`, `modules/` and `rules/`, and everything in `feedback/`. They leave behind any `.gitkeep` or `.ignore` placeholder an older checkout still has, and skip a folder the checkout does not have.
 
    PowerShell:
 
    ```powershell
    $checkout = "D:\Claude\dungeon-master-claude"   # your old checkout
    $dmc = "$HOME\dmc"                               # the DMC folder dmc install printed
-   foreach ($name in "adventures", "modules", "rules") {
-       Get-ChildItem -Force "$checkout\$name" | Where-Object { $_.Name -ne ".gitkeep" } | Move-Item -Destination "$dmc\$name"
+   foreach ($name in "adventures", "feedback", "modules", "rules") {
+       if (Test-Path "$checkout\$name") {
+           Get-ChildItem -Force "$checkout\$name" | Where-Object { $_.Name -notin ".gitkeep", ".ignore" } | Move-Item -Destination "$dmc\$name"
+       }
    }
-   Get-ChildItem -Force "$checkout\feedback" | Where-Object { $_.Name -notin ".gitkeep", ".ignore" } | Move-Item -Destination "$dmc\feedback"
    ```
 
    bash (Linux, Git Bash):
@@ -287,10 +288,10 @@ Before DMC had a DMC folder, you played in a checkout of the toolkit's repositor
    ```bash
    checkout=~/dungeon-master-claude     # your old checkout
    dmc=~/dmc                            # the DMC folder dmc install printed
-   for name in adventures modules rules; do
-     find "$checkout/$name" -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec mv {} "$dmc/$name/" \;
+   for name in adventures feedback modules rules; do
+     [ -d "$checkout/$name" ] || continue
+     find "$checkout/$name" -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name .ignore -exec mv {} "$dmc/$name/" \;
    done
-   find "$checkout/feedback" -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name .ignore -exec mv {} "$dmc/feedback/" \;
    ```
 
    If you also have a `exports/` folder in the checkout, move it the same way.

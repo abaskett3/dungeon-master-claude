@@ -180,7 +180,7 @@ public sealed partial class ToolkitTests
             Assert.IsTrue(Allowed(AllowRules, "PowerShell", command), command);
         }
         string rules = Read("kit/dm-rules.md");
-        StringAssert.Contains(rules, "tell the player to run the install line from the DMC README again, or `dmc update` in a terminal");
+        StringAssert.Contains(rules, "tell the player to run the install line from <https://github.com/abaskett3/dungeon-master-claude> again, or `dmc update` in a terminal");
     }
 
     [TestMethod]
@@ -331,7 +331,7 @@ public sealed partial class ToolkitTests
             var told = RunHook(commands[0], dmc);
             Assert.AreEqual(0, told.ExitCode, told.ToString());
             Assert.HasCount(1, told.StdoutLines, $"{dmc}: {told}");
-            StringAssert.Contains(told.Stdout, "dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall DMC with the install line in its README");
+            StringAssert.Contains(told.Stdout, "dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall DMC with the install line from https://github.com/abaskett3/dungeon-master-claude");
             Assert.AreEqual("", told.Stderr, dmc.ToString());
         }
         var working = RunHook(commands[0], BinDmc.Published);
@@ -603,11 +603,10 @@ public sealed partial class ToolkitTests
                 $"{script} is not executable in git:\n{string.Join('\n', git)}");
     }
 
-    /// <summary>Only the <c>.gitkeep</c> of each personal folder (<c>adventures/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>), and the <c>.ignore</c> that makes <c>feedback/</c> searchable, are tracked, and nothing under <c>bin/</c>.</summary>
+    /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked: players keep them in a DMC folder, and a maintainer's old checkout keeps its own git-ignored.</summary>
     [TestMethod]
     public void PersonalFilesStayOutOfGit() =>
-        CollectionAssert.AreEqual(new[] { "adventures/.gitkeep", "feedback/.gitkeep", "feedback/.ignore", "modules/.gitkeep", "rules/.gitkeep" },
-            GitLsFiles(["adventures", "feedback", "modules", "rules", "bin"]).Order(StringComparer.Ordinal).ToArray());
+        CollectionAssert.AreEqual(Array.Empty<string>(), GitLsFiles(["adventures", "exports", "feedback", "modules", "rules", "bin"]));
 
     /// <summary>The files git tracks under these paths (<c>git ls-files</c>, from the repository root). The test is skipped, or fails on CI, outside a git checkout.</summary>
     static string[] GitLsFiles(string[] args)
@@ -849,18 +848,6 @@ public sealed partial class ToolkitTests
             Assert.DoesNotContain("`record-feedback`", text, name);
         }
         StringAssert.Contains(Read(".claude/skills/review-feedback/SKILL.md"), "`kit/dm-rules.md`");
-    }
-
-    /// <summary>
-    /// <c>feedback/.ignore</c> un-ignores the entries, because the Grep tool (ripgrep) skips git-ignored files and
-    /// <c>dmc-record-feedback</c> and <c>review-feedback</c> search <c>feedback/</c> with it. (The repository's placeholder goes in PR 3 of #67.)
-    /// </summary>
-    [TestMethod]
-    public void FeedbackEntriesCanBeSearched()
-    {
-        Assert.AreEqual("!*", Read("feedback/.ignore").Trim(), "feedback/.ignore must re-include every entry for ripgrep");
-        StringAssert.Contains(Read(".gitignore"), "!feedback/.ignore");
-        StringAssert.Contains(Read(".gitattributes"), "feedback/.ignore text eol=lf");
     }
 
     /// <summary>Feedback has one route: <c>dmc-record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>

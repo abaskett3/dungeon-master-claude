@@ -24,7 +24,7 @@ Windows (PowerShell):  irm https://github.com/abaskett3/dungeon-master-claude/re
 Linux:                 curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh
 ```
 
-Nothing else needs installing. (The line works from the first release of the separated install; before it, `dmc` comes from a local build of the source, see the README: it needs the .NET 10 SDK.)
+Nothing else needs installing. To build `dmc` from source instead, see [development.md](development.md); it needs the .NET 10 SDK.
 
 ### Installing
 
@@ -269,7 +269,7 @@ Before DMC had a DMC folder, you played in a checkout of the toolkit's repositor
 
 1. **Back up first.** Copy the four folders somewhere safe, outside the checkout. Check the copy is there before you go on.
 2. **Install.** Run `dmc install` (or `dmc install --path <folder>`) and note the folder it prints.
-3. **Move the files.** Set the two folders at the top and run the commands for your shell. They move everything in `adventures/`, `modules/` and `rules/`, and everything in `feedback/` except the two placeholder files `.gitkeep` and `.ignore`, which stay in the checkout.
+3. **Move the files.** Set the two folders at the top and run the commands for your shell. They move everything in `adventures/`, `modules/` and `rules/`, and everything in `feedback/`. They leave behind any `.gitkeep` or `.ignore` placeholder an older checkout still has.
 
    PowerShell:
 
@@ -310,7 +310,7 @@ Your old session logs stay where Claude Code put them: under the checkout's Clau
 | `dmc install: could not add <folder> to your PATH: ...` | The DMC folder was written, but your `Path` could not be changed. Add the folder shown to your `Path` yourself. |
 | `dmc refresh: <folder>: <n> edited files kept in .dmc/replaced/<stamp>/` | You (or a tool) had changed a file `dmc` writes. It was put back, and your copy is in the folder named. Move anything you want to keep into a file of your own. |
 | `dmc: unknown command "campaign" (try roll, ...)` | Your `dmc` is older than 0.1.4, which added `campaign`. Install a newer one. |
-| DMC says `dmc` is missing or does not run | The start-of-session check found no working `dmc` on the `PATH`. Reinstall: run `dmc install` again, or the install line of the README. Without `dmc`, DMC cannot roll its own dice, draw maps or read PDFs. |
+| DMC says `dmc` is missing or does not run | The start-of-session check found no working `dmc` on the `PATH`. Reinstall: run `dmc install` again, or the install line from the [README](../README.md) (at <https://github.com/abaskett3/dungeon-master-claude>). Without `dmc`, DMC cannot roll its own dice, draw maps or read PDFs. |
 | `dmc play: Claude Code (claude) is not on the PATH: ...` | Install Claude Code, or open a new terminal after installing it. `dmc play` exits with code 127 in this case. |
 | `dmc play: only ...claude.cmd was found, ...` (Windows) | Only npm's command shim was found, without its PowerShell script. Install Claude Code's own `claude.exe`. |
 | The map tab did not open, or stopped updating | Open `adventures/<campaign>/maps/live.html` in your browser yourself. It refreshes itself while DMC redraws. |

@@ -19,16 +19,9 @@ Linux:                 curl -fsSL https://github.com/abaskett3/dungeon-master-cl
 
 To choose the folder in the line: `& ([scriptblock]::Create((irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1))) -Path D:\Games\dmc` or `curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh -s -- --path ~/games/dmc`. Open a new terminal afterwards, so that `dmc` is found by name. Later, `dmc update` replaces `dmc` with the latest release and brings your DMC folders up to date; it installs a release only if its checksums carry a valid signature from the DMC release key built into `dmc`.
 
-**From source** (the line works from the first release of the separated install; before it, or to try your own change), `dmc` comes from a local build, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`winget install Microsoft.DotNet.SDK.10` on Windows). From a clone of this repository:
+To build `dmc` from source instead, or to work on the toolkit, see [development.md](.docs/development.md).
 
-```
-dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
-artifacts/bin/dmc install --force
-```
-
-Use your system's runtime identifier in place of `win-x64` (`win-arm64`, `linux-x64` or `linux-arm64`). `dmc install` asks where to put your DMC folder (Enter takes `~/dmc`; `--path <folder>` answers for you), copies `dmc` into your user folder, puts it on your `PATH` and writes the folder. `--force` installs this build as your `dmc`; a release build is installed without it. Open a new terminal afterwards, so that `dmc` is found by name.
-
-Python is no longer needed. No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
+No rulebook text is included. DMC works from its knowledge of the 5e rules; for anything it is unsure of it will look the rule up or make a ruling and record it. For better accuracy, add a local rules reference (below).
 
 ### Optional: add a local rules reference
 
@@ -219,20 +212,9 @@ rules/                            optional local rules reference
 
 Your campaigns, modules, rules files and feedback are yours: `dmc install`, `dmc refresh` and `dmc play` never write, replace or remove anything in them. Back up a campaign with `dmc campaign export <name>` (see [the user guide](.docs/user-guide.md#back-up-copy-or-move-a-campaign)), and keep the copy outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
-### Tests
+### Working on the toolkit
 
-Playing needs none of this. After changing `dmc`, a skill or the settings, run the tests from a clone of this repository. They need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Publish `dmc` into `artifacts/bin/` first, because some tests run the program itself, then run them:
-
-```
-dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
-dotnet test
-```
-
-Use your system's runtime identifier in place of `win-x64`: `win-arm64`, `linux-x64` or `linux-arm64`. This local build needs no C++ toolchain; add `-p:PublishAot=true` for the faster-starting build the releases use. The tests insist that program says `dmc 0.0.0-dev`, as every build that is not a release does, and no release does, and that it is newer than the sources and the files under `kit/`. A release gets its version from its tag, so the project file never holds one. To test a different program, set `DMC_BIN` to its path and the tests run that, whatever version it prints. The tests never touch your DMC folder or the repository's `adventures/`. Tests for something you do not have (bash, PowerShell, Playwright's Chromium) are skipped; install Chromium for the map page tests with `pwsh tests/Dmc.Tests/bin/Debug/net10.0/playwright.ps1 install chromium` after a build. On GitHub the same tests run on Windows and Linux for every push to `main` and every pull request (`.github/workflows/tests.yml`), with nothing skipped.
-
-To try a change to the rules, a skill or a template, edit `kit/`, publish, and run `artifacts/bin/dmc install --path <scratch folder>` (or `artifacts/bin/dmc refresh <scratch folder>` on one you made before), then play there in a new session. The program you installed with `--force` is not changed by that: a development build installs itself only when asked.
-
-A new `dmc` reaches players through a release: push a tag `dmc-vX.Y.Z` on `main`, and `.github/workflows/release.yml` builds and checks it for every system, then, once the maintainer approves, signs its checksum list and publishes an immutable release. Players take it with the install line or `dmc update`. See [releases.md](.docs/releases.md).
+Playing needs none of the repository. Building `dmc`, running the tests, trying a change to `kit/` in a scratch DMC folder and publishing a release are in [development.md](.docs/development.md) and [releases.md](.docs/releases.md).
 
 ## Tips
 

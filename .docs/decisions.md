@@ -63,7 +63,7 @@ This log is for contributors who want to know why the toolkit is the way it is b
 ## Keep the missing-`dmc` notice at session start
 
 - **Date:** 2026-10-17
-- **Reworded 2026-10-24** (issue #67): the notice stays, in the play settings that `dmc` writes (`kit/settings.json`), and now tells DMC that `dmc` is missing or does not run and to reinstall DMC with the install line in its README. It still runs `dmc --version` and prints nothing when `dmc` runs.
+- **Reworded 2026-10-24** (issue #67): the notice stays, in the play settings that `dmc` writes (`kit/settings.json`), and now tells DMC that `dmc` is missing or does not run and to reinstall DMC with the install line in its README. **Reworded 2026-11-04** (issue #67, PR 3): a DMC folder has no README, which the first play test from a DMC folder showed (DMC searched for it and had to guess the SRD link), so the notice, `kit/dm-rules.md` and `dmc-setup-rules` now give the repository's address and the SRD links themselves. It still runs `dmc --version` and prints nothing when `dmc` runs.
 - **Decision:** Keep the `SessionStart` hook in `.claude/settings.json` that runs `bin/dmc --version` and, when it fails, tells DMC in one line to run `get-dmc` before the first roll.
 - **Reason:** Without it, a session started with plain `claude` and no working binary relies on DMC acting on a line in `CLAUDE.md`, which it would usually do only after a roll failed. It costs one shell start per session and prints nothing when `dmc` runs. It does not run `get-dmc` itself, which would touch the network on every start.
 - **Source:** PR #16 (proposed under "For the user to decide"); kept by the user's decision after that PR merged.
@@ -207,6 +207,7 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Source:** the user, in the session that closed issue #43.
 ## feedback/ has a .ignore file so the entries can be searched
 
+- **Superseded 2026-11-04** (issue #67, PR 3): the repository no longer holds a `feedback/` folder, so `feedback/.ignore` is gone. Players keep `feedback/` in their DMC folder, which is not a git repository, so ripgrep searches it without help. A maintainer's old checkout keeps its entries git-ignored and unsearchable until they are moved to a DMC folder.
 - **Date:** 2026-10-18
 - **Decision:** `feedback/.ignore` holds `!*` and is tracked (`!feedback/.ignore` in `.gitignore`, LF in `.gitattributes`). The entries stay git-ignored, but ripgrep treats a `.ignore` file as overriding `.gitignore`.
 - **Reason:** The Grep tool uses ripgrep, which skips git-ignored files. A search of `feedback/` returned nothing although ten entries matched, so the duplicate check in `record-feedback` and the listing in `review-feedback` could not see any entry. Naming one file directly worked, which is why it went unnoticed. After adding the file the same search found all ten.

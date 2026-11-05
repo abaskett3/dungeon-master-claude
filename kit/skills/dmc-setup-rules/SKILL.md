@@ -9,7 +9,7 @@ description: Index a local copy of the D&D 5e SRD (or other rules reference) in 
 
 ## 1. See what is there
 
-List `rules/`. If it holds nothing but `.gitkeep`, tell the player how to add the SRD (the README has the link) and stop.
+List `rules/`. If it is empty, tell the player how to add the SRD and stop: download the 5.1 SRD (the 2014 rules) from <https://media.wizards.com/2023/downloads/dnd/SRD_CC_v5.1.pdf>, or for the 2024 rules the 5.2 SRD from <https://www.dndbeyond.com/srd>, save it in `rules/` and run `/dmc-setup-rules` again. Pick the one for the campaign's edition.
 
 Note the format of each file:
 

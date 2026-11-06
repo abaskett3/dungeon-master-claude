@@ -1,6 +1,6 @@
 # Roadmap
 
-This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-11-04; the PRs and issues named are on GitHub.
+This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-11-05; the PRs and issues named are on GitHub.
 
 ## Status by area
 
@@ -16,21 +16,19 @@ This document is for anyone who wants to know what is finished, what comes next 
 | Code documentation: XML doc comments, script and workflow headers (PR #24) | Done | Every type and member of `src/Dmc.Cli` documented, and the build now fails on a missing visible comment there; scoped to the test project. See [development.md](development.md). |
 | `dmc roll "label:expr@target"`, issue #6 Phase 2a (PR #25) | Done | Shipped in 0.1.2. |
 | Turn order drawn on the map, issue #6 Phase 2b (PR #25) | Done | Shipped in 0.1.2. |
-| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. The first play test's findings became issue #35. |
+| Play one fight and review it, issue #6 Phase 3 | Done | The first play test's findings became issue #35; issue #6 closed 2026-10-17. |
 | Break alert relative to the resume, issue #35 part 1 | Done, in the next release | `dmc context-check` starts its bands at the larger of 150,000 and the post-resume baseline plus 40,000; wording says the context is large. Changes the binary, so it ships in the release after 0.1.2. |
-| Lighter resume, issue #35 part 2 | Next | Prompts only: search a large `canon.md`, read the tail of the session log, sheets of those present only. |
 | `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | `play.ps1` exits with a real code when `claude` cannot be started, issue #28 (PR #31) | Done (PR #31) | Launcher only, so it needs no release. |
 | `dmc digest` refuses a log with a bad token count as one error naming the file and line, issue #29 (PR #32) | Done (PR #32) | Changes the binary; ships in the next release, 0.1.3. |
 | `dmc campaign` export, import and show, issue #81 | Done (PR #120), released in 0.1.4 | Changes the binary; shipped in 0.1.4 (pin PR #155). Backs up, restores under a new name and moves a campaign as one checked file; see [dmc-reference.md](dmc-reference.md#campaign). |
 | No deleting or moving campaign files in play, issue #36 (PR #38) | Done | A clause in `CLAUDE.md` § Saving as you go, deny rules for shell deletes and moves in `.claude/play-settings.json`, and a toolkit test. Not a complete block; see [decisions.md](decisions.md). |
-| Play one fight and review it, issue #6 Phase 3 | Next | Then close issue #6. |
 | Lighter resume, issue #35 part 2 | Done | Prompts and templates only: canon past about 230 lines is read as its always-read sections plus a search, the session log is read from its tail (whole after an unsaved session), sheets are limited to the PCs, the companions and those present, and every full save splits and counts canon. Closes issue #35 together with the break alert change (part 1, which ships in the release after 0.1.2). |
 | `dmc pdf` output is all or nothing, issue #30 (PR #33) | Done (PR #33) | Changes the binary; ships in the next release, 0.1.3. |
 | Play fights and review them, issue #6 Phase 3 | Done | Two sparring bouts reviewed. Readied actions, shown rolls, enemy options and movement held; the map was drawn before the narration in all 6 updates. |
-| Redraw the map after the reply with a Stop hook, `dmc redraw`, issue #6 (PR #37) | Done (PR #37), not yet verified in play | Changes the binary and the play settings; it works only from release 0.1.3, once that is pinned. Prompt wording alone had failed 6 times out of 6. |
+| Redraw the map after the reply with a Stop hook, `dmc redraw`, issue #6 (PR #37) | Done (PR #37), verified in play | Shipped in 0.1.3. Prompt wording alone had failed 6 times out of 6; the verification play test on 2026-10-17 had the map after the narration in all 25 replies. |
 | The Stop hook opens the first map of a fight, issue #42 | Done, in the next release | `dmc redraw` draws `live.json` when there is no page yet and opens the page when it was not showing the scene; changes the binary, so it needs release 0.1.4 and its pin (written by the release workflow). |
-| Check the hook and the plan / standing-orders rule in play, then close issue #6 | Next | See [Next](#next-issue-6). |
+| Check the hook and the plan / standing-orders rule in play, then close issue #6 | Done | Issue #6 closed 2026-10-17. The hook, readied actions, enemy options and shown rolls passed; the plan and standing-orders rule was offered but not exercised. See [Issue #6](#issue-6-combat-procedure). |
 | Feedback about DMC recorded outside the campaign, issue #43 | Done (PR #44) | `record-feedback` and `review-feedback` skills, `feedback/`, `templates/feedback.md`; `review-transcript` now records entries and proposes no fixes. The migration of the first campaign's scattered feedback is done afterwards with the player, on local data. See [decisions.md](decisions.md). |
 | CI skips changes that are not code | Done | `tests.yml` ignores `*.md` and `*.txt` unless they are the prompts the tests read. See [decisions.md](decisions.md). |
 | `feedback/` searchable by the Grep tool | Superseded (issue #67, PR 3) | `feedback/.ignore` overrode the git-ignore for ripgrep in the repository; `feedback/` now lives in the DMC folder, which is not a git checkout, so it is gone. See [decisions.md](decisions.md). |
@@ -47,7 +45,7 @@ This document is for anyone who wants to know what is finished, what comes next 
 | macOS support removed, issue #124 (PR #159) | Done, in the next release | `dmc` is no longer built, tested or documented for macOS: the release and CI workflows, the pin (four archives) and the code drop `osx-arm64`, and `get-dmc` refuses on a Mac in one line. Releases up to 0.1.4 keep their macOS archive. See [decisions.md](decisions.md) and [releases.md](releases.md). |
 | Separate the player install from the toolkit source, issue #67, PR 1 of 3 (the kit and the DMC folder) | Done (PR #163) | `kit/` holds the source of the rules, skills (renamed `dmc-<name>`), settings and templates, embedded in `dmc`; `dmc install`, `dmc refresh`, `dmc folder` and the new `dmc play` write and keep a DMC folder by a manifest, never touching the player's files; `Toolkit.Root` and the stale-binary check, `play.ps1`, `play.sh` and their tests are gone; the repository's `CLAUDE.md` is developer-only; the constitution is 2.0.0 (players install Claude Code and `dmc`). Spec: `specs/003-separate-player-install/`. PR 2 (`dmc update`, signed releases, the install line) and PR 3 (the switch-over) follow. See [decisions.md](decisions.md). |
 | Separate the player install from the toolkit source, issue #67, PR 2 of 3 (`dmc update`, signed releases, the install line) | Done (PR #164), released as 0.2.0 | `dmc update` replaces the program in place with the latest release after checking the signature of its checksum list (ECDSA P-256, public keys built into `dmc`) and the archive's hash against the signed list and GitHub's digest; `tools/install.ps1` and `tools/install.sh` are the install line; the release workflow runs in the environment `release`, signs, creates a draft, publishes an immutable release, and pins its actions to commit SHAs; `get-dmc`, the pin and `write-pin.sh` are gone. The maintainer's steps are done: release keys, the `release` environment and secret, immutable releases, rulesets for `main` and `dmc-v*` tags, and `dmc-v0.2.0` published 2026-10-25. See [releases.md](releases.md) and [decisions.md](decisions.md). PR 3 (the switch-over) follows. |
-| Separate the player install from the toolkit source, issue #67, PR 3 of 3 (the switch-over) | In review | The repository's placeholder player folders and their tests are gone; the README is for players, with building and testing in [development.md](development.md); the kit's pointers to a README a DMC folder does not have give the links themselves (found by the first play test from release 0.2.0, which otherwise passed, Stop hook included). Waits on the maintainer moving their campaigns (H6) and the check in play from the release (H7 part 2). Closes #67. |
+| Separate the player install from the toolkit source, issue #67, PR 3 of 3 (the switch-over) | Done (PR #165), in the next release | The repository's placeholder player folders and their tests are gone; the README is for players, with building and testing in [development.md](development.md); the kit's pointers to a README a DMC folder does not have give the links themselves (found by the first play test from release 0.2.0, which otherwise passed, Stop hook included). The maintainer has moved their campaigns to a DMC folder (H6). The kit fixes are embedded in `dmc`, so players get them from release 0.2.1; the check in play from that release (H7 part 2) remains. Closed #67. |
 | Split the combat tracker into `combat.md` | Not planned unless needed | |
 | A Stop hook that warns about unshown rolls | Not planned unless needed | |
 | Gatekeeper and SmartScreen checks on fresh machines | Skipped | The user's call; see [decisions.md](decisions.md). |
@@ -86,9 +84,9 @@ This document is for anyone who wants to know what is finished, what comes next 
 - **PR #38:** issue #36, `CLAUDE.md` forbids deleting or moving a file under `adventures/` unless the player asks, `play-settings.json` denies `rm`, `mv`, `Remove-Item`, `Move-Item`, `git clean`, `find -delete` and their aliases, and `rewind-campaign` lists stale maps for the player to delete instead of deleting them. Closes issue #36.
 - **Issue #81:** `dmc campaign export`, `import` and `show`. One campaign (and the general player options) goes into a ZIP with a manifest of sizes and SHA-256 checksums in `exports/` (git ignores it); import checks the whole file, then creates the campaign all or nothing under a free name and never changes an existing campaign, the general options or the active campaign. (PR #120.)
 
-## Next: issue #6
+## Issue #6: combat procedure
 
-Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase 1 (the prompts and templates, PR #19) is done. So is Phase 2, shipped in release 0.1.2 (PR #26), on which `CLAUDE.md` § Dice and § Maps now depend:
+Done; issue #6 closed on 2026-10-17. Issue #6 fixes combat-procedure problems found by reviewing play sessions. Phase 1 (the prompts and templates, PR #19) is done. So is Phase 2, shipped in release 0.1.2 (PR #26), on which `CLAUDE.md` § Dice and § Maps now depend:
 
 - **Labelled rolls (PR #25).** `dmc roll "label:expr@target"` prints a line ready to paste, for example `Goblin, shortbow: 1d20+4: [11] +4 = 15 vs AC 14, hit`, with a natural 20 or 1 deciding an attack. The bare syntax keeps working, and `dmc roll --help` is new. Described in [dmc-reference.md](dmc-reference.md#label-and-target).
 - **Turn order on the map (PR #25).** `live.json` gains `"initiative"` (the order, by token id) and `"current"` (whose turn it is), and `dmc map` draws the turn order beside the grid with the current turn marked. Described in [campaign-files.md](campaign-files.md#the-map-files).
@@ -99,13 +97,11 @@ What the Phase 3 play test (two sparring bouts) found, and what remains:
 - **Failed:** the map was redrawn and the picture sent before the narration in all 6 map updates, because reply text written after a tool call appears after it and DMC wrote none before `dmc map`. Rewording `CLAUDE.md` could not be relied on, so PR #37 moves the redraw into a `Stop` hook (`dmc redraw`), which runs after the reply. It is **not yet verified**.
 - **Not exercised:** the plan and standing-orders rule.
 
-What remains:
+How it finished:
 
-1. **Release 0.1.3 and its pin.** PR #33 (`dmc pdf` output all or nothing) and PR #37 (`dmc redraw`) change the binary. The Stop hook does nothing until the pinned `dmc` is 0.1.3 or later, and with an older one it stays silent and play carries on.
-2. **Play test, then close issue #6.** In a fight, check that every map update appears after the text that describes it, that a refused map file is reported and corrected, and, for a remote player (where nothing but DMC's own ordering applies), that `live.png` is sent after the text; and exercise the plan and standing-orders rule. Review the session with `/review-transcript`.
-3. **Follow-ups from the same review, tracked separately:** issue #35 (the break alert fires right after a resume; make it relative and make the resume cheaper) and issue #36 (DMC deleted campaign files; PR #38 addresses it).
-
-Each of these updates [dmc-reference.md](dmc-reference.md), [campaign-files.md](campaign-files.md) (for `live.json`) and this roadmap, under the documentation rule.
+1. **Release 0.1.3 and its pin.** Published with PR #33 (`dmc pdf` output all or nothing) and PR #37 (`dmc redraw`), pinned by PR #41.
+2. **Verification play test (2026-10-17, `dmc` 0.1.3).** The Stop hook ran after all 25 replies with no refusals, so the map now follows the narration. Readied actions, enemy options, distances from `dmc map --measure` and shown rolls all passed. The plan and standing-orders rule was offered three times but the player directed companions turn by turn, so it remains unexercised; the next fight that uses a plan will test it.
+3. **Follow-ups from the same review:** issue #35 (the break alert relative to the resume, and a cheaper resume) and issue #36 (no deleting campaign files, PR #38), both closed. The same play test saw the break note about 40,000 tokens after the resume and no campaign file deleted.
 
 ## Not planned unless needed
 

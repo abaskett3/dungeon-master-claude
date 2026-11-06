@@ -217,7 +217,7 @@ is in Phase 9.)
 
 ## Phase 11: Convergence
 
-- [ ] T077 After each PR merges, run `/speckit-converge` and keep `spec.md`, `plan.md`, `research.md`, `contracts/` and this file in line with what shipped; the spec is frozen once a pass adds no tasks after PR 3 has merged (`.docs/development.md` § Spec-driven changes).
+- [x] T077 After each PR merges, run `/speckit-converge` and keep `spec.md`, `plan.md`, `research.md`, `contracts/` and this file in line with what shipped; the spec is frozen once a pass adds no tasks after PR 3 has merged (`.docs/development.md` § Spec-driven changes).
 
 ---
 

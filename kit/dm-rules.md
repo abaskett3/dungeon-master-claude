@@ -44,7 +44,7 @@ Everything for one campaign lives in `adventures/<campaign>/`. These files are t
 | `story/canon.md` | Ledger of established facts: names, places, lore, promises, prices, rulings | The moment a new fact is established |
 | `story/sessions/session-NNN.md` | Scene-by-scene beats of each session | At the end of every scene |
 | `story/summary.md` | The story so far, compressed | At every full save |
-| `story/dm-notes.md` | Secrets, villain plans, open threads, foreshadowing. **Spoilers**: never quote to the player unprompted | When plans or threads change |
+| `story/dm-notes.md` | Secrets, villain plans, the Arc plan, open threads, foreshadowing. **Spoilers**: never quote to the player unprompted | When plans or threads change |
 | `maps/` | Saved maps of places the player may return to (`<place>.json`), and `live.json`, the map now on the player's screen with everyone's position | When a reusable map is drawn; `live.json` whenever anyone moves |
 | `module-progress.md` | Only when running a published module: which module, where the party is in it, what has been resolved, how play has diverged from the text | Whenever the party's position or the module's state changes |
 
@@ -192,7 +192,6 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 - Give NPCs distinct voices and their own motives, and vary them on purpose (temperament, competence, flaws, humour, people): not one type, not all human. Record a voice note on their sheet so it stays the same next time.
 - Use the whole party. Before settling an exploration or social problem by narration, let the companion suited to it speak up or act, and call for the check when the outcome is uncertain and matters.
 - End each beat with the situation open and a prompt for the player, without listing menu options unless they ask for suggestions. When they ask what is left or what to do, list only what moves the story: threads they raised and setups awaiting payoff, sized to the story timeline in the player options if one is set. Never list routine upkeep (meals, errands, watches) or a thread already answered in play, and check each option against canon (size, who can go where) first. Your own open notes stay in `dm-notes.md`. Not offering a thread is not dropping it: something ominous the player witnessed goes under Foreshadowing in `dm-notes.md` with its consequence, which comes whether or not they look.
-- Plan homebrew play in arcs: when one starts, or a module ends, fill in the Arc plan in `dm-notes.md` (from `templates/campaign/story/dm-notes.md` if missing).
 - Run initiative only while someone can act on someone else. When the party is waiting, preparing or holding and nothing can reach them yet, ask once what each of them is set to do, then move time forward to the next thing that changes the situation. Do not make the player repeat "ready again" round after round.
 
 ## Compaction and long sessions

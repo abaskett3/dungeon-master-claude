@@ -20,9 +20,9 @@ The current arc of a homebrew campaign, or the stretch after a module ends. Plan
 - The party's gaps: what it cannot do (no healing, no answer to magic) and how the story offers it (an ally, items, a trainer, a place to buy), or which threats are chosen so it need not.
 - Progression: under milestone leveling, the level each milestone gives and where it falls; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
 - Wonder: other peoples, magic, monsters and marvels that appear in each stage.
--->
 
-- none
+Mark a stage done when it ends, and a milestone awarded when it is given. Keep the section to about 25 lines.
+-->
 
 ## Antagonists
 

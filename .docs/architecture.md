@@ -84,7 +84,7 @@ Because the generated files are inside `dmc`, a program and its files cannot dri
 | 2. Character sheets | Every character who appeared gets their sheet updated (`dmc-character-sheet-update`); bit parts go into `minor-npcs.md`. |
 | 3. Session log | Unwritten scenes are appended to the session log. |
 | 4. Canon | Missed facts go into `canon.md`, which is then pruned. The line count is checked every save: past about 230 lines, facts whose subject can no longer come up move to `canon-archive.md` until it is under about 200, because the resume only reads canon whole under about 230; if every subject is live it stays long and the resume searches it. The Last full save line records the last scene saved. |
-| 5. DM notes | `dm-notes.md` is updated, including the Opposition table; closed threads move to `dm-notes-archive.md`. |
+| 5. DM notes | `dm-notes.md` is updated, including the Opposition table; closed threads move to `dm-notes-archive.md`. Then an arc check: a homebrew campaign (or one whose module is finished) with no Arc plan or a finished arc gets the next one planned; the recent mix of play, unawarded milestones (a Pending line for the next rest), income, and a consequence for every foreshadowing line are checked. |
 | 5a. Module progress | `module-progress.md`, if present, is brought up to date. |
 | 6. Summary | `summary.md` is rewritten, under about 600 words. |
 | 7. Consistency check | Every file the save changed, and every party sheet, is read again in one batch and checked against the others: HP, resources, inventory, location, time, quests, spellings. |

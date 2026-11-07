@@ -156,7 +156,7 @@ is in Phase 9.)
 **Independent Test**: quickstart §6.
 
 - [x] T044 [US6] In `.docs/user-guide.md` add "Moving campaigns from a repository checkout": back up first; `dmc install` (or `--path`); then the PowerShell and bash commands that move `adventures/*`, `feedback/*` (except `.gitkeep`, `.ignore`), `modules/*` and `rules/*` from the checkout into the DMC folder; old session logs stay under the checkout's Claude Code project folder and `dmc digest --logs <folder>` reads them.
-- [ ] T045 🧑 HUMAN (H6) [US6] Ask the user to back up and then run the T044 commands themselves on their real campaigns (DMC never runs them), resume the active campaign with `dmc play`, and confirm the recap matches.
+- [x] T045 🧑 HUMAN (H6) [US6] Ask the user to back up and then run the T044 commands themselves on their real campaigns (DMC never runs them), resume the active campaign with `dmc play`, and confirm the recap matches.
 
 **Checkpoint**: the maintainer plays from a DMC folder.
 
@@ -209,15 +209,15 @@ is in Phase 9.)
 - [x] T072 [P] Finish `README.md` for players (install Claude Code, the install line, `dmc play`, `dmc update`, where the files are); move any remaining developer setup to `.docs/development.md`. Final pass over `.docs/` for stale references: `rg -n "play\.ps1|play\.sh|get-dmc|dmc-release|bin/dmc|Toolkit\.Root|/resume-campaign|play-settings" README.md .docs kit .claude CLAUDE.md` finds only marked history.
 - [x] T078 [US1] (found by T035) Replace the kit's pointers to "the README", which a DMC folder does not have: `dmc-setup-rules` gives the SRD links itself, and `kit/dm-rules.md` and the start-up hook's missing-`dmc` notice give the two install lines themselves; the toolkit tests follow.
 - [ ] T073 🧑 HUMAN (H7, part 2) Ask the user to install from the published release with the install line on a clean folder, play one scene there with the T035 checklist, then one scene in their migrated DMC folder after `dmc update` (or refresh) with the same checklist (rewind and ingest on scratch data only), and report (SC-008, SC-009). Before that, quickstart §3 step 1: change a line of `kit/dm-rules.md` on a branch, push it, and check the installed DMC folder's `CLAUDE.md` still has the released text (SC-006).
-- [ ] T074 Run `dotnet test`; open PR 3 with the full description and `Closes #67`; check the body with `gh pr view <n> --json body`.
-- [ ] T075 Run the code-review command once on PR 3; fix and check; documentation current; CI passes.
-- [ ] T076 🧑 HUMAN (H8) Ask the user to merge PR 3 (this closes #67).
+- [x] T074 Run `dotnet test`; open PR 3 with the full description and `Closes #67`; check the body with `gh pr view <n> --json body`.
+- [x] T075 Run the code-review command once on PR 3; fix and check; documentation current; CI passes.
+- [x] T076 🧑 HUMAN (H8) Ask the user to merge PR 3 (this closes #67).
 
 ---
 
 ## Phase 11: Convergence
 
-- [ ] T077 After each PR merges, run `/speckit-converge` and keep `spec.md`, `plan.md`, `research.md`, `contracts/` and this file in line with what shipped; the spec is frozen once a pass adds no tasks after PR 3 has merged (`.docs/development.md` § Spec-driven changes).
+- [x] T077 After each PR merges, run `/speckit-converge` and keep `spec.md`, `plan.md`, `research.md`, `contracts/` and this file in line with what shipped; the spec is frozen once a pass adds no tasks after PR 3 has merged (`.docs/development.md` § Spec-driven changes).
 
 ---
 

@@ -77,10 +77,10 @@ tests/Dmc.Tests/Toolkit/ToolkitTests.cs   # the rule's cases; the script in the 
 
 ### The script's interface
 
-- **Input**: changed paths relative to the repository root, `/` separators, one per line on stdin. Blank lines are
-  ignored.
-- **Output**: `true` if any path is not `*.md` or `*.txt`, or is `CLAUDE.md`, `README.md`, under `.claude/skills/` or
-  under `kit/`; otherwise `false` (including no paths). Exit 0.
+- **Input**: `git diff --name-status --no-renames` output on stdin: a status letter, a tab, a path relative to the
+  repository root with `/` separators, one per line. Blank lines are ignored.
+- **Output**: `true` if any change is a deletion, or its path is not `*.md` or `*.txt`, or is `CLAUDE.md`,
+  `README.md`, under `.claude/skills/` or under `kit/`; otherwise `false` (including no changes). Exit 0.
 
 ## Complexity Tracking
 

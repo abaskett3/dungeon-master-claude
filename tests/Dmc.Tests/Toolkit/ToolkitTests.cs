@@ -606,27 +606,61 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// <c>.github/ci/needs-tests.sh</c>, the rule <c>tests.yml</c> uses to decide whether a change needs the build and
-    /// tests: only Markdown and text files outside the prompts do not. The changed paths are separated by <c>|</c> here
-    /// and given to the script one per line; an empty string is no paths at all.
+    /// tests: only changed or added Markdown and text files outside the prompts do not, and a deleted file always does.
+    /// The changes are written <c>status path</c> and separated by <c>|</c> here, and given to the script as
+    /// <c>git diff --name-status</c> prints them, tab-separated, one per line; an empty string is no changes at all.
     /// </summary>
     [TestMethod]
-    [DataRow(".docs/roadmap.md", false)]
-    [DataRow("specs/004-docs-only-required-checks/tasks.md|notes.txt", false)]
-    [DataRow("docs/README.md|.docs/skills/kit/CLAUDE.md", false)]
+    [DataRow("M .docs/roadmap.md", false)]
+    [DataRow("A specs/004-docs-only-required-checks/tasks.md|M notes.txt", false)]
+    [DataRow("M docs/README.md|A .docs/skills/kit/CLAUDE.md", false)]
     [DataRow("", false)]
-    [DataRow("CLAUDE.md", true)]
-    [DataRow("README.md", true)]
-    [DataRow(".claude/skills/review-feedback/SKILL.md", true)]
-    [DataRow("kit/dm-rules.md", true)]
-    [DataRow("src/Dmc.Cli/CommandTable.cs", true)]
-    [DataRow(".github/workflows/tests.yml", true)]
-    [DataRow(".docs/roadmap.md|tools/install.sh|.docs/decisions.md", true)]
-    public void CiRunsTheTestsForEveryChangeButDocumentation(string paths, bool needsTests)
+    [DataRow("M CLAUDE.md", true)]
+    [DataRow("M README.md", true)]
+    [DataRow("A .claude/skills/review-feedback/SKILL.md", true)]
+    [DataRow("M kit/dm-rules.md", true)]
+    [DataRow("M src/Dmc.Cli/CommandTable.cs", true)]
+    [DataRow("M .github/workflows/tests.yml", true)]
+    [DataRow("M .docs/roadmap.md|A tools/install.sh|M .docs/decisions.md", true)]
+    [DataRow("D .docs/dmc-reference.md", true)]
+    [DataRow("D src/Dmc.Cli/Maps/Fonts/LICENSE-LiberationSans.txt|A src/Dmc.Cli/Maps/Fonts/LICENSE.txt", true)]
+    public void CiRunsTheTestsForEveryChangeButDocumentation(string changes, bool needsTests)
     {
-        string stdin = paths.Length == 0 ? "" : string.Join('\n', paths.Split('|')) + "\n";
+        string stdin = changes.Length == 0 ? "" : string.Join('\n', changes.Split('|').Select(c => c.Replace(' ', '\t'))) + "\n";
         var result = TestEnv.Run(Bootstrap.Shell("bash"), [Path.Combine(TestEnv.Root, ".github", "ci", "needs-tests.sh")], stdin);
         Assert.AreEqual(0, result.ExitCode, result.ToString());
-        Assert.AreEqual(needsTests ? "true" : "false", result.Stdout.Trim(), $"for {paths}");
+        Assert.AreEqual(needsTests ? "true" : "false", result.Stdout.Trim(), $"for {changes}");
+    }
+
+    /// <summary>
+    /// <c>tests.yml</c> always reports both required checks: it has no <c>paths</c> filter, so it starts on every change,
+    /// and no job-level <c>if</c>, which would report the skipped matrix job under its unexpanded name. Every step after
+    /// the one that decides carries a condition on its answer, so a documentation-only change builds and tests nothing.
+    /// </summary>
+    [TestMethod]
+    public void CiReportsTheRequiredChecksOnEveryChange()
+    {
+        string[] lines = Read(".github/workflows/tests.yml").Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+        Assert.IsFalse(lines.Any(l => Regex.IsMatch(l, @"^\s*paths(-ignore)?:")), "tests.yml must not filter by paths");
+        Assert.IsFalse(lines.Any(l => Regex.IsMatch(l, @"^    if:")), "the dotnet job must not have a job-level if");
+        CollectionAssert.Contains(lines, "    name: dotnet (${{ matrix.os }})");
+
+        // The steps are the items at six spaces under "steps:"; each one's lines run to the next item.
+        int start = Array.IndexOf(lines, "    steps:");
+        Assert.IsGreaterThanOrEqualTo(0, start, "tests.yml has no steps");
+        var steps = new List<List<string>>();
+        foreach (string line in lines.Skip(start + 1).TakeWhile(l => l.Length == 0 || l.StartsWith("      ", StringComparison.Ordinal)))
+        {
+            if (line.StartsWith("      - ", StringComparison.Ordinal))
+                steps.Add([]);
+            if (steps.Count > 0 && !line.TrimStart().StartsWith('#'))
+                steps[^1].Add(line);
+        }
+        int decide = steps.FindIndex(s => s.Any(l => l.Trim() == "id: changes"));
+        Assert.IsGreaterThan(0, decide, "tests.yml has no step with id: changes after the checkout");
+        foreach (var step in steps.Skip(decide + 1))
+            Assert.IsTrue(step.Any(l => l.TrimStart().StartsWith("if: ", StringComparison.Ordinal) && l.Contains("steps.changes.outputs.code", StringComparison.Ordinal)),
+                $"this step of tests.yml runs whether or not the change needs the tests:\n{string.Join('\n', step)}");
     }
 
     /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked, and <c>.gitignore</c> still ignores them, so a <c>git add .</c> in a maintainer's old checkout cannot pick up their files: players keep them in a DMC folder.</summary>

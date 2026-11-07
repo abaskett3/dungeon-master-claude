@@ -28,12 +28,15 @@
 
 ## R3. Which files changed
 
-- **Decision**: Check out with `fetch-depth: 0`, then `git diff --name-only --no-renames <base> HEAD`. On a pull
+- **Decision**: Check out with `fetch-depth: 2` on a pull request and `0` on a push, then
+  `git diff --name-status --no-renames <base> HEAD`. On a pull
   request `HEAD` is GitHub's merge commit (`refs/pull/N/merge`) and `<base>` is `HEAD^1`, the base branch it was
   merged onto, so the diff is what the pull request brings. On a push `<base>` is `github.event.before`. If the diff
   fails (an all-zero `before`, a missing commit), the answer is "needs the tests".
-- **Rationale**: `--no-renames` lists both names of a renamed file, so a source file renamed to `.md` still counts.
-  No API call and no token permission is needed.
+- **Rationale**: `--no-renames` lists a renamed file as a deletion and an addition, and `--name-status` gives the
+  script the `D`, so a deletion or rename of any file starts the tests: `ToolkitTests` checks that the `.docs/` files
+  a prompt names exist, and `MapPngTests` that the fonts' `.txt` licences do (found by the code review of the pull
+  request; the old `paths` filter had the same gap). No API call and no token permission is needed.
 
 ## R4. Where the rule lives
 

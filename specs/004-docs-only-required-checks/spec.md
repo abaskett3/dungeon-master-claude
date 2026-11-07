@@ -90,8 +90,9 @@ in User Stories 1 and 2.
   is treated as code, so the tests run: failing safe costs runner time, never an untested merge.
 - A push to `main` follows the same rule as a pull request, so the push and pull request rules cannot drift apart.
 - A push to `main` with no earlier commit to compare against (a new branch, a forced push) is treated as code.
-- A pull request that renames or deletes a file counts the old and new names, so deleting a source file starts
-  the tests.
+- A pull request that deletes or renames any file, even a Markdown or text one, starts the tests: some tests check
+  that Markdown and text files exist (the `.docs/` files a prompt names, the fonts' licences). Added by the code
+  review of the pull request.
 - A file named like a prompt in a subfolder (`docs/README.md`) is documentation, as today; only the root
   `CLAUDE.md` and `README.md` are prompts.
 - `claude-review` is a required check from a different workflow and is not changed.
@@ -104,14 +105,15 @@ in User Stories 1 and 2.
   changes.
 - **FR-002**: On every run, both required checks, `dotnet (ubuntu-latest)` and `dotnet (windows-latest)`, MUST
   report a result under exactly those names.
-- **FR-003**: When every changed file is a Markdown (`*.md`) or text (`*.txt`) file and none is the root
-  `CLAUDE.md`, the root `README.md`, or under `.claude/skills/` or `kit/`, the checks MUST succeed without building
-  or testing.
+- **FR-003**: When every changed file is a Markdown (`*.md`) or text (`*.txt`) file, none is deleted, and none is
+  the root `CLAUDE.md`, the root `README.md`, or under `.claude/skills/` or `kit/`, the checks MUST succeed without
+  building or testing.
 - **FR-004**: Otherwise the checks MUST build and run the full test suite, as before this change.
 - **FR-005**: When the changed files cannot be determined, the checks MUST build and run the tests.
 - **FR-006**: The rule in FR-003 MUST be written once and used for both pull requests and pushes.
-- **FR-007**: The toolkit tests MUST check the rule against documentation-only, prompt-only, code, mixed and empty
-  file lists.
+- **FR-007**: The toolkit tests MUST check the rule against documentation-only, prompt-only, code, mixed, deleted
+  and empty file lists, and MUST check that the workflow has no path filter and guards every step after the
+  decision.
 - **FR-008**: The repository's rules and the other workflows MUST NOT change.
 - **FR-009**: `.docs/development.md` § CI and the decision log MUST describe the required checks, the rule and the
   reason; the earlier decision "CI does not run for changes that are not code" MUST be marked as amended; the

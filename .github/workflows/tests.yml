@@ -3,8 +3,9 @@ name: Tests
 # Builds and tests the toolkit's .NET code. It starts on every pull request and every push to main, whatever the change,
 # because the ruleset on main requires its two checks, dotnet (ubuntu-latest) and dotnet (windows-latest), and a check
 # that never reports blocks the merge. Its first step asks .github/ci/needs-tests.sh, the one home of the rule, whether
-# the changed files need the tests: Markdown and text files do not, except the ones the toolkit tests read as DMC's
-# instructions (CLAUDE.md, README.md, .claude/skills/ and kit/). When they do not, every later step is skipped and the
+# the changed files need the tests: changed or added Markdown and text files do not, except the ones the toolkit tests
+# read as DMC's instructions (CLAUDE.md, README.md, .claude/skills/ and kit/), and a deleted file always does. When
+# they do not, every later step is skipped and the
 # check passes in about a minute. The steps are skipped, not the job: a job-level `if` is evaluated before the matrix,
 # so a skipped job would report under its unexpanded name and match neither required check. Otherwise, for each of
 # Linux and Windows it publishes dmc once with Native AOT, builds the tests, installs Playwright's Chromium and runs all
@@ -36,13 +37,15 @@ jobs:
       DOTNET_NOLOGO: "1"
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
-      # The whole history, so a push can be compared with the commit main was at before it.
+      # A pull request needs only the merge commit and its parents; a push needs the whole history, to be compared with
+      # the commit main was at before it.
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
       # On a pull request HEAD is GitHub's merge commit and HEAD^1 the base it was merged onto; on a push the base is
-      # the commit before the push. --no-renames lists both names of a renamed file. A diff that fails (no earlier
-      # commit) counts as code, so the tests run.
+      # the commit before the push. --no-renames lists a renamed file as a deletion and an addition. A diff that fails
+      # (no earlier commit) counts as code, so the tests run. Every step after this one must carry its `if`; a toolkit
+      # test checks that.
       - name: Decide whether the change needs the tests
         id: changes
         shell: bash
@@ -50,7 +53,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then base=HEAD^1; else base=$BEFORE; fi
-          if files=$(git diff --name-only --no-renames "$base" HEAD); then
+          if files=$(git diff --name-status --no-renames "$base" HEAD); then
             code=$(printf '%s\n' "$files" | bash .github/ci/needs-tests.sh)
           else
             code=true
@@ -84,4 +87,4 @@ jobs:
       - name: Skip the tests (only documentation changed)
         if: steps.changes.outputs.code != 'true'
         shell: bash
-        run: echo "Only Markdown and text files outside the prompts changed, so nothing was built or tested."
+        run: echo "Only Markdown and text files outside the prompts changed, and none was deleted, so nothing was built or tested."

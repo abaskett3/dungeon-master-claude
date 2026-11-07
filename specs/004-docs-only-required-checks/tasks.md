@@ -24,14 +24,16 @@
 - [X] T003 [P] [US3] Add a data-driven test to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that runs the script with
   bash on: a `.docs/` file (false), a `specs/` Markdown file and a `.txt` file (false), `CLAUDE.md`, `README.md`, a
   `.claude/skills/` file and a `kit/` file (true), a `.cs` file and a workflow (true), a nested `docs/README.md`
-  (false), a mixed list (true), an empty list (false). Add the script to
-  `ShellScriptsHaveUnixLineEndingsAndAreExecutable`.
+  (false), a mixed list (true), an empty list (false), a deleted `.md` and a renamed `.txt` (true). Add the script
+  to `ShellScriptsHaveUnixLineEndingsAndAreExecutable`, and add a test that `tests.yml` has no `paths` filter, no
+  job-level `if`, and a condition on `steps.changes.outputs.code` on every step after the decision (both added by
+  the code review).
 
 ## Phase 3: User Stories 1 and 2 - Docs-only merges; code is still tested (Priority: P1)
 
 - [X] T004 [US1] [US2] In `.github/workflows/tests.yml`: drop both `paths` filters (keep `push` on `main`); check out
-  with `fetch-depth: 0`; add the step `changes` (bash) that diffs `HEAD^1` on a pull request or
-  `github.event.before` on a push, with `--no-renames`, pipes the names to the script and writes `code=` to
+  with `fetch-depth` 2 on a pull request and 0 on a push; add the step `changes` (bash) that diffs `HEAD^1` on a
+  pull request or `github.event.before` on a push, with `--name-status --no-renames`, pipes the names to the script and writes `code=` to
   `GITHUB_OUTPUT`, or `code=true` if the diff fails; put `if: steps.changes.outputs.code == 'true'` on every later
   step (joined with the Linux condition); add a last step that says the tests were skipped when it is `false`;
   rewrite the header comment.
@@ -45,9 +47,10 @@
   source); mark "CI does not run for changes that are not code" as amended by it.
 - [X] T007 [P] `.docs/roadmap.md`: update the row "CI skips changes that are not code".
 - [X] T008 Build and run the tests (`dotnet test tests/Dmc.Tests -c Release`), run the quickstart's local steps,
-  then open the pull request with `Closes #N` for the issue of T001 and check its description lands.
+  then open the pull request with `Part of #N` for the issue of T001 (T009 can only be done after merge, so the
+  issue stays open for it) and check its description lands.
 - [ ] T009 After merge, update PR #166 from `main` and confirm both `dotnet` checks pass without building
-  (quickstart step 4, SC-001, SC-002).
+  (quickstart step 4, SC-001, SC-002); then close #167.
 
 ## Dependencies & Execution Order
 

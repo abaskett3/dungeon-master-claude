@@ -97,14 +97,19 @@ The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README
 
 ## CI
 
-`.github/workflows/tests.yml` runs for every push to `main` and every pull request that changes more than Markdown and text files, on `ubuntu-latest` (linux-x64) and `windows-latest` (win-x64), each:
+`.github/workflows/tests.yml` runs for every push to `main` and every pull request, on `ubuntu-latest` (linux-x64) and `windows-latest` (win-x64), each:
 
-1. installs the .NET 10 SDK, and on Linux `clang` and `zlib1g-dev` for Native AOT;
-2. publishes `dmc` with Native AOT into `artifacts/bin`;
-3. builds the tests and installs Playwright's Chromium through `pwsh`;
-4. runs `dotnet test`.
+1. asks `.github/ci/needs-tests.sh` whether the changed files need the tests, and if not skips every step below;
+2. installs the .NET 10 SDK, and on Linux `clang` and `zlib1g-dev` for Native AOT;
+3. publishes `dmc` with Native AOT into `artifacts/bin`;
+4. builds the tests and installs Playwright's Chromium through `pwsh`;
+5. runs `dotnet test`.
 
-A change that touches only `*.md` or `*.txt` files does not start it, so a documentation change (`.docs/`, the roadmap) costs no runner time. `CLAUDE.md`, `README.md`, `.claude/skills/` and `kit/` always start it, because the toolkit tests read them as instructions. The `paths` filter is not tested; check it on the next documentation-only PR. The repository has no required status checks, so a skipped run never blocks a merge.
+**Required checks.** A ruleset on `main` requires `dotnet (ubuntu-latest)`, `dotnet (windows-latest)` and `claude-review` before a pull request can merge. A check that never reports blocks the merge for good, so the workflow has no `paths` filter: it starts on every change, and both `dotnet` checks always report.
+
+**Which changes are tested.** A change that only changes or adds `*.md` or `*.txt` files skips the build and tests, so a documentation change (`.docs/`, the roadmap, a spec) passes in about a minute. `CLAUDE.md`, `README.md`, `.claude/skills/` and `kit/` always need them, because the toolkit tests read them as instructions, and so does deleting any file, because tests check that some Markdown and text files exist (the `.docs/` files a prompt names, the fonts' licences). The rule's one home is `.github/ci/needs-tests.sh`, which reads the changes (`git diff --name-status --no-renames` against the pull request's base, or the commit before a push) and prints `true` or `false`; a diff that fails counts as `true`. `ToolkitTests.CiRunsTheTestsForEveryChangeButDocumentation` checks it on example lists, and `CiReportsTheRequiredChecksOnEveryChange` checks the workflow's wiring. To change which files are tested, change the script and its test cases.
+
+**Why the steps are skipped, not the job.** A job-level `if` is evaluated before the matrix is applied, so a skipped matrix job reports once, under its unexpanded name `dotnet (${{ matrix.os }})`, and matches neither required check. Each step after the decision carries `if: steps.changes.outputs.code == 'true'` instead; a new step needs the same condition, or the test above fails. See [decisions.md](decisions.md).
 
 `.github/workflows/release.yml` also runs on pull requests that change the release files (`release.yml`, `.github/release/**`, `tools/**`, `src/Dmc.Cli/Dmc.Cli.csproj`, `Directory.Build.props`, `Directory.Packages.props`, `global.json`). On a pull request it is a dry run: it builds and packs every platform's archive, installs it with the install line (`tools/install.sh` and `tools/install.ps1`) from local assets into a temporary DMC folder and checks the result, checks that `dmc update` refuses a release signed by a throwaway key, signs the checksum list with a throwaway key and publishes nothing. Every third-party action in it is pinned to a full commit SHA, with its version in a comment. See [releases.md](releases.md).
 

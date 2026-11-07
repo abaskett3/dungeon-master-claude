@@ -10,6 +10,7 @@
 
 - **Appearance**:
 - **Voice** (speech pattern, mannerism, a sample line):
+- **Names they use** (for people, places and things that matter, where they differ from DMC's labels; what they would never call them):
 - **Personality**:
 - **What they want**:
 - **What they fear**:

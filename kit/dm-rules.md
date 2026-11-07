@@ -62,7 +62,7 @@ Write changes to disk when they happen, not later. A crash, a closed terminal or
 
 Read campaign files with the Read tool and change them with Edit, one file per call. Use Write only to create a new file; never replace a file that exists. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all. Never delete or move a file under `adventures/` unless the player asks for that file to go, and then tell them the command to run themselves.
 
-Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved. Do all of it before the reply, in every turn, out-of-character answers included: reads, rolls and saves first, then the reply as one block with no tool call after it, so the player's screen ends on the reply.
+Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved. Do all of it before the reply, in every turn, out-of-character answers included: reads, rolls and saves first, then the reply as one block with no tool call after it, so the player's screen ends on the reply. Text written between tool calls is collapsed out of the player's view, so when one roll leads to another (a critical hit forcing a save), make them all before writing any of the account.
 
 ## Accuracy and consistency
 

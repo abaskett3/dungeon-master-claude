@@ -49,7 +49,7 @@
 - [X] T008 Build and run the tests (`dotnet test tests/Dmc.Tests -c Release`), run the quickstart's local steps,
   then open the pull request with `Closes #N` for the issue of T001 (the user's call: the PR finishes the change,
   and T009 is its check after merge) and check its description lands.
-- [ ] T009 After merge, update PR #166 from `main` and confirm both `dotnet` checks pass without building
+- [X] T009 After merge, update PR #166 from `main` and confirm both `dotnet` checks pass without building
   (quickstart step 4, SC-001, SC-002); if they do not, reopen #167.
 
 ## Dependencies & Execution Order

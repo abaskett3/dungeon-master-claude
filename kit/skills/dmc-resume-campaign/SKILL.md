@@ -54,7 +54,7 @@ Scenes are numbered from 1 in each session. Cite a session as `sN` and a scene a
 
 ## 5. Recap and resume
 
-Give the player a short recap in the style the player options ask for: where they are, what just happened, what they were about to do, and their current condition (HP, key resources). Mention open quests in a line. Then restate the immediate scene and ask what they do.
+Give the player a short recap in the style the player options ask for: where they are, what just happened, what they were about to do, and their current condition (HP, key resources). Mention open quests in a line. Build it only from what the character has seen or been told: nothing from `dm-notes.md`, nothing from `game-state.md` (the Scene block, a quest's wording) that has not appeared in play, and no name the character has not heard; say a quest in the character's words (CLAUDE.md § Accuracy). Then restate the immediate scene and ask what they do.
 
 After a mid-session compaction, skip the recap unless the player asks; restate only the immediate situation.
 

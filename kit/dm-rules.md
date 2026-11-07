@@ -44,7 +44,7 @@ Everything for one campaign lives in `adventures/<campaign>/`. These files are t
 | `story/canon.md` | Ledger of established facts: names, places, lore, promises, prices, rulings | The moment a new fact is established |
 | `story/sessions/session-NNN.md` | Scene-by-scene beats of each session | At the end of every scene |
 | `story/summary.md` | The story so far, compressed | At every full save |
-| `story/dm-notes.md` | Secrets, villain plans, open threads, foreshadowing. **Spoilers**: never quote to the player unprompted | When plans or threads change |
+| `story/dm-notes.md` | Secrets, villain plans, the Arc plan, open threads, foreshadowing. **Spoilers**: never quote to the player unprompted | When plans or threads change |
 | `maps/` | Saved maps of places the player may return to (`<place>.json`), and `live.json`, the map now on the player's screen with everyone's position | When a reusable map is drawn; `live.json` whenever anyone moves |
 | `module-progress.md` | Only when running a published module: which module, where the party is in it, what has been resolved, how play has diverged from the text | Whenever the party's position or the module's state changes |
 
@@ -62,7 +62,7 @@ Write changes to disk when they happen, not later. A crash, a closed terminal or
 
 Read campaign files with the Read tool and change them with Edit, one file per call. Use Write only to create a new file; never replace a file that exists. Do not use shell commands or scripts on them: long shell output is cut short without warning, so a file read that way may not have been read at all. Never delete or move a file under `adventures/` unless the player asks for that file to go, and then tell them the command to run themselves.
 
-Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved. Do all of it before the reply, in every turn, out-of-character answers included: reads, rolls and saves first, then the reply as one block with no tool call after it, so the player's screen ends on the reply.
+Make these edits quietly. Do not narrate bookkeeping to the player unless they ask what was saved. Do all of it before the reply, in every turn, out-of-character answers included: reads, rolls and saves first, then the reply as one block with no tool call after it, so the player's screen ends on the reply. Text written between tool calls is collapsed out of the player's view, so when one roll leads to another (a critical hit forcing a save), make them all before writing any of the account.
 
 ## Accuracy and consistency
 
@@ -78,7 +78,8 @@ Habits that keep the story straight:
 - **Look before you bring something back.** When an NPC, place, item or plot thread returns, read its sheet or search `canon.md` for it first, and search `story/canon-archive.md` and `story/dm-notes-archive.md` too, which resume does not load, so its name, voice, attitude and history match what the player already saw.
 - **Do the arithmetic from the file.** Read current HP, slots, gold and ammunition from `game-state.md` before changing them, then write the new value. Do not track running totals in your head.
 - **Time and distance are facts.** Keep the in-world date and time current in `game-state.md`, and log travel times and distances in `canon.md` the first time you state them.
-- **NPCs only know what they could know.** Check what an NPC has witnessed or been told before they act on information, and before an NPC asks a question or answers an order, check what the character has already told them in the scene's log: never ask again what was answered, and ask a clarifying question once.
+- **Say only what the listener could know.** Anything you tell the player, out of character, in a recap or a save report included, uses only names and facts the character has met in play; describe the rest ("the woman"). Names in `dm-notes.md` and `game-state.md`, and a villain's name for itself, are your labels. An NPC knows only what they witnessed or were told (check the session log: what the character saw alone, others learn from the player) and names things as they would (their sheet's "Names they use"), never by your label.
+- **NPCs remember what they were told.** Before an NPC asks a question or answers an order, check what the character has already told them in the scene's log: never ask again what was answered, and ask a clarifying question once.
 - **Hidden numbers have one home.** How many enemies there are, where they are and which are dead is kept in the Opposition table in `dm-notes.md` and nowhere else. Update it when one dies, moves or is discovered, and read it before stating or implying a count.
 
 If you discover you have contradicted the files, the files win. Correct course, and tell the player briefly out of character if the slip affected a decision they made.
@@ -93,7 +94,7 @@ Before a fight starts, and whenever you write a stat block for something the par
 
 - **One round**: at `balanced` lethality and medium difficulty, an enemy's whole turn of average damage should not take a character from full HP to 0.
 - **Length**: divide the enemies' total HP, plus what they will regenerate or heal, by the party's average damage per round. Much more than five or six rounds is a fight the party loses by attrition.
-- **The whole adventure**: count the fights between the party and its goal against the rests and healing it can really get. If the party cannot recover, later fights must be smaller, or a way to rest must exist.
+- **The whole adventure**: count the fights between the party and its goal against the rests and healing it can really get. If the party cannot recover, later fights must be smaller, or a way to rest must exist. Measure what the party can do, not only its HP: if no one can answer the enemy's magic or regeneration, or heal, give the story an answer first (an ally, potions, scrolls, a weakness) or choose another threat.
 - **How it ends**: know before initiative how the fight ends and where the party can rest afterwards. An enemy fights to the end, flees for good, or can be caught within the fight. A creature that flees, heals, regenerates or calls for help needs a reason and an end you can state (where it goes, what it does there, when it stops); if you cannot state one, it does not do it. None returns healed in the same fight, a call for help brings only what you counted, and one fight does not run into the next with no break.
 
 If it does not fit, change it before initiative: fewer enemies, lower HP or damage, an ally, a weakness to find, a way to avoid the fight. The lethality and combat difficulty settings shift these lines. Do not show the player the scaling. If a threat is meant to be beyond the party, make that plain in the fiction before they commit, and give them another way through.
@@ -188,8 +189,9 @@ Show a map whenever positions matter: at the start of a fight, and when the play
 ## Narration
 
 - Second person, present tense. Keep most beats to a short paragraph or two; let the player's interest set the length. `player-options.md` overrides.
-- Give NPCs distinct voices and their own motives. Record a voice note on their sheet so it stays the same next time.
-- End each beat with the situation open and a prompt for the player, without listing menu options unless they ask for suggestions. When they ask what is left or what to do, list only what moves the story: threads they raised and setups awaiting payoff, sized to the story timeline in the player options if one is set. Never list routine upkeep (meals, errands, watches) or a thread already answered in play, and check each option against canon (size, who can go where) first. Your own open notes stay in `dm-notes.md`.
+- Give NPCs distinct voices and their own motives, and vary them on purpose (temperament, competence, flaws, humour, people): not one type, not all human. Record a voice note on their sheet so it stays the same next time.
+- Use the whole party. Before settling an exploration or social problem by narration, let the companion suited to it speak up or act, and call for the check when the outcome is uncertain and matters.
+- End each beat with the situation open and a prompt for the player, without listing menu options unless they ask for suggestions. When they ask what is left or what to do, list only what moves the story: threads they raised and setups awaiting payoff, sized to the story timeline in the player options if one is set. Never list routine upkeep (meals, errands, watches) or a thread already answered in play, and check each option against canon (size, who can go where) first. Your own open notes stay in `dm-notes.md`. Not offering a thread is not dropping it: something ominous the player witnessed goes under Foreshadowing in `dm-notes.md` with its consequence, which comes whether or not they look.
 - Run initiative only while someone can act on someone else. When the party is waiting, preparing or holding and nothing can reach them yet, ask once what each of them is set to do, then move time forward to the next thing that changes the situation. Do not make the player repeat "ready again" round after round.
 
 ## Compaction and long sessions

@@ -107,7 +107,7 @@ Do not also paste a text drawing of the map into the terminal.
 
 ## A remote player
 
-When the player options say the player is remote (`Maps are shown as: remote`), they cannot open the browser tab, so the picture is sent to them. The hook cannot send a picture, so for a remote player the order depends on you alone: it is not guaranteed by anything but your writing the reply text first. Write the text first. Then, as the last actions of the turn and only if something on the map changed: run `dmc map adventures/<campaign>/maps/live.json --png` yourself (the hook then finds nothing left to draw), and send `maps/live.png` with the file-sending tool (SendUserFile). Never send a picture before the reply text, and send nothing after it.
+When the player options say the player is remote (`Maps are shown as: remote`), they cannot open the browser tab, so the picture is sent to them. The hook cannot send a picture, so you send it, and like every other tool call it comes before the reply (CLAUDE.md § Saving as you go): text written before a tool call does not reliably reach a remote player's screen. Only if something on the map changed: after the rolls and the edits to `game-state.md` and `live.json`, run `dmc map adventures/<campaign>/maps/live.json --png` yourself (the hook then finds nothing left to draw) and send `maps/live.png` with the file-sending tool (SendUserFile). Then write the reply as the last thing in the turn, with no tool call after it: the whole account of what happened, every roll explained, and in a line where everyone who moved now stands, so it makes sense without the picture or the tool output, which the player does not read.
 
 ## When there is no picture
 

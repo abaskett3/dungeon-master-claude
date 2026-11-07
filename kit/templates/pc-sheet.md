@@ -61,6 +61,7 @@
 
 - **Appearance**:
 - **Personality**:
+- **Names they use** (a companion: for people, places and things that matter, where they differ from DMC's labels; what they would never call them):
 - **Ideals, bonds, flaws**:
 - **Backstory**:
 - **Current objectives**:

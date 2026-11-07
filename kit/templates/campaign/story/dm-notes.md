@@ -8,9 +8,25 @@ DMC's private plans. Nothing here is true in the game until it appears in play; 
 
 <!-- What is really going on, who is behind it, what happens if nobody intervenes. -->
 
+## Arc plan
+
+<!--
+The current arc of a homebrew campaign, or the stretch after a module ends. Plan it when one starts; the full save checks it. A plan, not a script: change it when the player surprises you.
+
+- Shape: the stages (for example exposition, rising action, climax, falling action, resolution), each with what changes in the story.
+- Mix: for each stage, the fights, exploration, puzzles and roleplay it holds. A stage of talk alone is not a stage.
+- Character arcs: for the PC and each companion, what they want or must face in this arc, and a moment that tests it.
+- Side quests: two or three short ones tied to the main story, with a reward.
+- The party's gaps: what it cannot do (no healing, no answer to magic) and how the story offers it (an ally, items, a trainer, a place to buy), or which threats are chosen so it need not.
+- Progression: under milestone leveling, the level each milestone gives and where it falls; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
+- Wonder: other peoples, magic, monsters and marvels that appear in each stage.
+
+Mark a stage done when it ends, and a milestone awarded when it is given. Keep the section to about 25 lines.
+-->
+
 ## Antagonists
 
-<!-- For each: what they want, what they are doing right now offscreen, what they know about the PC. -->
+<!-- For each: what they want, what they are doing right now offscreen, what they know about the PC, and the names the party knows them by. Speak only those to the player. -->
 
 ## Opposition
 
@@ -33,7 +49,7 @@ Stat blocks are sized for the party actually present (see "Sizing fights" in CLA
 
 ## Foreshadowing to pay off
 
-<!-- Details already shown to the player that should matter later. -->
+<!-- Details already shown to the player that should matter later, each with the consequence it will have and roughly when. An ominous event the player witnessed is a promise: it comes due even if they never go looking. -->
 
 ## Ideas for what comes next
 

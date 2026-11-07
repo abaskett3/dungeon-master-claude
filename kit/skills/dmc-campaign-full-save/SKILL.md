@@ -39,7 +39,14 @@ Then archive, every full save, not only when it seems worth it. Move lines in bu
 
 Update `story/dm-notes.md`: threads opened, advanced or closed; what offscreen factions and villains have done in the meantime; what you plan to pay off later; what you learned about what this player enjoys.
 
-Bring the Opposition table up to date (who is dead, who has moved, what the party now knows), and check that no other file gives a different count. This file is read whole at every resume, so it should hold what is still ahead, not what has happened. Delete plans the story has overtaken and anything voided by a rewind. Move threads that are closed to `story/dm-notes-archive.md` (create it if missing), which resume does not read. Never move the Opposition table, secrets, open threads, foreshadowing or the notes about this player. Keep the notes about this player as lasting statements, not a diary: merge dated lines that say the same thing, and keep the section under about 40 lines. After splitting long lines, aim for the whole file under about 150 lines.
+Then check the arc, in a few lines of `dm-notes.md` and not out loud:
+
+- **Arc plan.** If the campaign is homebrew, or its module is finished, and `dm-notes.md` has no Arc plan or the arc's last stage is done, plan the next one now in that section (add it from `templates/campaign/story/dm-notes.md` if missing).
+- **Mix.** Look over this session's scenes as you logged them in step 3, and the previous log's Session end. If they held no fight, no check that mattered or no exploration, or one companion's strengths never came up, make the next scene in the Arc plan bring them in.
+- **Progression.** Under milestone leveling, if a milestone in the Arc plan was reached and not yet awarded, add a Pending line in `game-state.md` (`Milestone: level N at the next rest`) and mark it awarded in the Arc plan; the level-up follows `dmc-character-sheet-update` at that rest. If the party has had no way to earn money this arc, put one in the next stage.
+- **Promises.** Every Foreshadowing line has a consequence and roughly when it comes due; give one to any that lacks it.
+
+Bring the Opposition table up to date (who is dead, who has moved, what the party now knows), and check that no other file gives a different count. This file is read whole at every resume, so it should hold what is still ahead, not what has happened. Delete plans the story has overtaken and anything voided by a rewind, except in the Arc plan, where a finished stage is marked done instead, so the check below can tell when the arc is over. Move threads that are closed to `story/dm-notes-archive.md` (create it if missing), which resume does not read. Never move the Opposition table, the Arc plan, secrets, open threads, foreshadowing or the notes about this player. Keep the notes about this player as lasting statements, not a diary: merge dated lines that say the same thing, and keep the section under about 40 lines. After splitting long lines, aim for the whole file under about 150 lines.
 
 ## 5a. Module progress
 
@@ -67,4 +74,4 @@ Set the "Last full save" line in `game-state.md` to the real-world date and time
 
 If this save is a planned break (the player accepted a break offer and will start a fresh session), also add this line under Pending in `game-state.md`: `Planned break: restate the immediate situation only.`
 
-Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence, and any discrepancy you corrected. Do not list every file. For a planned break, end by telling them it is safe to type `/clear` and then `/dmc-resume-campaign`.
+Tell the player, briefly and out of character, that the save is complete and what it covers: session number, where the story stands in one sentence (in the names the character knows, never a label from `dm-notes.md`), and any discrepancy you corrected. Do not list every file. For a planned break, end by telling them it is safe to type `/clear` and then `/dmc-resume-campaign`.

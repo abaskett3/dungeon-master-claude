@@ -1,40 +1,26 @@
 name: Tests
 
-# Builds and tests the toolkit's .NET code. It runs on every pull request, and on every push to main, unless the change
-# touches only files that are not code: Markdown and text files are skipped, except the ones the toolkit tests read as
-# DMC's instructions (CLAUDE.md, README.md, .claude/skills/ and kit/, the source of the files dmc writes into a DMC
-# folder), which still run it. For each of Linux and Windows it publishes dmc once with Native AOT, builds the tests,
-# installs Playwright's Chromium and runs all the tests. It writes nothing to the repository and publishes nothing. The
-# build treats a missing XML comment on a public member of dmc as an error (CS1591; see Directory.Build.props), so the
-# publish step fails on one.
+# Builds and tests the toolkit's .NET code. It starts on every pull request and every push to main, whatever the change,
+# because the ruleset on main requires its two checks, dotnet (ubuntu-latest) and dotnet (windows-latest), and a check
+# that never reports blocks the merge. Its first step asks .github/ci/needs-tests.sh, the one home of the rule, whether
+# the changed files need the tests: Markdown and text files do not, except the ones the toolkit tests read as DMC's
+# instructions (CLAUDE.md, README.md, .claude/skills/ and kit/). When they do not, every later step is skipped and the
+# check passes in about a minute. The steps are skipped, not the job: a job-level `if` is evaluated before the matrix,
+# so a skipped job would report under its unexpanded name and match neither required check. Otherwise, for each of
+# Linux and Windows it publishes dmc once with Native AOT, builds the tests, installs Playwright's Chromium and runs all
+# the tests. It writes nothing to the repository and publishes nothing. The build treats a missing XML comment on a
+# public member of dmc as an error (CS1591; see Directory.Build.props), so the publish step fails on one.
 
 on:
   push:
     branches: [main]
-    paths:
-      - "**"
-      - "!**.md"
-      - "!**.txt"
-      # The prompts: ToolkitTests checks their commands, skills and paths, so a change to them is tested.
-      - CLAUDE.md
-      - README.md
-      - .claude/skills/**
-      - kit/**
   pull_request:
-    paths:
-      - "**"
-      - "!**.md"
-      - "!**.txt"
-      # The prompts: ToolkitTests checks their commands, skills and paths, so a change to them is tested.
-      - CLAUDE.md
-      - README.md
-      - .claude/skills/**
-      - kit/**
 
 jobs:
-  # The only job: publish dmc for the runner's platform, then build and run the tests against it.
-  # dmc is published for the runner with Native AOT, the way a release is built, and the tests then run it as a
-  # subprocess. bash and PowerShell, which some tests start as a hook or a shell, are on every runner image.
+  # The only job: decide whether the change needs the tests, then publish dmc for the runner's platform, and build and
+  # run the tests against it. dmc is published for the runner with Native AOT, the way a release is built, and the
+  # tests then run it as a subprocess. bash and PowerShell, which some tests start as a hook or a shell, are on every
+  # runner image.
   dotnet:
     name: dotnet (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -50,23 +36,52 @@ jobs:
       DOTNET_NOLOGO: "1"
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
+      # The whole history, so a push can be compared with the commit main was at before it.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # On a pull request HEAD is GitHub's merge commit and HEAD^1 the base it was merged onto; on a push the base is
+      # the commit before the push. --no-renames lists both names of a renamed file. A diff that fails (no earlier
+      # commit) counts as code, so the tests run.
+      - name: Decide whether the change needs the tests
+        id: changes
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then base=HEAD^1; else base=$BEFORE; fi
+          if files=$(git diff --name-only --no-renames "$base" HEAD); then
+            code=$(printf '%s\n' "$files" | bash .github/ci/needs-tests.sh)
+          else
+            code=true
+          fi
+          echo "Needs the tests: $code"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-dotnet@v6
+        if: steps.changes.outputs.code == 'true'
         with:
           dotnet-version: "10.0.x"
       - name: Install the Native AOT toolchain (Linux)
-        if: runner.os == 'Linux'
+        if: steps.changes.outputs.code == 'true' && runner.os == 'Linux'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq clang zlib1g-dev
       # Not into bin/. The black-box tests run this one, and insist that it says 0.0.0-dev.
       - name: Publish dmc with Native AOT
+        if: steps.changes.outputs.code == 'true'
         run: dotnet publish src/Dmc.Cli -c Release -r ${{ matrix.rid }} -o artifacts/bin -p:PublishAot=true
       - name: Build the tests
+        if: steps.changes.outputs.code == 'true'
         run: dotnet build tests/Dmc.Tests -c Release
       # The map page tests drive Chromium. The runner images have PowerShell (pwsh), which Playwright's installer needs.
       - name: Install Playwright's Chromium
+        if: steps.changes.outputs.code == 'true'
         shell: pwsh
         run: |
           $extra = @(); if ($IsLinux) { $extra = @("--with-deps") }
           pwsh tests/Dmc.Tests/bin/Release/net10.0/playwright.ps1 install @extra chromium
       - name: Run the tests
+        if: steps.changes.outputs.code == 'true'
         run: dotnet test -c Release --no-build
+      - name: Skip the tests (only documentation changed)
+        if: steps.changes.outputs.code != 'true'
+        shell: bash
+        run: echo "Only Markdown and text files outside the prompts changed, so nothing was built or tested."

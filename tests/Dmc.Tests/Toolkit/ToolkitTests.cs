@@ -591,8 +591,9 @@ public sealed partial class ToolkitTests
     [TestMethod]
     public void ShellScriptsHaveUnixLineEndingsAndAreExecutable()
     {
-        // The install line for Linux, which every release carries, and the script that signs a release's checksum list.
-        string[] scripts = ["tools/install.sh", ".github/release/sign.sh"];
+        // The install line for Linux, which every release carries, the script that signs a release's checksum list, and
+        // the one CI runs on both systems to decide whether a change needs the tests.
+        string[] scripts = ["tools/install.sh", ".github/release/sign.sh", ".github/ci/needs-tests.sh"];
         foreach (string script in scripts)
             Assert.DoesNotContain((byte)'\r', File.ReadAllBytes(Path.Combine(TestEnv.Root, script)), $"{script} has Windows line endings");
         StringAssert.Contains(Read(".gitattributes"), "*.sh text eol=lf");
@@ -601,6 +602,31 @@ public sealed partial class ToolkitTests
         foreach (string script in scripts)
             Assert.IsTrue(git.Any(l => l.StartsWith("100755 ", StringComparison.Ordinal) && l.EndsWith("\t" + script, StringComparison.Ordinal)),
                 $"{script} is not executable in git:\n{string.Join('\n', git)}");
+    }
+
+    /// <summary>
+    /// <c>.github/ci/needs-tests.sh</c>, the rule <c>tests.yml</c> uses to decide whether a change needs the build and
+    /// tests: only Markdown and text files outside the prompts do not. The changed paths are separated by <c>|</c> here
+    /// and given to the script one per line; an empty string is no paths at all.
+    /// </summary>
+    [TestMethod]
+    [DataRow(".docs/roadmap.md", false)]
+    [DataRow("specs/004-docs-only-required-checks/tasks.md|notes.txt", false)]
+    [DataRow("docs/README.md|.docs/skills/kit/CLAUDE.md", false)]
+    [DataRow("", false)]
+    [DataRow("CLAUDE.md", true)]
+    [DataRow("README.md", true)]
+    [DataRow(".claude/skills/review-feedback/SKILL.md", true)]
+    [DataRow("kit/dm-rules.md", true)]
+    [DataRow("src/Dmc.Cli/CommandTable.cs", true)]
+    [DataRow(".github/workflows/tests.yml", true)]
+    [DataRow(".docs/roadmap.md|tools/install.sh|.docs/decisions.md", true)]
+    public void CiRunsTheTestsForEveryChangeButDocumentation(string paths, bool needsTests)
+    {
+        string stdin = paths.Length == 0 ? "" : string.Join('\n', paths.Split('|')) + "\n";
+        var result = TestEnv.Run(Bootstrap.Shell("bash"), [Path.Combine(TestEnv.Root, ".github", "ci", "needs-tests.sh")], stdin);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual(needsTests ? "true" : "false", result.Stdout.Trim(), $"for {paths}");
     }
 
     /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked, and <c>.gitignore</c> still ignores them, so a <c>git add .</c> in a maintainer's old checkout cannot pick up their files: players keep them in a DMC folder.</summary>

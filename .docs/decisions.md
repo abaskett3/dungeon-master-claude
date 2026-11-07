@@ -198,13 +198,22 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** `Edit(feedback/**)` must be in `.claude/settings.json` for recording to raise no prompt in play. The existing scattered feedback in the first campaign is migrated by hand, with the player, after merge; that is local data and not part of the PR.
 - **Source:** Issue #43.
 
-## CI does not run for changes that are not code
+## CI does not run for changes that are not code (amended 2026-11-06 by "Every change starts CI; only its steps are skipped")
 
 - **Date:** 2026-10-17
 - **Decision:** `.github/workflows/tests.yml` has a `paths` filter on both `push` and `pull_request`: everything runs it except `*.md` and `*.txt` files, and `CLAUDE.md`, `README.md`, `.claude/skills/**` and `templates/**` are put back, because the toolkit tests read them. The same list is written out for both events.
 - **Reason:** A documentation-only change started three platform builds of a Native AOT program and all the tests for nothing. The user asked for CI to skip anything that is not technically code. The prompts are the exception: `ToolkitTests` checks that every `dmc` command, skill name and path in them is real, so a broken prompt must not merge unseen.
 - **Limits:** The filter is untested until a documentation-only PR shows the skip. `release.yml` keeps its own filter. `.docs/` files are not tested for content, only checked to exist when a prompt names them, so deleting or renaming one that a prompt names, together with a Markdown-only change, would not be caught.
 - **Source:** the user, in the session that closed issue #43.
+
+## Every change starts CI; only its steps are skipped
+
+- **Date:** 2026-11-06
+- **Decision:** `tests.yml` has no `paths` filter. The `dotnet` matrix job runs on every pull request and push to `main`; its first step runs `.github/ci/needs-tests.sh` on the changed files, and every build and test step is conditional on its answer. The rule is unchanged (skip only `*.md` and `*.txt`, except `CLAUDE.md`, `README.md`, `.claude/skills/` and `kit/`), now written once, for both events, and tested by `ToolkitTests`. The ruleset on `main` is not changed.
+- **Reason:** The ruleset added on 2026-10-24 requires `dotnet (ubuntu-latest)` and `dotnet (windows-latest)`. With the `paths` filter a documentation-only pull request never started the workflow, so those checks never reported and the pull request could not merge (PR #166). The job is not skipped as a whole because a job-level `if` is evaluated before the matrix, and the skipped job would report under its unexpanded name.
+- **Alternatives:** Bypassing the ruleset for each documentation PR (the next one gets stuck the same way). Taking the `dotnet` checks out of the ruleset (code could merge before its tests finish). An always-passing twin workflow for the ignored paths, as GitHub's troubleshooting page suggests (the same path list kept twice, inverted). A third-party paths-filter action (a dependency for a shell `case`).
+- **Limits:** A documentation-only change now starts two runners for about a minute each. The skip on a real documentation-only pull request is checked after merge, on PR #166.
+- **Source:** The user's choice of option 3, 2026-11-06; issue #167 and `specs/004-docs-only-required-checks/`.
 ## feedback/ has a .ignore file so the entries can be searched
 
 - **Superseded 2026-11-04** (issue #67, PR 3): the repository no longer holds a `feedback/` folder, so `feedback/.ignore` is gone. Players keep `feedback/` in their DMC folder, which is not a git repository, so ripgrep searches it without help. A maintainer's old checkout keeps its entries git-ignored and unsearchable until they are moved to a DMC folder.

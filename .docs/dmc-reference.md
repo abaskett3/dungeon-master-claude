@@ -383,7 +383,7 @@ Context 197k is large, break due since 190k: at the next break point, offer a fu
 
 The bands are counted from the first band, so a break the player declined is offered again after another 40,000 tokens. A compaction, which restarts the search for the baseline, starts the count again.
 
-This changed after release 0.1.2, so it reaches players with the next release. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
+This changed in release 0.1.3. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
 It never fails: on any error (input that is not JSON, a missing or unreadable log) it prints nothing and exits 0. 
 

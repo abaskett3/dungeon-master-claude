@@ -115,6 +115,11 @@ rest settle what the spec left to the plan. The code facts were read on 2026-11-
   (issue #174, spec `specs/006-dmc-size`), which measures in tokens. Whichever of this feature and spec 006 merges
   second adds one step to the end of `dmc-migrate-campaign`: after a pass, run the play form of `dmc size` and say
   each line it prints as a shortfall, not a failure. Until both are in, a migration reports no sizes.
+- **Merge order (decided 2026-11-10).** Spec 006 merges first. This branch rebases onto `main` once 006 has merged,
+  before the skill edits of story 3, and adds the `dmc size` step itself (T037). Either order would work; 006 goes
+  first because it is smaller and nearer done, and so that the live run on the long campaign (T050) measures with
+  `dmc size`. If 006 is not merged when this PR is otherwise ready, it is not held back: the PR leaves the step out
+  and says so, and 006 adds it.
 - **Rationale.** The line targets live in `dmc-campaign-full-save`, and spec 006 is moving them to token budgets; a
   copy in a migration's front matter would be a second home (Constitution III) and would go stale when 006 lands. A
   migration cannot shrink a file below the live material it holds without dropping something still true, which would

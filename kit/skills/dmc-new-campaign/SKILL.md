@@ -55,6 +55,7 @@ If the file already exists, read it, tell the player in a line or two what it sa
 - **Tone**: heroic, grim, comic.
 - **Lethality**: story, balanced or gritty. Explain each in a sentence.
 - **Setting and premise**: their idea, or pitch three short hooks and let them choose.
+- **Predecessor**: if this campaign continues an earlier one, that campaign's folder in `adventures/`. DMC searches its files when a subject from it returns.
 
 Leave defaults where the player has no preference.
 

@@ -63,6 +63,8 @@ No fight in progress.
 
 ## Plan and standing orders
 
+<!-- Only orders for where the party is now or for what is about to happen. A standing order not in play (camp rules, a signal code) goes in story/canon.md. -->
+
 - none
 
 ## Quests

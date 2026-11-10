@@ -48,8 +48,11 @@ Cite them in the skill only as behaviour, never by number.
 
 **Purpose**: A known-good start.
 
-- [ ] T001 From the worktree, run `dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin` and `dotnet test`. Record any
+- [X] T001 From the worktree, run `dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin` and `dotnet test`. Record any
   test skipped locally, so later runs can tell a new skip from an old one.
+  Done 2026-11-10: 5 skipped on Windows, `OnLinuxAReleaseIsLinkedAndThePlayerIsToldWhenTheLinkFolderIsNotOnThePath`,
+  `ASymbolicLinkToAFileInTheCampaignIsRefused`, `ASymbolicLinkToAFolderInTheCampaignIsRefused`,
+  `AGeneralPlayerOptionsFileThatIsALinkIsRefused` and `ACampaignHoldingAPathThatCouldNotBeImportedIsRefused`.
 
 ---
 
@@ -57,10 +60,10 @@ Cite them in the skill only as behaviour, never by number.
 
 **Purpose**: The styles section's shape. Every story that touches styles (US2 and US3) reads or writes it.
 
-- [ ] T002 Add `## Image styles` to `kit/templates/player-options.md`, after `## Style` and before `## Other requests`,
+- [X] T002 Add `## Image styles` to `kit/templates/player-options.md`, after `## Style` and before `## Other requests`,
   exactly as `specs/007-image-prompts/contracts/image-styles-section.md` § "In `kit/templates/player-options.md`" gives
   it: the comment, then `- **Last used**: none`.
-- [ ] T003 Add a test to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that checks the template's section against
+- [X] T003 Add a test to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that checks the template's section against
   `contracts/image-styles-section.md` § Rules:
   - the file has exactly one `## Image styles` heading;
   - its first bullet is `- **Last used**: none`;
@@ -81,7 +84,7 @@ files describe them, sizes are comparisons, nothing the character has not percei
 **Independent Test**: quickstart § 3, rows 1 to 8, on a scratch copy of Rorn's Landing. Until US2 lands, the style is
 whatever the skill's default section says.
 
-- [ ] T004 [US1] Create `kit/skills/dmc-generate-image-prompt/SKILL.md`, with the front matter exactly as
+- [X] T004 [US1] Create `kit/skills/dmc-generate-image-prompt/SKILL.md`, with the front matter exactly as
   `contracts/dmc-generate-image-prompt.md` § Front matter gives it, and these sections for the content:
   1. **"Change nothing in the game"**: no time passes, no roll, and no change to `game-state.md`, canon or the maps.
      The session log takes at most its one out-of-character line, without the prompt text.
@@ -107,10 +110,10 @@ whatever the skill's default section says.
 
   For now, a short **"Style"** section saying: use the built-in Storybook description (research R4, word for word). US2
   replaces it.
-- [ ] T005 [P] [US1] Add `/dmc-generate-image-prompt` to the skill table in `README.md`, after
+- [X] T005 [P] [US1] Add `/dmc-generate-image-prompt` to the skill table in `README.md`, after
   `/dmc-migrate-campaign`: "Write a prompt for an image model of a moment in your game, true to the story and free of
   spoilers, in a style you choose or saved".
-- [ ] T006 [US1] Run `dotnet test --filter FullyQualifiedName~Toolkit`. Fix the skill for any finding: the skill's name,
+- [X] T006 [US1] Run `dotnet test --filter FullyQualifiedName~Toolkit`. Fix the skill for any finding: the skill's name,
   the README list, the paths, the commands, a `/word-word` read as a skill name, or a catch-up clause.
 - [ ] T007 [US1] Run quickstart § 3, rows 1 to 8, live: publish, make a scratch DMC folder in a terminal outside Claude
   Code, copy Rorn's Landing in, then `dmc play`. Revise `kit/skills/dmc-generate-image-prompt/SKILL.md` for anything
@@ -127,7 +130,7 @@ whatever the skill's default section says.
 **Independent Test**: quickstart § 3, rows 9 and 12, plus User Story 2's scenarios: no saved style gives Storybook and
 one line saying styles can be saved; Last used is followed; a described style does not change it.
 
-- [ ] T008 [US2] In `kit/skills/dmc-generate-image-prompt/SKILL.md`, replace the interim "Style" section with
+- [X] T008 [US2] In `kit/skills/dmc-generate-image-prompt/SKILL.md`, replace the interim "Style" section with
   **"Choose the style"**, in the order of FR-011:
   1. A style described in the request, as given. A variation of a saved style ("the same style, but more abstract")
      counts as described too, and so does a style DMC chooses when asked for something different without a
@@ -140,7 +143,7 @@ one line saying styles can be saved; Last used is followed; a described style do
   - The style holds the look only (medium, palette, light, rendering, aspect ratio). Where a style's words say who is
     shown or how wide the shot is, the content rules win; scene details such as rain or night are content.
   - With no saved style, add one line saying which style was used and that "save that as <name>" keeps a look.
-- [ ] T009 [US2] In the same file, add **"The last used style"**: after a prompt in a saved style (named, used as the
+- [X] T009 [US2] In the same file, add **"The last used style"**: after a prompt in a saved style (named, used as the
   default, or varied), set `- **Last used**:` to that style's name when it differs. Never set it for a style described
   in the request or one DMC chose. The section's shape is in `templates/player-options.md`.
 - [ ] T010 [US2] Rerun T006's filter, then quickstart § 3, rows 9 and 12, live. Revise the skill for anything DMC got
@@ -158,7 +161,7 @@ different style.
 **Independent Test**: quickstart § 3, rows 10, 11 and 13, plus User Story 3's scenarios 3, 4 and 6: save after
 refining; list, rename, change and delete; an unknown name.
 
-- [ ] T011 [US3] In `kit/skills/dmc-generate-image-prompt/SKILL.md`, add **"Saved styles"**, for the requests in
+- [X] T011 [US3] In `kit/skills/dmc-generate-image-prompt/SKILL.md`, add **"Saved styles"**, for the requests in
   `contracts/dmc-generate-image-prompt.md`'s table:
   - **"save that as <name>"** saves the last prompt's style, refinements included, as
     `- **<Name>**: <description>` on one line, and makes it the last used.
@@ -171,10 +174,10 @@ refining; list, rename, change and delete; an unknown name.
 
   If the general file has no `## Image styles` section, the first save writes it as `templates/player-options.md`
   gives it. Each action is confirmed in one line. A campaign's `player-options.md` never holds styles.
-- [ ] T012 [US3] In the same file, add **"A variation"**: use it for this prompt only and leave the saved style
+- [X] T012 [US3] In the same file, add **"A variation"**: use it for this prompt only and leave the saved style
   unchanged. Say in one line that it is unchanged, for example "I haven't changed Concept art; say if you want this
   change saved into it". On a yes, rewrite that style's description and confirm in a line.
-- [ ] T013 [US3] In the same file, add **"Something different"**: when asked for a different style without a
+- [X] T013 [US3] In the same file, add **"Something different"**: when asked for a different style without a
   description, choose one clearly unlike the last prompt's style and every style DMC chose earlier in this session.
   Describe it in full in the prompt, and label it with a short name marked unsaved. Do not save it, and do not change
   Last used.
@@ -191,19 +194,19 @@ refining; list, rename, change and delete; an unknown name.
 
 **Purpose**: The documents, the full run, the review and the PR.
 
-- [ ] T016 [P] Update `.docs/user-guide.md` with a short section on image prompts: how to ask, what comes back, styles
+- [X] T016 [P] Update `.docs/user-guide.md` with a short section on image prompts: how to ask, what comes back, styles
   (the default, saving, switching, varying, "surprise me"), that nothing the character has not seen is shown, and that
   missing details are asked for, never made up.
-- [ ] T017 [P] Update `.docs/campaign-files.md`: the general `player-options.md` row gains Image styles (optional,
+- [X] T017 [P] Update `.docs/campaign-files.md`: the general `player-options.md` row gains Image styles (optional,
   written by `/dmc-generate-image-prompt` when the player saves or uses a style). Update `.docs/architecture.md`'s
   Skills row: twelve procedures, naming `dmc-generate-image-prompt`.
-- [ ] T018 [P] Add to `.docs/decisions.md` (Decision, Reason, Limits, Source):
+- [X] T018 [P] Add to `.docs/decisions.md` (Decision, Reason, Limits, Source):
   - "Image styles live in the general player options";
   - "Image prompts state facts only; a missing detail is asked for, never assumed";
   - "Image styles need no migration" (research R9: an optional section; one campaign's notes moved by asking).
-- [ ] T019 [P] Add a row to `.docs/roadmap.md` for issue #178: status, and what ships (the skill and the optional
+- [X] T019 [P] Add a row to `.docs/roadmap.md` for issue #178: status, and what ships (the skill and the optional
   section).
-- [ ] T020 Publish, run `dotnet test`, and fix any failure. Confirm nothing new is skipped beyond T001's list.
+- [X] T020 Publish, run `dotnet test`, and fix any failure. Confirm nothing new is skipped beyond T001's list.
 - [ ] T021 Run `/speckit-converge` until it adds no tasks, then Claude Code's built-in code-review command once on the
   finished branch. Present its fixes for approval before committing them.
 - [ ] T022 Write the PR description per `CLAUDE.md` § Git and GitHub:

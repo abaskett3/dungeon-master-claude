@@ -215,17 +215,18 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// A player's session may not edit or write the generated files, and may not run <c>dmc update</c>, <c>install</c> or
-    /// <c>refresh</c> (FR-005, FR-016): deny rules anchored at the project folder with <c>/</c>, and the three commands in both shells.
+    /// <c>refresh</c> (FR-005, FR-016): <c>Edit</c> deny rules anchored at the project folder with <c>/</c>, and the three commands
+    /// in both shells. Claude Code applies an <c>Edit</c> rule to every tool that edits files, <c>Write</c> included, and never
+    /// matches a <c>Write(...)</c> rule (it warns that such a rule has no effect), so the kit holds none.
     /// </summary>
     [TestMethod]
     public void TheKitSettingsProtectTheGeneratedFiles()
     {
         string[] denied = Settings(KitSettings)["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
-        foreach (string tool in new[] { "Edit", "Write" })
-        {
-            foreach (string path in new[] { "/CLAUDE.md", "/.claude/**", "/templates/**", "/migrations/**", "/.dmc/**" })
-                CollectionAssert.Contains(denied, $"{tool}({path})");
-        }
+        foreach (string path in new[] { "/CLAUDE.md", "/.claude/**", "/templates/**", "/migrations/**", "/.dmc/**" })
+            CollectionAssert.Contains(denied, $"Edit({path})");
+        var allowed = Settings(KitSettings)["permissions"]!["allow"]!.AsArray().Select(r => (string)r!);
+        Assert.IsFalse(denied.Concat(allowed).Any(r => r.StartsWith("Write(", StringComparison.Ordinal)), "Claude Code never matches a Write(...) rule; Edit(...) covers Write");
         foreach (string tool in new[] { "Bash", "PowerShell" })
         {
             foreach (string command in new[] { "update", "install", "refresh" })

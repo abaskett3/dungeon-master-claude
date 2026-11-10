@@ -313,3 +313,7 @@ Made after the code review of PR #176 (2026-11-10):
     once a year.
   - **`import` and `restore` leave an older export's `backups/` out instead of refusing the file.** A player who
     exported a campaign with such a folder before this change could otherwise never import it again.
+- **A13.** R13's `Write(/migrations/**)` is not added, and the existing `Write(...)` deny rules leave `kit/settings.json`.
+  Claude Code applies an `Edit(...)` rule to every tool that edits files, `Write` included. It never matches a
+  `Write(...)` rule, and warns that such a rule has no effect. `Edit(/migrations/**)` is the protection, and a toolkit
+  test refuses any `Write(...)` rule.

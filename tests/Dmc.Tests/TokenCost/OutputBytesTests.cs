@@ -73,6 +73,30 @@ public sealed class OutputBytesTests
     }
 
     [TestMethod]
+    public void TheSizeReportAndItsCheckFormArePlainUtf8WithLfLineEnds()
+    {
+        string root = Size.SizeFixtures.NewDmcFolderWithCampaign();
+        try
+        {
+            // A Party status block with an accent, and a file over its budget, so both forms print something.
+            Size.SizeFixtures.Write(root, "game-state.md", Size.SizeFixtures.GameState(["Élodie"]) + Size.SizeFixtures.Filler(20000));
+            foreach (string[] args in new[] { new[] { "size", "--folder", root }, ["size", "--folder", root, "--check"] })
+            {
+                var result = DmcRunner.BlackBox(args);
+                string name = string.Join(' ', args[..1]) + (args.Length > 3 ? " --check" : "");
+                Assert.AreEqual(0, result.ExitCode, result.Stderr);
+                AssertNoBom(result.StdoutBytes, name + " stdout");
+                Assert.IsGreaterThan(0, result.StdoutBytes!.Length, name + " printed nothing");
+                Assert.IsFalse(result.Stdout.Contains('\r'), name + " wrote a CR");
+            }
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    [TestMethod]
     public void NonAsciiIsWrittenAsUtf8()
     {
         var result = DmcRunner.BlackBox(["roll", "é中"]);

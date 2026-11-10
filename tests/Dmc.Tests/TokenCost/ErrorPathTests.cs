@@ -4,6 +4,7 @@ using Dmc.Tests.Campaign;
 using Dmc.Tests.Digest;
 using Dmc.Tests.Map;
 using Dmc.Tests.Pdf;
+using Dmc.Tests.Size;
 using Dmc.Tests.Support;
 
 namespace Dmc.Tests.TokenCost;
@@ -169,6 +170,35 @@ public sealed partial class ErrorPathTests
             Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", null);
             Directory.Delete(before, recursive: true);
             DmcFolders.Delete(dmcFolder);
+        }
+    }
+
+    /// <summary>The size cases that must fail, as test data.</summary>
+    public static IEnumerable<object[]> SizeErrors { get; } = SizeCases.ErrorCases().Select(c => new object[] { c }).ToArray();
+
+    /// <summary>
+    /// Every bad argument and every campaign <c>dmc size</c> cannot measure prints one line and no stack trace, and leaves
+    /// the working folder exactly as the case made it: the command never writes.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(SizeErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfSizePrintsOneLine(CommandCase test)
+    {
+        string before = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(before);
+        try
+        {
+            test.Seed?.Invoke(before);
+            string[] seeded = Entries(before);
+            test.Run("size", (result, folder) =>
+            {
+                AssertOneLine(result, test.Describe("size"));
+                CollectionAssert.AreEqual(seeded, Entries(folder), "a failed run must not write anything");
+            });
+        }
+        finally
+        {
+            Directory.Delete(before, recursive: true);
         }
     }
 

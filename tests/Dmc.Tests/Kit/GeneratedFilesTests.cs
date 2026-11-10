@@ -21,6 +21,7 @@ public sealed class GeneratedFilesTests
         Assert.AreEqual("templates/campaign/story/sessions/.gitkeep", GeneratedFiles.TargetOf("kit/templates/campaign/story/sessions/.gitkeep"));
         // MSBuild writes the platform's separator into the name of a nested resource.
         Assert.AreEqual("templates/campaign/game-state.md", GeneratedFiles.TargetOf("kit/templates\\campaign\\game-state.md"));
+        Assert.AreEqual("migrations/004-lean-notes-and-state.md", GeneratedFiles.TargetOf("kit/migrations/004-lean-notes-and-state.md"));
     }
 
     [TestMethod]
@@ -75,5 +76,58 @@ public sealed class GeneratedFilesTests
             GeneratedFiles.Guard(path);
         foreach (var file in GeneratedFiles.All)
             GeneratedFiles.Guard(file.Path);
+    }
+
+    /// <summary>A refresh writes the kit's migrations to <c>migrations/</c>, where DMC reads them and <c>dmc campaign</c> finds the kit's standard (spec 005, research R3).</summary>
+    [TestMethod]
+    public void ARefreshWritesTheMigrations()
+    {
+        string folder = DmcFolders.NewTemp();
+        try
+        {
+            Refresher.Refresh(folder, GeneratedFiles.All, GeneratedFiles.Version, DateTime.Now);
+            string[] kit = [.. Directory.EnumerateFiles(Path.Combine(TestEnv.Root, "kit", "migrations")).Select(f => Path.GetFileName(f)!).Order(StringComparer.Ordinal)];
+            Assert.IsNotEmpty(kit);
+            CollectionAssert.AreEqual(kit, Directory.EnumerateFiles(Path.Combine(folder, "migrations")).Select(f => Path.GetFileName(f)!).Order(StringComparer.Ordinal).ToArray());
+            Assert.AreEqual(kit.Length + 1, Dmc.Campaign.MigrationSet.Read(folder).Kit);
+        }
+        finally
+        {
+            DmcFolders.Delete(folder);
+        }
+    }
+
+    /// <summary>
+    /// After a refresh that updated files, one line when any campaign of the folder is behind or unfinished; none when every
+    /// campaign is current, when there is none, or for a folder whose name starts with a dot (spec 005, FR-012).
+    /// </summary>
+    [TestMethod]
+    public void TheBehindLineCountsBehindAndUnfinishedCampaignsOnly()
+    {
+        string folder = DmcFolders.NewTemp();
+        try
+        {
+            Refresher.Refresh(folder, GeneratedFiles.All, GeneratedFiles.Version, DateTime.Now);
+            int kit = Dmc.Campaign.MigrationSet.Read(folder).Kit;
+            string adventures = Path.Combine(folder, "adventures");
+            Assert.IsNull(Refresher.BehindLine("dmc refresh", folder), "no adventures/");
+            Directory.CreateDirectory(Path.Combine(adventures, ".dmc-import-1234"));
+            Directory.CreateDirectory(Path.Combine(adventures, "current"));
+            File.WriteAllText(Path.Combine(adventures, "current", ".standard"), $"{kit}\n");
+            Assert.IsNull(Refresher.BehindLine("dmc refresh", folder), "every campaign is current, and a dot-folder is not one");
+
+            Directory.CreateDirectory(Path.Combine(adventures, "old"));
+            Assert.AreEqual($"dmc refresh: {folder}: 1 campaign is behind the new rules: ask DMC to bring it up to date", Refresher.BehindLine("dmc refresh", folder));
+
+            Directory.CreateDirectory(Path.Combine(adventures, "halfway", "backups"));
+            File.WriteAllText(Path.Combine(adventures, "halfway", ".standard"), $"{kit}\n");
+            File.WriteAllText(Path.Combine(adventures, "halfway", "backups", "halfway_backup_20261110120000.zip"), "x");
+            File.WriteAllText(Path.Combine(adventures, "halfway", "backups", "halfway_backup_20261110120000.zip.migrating"), "");
+            Assert.AreEqual($"dmc refresh: {folder}: 2 campaigns are behind the new rules: ask DMC to bring them up to date", Refresher.BehindLine("dmc refresh", folder));
+        }
+        finally
+        {
+            DmcFolders.Delete(folder);
+        }
     }
 }

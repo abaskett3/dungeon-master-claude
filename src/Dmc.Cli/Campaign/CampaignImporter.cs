@@ -98,9 +98,25 @@ internal static class CampaignImporter
     /// <param name="summary">The export, already checked.</param>
     /// <param name="staging">The staging folder, which exists.</param>
     /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
-    static void Extract(ExportSummary summary, string staging)
+    static void Extract(ExportSummary summary, string staging) =>
+        Extract(summary, Path.Combine(staging, "campaign"), staging);
+
+    /// <summary>
+    /// Extracts only the campaign of an export into a folder, verifying each file as it is written, as an import does.
+    /// <c>dmc campaign restore</c> stages a backup with it.
+    /// </summary>
+    /// <param name="summary">The export, already checked.</param>
+    /// <param name="campaign">The folder to extract into; made if missing.</param>
+    /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
+    internal static void ExtractCampaign(ExportSummary summary, string campaign) => Extract(summary, campaign, null);
+
+    /// <summary>Extracts the campaign into a folder and, when a staging folder is given, the general player options beside it.</summary>
+    /// <param name="summary">The export, already checked.</param>
+    /// <param name="campaign">The folder for the campaign's files.</param>
+    /// <param name="staging">The folder for the general player options; null to leave them out.</param>
+    /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
+    static void Extract(ExportSummary summary, string campaign, string? staging)
     {
-        string campaign = Path.Combine(staging, "campaign");
         // Every file gets the export's time, the same one: the archive keeps no per-file times, and files written in archive order would otherwise
         // look newer or older than each other, which the map redraw (live.json against live-data.js) reads as a change.
         ExportSummary.TryParseTimestamp(summary.Manifest.ExportedAt, out var stamp);
@@ -112,7 +128,7 @@ internal static class CampaignImporter
             ZipArchiveEntry Find(string entry) =>
                 entries.GetValueOrDefault(entry) ?? throw new DmcException($"{summary.Path} is damaged: {entry} is missing");
 
-            if (summary.Manifest.PlayerOptions is { } options)
+            if (staging is not null && summary.Manifest.PlayerOptions is { } options)
                 ExtractFile(summary.Path, Find(ExportSummary.PlayerOptionsEntry), options, ArchivePaths.Combine(staging, ExportSummary.PlayerOptionsEntry), stamp);
             foreach (var file in summary.Manifest.Files)
                 ExtractFile(summary.Path, Find(ExportSummary.CampaignPrefix + file.Path), file, ArchivePaths.Combine(campaign, file.Path), stamp);

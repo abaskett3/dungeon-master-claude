@@ -92,6 +92,8 @@ adventures, feedback, modules, rules and exports are never touched. A generated 
             var result = Refresher.Refresh(target, machine.Files, machine.Version, machine.Now());
             foreach (string line in Refresher.Report("dmc refresh", target, result, machine.Version))
                 io.Out.WriteLine(line);
+            if (result.Updated > 0 && Refresher.BehindLine("dmc refresh", target) is { } behind)
+                io.Out.WriteLine(behind);
         }
         return 0;
     }

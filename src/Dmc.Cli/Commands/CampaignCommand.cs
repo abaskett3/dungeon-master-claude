@@ -1,12 +1,13 @@
+using System.Globalization;
 using Dmc.Campaign;
 
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc campaign export|import|show NAME-or-FILE [--out PATH] [--force] [--as NAME]</c>: moves a whole campaign in and out
+/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE</c>: moves a whole campaign in and out
 /// of one file. <c>export</c> writes a campaign folder (and the general player options) to a ZIP with a manifest of sizes
 /// and checksums; <c>import</c> checks such a file completely, then creates the campaign all or nothing under a name that
-/// is free; <c>show</c> says what a file holds and writes nothing.
+/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
@@ -19,7 +20,7 @@ public sealed class CampaignCommand : ICommand
     public string Name => "campaign";
 
     /// <inheritdoc />
-    public string Summary => "export or import a whole campaign as one file: dmc campaign export|import|show NAME-or-FILE [--out PATH] [--force] [--as NAME]";
+    public string Summary => "export or import a whole campaign as one file, and bring its files up to date: dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE";
 
     /// <summary>The text <c>--help</c> prints: usage, what each verb does and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
@@ -27,21 +28,46 @@ public sealed class CampaignCommand : ICommand
 usage: dmc campaign export NAME [--out PATH] [--force]
        dmc campaign import FILE [--as NAME]
        dmc campaign show FILE
+       dmc campaign standard [NAME] [--init]
+       dmc campaign backups NAME
+       dmc campaign backup NAME [--prune oldest|old]
+       dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
+       dmc campaign restore NAME [--from FILE] [--yes]
 
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
+Brings a campaign's files up to the kit's standard with DMC, safely: a backup first, a check that nothing was lost, and
+a way back.
 
-  export  writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
-          adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
-  import  checks the whole file, then creates adventures/<name> from it, all or nothing. It never changes an existing
-          campaign, never replaces an existing adventures/player-options.md and never changes the active campaign.
-  show    prints what a file holds (name, date, files, module) and writes nothing.
+  export    writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
+            adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
+            The campaign's backups/ folder is left out.
+  import    checks the whole file, then creates adventures/<name> from it, all or nothing. It never changes an existing
+            campaign, never replaces an existing adventures/player-options.md and never changes the active campaign.
+  show      prints what a file holds (name, date, files, module) and writes nothing.
+  standard  says whether the campaign's files are current, behind the kit's standard (and which migrations are
+            pending), ahead of it, or in the middle of an unfinished migration. Changes nothing, except --init.
+  backups   lists the campaign's backups, oldest first, and ends with the question to ask the player when it is time
+            to remove old ones.
+  backup    writes a checked backup to adventures/NAME/backups/ and marks a migration as under way.
+  verify    checks that every line of the backup is in the migrated campaign or accounted for, and that each pending
+            migration's checks pass; then records the new standard. Changes nothing when it fails.
+  restore   puts the campaign back as a backup holds it, keeping backups/. Without --yes, prints the plan only.
 
-  NAME    a folder under adventures/
-  FILE    an export file; its name does not matter, the campaign name is read from inside it
-  --out   export: an existing folder (the default file name is used inside it), or a file path ending in .zip
-          (default: exports/ in the DMC folder, made when needed; never inside adventures/)
-  --force export: replace an existing file named by --out; the default name is never replaced, the next free -2, -3 ... is used
-  --as    import: the folder name to import under (lowercase letters, digits and hyphens; default: the name inside the file)
+  NAME          a folder under adventures/ (standard: default the active campaign)
+  FILE          an export file; its name does not matter, the campaign name is read from inside it
+  --out         export: an existing folder (the default file name is used inside it), or a file path ending in .zip
+                (default: exports/ in the DMC folder, made when needed; never inside adventures/)
+  --force       export: replace an existing file named by --out; the default name is never replaced, the next free -2, -3 ... is used
+  --as          import: the folder name to import under (lowercase letters, digits and hyphens; default: the name inside the file)
+  --init        standard: record the kit's standard for a new campaign that has no record
+  --prune       backup: after the backup, remove the oldest backup (oldest) or all but the latest two older ones (old);
+                only on the player's yes to the question backups asks
+  --backup      verify: the backup to compare with (default: the one of the unfinished migration, else the latest)
+  --accounting  verify: the accounting file (default: backups/<backup file>.accounting.tsv)
+  --list        verify: print what is still to account for, and write nothing
+  --all         verify: print every unaccounted line, not the first 40
+  --from        restore: the backup to restore (default: the one of the unfinished migration, else the latest)
+  --yes         restore: restore; without it nothing changes
 
 An export holds the whole campaign, spoilers included (story/dm-notes.md): do not open it before you have played the story.
 A published module is not exported; ingest it again from your own copy.
@@ -64,6 +90,16 @@ A published module is not exported; ingest it again from your own copy.
                 return RunImport(import, io);
             case ShowRequest show:
                 return RunShow(show, io);
+            case StandardRequest standard:
+                return RunStandard(standard, io);
+            case BackupsRequest backups:
+                return RunBackups(backups, io);
+            case BackupRequest backup:
+                return RunBackup(backup, io);
+            case VerifyRequest verify:
+                return RunVerify(verify, io);
+            case RestoreRequest restore:
+                return RunRestore(restore, io);
             default:
                 throw new InvalidOperationException("unknown campaign request");
         }
@@ -102,6 +138,118 @@ A published module is not exported; ingest it again from your own copy.
         else if (result.Module.Kind == ModuleKind.Unnamed)
             io.Out.WriteLine("this is a module campaign, but its module-progress.md names no module folder");
         io.Out.WriteLine($"to play it, start a session and ask DMC to resume {result.Name}");
+        if (ImportStandardLine(DmcFolder.Require(), result.Name) is { } standard)
+            io.Out.WriteLine(standard);
+        return 0;
+    }
+
+    /// <summary>The extra line an import prints when the new campaign is not on the kit's standard (research R12); null when it is current.</summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="name">The imported campaign.</param>
+    internal static string? ImportStandardLine(string root, string name)
+    {
+        StandardStatus status;
+        try
+        {
+            status = StandardRecord.Status(root, name);
+        }
+        catch (DmcException)
+        {
+            return null; // the import itself succeeded; resume reports an unreadable record or migration
+        }
+        return status.State switch
+        {
+            StandardState.Behind => string.Create(CultureInfo.InvariantCulture,
+                $"{name} is behind (standard {status.Campaign}, kit {status.Kit}): ask DMC to bring it up to date"),
+            StandardState.Ahead => string.Create(CultureInfo.InvariantCulture,
+                $"{name} is ahead (standard {status.Campaign}, kit {status.Kit}): update dmc"),
+            _ => null,
+        };
+    }
+
+    /// <summary>Prints where a campaign stands, or records the kit's standard with <c>--init</c>.</summary>
+    /// <param name="request">The parsed <c>standard</c> request.</param>
+    /// <param name="io">Standard output gets the one line.</param>
+    static int RunStandard(StandardRequest request, Io io)
+    {
+        string root = DmcFolder.Require();
+        string adventures = Path.Combine(root, "adventures");
+        string name = CampaignExporter.FindCampaign(adventures, request.Name ?? ActiveCampaign(adventures));
+        string campaign = Path.Combine(adventures, name);
+        if (request.Init)
+        {
+            if (File.Exists(Path.Combine(campaign, StandardRecord.FileName)))
+                throw new DmcException($"{name} already has a standard: only dmc campaign verify changes it");
+            int kit = MigrationSet.Read(root).Kit;
+            StandardRecord.Write(campaign, kit);
+            io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture, $"initialised {name} at standard {kit}"));
+            return 0;
+        }
+        io.Out.WriteLine(StandardRecord.Status(root, name).Line);
+        return 0;
+    }
+
+    /// <summary>The active campaign: the first line of <c>adventures/.active-campaign</c>.</summary>
+    /// <param name="adventures">The <c>adventures/</c> folder.</param>
+    /// <exception cref="DmcException">No campaign is active.</exception>
+    static string ActiveCampaign(string adventures)
+    {
+        string active = Path.Combine(adventures, ".active-campaign");
+        string? name = File.Exists(active) ? File.ReadLines(active).Select(l => l.Trim().TrimStart('﻿')).FirstOrDefault() : null;
+        return string.IsNullOrEmpty(name) ? throw new DmcException("no active campaign: name one (dmc campaign standard NAME)") : name;
+    }
+
+    /// <summary>Lists a campaign's backups and, when it is due, the removal question.</summary>
+    /// <param name="request">The parsed <c>backups</c> request.</param>
+    /// <param name="io">Standard output gets the count, the file names and the question.</param>
+    static int RunBackups(BackupsRequest request, Io io)
+    {
+        string adventures = Path.Combine(DmcFolder.Require(), "adventures");
+        string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, request.Name));
+        var backups = BackupFolder.List(campaign, request.Name);
+        io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{backups.Count} backups"));
+        foreach (var backup in backups)
+            io.Out.WriteLine(backup.FileName);
+        if (BackupFolder.AskLine(backups, BackupFolder.Marked(campaign, request.Name) is not null) is { } ask)
+            io.Out.WriteLine(ask);
+        return 0;
+    }
+
+    /// <summary>Takes a backup, pruning on the flag, and prints the contract's one line.</summary>
+    /// <param name="request">The parsed <c>backup</c> request.</param>
+    /// <param name="io">Standard output gets the result line.</param>
+    static int RunBackup(BackupRequest request, Io io)
+    {
+        var result = CampaignBackup.Take(DmcFolder.Require(), request.Name, request.Prune);
+        string line = string.Create(CultureInfo.InvariantCulture,
+            $"backed up {request.Name}: {result.Files} files to {BackupFolder.FolderName}/{result.FileName}");
+        if (request.Prune != PruneMode.None)
+            line += string.Create(CultureInfo.InvariantCulture, $"; removed {result.Removed} older");
+        if (result.NotRemoved.Count > 0)
+            line += "; could not remove " + string.Join(", ", result.NotRemoved);
+        io.Out.WriteLine(line);
+        return 0;
+    }
+
+    /// <summary>Verifies a migration and prints the list, pass or fail lines.</summary>
+    /// <param name="request">The parsed <c>verify</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    /// <exception cref="DmcException">The verification failed (after its lines are printed), or cannot run.</exception>
+    static int RunVerify(VerifyRequest request, Io io)
+    {
+        var outcome = CampaignVerifier.Run(DmcFolder.Require(), request.Name, request.Options);
+        foreach (string line in outcome.Lines)
+            io.Out.WriteLine(line);
+        return outcome.Failure is null ? 0 : throw new DmcException("verification failed: " + outcome.Failure);
+    }
+
+    /// <summary>Plans or makes a restore and prints its lines.</summary>
+    /// <param name="request">The parsed <c>restore</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    static int RunRestore(RestoreRequest request, Io io)
+    {
+        foreach (string line in CampaignRestorer.Run(DmcFolder.Require(), request.Name, request.From, request.Yes))
+            io.Out.WriteLine(line);
         return 0;
     }
 

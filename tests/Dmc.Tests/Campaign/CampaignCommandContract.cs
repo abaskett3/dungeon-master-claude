@@ -98,16 +98,52 @@ public abstract class CampaignCommandContract
     }
 
     [TestMethod]
-    public void HelpListsAllThreeVerbsAndTheOptions()
+    public void HelpListsEveryVerbAndTheOptions()
     {
-        foreach (string[] args in new[] { new[] { "--help" }, ["export", "--help"], ["import", "--help"], ["show", "--help"], ["-h"] })
+        foreach (string[] args in new[] { new[] { "--help" }, ["export", "--help"], ["import", "--help"], ["show", "--help"], ["-h"],
+                     ["standard", "--help"], ["backups", "--help"], ["backup", "--help"], ["verify", "--help"], ["restore", "--help"] })
         {
             var result = Campaign(args);
             Assert.AreEqual(0, result.ExitCode, string.Join(' ', args) + ": " + result.Stderr);
             Assert.DoesNotContain("\r", result.Stdout);
-            foreach (string word in new[] { "dmc campaign export NAME [--out PATH] [--force]", "dmc campaign import FILE [--as NAME]", "dmc campaign show FILE", "--out", "--force", "--as" })
+            foreach (string word in new[] { "dmc campaign export NAME [--out PATH] [--force]", "dmc campaign import FILE [--as NAME]", "dmc campaign show FILE", "--out", "--force", "--as",
+                         "dmc campaign standard [NAME] [--init]", "dmc campaign backups NAME", "dmc campaign backup NAME [--prune oldest|old]",
+                         "dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]", "dmc campaign restore NAME [--from FILE] [--yes]" })
                 StringAssert.Contains(result.Stdout, word, $"dmc campaign {string.Join(' ', args)}");
         }
+    }
+
+[TestMethod]
+    [DataRow("standard --frob", "unrecognized arguments: --frob")]
+    [DataRow("backups", "the following arguments are required: name")]
+    [DataRow("backup", "the following arguments are required: name")]
+    [DataRow("verify", "the following arguments are required: name")]
+    [DataRow("restore", "the following arguments are required: name")]
+    [DataRow("backup rorn --prune all", "argument --prune: invalid choice: 'all' (choose from 'oldest', 'old')")]
+    [DataRow("backup rorn --prune", "argument --prune: expected one argument")]
+    [DataRow("backup rorn --list", "unrecognized arguments: --list")]
+    [DataRow("restore rorn --all", "unrecognized arguments: --all")]
+    [DataRow("standard rorn --list", "unrecognized arguments: --list")]
+    [DataRow("verify rorn --list=yes", "argument --list: ignored explicit argument 'yes'")]
+    [DataRow("verify rorn --a", "ambiguous option: --a could match --accounting, --all")]
+    [DataRow("restore rorn --yes --frob", "unrecognized arguments: --frob")]
+    [DataRow("migrate rorn", "give export, import, show, standard, backups, backup, verify or restore (try dmc campaign --help)")]
+    public void AMistakeWithTheNewVerbsIsOneLineAndExitTwo(string line, string message)
+    {
+        string[] before = Snapshot(_folder);
+        var result = Campaign(line.Split(' '));
+        Assert.AreEqual(2, result.ExitCode, result.ToString());
+        Assert.AreEqual("", result.Stdout);
+        Assert.AreEqual($"dmc campaign: {message}", result.Stderr.TrimEnd());
+        CollectionAssert.AreEqual(before, Snapshot(_folder));
+    }
+
+    [TestMethod]
+    public void StandardOfACampaignWithNoMigrationsIsCurrent()
+    {
+        var result = Campaign("standard", CampaignName);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("current\n", result.Stdout);
     }
 
     [TestMethod]

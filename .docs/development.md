@@ -13,7 +13,7 @@ This document is for contributors changing `dmc`, the kit (the Dungeon Master ru
 
 | Path | Holds |
 |---|---|
-| `kit/` | The source of everything `dmc` writes into a DMC folder, embedded in `dmc`: `dm-rules.md` (becomes `CLAUDE.md`), `settings.json` (becomes `.claude/settings.json`), `skills/dmc-*/` (become `.claude/skills/dmc-*/`) and `templates/` |
+| `kit/` | The source of everything `dmc` writes into a DMC folder, embedded in `dmc`: `dm-rules.md` (becomes `CLAUDE.md`), `settings.json` (becomes `.claude/settings.json`), `skills/dmc-*/` (become `.claude/skills/dmc-*/`), `templates/` and `migrations/` (the numbered files DMC follows to bring an older campaign's files up to date) |
 | `CLAUDE.md` | Instructions for working on the toolkit: the git rules. The Dungeon Master rules are in `kit/dm-rules.md` and are not loaded as instructions in a session here |
 | `.claude/skills/`, `.claude/settings.json` | Developer-only: the `review-feedback` and `review-transcript` skills (they take a DMC folder), Spec Kit's `speckit-*` skills, and the permissions development needs |
 | `tools/` | `install.ps1` and `install.sh`: the install line, attached to every release (tested by `Distribution/BootstrapTests.cs`) |
@@ -210,6 +210,37 @@ specify integration upgrade claude --integration-options="--events false --no-mo
 - **Write for a reader with none of the history.** Say what to do and why; leave out the session that prompted it.
 - **The toolkit tests check the prompts.** Every `dmc` command in a prompt must be a real subcommand, and the ones DMC runs must match an allow rule; every path under `templates/` or `.claude/skills/` in a kit prompt must exist in `kit/` (a DMC folder has no `tools/` or `.docs/`); a backticked `/word-word` is read as a skill name and must be a real one, so name Claude Code's own commands in words rather than as `/code-review`.
 
+### Changing a campaign-file standard
+
+A change to what campaign files should hold (a template, or a skill's rule for a file's shape) leaves every existing
+campaign behind. It is not finished without a migration, or a line in the PR saying why none is needed (a new optional
+field that an older file can simply lack, say). The format of a migration file is
+`specs/005-campaign-migrations/contracts/migration-file.md`; this is how to add one.
+
+1. **Number it.** The next integer after the highest file in `kit/migrations/`: `kit/migrations/NNN-<slug>.md`, three
+   digits. Numbers run from 2 without a gap (standard 1 is the baseline, with no file). Two PRs that both add one
+   conflict on the name, which is the point.
+2. **Write it for a campaign you have never seen**, with the five headings in order: What changes, Steps, Judgments,
+   Declared drops, Done when. Every step checks whether it is needed, so a campaign already in the new shape is left
+   alone. Write before delete. Change only files the front matter's `touches` lists, and name in `drops` every class
+   of content a step may remove.
+3. **Name a shape check.** `checks` names at least one check in `src/Dmc.Cli/Campaign/MigrationChecks.cs` that fails
+   on a file left in the old shape. A new check is a small function there, with a test in
+   `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`.
+4. **Build the golden fixture** in `tests/Dmc.Tests/Fixtures/migrations/NNN/`: `before/`, a small campaign at standard
+   `NNN-1` made from the templates plus the shapes the migration touches; `after/`, what a correct run leaves; and
+   `accounting.tsv`, made by backing up `before/` in a scratch DMC folder, replacing the campaign with `after/`, and
+   accounting for each unit `dmc campaign verify NAME --list` prints. Show one of each disposition the migration can
+   produce. `Toolkit/MigrationGoldenTests.cs` verifies it on CI, and fails when a unit is removed, an undeclared drop
+   class is claimed, or a touched file is left as it was; `Toolkit/MigrationFilesTests.cs` checks the file's format.
+5. **Run it live** once: in a scratch DMC folder made with `artifacts/bin/dmc install`, put the `before/` campaign at
+   standard `NNN-1`, start `dmc play`, ask DMC to bring the campaign's files up to date, and compare the result with
+   `after/`. Fix the migration's prose for anything DMC got wrong. CI cannot run a model, so this is the only test
+   that DMC can follow the steps.
+6. **Say it in the PR**: which migration it adds and what the live run found, or why none is needed.
+
+Never put a clause in a skill that repairs older files as it goes ("add the line if an older sheet lacks it"): that
+work is the migration's, and the toolkit tests refuse such wording.
 ## Adding to `dmc`
 
 - A subcommand is one class in `src/Dmc.Cli/Commands/` implementing `ICommand` (name, one-line summary, `Run`), added to `CommandTable.All`. It parses its own arguments and calls library code that the tests can call in-process.

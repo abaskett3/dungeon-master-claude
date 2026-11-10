@@ -19,7 +19,7 @@ For each PC, companion and NPC who appeared since the last full save, follow the
 
 Add a line to `character-sheets/minor-npcs.md` for any named bit-part character met. Promote anyone who has become recurring to their own sheet.
 
-Resume reads each sheet down to its history, so keep every sheet's history (`## History`, or the older `## Notes` / `## History with the PC`) as its last section, and move it there if it is not. Split any line that has grown into a paragraph, and keep the part resume reads within the budget `dmc size` checks in step 7. Move dated history older than the current stretch of the story to `character-sheets/<sheet name>-history.md` (create it if missing; resume does not read it) and leave the sheet with what is true now.
+Resume reads each sheet down to its history, so keep every sheet's history (`## History`, or the older `## Notes` / `## History with the PC`) as its last section. Split any line that has grown into a paragraph, and keep the part resume reads within the budget `dmc size` checks in step 7. Move dated history older than the current stretch of the story to `character-sheets/<sheet name>-history.md` (create it if missing; resume does not read it) and leave the sheet with what is true now.
 
 ## 3. Session log
 

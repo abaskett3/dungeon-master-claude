@@ -534,4 +534,32 @@ public sealed class CampaignImportRefusalTests
         Assert.AreEqual(NotAnExport(scene), caught.Message);
         Assert.IsFalse(Directory.Exists(scene.Target.Adventures), "a refused archive makes no folder");
     }
+
+    // ---------- backups (spec 005, research R12) ----------
+
+    [TestMethod]
+    public void AnArchiveWithABackupsEntryIsRefusedAsDamaged()
+    {
+        using var scene = new Scene().Build(p => p.AddFile("backups/x.zip", Encoding.UTF8.GetBytes("a backup")));
+        AssertRefused(scene, $"{scene.Zip} is damaged: campaign/backups/x.zip is under backups/, which an export never holds");
+    }
+
+    [TestMethod]
+    public void AnArchiveWithAnEmptyBackupsFolderIsRefusedToo()
+    {
+        using var scene = new Scene().Build(p =>
+        {
+            p.Folders.Add("backups");
+            p.Entries.Add(("campaign/backups/", []));
+        });
+        AssertRefused(scene, $"{scene.Zip} is damaged: campaign/backups/ is under backups/, which an export never holds");
+    }
+
+    [TestMethod]
+    public void AnImportNeverMakesABackupsFolder()
+    {
+        using var scene = new Scene().Build();
+        var result = CampaignImporter.Import(scene.Target.Folder, new ImportRequest(scene.Zip, null), TextWriter.Null);
+        Assert.IsFalse(Directory.Exists(Path.Combine(result.Folder, "backups")));
+    }
 }

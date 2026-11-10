@@ -114,6 +114,69 @@ internal sealed class ExportSummary
         return new ExportSummary(path, manifest);
     }
 
+    /// <summary>
+    /// Reads every campaign file of the export into memory and checks each against the manifest's size and SHA-256 (check
+    /// 5, as import makes it while it extracts), so a backup is known whole before <c>backup</c>, <c>verify</c> or
+    /// <c>restore</c> trusts it. Reading an entry stops as soon as it is longer than declared.
+    /// </summary>
+    /// <returns>The campaign's files by their path in the campaign (without <c>campaign/</c>), in ordinal order.</returns>
+    /// <exception cref="DmcException">The file cannot be read, or an entry is missing, larger or smaller than declared, or does not match its checksum.</exception>
+    public SortedDictionary<string, byte[]> ReadCampaign()
+    {
+        var files = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
+        try
+        {
+            using var zip = ZipFile.Open(Path, ZipArchiveMode.Read, Encoding.UTF8);
+            var entries = zip.Entries.ToDictionary(e => e.FullName, StringComparer.Ordinal);
+            foreach (var file in Manifest.Files)
+            {
+                var entry = entries.GetValueOrDefault(CampaignPrefix + file.Path)
+                    ?? throw new DmcException($"{Path} is damaged: {CampaignPrefix + file.Path} is missing");
+                files[file.Path] = ReadChecked(entry, file);
+            }
+        }
+        catch (InvalidDataException)
+        {
+            throw NotAnExport(Path);
+        }
+        catch (IOException e)
+        {
+            throw new DmcException($"cannot read {Path}: {e.Message.TrimEnd('.', '\r', '\n', ' ')}");
+        }
+        return files;
+    }
+
+    /// <summary>Reads one entry, counting and hashing as it goes, and refuses it unless it is exactly the file the manifest describes.</summary>
+    /// <param name="entry">The archive entry.</param>
+    /// <param name="record">What the manifest says it is.</param>
+    /// <exception cref="DmcException">The entry is larger or smaller than declared, cannot be read, or its SHA-256 differs.</exception>
+    byte[] ReadChecked(ZipArchiveEntry entry, FileEntry record)
+    {
+        using var output = new MemoryStream();
+        try
+        {
+            using var input = entry.Open();
+            var buffer = new byte[81920];
+            int read;
+            while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                if (output.Length + read > record.Size)
+                    throw new DmcException($"{Path} is damaged: {entry.FullName} is larger than the size in the manifest");
+                output.Write(buffer, 0, read);
+            }
+        }
+        catch (InvalidDataException e)
+        {
+            throw new DmcException($"{Path} is damaged: {entry.FullName} cannot be read ({e.Message.TrimEnd('.')})");
+        }
+        if (output.Length < record.Size)
+            throw new DmcException($"{Path} is damaged: {entry.FullName} is smaller than the size in the manifest");
+        byte[] bytes = output.ToArray();
+        if (Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)) != record.Sha256)
+            throw new DmcException($"{Path} is damaged: {entry.FullName} does not match its checksum in the manifest");
+        return bytes;
+    }
+
     /// <summary>The module this export needs, and whether <c>modules/&lt;folder&gt;/index.md</c> exists under a DMC folder (research R8).</summary>
     /// <param name="root">The DMC folder to look in.</param>
     public ModuleState Module(string root)
@@ -268,6 +331,12 @@ internal sealed class ExportSummary
     static DmcException Unportable(string path, string entry, string reason) =>
         new($"{path} holds an entry that cannot be imported: {entry} ({reason})");
 
+    /// <summary>The refusal for an archive that holds the campaign's <c>backups/</c> folder, which an export never writes (research R12).</summary>
+    /// <param name="path">The export file.</param>
+    /// <param name="entry">The entry under <c>backups/</c>.</param>
+    static DmcException HoldsBackups(string path, string entry) =>
+        new($"{path} is damaged: {entry} is under backups/, which an export never holds");
+
     /// <summary>Check 3: every path of the manifest is safe, none is the same as another when case is ignored, and none is both a file and a folder.</summary>
     /// <param name="path">The export file, for the messages.</param>
     /// <param name="manifest">The manifest.</param>
@@ -294,11 +363,15 @@ internal sealed class ExportSummary
         {
             if (ArchivePaths.Refusal(file) is { } why)
                 throw Unportable(path, CampaignPrefix + file, why);
+            if (!CampaignFiles.Counts(file) && file != StandardRecord.FileName)
+                throw HoldsBackups(path, CampaignPrefix + file);
         }
         foreach (string folder in manifest.Folders)
         {
             if (ArchivePaths.Refusal(folder) is { } why)
                 throw Unportable(path, CampaignPrefix + folder + "/", why);
+            if (!CampaignFiles.Counts(folder))
+                throw HoldsBackups(path, CampaignPrefix + folder + "/");
         }
 
         // Campaign files and folders compared together: on a case-insensitive file system they share one namespace.

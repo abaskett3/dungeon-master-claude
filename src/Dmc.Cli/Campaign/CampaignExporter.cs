@@ -45,7 +45,29 @@ internal static class CampaignExporter
     /// <param name="now">The moment of the export; the clock when null. It is read once: the file name and the manifest's <c>exportedAt</c> come from this one value.</param>
     /// <returns>The file written and what it holds.</returns>
     /// <exception cref="DmcException">The campaign or the destination cannot be used, the campaign holds a link or a path that could not be imported, or the file could not be written. Nothing is left under the final name.</exception>
-    public static ExportResult Export(string root, ExportRequest request, DateTime? now = null)
+    public static ExportResult Export(string root, ExportRequest request, DateTime? now = null) =>
+        Export(root, request, now, toBackups: false);
+
+    /// <summary>
+    /// Writes a backup of a campaign: an export to the campaign's own <c>backups/</c> folder, named
+    /// <c>&lt;campaign&gt;_backup_&lt;yyyyMMddHHmmss&gt;.zip</c> (local time), with <c>-2</c>, <c>-3</c> ... on a clash (research
+    /// R8). This is the only way an export is written inside <c>adventures/</c>: the destination is fixed here, never
+    /// taken from <c>--out</c> (FR-005e). An existing file is never replaced.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="name">The campaign's folder name.</param>
+    /// <param name="now">The moment of the backup; the clock when null.</param>
+    /// <returns>The file written and what it holds.</returns>
+    /// <exception cref="DmcException">The campaign cannot be read or the file could not be written. Nothing is left under the final name.</exception>
+    public static ExportResult Backup(string root, string name, DateTime? now = null) =>
+        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true);
+
+    /// <summary>Exports a campaign to the destination <see cref="Plan"/> chooses, or to its <c>backups/</c> folder.</summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="request">What was asked.</param>
+    /// <param name="now">The moment of the export; the clock when null.</param>
+    /// <param name="toBackups">True for a backup: the destination is the campaign's <c>backups/</c> folder and <c>--out</c> is not read.</param>
+    static ExportResult Export(string root, ExportRequest request, DateTime? now, bool toBackups)
     {
         DateTime moment = (now ?? DateTime.UtcNow).ToUniversalTime();
         string adventures = Path.Combine(root, "adventures");
@@ -57,7 +79,9 @@ internal static class CampaignExporter
         try
         {
             // Inside the try: a --out the system cannot make sense of (a ":" in a name on Windows, a NUL) throws ArgumentException or NotSupportedException.
-            var destination = Plan(root, adventures, request, moment);
+            var destination = toBackups
+                ? new Destination(BackupFolder.Of(campaign), null, BackupFolder.Stem(request.Name, moment))
+                : Plan(root, adventures, request, moment);
             var files = new List<Item>();
             var folders = new List<string>();
             Walk(campaign, "", files, folders);
@@ -92,7 +116,7 @@ internal static class CampaignExporter
     /// <param name="adventures">The <c>adventures/</c> folder.</param>
     /// <param name="name">What the user typed.</param>
     /// <exception cref="DmcException">There is no such campaign; the message lists the ones there are.</exception>
-    static string FindCampaign(string adventures, string name)
+    internal static string FindCampaign(string adventures, string name)
     {
         string[] campaigns = !Directory.Exists(adventures)
             ? []
@@ -157,6 +181,9 @@ internal static class CampaignExporter
             empty.Add(relative);
         foreach (var entry in entries)
         {
+            // The campaign's own backups are never part of an export or of another backup (FR-005d).
+            if (relative.Length == 0 && entry.Name == BackupFolder.FolderName)
+                continue;
             string path = relative.Length == 0 ? entry.Name : relative + "/" + entry.Name;
             // A link would export something from outside the campaign. LinkTarget is set for symbolic links and junctions;
             // a Windows file that is only a cloud placeholder has the reparse-point attribute but no target, and is a plain file.

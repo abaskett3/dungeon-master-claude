@@ -223,9 +223,11 @@ public sealed class RefreshCommandTests
             File.Delete(Path.Combine(folder, ".claude", "skills", "dmc-resume-campaign", "SKILL.md"));
             var refresh = TestEnv.Run(DmcRunner.Binary(), ["refresh", folder], environment: environment);
             Assert.AreEqual(0, refresh.ExitCode, refresh.ToString());
-            Assert.HasCount(2, refresh.StdoutLines);
+            Assert.HasCount(3, refresh.StdoutLines);
             StringAssert.Contains(refresh.Stdout, "2 files updated for dmc 0.0.0-dev");
             StringAssert.Contains(refresh.Stdout, "1 edited files kept in .dmc/replaced/");
+            // The three campaigns have no .standard and the kit has migrations: one line says so (spec 005, FR-012).
+            Assert.AreEqual($"dmc refresh: {folder}: 3 campaigns are behind the new rules: ask DMC to bring them up to date", refresh.StdoutLines[^1]);
             CollectionAssert.AreEqual(before, Player(), "after dmc refresh");
             Assert.IsTrue(File.Exists(Path.Combine(folder, ".claude", "skills", "dmc-resume-campaign", "SKILL.md")));
 

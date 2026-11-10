@@ -9,3 +9,6 @@
 
 # kit/ is embedded in dmc and written into players' DMC folders: keep it LF on every checkout so that every build embeds the same bytes
 kit/** text eol=lf
+
+# The golden fixtures of the campaign migrations are compared as text: keep them LF on every checkout
+tests/Dmc.Tests/Fixtures/migrations/** text eol=lf

@@ -11,7 +11,7 @@ Set up a campaign so that every file a future session needs exists and is filled
 
 Ask for a campaign title if one was not given (offer two or three ideas if the player has none). Turn it into a folder name: lowercase, words joined by hyphens, no other punctuation. If `adventures/<folder>/` already exists, stop and ask whether to resume it or pick another name.
 
-Copy everything in `templates/campaign/` to `adventures/<folder>/`, then write the folder name as the only line of `adventures/.active-campaign`.
+Copy everything in `templates/campaign/` to `adventures/<folder>/`, run `dmc campaign standard <folder> --init` to record that its files follow the current rules, then write the folder name as the only line of `adventures/.active-campaign`.
 
 ## 1a. Homebrew or published module
 

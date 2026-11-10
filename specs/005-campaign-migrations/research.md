@@ -51,8 +51,9 @@ rest settle what the spec left to the plan. The code facts were read on 2026-11-
   the Read tool.
 - **The shipped cases.** The baseline is "before the first carried clause". Migrations 2 to 4, in the order they
   shipped: **002** history is the last section of a sheet, **003** the "Names they use" line (PR #170), **004** the
-  November review (PR #173). Which PR shipped history-last is found in T001 (`git log -S` on the sheet templates)
-  and the order fixed there. A campaign created after those PRs but before this feature has no `.standard`, so it
+  November review (PR #173). Which PR shipped history-last was found in T001 (`git log -S "move it there if it is
+  not"`): commit 14c7faf, "Bound the resume and the full save", merged as **PR #68** on 2026-10-18, before the "Names
+  they use" line (commit 50e43d5, PR #170, 2026-11-07). The order 002, 003, 004 stands. A campaign created after those PRs but before this feature has no `.standard`, so it
   runs 002 to 004 on files that are already current: **every migration must be idempotent**, which FR-011 already
   requires and the migration contract states (contracts/migration-file.md).
 

@@ -30,6 +30,12 @@ How this player likes to play, whatever the adventure. DMC reads this at the sta
 - **Maps**: draw one at the start of each fight and whenever I ask
 - **Maps are shown as**: a picture in my browser that updates itself (`browser`). Say `text` for ASCII maps in the terminal instead, or `remote` if you play away from this computer's screen (DMC sends the picture to you).
 
+## Image styles
+
+<!-- Saved looks for image prompts (/dmc-generate-image-prompt), one line each: - **Name**: the look, in words for an image model (medium, palette, light, rendering, aspect ratio). Who is in the picture comes from the story, never from a style. "Last used" is the style a prompt gets when the player names none; with none saved, DMC uses its built-in Storybook style. Say "save that as <name>" after a prompt you like. -->
+
+- **Last used**: none
+
 ## Other requests
 
 <!-- Preferences only: anything else the player wants for every campaign. Write the preference, not the incident behind it: this file is read at every session. Feedback about DMC itself (a mistake, an inconsistency) is not a preference: record it with the dmc-record-feedback skill. -->

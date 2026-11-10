@@ -731,7 +731,7 @@ public sealed partial class ToolkitTests
     {
         CollectionAssert.AreEqual(new[]
         {
-            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-draw-map", "dmc-ingest-module", "dmc-migrate-campaign", "dmc-new-campaign",
+            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-draw-map", "dmc-generate-image-prompt", "dmc-ingest-module", "dmc-migrate-campaign", "dmc-new-campaign",
             "dmc-record-feedback", "dmc-resume-campaign", "dmc-rewind-campaign", "dmc-setup-rules", "dmc-update-game-state",
         }, SkillNames());
         foreach (string name in SkillNames())
@@ -898,6 +898,32 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(skill, "templates/feedback.md");
         StringAssert.Contains(skill, "`dmc:`");
         StringAssert.Contains(skill, "dmc --version");
+    }
+
+    /// <summary>
+    /// The general player options template ships the <c>## Image styles</c> section that <c>dmc-generate-image-prompt</c> reads
+    /// and writes, in the shape of <c>specs/007-image-prompts/contracts/image-styles-section.md</c>: one such heading, after
+    /// <c>## Style</c> and before <c>## Other requests</c>, holding only its comment, <c>- **Last used**: none</c> and blank lines.
+    /// The skill writes the section from this template on a first save, so the two must agree.
+    /// </summary>
+    [TestMethod]
+    public void TheGeneralPlayerOptionsTemplateShipsAnEmptyImageStylesSection()
+    {
+        string template = Read("kit/templates/player-options.md");
+        string[] headings = Regex.Matches(template, @"^## (.+)$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToArray();
+        Assert.AreEqual(1, headings.Count(h => h == "Image styles"), "kit/templates/player-options.md must have exactly one `## Image styles` heading");
+        int at = Array.IndexOf(headings, "Image styles");
+        Assert.AreEqual("Style", headings[at - 1], "`## Image styles` comes right after `## Style`");
+        Assert.AreEqual("Other requests", headings[at + 1], "`## Image styles` comes right before `## Other requests`");
+
+        var section = Regex.Match(template, @"^## Image styles\n(.*?)(?=^## )", RegexOptions.Multiline | RegexOptions.Singleline).Groups[1].Value;
+        string[] lines = section.Split('\n').Where(l => l.Trim().Length > 0).ToArray();
+        string[] bullets = lines.Where(l => l.StartsWith("- ", StringComparison.Ordinal)).ToArray();
+        CollectionAssert.AreEqual(new[] { "- **Last used**: none" }, bullets, "the template's only bullet is `- **Last used**: none`");
+        foreach (string line in lines.Where(l => !l.StartsWith("- ", StringComparison.Ordinal)))
+            Assert.IsTrue(line.StartsWith("<!--", StringComparison.Ordinal) && line.EndsWith("-->", StringComparison.Ordinal), $"`## Image styles` holds only its comment, the Last used line and blank lines, not: {line}");
+        StringAssert.Contains(section, "Storybook", "the comment names the built-in default");
+        StringAssert.Contains(section, "/dmc-generate-image-prompt", "the comment names the skill that writes the section");
     }
 
     /// <summary>The review skills read a DMC folder: they name <c>dmc folder</c> and <c>--folder</c>, and never <c>./bin/dmc</c>; the files to tune are in <c>kit/</c>.</summary>

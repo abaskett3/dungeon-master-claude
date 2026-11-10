@@ -129,6 +129,22 @@ When positions matter, DMC opens a map in your web browser: a grid with walls, t
 
 If you prefer text maps in the terminal, tell DMC. If you play away from the computer's screen (so you cannot keep the browser tab open), tell DMC that too: it sends you the picture, `live.png`, before its reply text instead. For that case the hook does not help (a hook cannot send a file), so the order depends on DMC writing the text first.
 
+### Image prompts
+
+DMC can write a prompt for an image-generation model of a moment in your game, for you to paste into the image model you use (DMC makes no pictures itself). Type `/dmc-generate-image-prompt`, or just ask: "give me an image prompt of this", "an image prompt of the reunion at the Landing", "Shale and Kibil at the gate, close up".
+
+- **What is in it.** Unless you say otherwise, the current scene: everyone present, in a wide shot. A past moment you name is taken from its session log. Everyone is described from their sheet: species, looks, gear and injuries, with each figure's size compared with someone else in the picture ("chest-high to the humans"), so sizes stay the same from picture to picture, and animals are named by kind.
+- **No spoilers.** A prompt shows only what your character has perceived: no enemy you have not spotted (not even a shadow or eyes), no disguised being's true form, no secret and nothing from the module ahead. If you ask for something your character has not seen, DMC says so in a line and leaves it out.
+- **Nothing made up.** A detail the files do not hold (a hair colour, say) is left out, and DMC names it after the prompt. Tell DMC the detail and it goes on that character's sheet, so every later picture has it.
+- **Nothing changes in the game.** No time passes and no roll is made.
+
+**Styles.** Each prompt is labelled with its style.
+
+- **The default.** With no style saved, DMC uses its built-in Storybook style, a high-fantasy storybook illustration. Once you have saved styles, a prompt that names none gets the saved style you used last.
+- **Saving and switching.** Describe any style in the request ("as a charcoal sketch") and that is used, unsaved. When you like a look, say "save that as Woodcut"; it is kept in `adventures/player-options.md` under Image styles, for every campaign. Switch with "in Woodcut". Ask DMC to list, rename, change or delete your styles at any time.
+- **Varying.** "The same style, but more abstract" changes that picture only; DMC tells you the saved style is unchanged and saves the change into it if you say so.
+- **Surprise me.** Ask for something different without describing it, and DMC picks a style unlike the ones you have just seen, marked unsaved, for you to save if you like it.
+
 ## Saving and breaks
 
 DMC saves as it goes: every change to HP, resources, inventory, location or time is written before the next beat, every new fact goes into the canon file at once, and each scene is appended to the session log when it ends. Closing the terminal by accident costs at most the current exchange.
@@ -164,7 +180,7 @@ Two files say how you want the game run. Both are plain text; edit them by hand 
 
 | File | Holds |
 |---|---|
-| `adventures/player-options.md` | Your preferences for every campaign: who rolls, how rolls are shown, how you talk with DMC, narration style, maps. Created from `templates/player-options.md` in your DMC folder the first time you play. |
+| `adventures/player-options.md` | Your preferences for every campaign: who rolls, how rolls are shown, how you talk with DMC, narration style, maps, and your saved image styles. Created from `templates/player-options.md` in your DMC folder the first time you play. |
 | `adventures/<campaign>/player-options.md` | One campaign's settings: edition, starting level, leveling, lethality, combat difficulty, tone, house rules, the earlier campaign of a sequel, and any overrides of the general file. |
 
 The campaign file wins over the general file, which wins over DMC's defaults. When you ask for a change that could belong in either, DMC asks whether it is for this campaign or all of them.

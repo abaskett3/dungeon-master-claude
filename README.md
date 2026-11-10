@@ -59,6 +59,7 @@ Plain `claude` started in your DMC folder also works: the same rules, skills and
 | `/dmc-rewind-campaign` | Go back to an earlier moment and undo what came after it |
 | `/dmc-record-feedback` | Record feedback about how DMC itself runs the game, outside the campaign |
 | `/dmc-migrate-campaign` | Bring a campaign's files up to date after an update, with a backup and a check that nothing was lost |
+| `/dmc-generate-image-prompt` | Write a prompt for an image model of a moment in your game, true to the story and free of spoilers, in a style you choose or saved |
 
 DMC uses these on its own as you play. You only need to type the first three, plus Claude Code's own `/clear` when you take a break.
 

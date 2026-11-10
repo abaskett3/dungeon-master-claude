@@ -99,9 +99,9 @@ matches.
 | SectionOverBudget | About this player or Arc plan over its budget | dm-notes section | yes |
 | LastPlayedLog | more than one `Last played` line, or a `## Mix tracker` section | dm-notes | yes |
 | FinishedOpposition | Opposition rows whose alive count is 0 | dm-notes `## Opposition` | yes |
-| DoneLines | `DONE` or `RESOLVED` lines outside the Arc plan | dm-notes | yes |
+| DoneLines | `DONE` or `RESOLVED` lines in the content, outside the Arc plan | dm-notes | yes |
 | PricesSection | `## Prices, debts and promises` over CanonPricesSection | canon | yes |
-| LongLines | lines over LongLineCharacters | a file read whole | yes |
+| LongLines | lines over LongLineCharacters in the content (under a `## ` heading, outside comments) | a file the full save trims, read whole | yes |
 
 A flag on a file without a budget (NearCap on a session log, say) is reported but not the save's to fix: the save's
 rule covers the files it trims.

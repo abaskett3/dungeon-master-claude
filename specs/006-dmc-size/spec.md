@@ -244,16 +244,18 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
   module's progress and digest) have no budget: they are shown, counted in the total and flagged only near the Read
   cap (FR-006). The total has no budget of its own. The budgets are starting points measured on the long campaign, recorded with their reason in `.docs/decisions.md` and
   tuned later against `review-transcript`'s slip counts. The review's starting points: `dm-notes.md` about 10k,
-  `game-state.md` about 4k, `summary.md` about 3k, the read part of each sheet about 4k, and canon by its limit
+  `game-state.md` about 4k, `summary.md` about 3k, the read part of each sheet about 4k (a PC's sheet 6k, after measurement: research R4), and canon by its limit
   (FR-010). Every budget MUST sit well under the Read tool's cap, so no file is paged at resume.
 - **FR-008**: The command MUST flag the bloat patterns that the campaign-file standards say should not stay in a
   file read whole:
   - in `dm-notes.md`: more than the one "Last played" line, or a per-session Mix tracker (the older form of it);
     Opposition rows with none left alive (`0 / N` in "How many (alive / started)"); an Arc plan stage marked done that
-    keeps more than its one line; and lines marked DONE or RESOLVED, which by definition record what has happened;
+    keeps more than its one line, detected as the Arc plan section over its own budget (research R6); and lines
+    marked DONE or RESOLVED outside the Arc plan, which by definition record what has happened;
   - in canon: a **Prices, debts and promises** section large for its kind, which suggests debts paid or promises kept
     that were not deleted;
-  - in any file read whole: lines over about 400 characters, against the rule of one fact per line.
+  - in the content of any file the full save trims (under a `## ` heading, outside comments): lines over about 400
+    characters, against the rule of one fact per line.
 
   Each flag names the file and section and says it is likely, since the command cannot judge the story.
 - **FR-009**: The command MUST report canon against its limit in estimated tokens, and say whether the resume reads
@@ -325,7 +327,8 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
   additions reach it.
 - **SC-005**: Two canons with the same line count and a threefold difference in size are treated by size: the larger
   is read in sections and archived, the smaller is not.
-- **SC-006**: After the change, 0 size rules in the kit and the documents are counted in lines or words.
+- **SC-006**: After the change, 0 size rules in the kit, and in the documents' account of current behaviour, are counted in
+  lines or words (`.docs/decisions.md` keeps the old rules as history).
 - **SC-007**: For a campaign with nothing flagged, each step that runs the command in play adds 0 lines about size to
   what DMC says.
 - **SC-008**: The full report for the long campaign fits in a short screen (about 40 lines or fewer), and the play

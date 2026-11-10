@@ -41,7 +41,7 @@ These come from the repository, not from this feature; each task below assumes t
 
 **Purpose**: A known-good baseline.
 
-- [ ] T001 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test` on the branch before any
+- [X] T001 Run `dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin` and `dotnet test` on the branch before any
   change, and note which tests skip locally (`TestEnv.Need`). A failure here is a pre-existing problem to report, not
   to fix in this feature.
 
@@ -54,7 +54,7 @@ the flag record and the `--check` formatter, the fixtures and the error-path wir
 
 **CRITICAL**: No user story starts until this phase is complete.
 
-- [ ] T002 [P] Create `src/Dmc.Cli/Size/Budgets.cs`, an `internal static` class of `const int` values in estimated
+- [X] T002 [P] Create `src/Dmc.Cli/Size/Budgets.cs`, an `internal static` class of `const int` values in estimated
   tokens unless said otherwise, each with a doc comment giving the reason from research R3–R6: `GameState = 4000`,
   `DmNotes = 10000`, `DmNotesAboutThePlayer = 2000` (section), `DmNotesArcPlan = 1500` (section), `Summary = 3000`,
   `PcSheet = 6000` (part read), `OtherSheet = 4000` (part read), `CanonLimit = 19000` (read whole below it),
@@ -62,7 +62,7 @@ the flag record and the `--check` formatter, the fixtures and the error-path wir
   `ReadCapTokens = 25000` (the Read tool's cap, for the message only), `LongLineCharacters = 400` (characters),
   `CheckLines = 12` (the most lines `--check` prints). This is the one home of every number (plan, Constitution
   Check III).
-- [ ] T003 [P] Create `src/Dmc.Cli/Size/Measurement.cs`: a record `Part(string Path, PartKind Kind, long Bytes, int
+- [X] T003 [P] Create `src/Dmc.Cli/Size/Measurement.cs`: a record `Part(string Path, PartKind Kind, long Bytes, int
   Lines, IReadOnlyList<Section> Sections)` with `Tokens => Bytes / 4` (research R1: "rounded down"), an enum
   `PartKind { Whole, ToHistory, Tail, AlwaysReadSections, Section }`, a record `Section(string Heading, long Bytes)`
   with `Tokens`, and static helpers that work on the file's raw bytes split after each `\n` (a line keeps its line
@@ -71,7 +71,7 @@ the flag record and the `--check` formatter, the fixtures and the error-path wir
   and names text before the first heading `(top)` (data-model § File measurement). Also `FormatTokens(long tokens)`:
   thousands with one decimal (`6.6k`, `20.4k`, `19k` when the decimal is 0), whole numbers below 1,000 (`812`), as
   contracts/dmc-size.md § Full report says.
-- [ ] T004 [P] Create `tests/Dmc.Tests/Size/SizeFixtures.cs`, a static helper like
+- [X] T004 [P] Create `tests/Dmc.Tests/Size/SizeFixtures.cs`, a static helper like
   `tests/Dmc.Tests/Campaign/CampaignFixtures.cs`, using only `System.IO`: (1) a temporary DMC folder that counts as
   one (reuse `tests/Dmc.Tests/Support/DmcFolders.cs` for `.dmc/manifest.json`), deleted afterwards; (2)
   `NewCampaign(root, name)` copying `kit/templates/campaign/` (resolve `kit/` the way `ToolkitTests` does) into
@@ -86,35 +86,35 @@ the flag record and the `--check` formatter, the fixtures and the error-path wir
   section, a Chapter status) with `modules/<m>/index.md` and the chapter file; (4) `Grow(path, bytes, lineLength)`,
   which appends lines of a given length until the file reaches a size; (5) `Hash(folder)`, a hash of every file's path
   and bytes, to prove nothing changed.
-- [ ] T005 [P] Create `tests/Dmc.Tests/Size/SizeLibraryTests.cs` with the Measurement and Budgets tests, written to
+- [X] T005 [P] Create `tests/Dmc.Tests/Size/SizeLibraryTests.cs` with the Measurement and Budgets tests, written to
   fail first: bytes ÷ 4 rounded down (7 bytes → 1 token); a CRLF file counts its CRs; a UTF-8 accented line counts its
   bytes, not its characters; sections largest first with `(top)`; `FormatTokens` for 0, 812, 1000, 6640, 19000,
   20448; and that every `Budgets` value used by a flag is below `ReadCapTokens` (FR-007: "Every budget MUST sit well
   under the Read tool's cap").
-- [ ] T006 [P] Create `src/Dmc.Cli/Size/SizeArguments.cs`, parsing `dmc size [NAME] [--check] [--folder PATH]
+- [X] T006 [P] Create `src/Dmc.Cli/Size/SizeArguments.cs`, parsing `dmc size [NAME] [--check] [--folder PATH]
   [--help]` with `src/Dmc.Cli/Argparse.cs` as `src/Dmc.Cli/Campaign/CampaignArguments.cs` does (a unique prefix
   works, `--folder=PATH` works, a mistake is one line, exit 2, never the usage text). Returns a record
   `SizeRequest(string? Name, bool Check, string? Folder)` or null for `--help`. A second positional argument and an
   unknown option use the existing `Argparse` messages.
-- [ ] T007 Create `src/Dmc.Cli/Size/SizeReport.cs` with the campaign lookup only, for now: `Target(string
+- [X] T007 Create `src/Dmc.Cli/Size/SizeReport.cs` with the campaign lookup only, for now: `Target(string
   dmcFolder, string? name)` returns the campaign folder or throws, with the messages of contracts/dmc-size.md
   § Failures verbatim: `no active campaign: name one (dmc size NAME)` (no name, and `adventures/.active-campaign`
   missing or its first line empty); `<NAME> is not a campaign (a folder starting with a dot is a staging folder)`;
   `no campaign <NAME> in adventures/`. Add a `--folder` check in the same file: `<path> is not a DMC folder` when
   `DmcFolder.IsDmcFolder` is false (research R8).
-- [ ] T008 Create `src/Dmc.Cli/Commands/SizeCommand.cs` implementing `ICommand` as `CampaignCommand` does: `Name`
+- [X] T008 Create `src/Dmc.Cli/Commands/SizeCommand.cs` implementing `ICommand` as `CampaignCommand` does: `Name`
   `size`; `Summary` `what a resume reads, in estimated tokens, with what to trim: dmc size [NAME] [--check] [--folder
   PATH]`; a `Help` text (usage; the full report and `--check`; the estimate is bytes / 4; the command writes nothing;
   `.Replace("\r\n", "\n")`); `Run` parses with `SizeArguments`, resolves the folder (`--folder` else
   `DmcFolder.Require()`) and the campaign with `SizeReport.Target`, and for now prints nothing and returns 0. Register
   it in `src/Dmc.Cli/CommandTable.cs` after `new CampaignCommand(),`.
-- [ ] T009 Add the flag record and the `--check` formatter to `src/Dmc.Cli/Size/Flags.cs`: an enum `FlagKind`
+- [X] T009 Add the flag record and the `--check` formatter to `src/Dmc.Cli/Size/Flags.cs`: an enum `FlagKind`
   (`CanonOverLimit, NearCap, OverBudget, SectionOverBudget, LastPlayedLog, FinishedOpposition, DoneLines,
   PricesSection, LongLines`, in that order, the order lines are printed: "A canon over its limit always comes first"),
   a record `Flag(FlagKind Kind, string Path, string Line, bool HoldsTheSave)`, and `CheckLines(IReadOnlyList<Flag>)`
   returning at most `Budgets.CheckLines` lines, the last one `... and N more: run dmc size <campaign>` when there are
   more, and none for an empty list (FR-013a, research R7). The flag tests themselves come in US2 and US3.
-- [ ] T010 Wire the guards every command goes through: (1) create `tests/Dmc.Tests/Size/SizeCases.cs` with
+- [X] T010 Wire the guards every command goes through: (1) create `tests/Dmc.Tests/Size/SizeCases.cs` with
   `ErrorCases()` returning `CommandCase`s for each failure of contracts/dmc-size.md § Failures and the argument
   mistakes (unknown option, two names, `--folder` with no value), each seeding its own DMC folder with
   `SizeFixtures` and passing `--folder <work>`, so no case can find the developer's real DMC folder through
@@ -122,7 +122,7 @@ the flag record and the `--check` formatter, the fixtures and the error-path wir
   `EveryErrorOfSizePrintsOneLine`, following `EveryErrorOfCampaignPrintsOneLine` (one line, no stack trace, non-zero
   exit, and the folder hash from `SizeFixtures.Hash` unchanged); (3) in `tests/Dmc.Tests/TokenCost/OutputBytesTests.cs`
   add a run of `dmc size --folder <fixture>` and of `--check` on a fixture with a flag: no byte-order mark, no `\r`.
-- [ ] T011 [P] Add `"Bash(dmc size *)"` and `"PowerShell(dmc size *)"` to the allow list of `.claude/settings.json`,
+- [X] T011 [P] Add `"Bash(dmc size *)"` and `"PowerShell(dmc size *)"` to the allow list of `.claude/settings.json`,
   next to the `dmc digest` rules, so `review-transcript` (T040) runs it without a prompt. `kit/settings.json` already
   allows `Bash(dmc *)` and `PowerShell(dmc *)` and does not change.
 
@@ -141,7 +141,7 @@ exactly the part read, none it does not read is listed, the total is their sum, 
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, read-set tests on `SizeFixtures` campaigns, one
+- [X] T012 [P] [US1] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, read-set tests on `SizeFixtures` campaigns, one
   per rule of data-model § Resume read set and § Part read: both player-options files first; `game-state.md`,
   `summary.md`, `dm-notes.md` whole; every `pc-*.md`; a companion from a Party status block matched by its sheet title
   or its first word ("Kibil" → `# Kibil Rornson`), case-insensitive, whole word; the "With the party, not companions"
@@ -152,11 +152,11 @@ exactly the part read, none it does not read is listed, the total is their sum, 
   counted 0; the log tail from the third-last `### Scene [0-9]+:` (the commented `### Scene N:` not counted); fewer
   than three scenes whole; the whole log when `Last full save` lacks "through scene N", names an earlier session, or N
   is below the log's last scene; the latest log chosen by its number (`session-010.md` after `session-009.md`).
-- [ ] T013 [P] [US1] In the same file, module tests: `module-progress.md`, `modules/<m>/index.md` and the digest
+- [X] T013 [P] [US1] In the same file, module tests: `module-progress.md`, `modules/<m>/index.md` and the digest
   section (heading holding the name, to the next heading of the same or a higher level) are counted; a section not
   found counts the chapter whole and says so; a chapter file missing is `not ingested`; with every chapter complete in
   Chapter status only `module-progress.md` counts (research R10).
-- [ ] T014 [P] [US1] Create `tests/Dmc.Tests/Size/SizeCommandContract.cs`, run in-process (`CommandLine.Run`) and
+- [X] T014 [P] [US1] Create `tests/Dmc.Tests/Size/SizeCommandContract.cs`, run in-process (`CommandLine.Run`) and
   black-box (`DmcRunner.BlackBox`) like `tests/Dmc.Tests/Campaign/CampaignCommandContract.cs`: the full report's first
   line `<campaign>: what a resume reads, in estimated tokens (bytes / 4)`; one line per file in resume order with its
   tokens, budget and part; the `total` line; `largest sections:` with at most four per file and `(+N more)`;
@@ -165,7 +165,7 @@ exactly the part read, none it does not read is listed, the total is their sum, 
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Create `src/Dmc.Cli/Size/ReadSet.cs` with resume step 2 items 1 to 6 (research R9, R10): the two
+- [X] T015 [US1] Create `src/Dmc.Cli/Size/ReadSet.cs` with resume step 2 items 1 to 6 (research R9, R10): the two
   player-options files, `game-state.md`, `story/summary.md`, `story/dm-notes.md`, the sheets (all `pc-*.md`; Party
   status `### ` blocks except `With the party, not companions`; names in the Scene block's `**Present**` line and the
   `## Combat tracker` section; matched to `character-sheets/*.md` other than `minor-npcs.md` by the title's whole text
@@ -175,14 +175,14 @@ exactly the part read, none it does not read is listed, the total is their sum, 
   `internal const string` (`"## History"`, `"## Notes"`, `"## History with the PC"`, `"With the party, not
   companions"`, `"through scene"`, the scene pattern `^### Scene [0-9]+:`, `"Rulings"`, `"Prices, debts and
   promises"`, `"Always read"`), so T018 can check them against the skill.
-- [ ] T016 [US1] Add item 9 to `src/Dmc.Cli/Size/ReadSet.cs`: when `module-progress.md` exists, its `**Module
+- [X] T016 [US1] Add item 9 to `src/Dmc.Cli/Size/ReadSet.cs`: when `module-progress.md` exists, its `**Module
   folder**`, `**Digest to read before continuing**` and `## Chapter status` lines give `modules/<m>/index.md` and the
   digest section, measured as T013 describes. Canon (item 7) is listed as whole for now; US2 adds its rule.
-- [ ] T017 [US1] In `src/Dmc.Cli/Size/SizeReport.cs` add `Measure(string dmcFolder, string campaign)` returning the
+- [X] T017 [US1] In `src/Dmc.Cli/Size/SizeReport.cs` add `Measure(string dmcFolder, string campaign)` returning the
   read set's `Part`s with their budgets and states (data-model § Relationships; the in-process surface issue #172
   will call, FR-016), and `FullReport(...)` formatting it as contracts/dmc-size.md § Full report shows; then make
   `SizeCommand.Run` print the full report when `--check` is not given.
-- [ ] T018 [US1] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `ResumeStepTwoStillHoldsEveryMarkerDmcSizeReads`:
+- [X] T018 [US1] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `ResumeStepTwoStillHoldsEveryMarkerDmcSizeReads`:
   read `kit/skills/dmc-resume-campaign/SKILL.md` § 2 and assert it contains each `ReadSet` marker constant from T015
   word for word (research R2), so a change to step 2 that drops one fails until `ReadSet` changes too.
 
@@ -201,32 +201,32 @@ sections, by the command and by the skills' wording (SC-005); the long campaign'
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`: canon at 18,999 estimated tokens read whole and
+- [X] T019 [P] [US2] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`: canon at 18,999 estimated tokens read whole and
   no flag; at 19,000 read as `## Rulings`, `## Prices, debts and promises` and the "Always read" section only, with a
   `CanonOverLimit` flag; two canons of 200 lines, about 8k and 24k, one whole and one in sections; canons of 15.5k and
   17k read whole (SC-004); the full report's canon line says `limit 19k   read whole` or `read in sections` and, in
   sections, `(the search for the scene's names is not counted)`.
-- [ ] T020 [P] [US2] In `tests/Dmc.Tests/Size/SizeCommandContract.cs`: `--check` on a canon over its limit prints, as
+- [X] T020 [P] [US2] In `tests/Dmc.Tests/Size/SizeCommandContract.cs`: `--check` on a canon over its limit prints, as
   its first line, `story/canon.md <n>k is over its 19k limit: read it in sections; a full save archives it down to
   16k`; on a canon under it, nothing.
-- [ ] T021 [P] [US2] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `NoKitRuleCountsCanonInLines`: no file under
+- [X] T021 [P] [US2] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `NoKitRuleCountsCanonInLines`: no file under
   `kit/` contains `230` or `200 lines` beside `canon`, and neither `dmc-resume-campaign` nor `dmc-campaign-full-save`
   tells DMC to count canon's lines with Grep (`pattern \`^\`, count mode` near `canon`).
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] In `src/Dmc.Cli/Size/ReadSet.cs` give canon (item 7) its rule: measure the whole file; under
+- [X] T022 [US2] In `src/Dmc.Cli/Size/ReadSet.cs` give canon (item 7) its rule: measure the whole file; under
   `Budgets.CanonLimit` the part is `Whole`; at or over it, `AlwaysReadSections`: the `## Rulings` and `## Prices,
   debts and promises` sections and any `## ` section whose first comment (`<!-- ... -->` directly under the heading)
   contains "Always read".
-- [ ] T023 [US2] In `src/Dmc.Cli/Size/Flags.cs` add the `CanonOverLimit` flag (whole-file tokens ≥
+- [X] T023 [US2] In `src/Dmc.Cli/Size/Flags.cs` add the `CanonOverLimit` flag (whole-file tokens ≥
   `Budgets.CanonLimit`, `HoldsTheSave` true) with the line of T020, and make `SizeReport` print the canon line and the
   search note of T019 in the full report and the flag lines through `CheckLines` when `--check` is given.
-- [ ] T024 [US2] Rewrite `kit/skills/dmc-resume-campaign/SKILL.md` § 2 item 7: read canon whole unless `dmc size
+- [X] T024 [US2] Rewrite `kit/skills/dmc-resume-campaign/SKILL.md` § 2 item 7: read canon whole unless `dmc size
   <campaign> --check` (run once before the reads, T033) printed that canon is over its limit; then read it in sections
   and search as the item already says. Remove the Grep line count and "Under about 230 lines". Keep the Rulings,
   Prices, "Always read", search and "Do not archive anything now" text, and every marker T018 checks.
-- [ ] T025 [US2] Rewrite `kit/skills/dmc-campaign-full-save/SKILL.md` step 4's archive paragraph and step 7's canon
+- [X] T025 [US2] Rewrite `kit/skills/dmc-campaign-full-save/SKILL.md` step 4's archive paragraph and step 7's canon
   bullet: archive when `dmc size <campaign> --check` says canon is over its limit, until it no longer does and canon is
   under the mark the line names; keep "move lines in bulk", "by whether the subject is still live", the always-read
   sections never moving, and "a long canon is legitimate". Remove the Grep count and the 230 and 200 numbers; in step
@@ -246,7 +246,7 @@ R6); `--check` silent when all is well (FR-013a).
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, a positive and a negative fixture per flag, with
+- [X] T026 [P] [US3] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, a positive and a negative fixture per flag, with
   the boundary: NearCap at 19,999 and 20,000 tokens and at 1,599 and 1,600 lines, on a budgeted and on an unbudgeted
   file (a session log); OverBudget for `game-state.md` at 4,000 (no flag) and 4,001, a PC sheet at 6,001, a companion
   sheet at 4,001; no budget flag on either player-options file, the log tail or a module file; SectionOverBudget for
@@ -254,24 +254,24 @@ R6); `--check` silent when all is well (FR-013a).
   `## Mix tracker` section, not for one `Last played` line; FinishedOpposition for rows `| Goblins | 0 / 4 |` and
   `0/4`, not for `1 / 4`, and counted (`3 rows`); DoneLines for `DONE` and `RESOLVED` outside the Arc plan, not inside
   it and not for lowercase `done`; PricesSection over 3,000; LongLines counted per file at 401 characters, not at 400.
-- [ ] T027 [P] [US3] In `tests/Dmc.Tests/Size/SizeCommandContract.cs`: `--check` prints nothing and exits 0 on a new
+- [X] T027 [P] [US3] In `tests/Dmc.Tests/Size/SizeCommandContract.cs`: `--check` prints nothing and exits 0 on a new
   campaign; one line per flag in `FlagKind` order with contracts/dmc-size.md's wording; 14 flags print 11 lines and
   `... and 3 more: run dmc size <campaign>`; the full report's `flags:` block holds the same lines; exit 0 with flags.
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] In `src/Dmc.Cli/Size/Flags.cs` add `NearCap` (part read ≥ `NearCapTokens` or ≥ `NearCapLines`
+- [X] T028 [US3] In `src/Dmc.Cli/Size/Flags.cs` add `NearCap` (part read ≥ `NearCapTokens` or ≥ `NearCapLines`
   lines: `<path> <n>k is near the Read cap (25k): it may be cut short at resume`), `OverBudget` (`<path> <n>k is over
   its <b>k budget`) and `SectionOverBudget` (`<path> <section>: <n>k, over its <b>k budget`), with `HoldsTheSave` true
   for budgeted files and false for NearCap on an unbudgeted file (data-model § Flag).
-- [ ] T029 [US3] In `src/Dmc.Cli/Size/Flags.cs` add the bloat flags of research R6 on `story/dm-notes.md` and
+- [X] T029 [US3] In `src/Dmc.Cli/Size/Flags.cs` add the bloat flags of research R6 on `story/dm-notes.md` and
   `story/canon.md`: `LastPlayedLog` (`<path> Mix tracker: a log of sessions, where one Last played line belongs`, or
   `<path>: <n> Last played lines, where one belongs`), `FinishedOpposition` (`<path> Opposition: <n> rows with none
   left alive`, a row whose second cell starts `0 /` or `0/`), `DoneLines` (`<path>: <n> lines marked DONE or
   RESOLVED`, whole word, upper case, outside `## Arc plan`), `PricesSection` (`<path> Prices, debts and promises:
   <n>k, which suggests paid debts or kept promises not deleted`) and `LongLines` (`<path>: <n> lines over 400
   characters`, on every file read whole).
-- [ ] T030 [US3] In `src/Dmc.Cli/Size/SizeReport.cs` collect every flag for the read set in `FlagKind` order, print
+- [X] T030 [US3] In `src/Dmc.Cli/Size/SizeReport.cs` collect every flag for the read set in `FlagKind` order, print
   them under `flags:` (or `nothing to flag`) in the full report, and through `CheckLines` for `--check`.
 
 **Checkpoint**: `dmc size --check` is silent on a healthy campaign and names each problem on a grown one.
@@ -290,10 +290,10 @@ about size, a resume of a campaign near the cap says one line, and a full save n
 
 ### Tests for User Story 4
 
-- [ ] T031 [P] [US4] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `NoSizeRuleInTheKitIsInLinesOrWords`: no file
+- [X] T031 [P] [US4] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `NoSizeRuleInTheKitIsInLinesOrWords`: no file
   under `kit/` matches `about \d+ (lines|words)` or `under about \d+` (the forms found in `dmc-campaign-full-save`, the
   three templates and `dmc-resume-campaign`; plan § Source Code).
-- [ ] T032 [P] [US4] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `TheResumeAndTheFullSaveRunDmcSizeCheck`:
+- [X] T032 [P] [US4] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` add `TheResumeAndTheFullSaveRunDmcSizeCheck`:
   `dmc-resume-campaign` § 2 and `dmc-campaign-full-save` § 7 each contain `dmc size <campaign> --check`, and
   `.claude/skills/review-transcript/SKILL.md` contains `dmc size --folder`. The existing
   `EveryDmcCommandInThePromptsIsARealSubcommandAndTheOnesDmcRunsNeedNoPermissionPrompt` then checks both forms
@@ -301,33 +301,33 @@ about size, a resume of a campaign near the cap says one line, and a full save n
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] In `kit/skills/dmc-resume-campaign/SKILL.md` § 2, before item 1: run `dmc size <campaign> --check`
+- [X] T033 [US4] In `kit/skills/dmc-resume-campaign/SKILL.md` § 2, before item 1: run `dmc size <campaign> --check`
   once. Its output says what to do: canon over its limit decides item 7 (T024); a file near the Read cap is read in
   parts if it comes back cut, and the player is told in one line out of character that the campaign's files are large
   and the next full save will trim them; other lines are for the full save and are not mentioned. Nothing printed
   means canon is read whole and nothing is said about size (FR-015, SC-007).
-- [ ] T034 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` remove the size targets in lines and words: step 1
+- [X] T034 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` remove the size targets in lines and words: step 1
   ("aim for under about 100 lines"), step 2 ("aim for a sheet under about 150 lines"), step 5 ("keep the section under
   about 40 lines", "aim for the whole file under about 150 lines") and step 6 ("under about 600 words"). Replace each
   with "within the budget `dmc size` checks in step 7", keeping every content rule (one fact per line, history cut,
   split long lines, recent events in detail, older arcs compressed, nothing open dropped).
-- [ ] T035 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 7 add the size check as its last bullet: run
+- [X] T035 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 7 add the size check as its last bullet: run
   `dmc size <campaign> --check`; for each line, trim dead text from the file it names (steps 1 to 6 say how) and run
   it again; the save is complete when it prints nothing, or when the step 8 report names each line still printed and
   why it stays (every subject left in the file is live, or the flagged text is still needed, such as an enemy that fled
   and may return) (FR-015a, SC-010). In step 8 add that sentence's report item.
-- [ ] T036 [P] [US4] In `kit/templates/campaign/game-state.md` (line 3), `kit/templates/campaign/story/dm-notes.md`
+- [X] T036 [P] [US4] In `kit/templates/campaign/game-state.md` (line 3), `kit/templates/campaign/story/dm-notes.md`
   (the Arc plan's "Keep the section to about 25 lines" and About this player's "about 40 lines at most") and
   `kit/templates/campaign/story/summary.md` (line 3, "kept under about 600 words"), remove the line and word targets
   and say instead that the full save checks the size with `dmc size`; keep the content rules.
-- [ ] T037 [US4] Check `kit/skills/dmc-resume-campaign/SKILL.md` § 2 as a whole after T024 and T033: the check is run
+- [X] T037 [US4] Check `kit/skills/dmc-resume-campaign/SKILL.md` § 2 as a whole after T024 and T033: the check is run
   once, item 7 refers to it, no Grep line count remains, and the section is no longer than before (Principle II).
-- [ ] T038 [P] [US4] In `kit/skills/dmc-update-game-state/SKILL.md` and `kit/skills/dmc-character-sheet-update/SKILL.md`
+- [X] T038 [P] [US4] In `kit/skills/dmc-update-game-state/SKILL.md` and `kit/skills/dmc-character-sheet-update/SKILL.md`
   search for any size target in lines or words and replace it as T034 does (none were found in planning; confirm and
   leave the files unchanged if so).
-- [ ] T039 [P] [US4] Search `kit/dm-rules.md` for `230`, `lines` and `words` used as a size rule; if any, point it at
+- [X] T039 [P] [US4] Search `kit/dm-rules.md` for `230`, `lines` and `words` used as a size rule; if any, point it at
   the full save's check instead. Planning found none, so the file should not change (plan, Constitution Check II).
-- [ ] T040 [US4] In `.claude/skills/review-transcript/SKILL.md` § 4 "Context and tokens", add: run `dmc size --folder
+- [X] T040 [US4] In `.claude/skills/review-transcript/SKILL.md` § 4 "Context and tokens", add: run `dmc size --folder
   <dmc folder> <campaign>` and put its total and flags, with the date measured, in the context entry, since the
   command measures the files as they are now, not as they were when each session was played (spec Edge Cases).
 
@@ -339,35 +339,35 @@ about size, a resume of a campaign near the cap says one line, and a full save n
 
 **Purpose**: The documents, the measurement on the long campaign, and the full test run.
 
-- [ ] T041 [P] Update `.docs/campaign-files.md`: in "What each file holds", the canon row's read rule (whole under its
+- [X] T041 [P] Update `.docs/campaign-files.md`: in "What each file holds", the canon row's read rule (whole under its
   token limit; past it, Rulings, Prices, debts and promises and a search) and the `canon-archive.md` row (archived
   when `dmc size` says canon is over its limit); add a short "How big the files may be" note: each budget and the
   canon limit from `Budgets`, checked by `dmc size` at every full save, the files without a budget, and that
   `src/Dmc.Cli/Size/Budgets.cs` is where they are set.
-- [ ] T042 [P] Update `.docs/architecture.md`: "Starting a session" (the resume runs `dmc size --check` once; canon
+- [X] T042 [P] Update `.docs/architecture.md`: "Starting a session" (the resume runs `dmc size --check` once; canon
   whole under its token limit), the full save table's Canon row and a line for step 7's check, and "Inside `dmc`"
   listing `size`.
-- [ ] T043 [P] Update `.docs/user-guide.md` § Your files: how to see what a resume reads (`dmc size`, run in a
+- [X] T043 [P] Update `.docs/user-guide.md` § Your files: how to see what a resume reads (`dmc size`, run in a
   terminal or by asking DMC "are your files too big?"), what the flags mean and that the full save fixes them, and
   that the command changes nothing.
-- [ ] T044 [P] Add to `.docs/decisions.md` the entry "Size rules are measured in tokens by `dmc size`" (Decision,
+- [X] T044 [P] Add to `.docs/decisions.md` the entry "Size rules are measured in tokens by `dmc size`" (Decision,
   Reason, Alternatives): bytes ÷ 4 (R1), the budgets and why the PC sheet is 6k and the summary 3k (R4), the canon limit
   of 19k and mark of 16k for consistency (R5), the two forms and exit 0 (R7), the numbers' one home in `Budgets`; and a
   line in "Resume and full save are bounded" and in the 230-line canon entry pointing to it.
-- [ ] T045 [P] Update `.docs/roadmap.md` with a row for issue #174 (status, what shipped) and `.docs/development.md`
+- [X] T045 [P] Update `.docs/roadmap.md` with a row for issue #174 (status, what shipped) and `.docs/development.md`
   § Tests, Layers, naming `Size/` library and contract tests and the new toolkit tests.
-- [ ] T046 [P] Add a short paragraph on `dmc size` to `README.md` beside the `dmc campaign` one (what it shows, the
+- [X] T046 [P] Add a short paragraph on `dmc size` to `README.md` beside the `dmc campaign` one (what it shows, the
   `--check` form, that it changes nothing).
-- [ ] T047 Publish, run `dotnet test`, and fix any failure; confirm nothing new is skipped locally beyond T001's list.
-- [ ] T048 Run quickstart § 2 by hand on a scratch DMC folder and § 3 on the long campaign (`dmc size --folder
+- [X] T047 Publish, run `dotnet test`, and fix any failure; confirm nothing new is skipped locally beyond T001's list.
+- [X] T048 Run quickstart § 2 by hand on a scratch DMC folder and § 3 on the long campaign (`dmc size --folder
   D:\Claude\dmc rorns-landing`, read-only), and record the report's total, the dm-notes and canon lines and the
   flags in the PR description (SC-003, SC-004, SC-008).
-- [ ] T050 Before opening the PR, check whether issue #172's migration has merged (`git log origin/main --
+- [X] T050 Before opening the PR, check whether issue #172's migration has merged (`git log origin/main --
   kit/skills/dmc-migrate-campaign/SKILL.md`). If it has, add the `dmc size <campaign> --check` step to that skill as
   its decision C1 requires, move its size check from line counts against the old targets to `dmc size`, rerun T031
   (which would otherwise fail on any line target it states), and say so in the PR. If it has not, say in the PR that
   the migration's PR must add the step (FR-016a).
-- [ ] T049 Write the PR description per `CLAUDE.md` § Git and GitHub: what changed, why (the PR #173 review), the
+- [X] T049 Write the PR description per `CLAUDE.md` § Git and GitHub: what changed, why (the PR #173 review), the
   sources (spec, research, issue #174), how it was tested (T047, T048), the documents changed, `Part of #174` or
   `Closes #174`, and a migration line: none needed, because the change alters when canon is archived and what the save
   checks, not what a campaign file holds (spec Assumptions); then `gh pr view <n> --json body` to check it is there.

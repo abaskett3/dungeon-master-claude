@@ -1146,4 +1146,36 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(SkillSection("kit/skills/dmc-campaign-full-save/SKILL.md", 7), "`dmc size <campaign> --check`");
         StringAssert.Contains(Read(".claude/skills/review-transcript/SKILL.md"), "dmc size --folder");
     }
+
+    /// <summary>
+    /// The budgets live in <c>Budgets</c>; <c>.docs/campaign-files.md</c> lists them for readers and the reference repeats the
+    /// thresholds, so this keeps both copies equal to the code (a number changed in one place only fails here).
+    /// </summary>
+    [TestMethod]
+    public void TheDocumentedBudgetsEqualTheCode()
+    {
+        static string N(int value) => value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        string files = Read(".docs/campaign-files.md");
+        (string What, int Value)[] rows =
+        [
+            ("`game-state.md`", Budgets.GameState),
+            ("`story/dm-notes.md`", Budgets.DmNotes),
+            ("its About this player section", Budgets.DmNotesAboutThePlayer),
+            ("its Arc plan section", Budgets.DmNotesArcPlan),
+            ("`story/summary.md`", Budgets.Summary),
+            ("a PC's sheet, down to its history", Budgets.PcSheet),
+            ("any other sheet, down to its history", Budgets.OtherSheet),
+            ("`story/canon.md`: read whole below", Budgets.CanonLimit),
+            ("`story/canon.md`: a full save archives down to", Budgets.CanonArchiveMark),
+        ];
+        foreach (var (what, value) in rows)
+            StringAssert.Contains(files, $"| {what} | {N(value)} |", $"campaign-files.md must list {what} at {N(value)}, as Budgets does");
+        foreach (string doc in new[] { ".docs/campaign-files.md", ".docs/dmc-reference.md" })
+        {
+            string text = Read(doc);
+            StringAssert.Contains(text, $"{N(Budgets.NearCapTokens)} estimated tokens or {N(Budgets.NearCapLines)} lines", doc);
+            StringAssert.Contains(text, $"Prices, debts and promises section over {N(Budgets.CanonPricesSection)}", doc);
+            StringAssert.Contains(text, $"lines over {Budgets.LongLineCharacters} characters", doc);
+        }
+    }
 }

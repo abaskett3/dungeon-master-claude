@@ -243,6 +243,8 @@ Your DMC folder holds two kinds of file, and `dmc` keeps them apart:
 
 Campaigns are ordinary text files under `adventures/`. You can read and edit your character sheet and the options by hand. To keep surprises, stay out of `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md` and the NPC sheets. [campaign-files.md](campaign-files.md) describes every file.
 
+**How big your campaign's files are.** The longer a campaign runs, the more DMC reads when a session starts, and past a point it starts losing track. `dmc size` shows what a resume reads, file by file, in estimated tokens, the largest sections, and anything to trim (a file close to what DMC can read in one go, a file over its budget, leftovers such as finished fights). Run it in a terminal in your DMC folder (`dmc size`, or `dmc size <campaign>`), or ask DMC "are your files too big?". It changes nothing: the next full save trims what it flags, and says what it kept and why. [campaign-files.md](campaign-files.md#how-big-the-files-may-be) lists the budgets.
+
 Feedback about DMC is under `feedback/` in the DMC folder, outside every campaign. To back up a campaign, restore one or move to another computer, see [Back up, copy or move a campaign](#back-up-copy-or-move-a-campaign). Keep a backup outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ### Back up, copy or move a campaign

@@ -113,7 +113,9 @@ below.
   - **dm-notes, Arc plan:** the section over its 1.5k budget (R4), which is how a done stage kept in full shows.
   - **canon, Prices, debts and promises:** the section over 3k, a sign that paid debts and kept promises were not
     deleted (on the long campaign it is 16.4k bytes, about 4.1k tokens, the largest section).
-  - **any file read whole, long lines:** the number of lines over 400 characters.
+  - **long lines:** the number of lines over 400 characters in the content (under a `## ` heading, outside comments)
+    of a file the full save trims. Not the preamble or comments, which hold the templates' guidance (the canon
+    template's preamble is one 673-character line), and not a session log or digest, which is prose nobody splits.
 - **Rationale:** Each marker is written by the templates or the full save, so a match is likely to mean what the flag
   says. Counting per file and kind keeps the play form to a few lines on a campaign with hundreds of matches (the long
   campaign has 69 long lines in one file). Detecting "a done stage that keeps more than its one line" by structure is
@@ -151,10 +153,12 @@ below.
 - **Decision:** Every `character-sheets/pc-*.md`; the sheet of each `### ` block under `game-state.md`'s
   **Party status** except **With the party, not companions**; and the sheet of each NPC whose name appears in the
   Scene block's **Present** line or in the **Combat tracker** section. A block or a name is matched to a sheet by the
-  sheet's title (`# Name`): the whole title, or its first word, as a whole word, case-insensitive. A Party status block
-  with no matching sheet is reported as not found. `minor-npcs.md` is never counted.
+  sheet's title (`# Name`): the whole title, its first word or its last word, as a whole word, case-insensitive, words
+  under three letters not tried. A Party status block
+  with no matching sheet is reported as not found. `minor-npcs.md` and the `<sheet>-history.md` files the full save moves old history to are never counted, and a
+  Party status block in brackets (the template's `(character name)`) is a placeholder, not a companion.
 - **Rationale:** These are resume step 2.5's rules. Matching on the first word of the title catches "Kibil" for
-  "Kibil Rornson". A Present line can also list who is off scene, and the command cannot tell; counting such a sheet
+  "Kibil Rornson", and the last word catches "Anselm's shrine" for "Brother Anselm". A Present line can also list who is off scene, and the command cannot tell; counting such a sheet
   overstates the read, which errs toward a flag rather than away from one.
 - **Alternatives considered:** Matching file names: sheets are named `npc-<slug>.md`, and slugs drop words. Parsing
   "Off scene:": that wording is one campaign's habit, not a template's.

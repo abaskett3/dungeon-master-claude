@@ -204,6 +204,92 @@ public sealed class RestoreTests
         Assert.IsTrue(File.Exists(root.InBackups(backup)));
     }
 
+    /// <summary>Runs a restore with <c>--yes</c> that is killed (an exception no step catches) at a step, leaving what it left.</summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="step">The step it is killed after.</param>
+    static void KilledAt(MigrationRoot root, string step)
+    {
+        CampaignRestorer.Hook = s =>
+        {
+            if (s == step)
+                throw new InvalidOperationException("killed");
+        };
+        try
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => CampaignRestorer.Run(root.Folder, MigrationRoot.Name, null, yes: true));
+        }
+        finally
+        {
+            CampaignRestorer.Hook = null;
+        }
+    }
+
+    [TestMethod]
+    public void ARestoreKilledAfterMovingBackupsIsPutBackByStandardWithItsMark()
+    {
+        // backups/, with the mark, sits in the staging folder: the campaign must not read as behind or current meanwhile.
+        var (root, backup) = Migrated();
+        using var _ = root;
+        KilledAt(root, "backups-moved");
+        Assert.IsFalse(Directory.Exists(root.Backups()));
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { "recovered rorn from an interrupted restore", $"unfinished: {backup}" }, result.StdoutLines);
+        Assert.IsEmpty(Dotted(root));
+    }
+
+    [TestMethod]
+    public void RecoveryMovesStagedBackupsIntoABackupsFolderMadeSinceAndDeletesNone()
+    {
+        var (root, backup) = Migrated();
+        using var _ = root;
+        root.Account(backup, "# accounting");
+        KilledAt(root, "backups-moved");
+        Directory.CreateDirectory(root.Backups());
+        File.WriteAllText(root.InBackups("notes.txt"), "made since");
+        File.WriteAllText(root.InBackups(backup + ".accounting.tsv"), "clashes");
+        var result = Restore();
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        StringAssert.StartsWith(result.StdoutLines[0], "recovered rorn from an interrupted restore; adventures/.restore-rorn-");
+        StringAssert.Contains(result.StdoutLines[0], "still holds backups that could not go back");
+        Assert.IsTrue(File.Exists(root.InBackups(backup)), "the backup is back");
+        Assert.IsTrue(File.Exists(root.InBackups(backup + ".migrating")), "with its mark");
+        Assert.AreEqual("made since", File.ReadAllText(root.InBackups("notes.txt")));
+        Assert.AreEqual("clashes", File.ReadAllText(root.InBackups(backup + ".accounting.tsv")), "a clash replaces nothing");
+        string staging = Dotted(root).Single();
+        Assert.IsTrue(File.Exists(Path.Combine(staging, "backups", backup + ".accounting.tsv")), "the staging keeps what could not go back");
+    }
+
+    [TestMethod]
+    public void RecoveryNeverDeletesTheCampaignSetAsideWhenANewFolderTookItsName()
+    {
+        var (root, _) = Migrated();
+        using var __ = root;
+        KilledAt(root, "aside");
+        string aside = Directory.GetDirectories(root.Adventures, ".replaced-rorn-*").Single();
+        string[] kept = Snapshot(aside);
+        root.Write("live.json", "{}"); // something wrote into adventures/rorn/ while it was gone
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name);
+        Assert.AreEqual(1, result.ExitCode);
+        Assert.AreEqual($"dmc campaign: an interrupted restore left rorn as adventures/{Path.GetFileName(aside)}, and adventures/rorn exists too: "
+            + "keep the one to play, delete the other, and run the command again", result.Stderr.TrimEnd());
+        CollectionAssert.AreEqual(kept, Snapshot(aside), "the campaign set aside is untouched");
+        Assert.HasCount(2, Dotted(root), "the staging is kept too");
+    }
+
+    [TestMethod]
+    public void ARestoreKilledAfterTheRenameIntoPlaceIsFinishedByTheNextRun()
+    {
+        var (root, backup) = Migrated();
+        using var _ = root;
+        KilledAt(root, "in-place");
+        Assert.IsTrue(File.Exists(root.InBackups(backup + ".migrating")), "the mark was not yet removed");
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name);
+        CollectionAssert.AreEqual(new[] { "recovered rorn from an interrupted restore", "behind: standard 1, kit 2: 002-test-2.md" }, result.StdoutLines);
+        Assert.IsEmpty(Dotted(root));
+        Assert.IsTrue(File.Exists(root.InBackups(backup)));
+    }
+
     [TestMethod]
     public void WithNoBackupItIsOneLine()
     {

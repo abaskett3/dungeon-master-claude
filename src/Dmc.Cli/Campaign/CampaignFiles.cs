@@ -11,10 +11,15 @@ internal static class CampaignFiles
 {
     /// <summary>True for a path, relative to the campaign with <c>/</c> separators, that is a campaign file.</summary>
     /// <param name="path">A file's path inside the campaign or inside a backup's <c>campaign/</c> folder.</param>
-    public static bool Counts(string path) =>
-        path != StandardRecord.FileName
-        && path != BackupFolder.FolderName
-        && !path.StartsWith(BackupFolder.FolderName + "/", StringComparison.Ordinal);
+    public static bool Counts(string path) => path != StandardRecord.FileName && !InBackups(path);
+
+    /// <summary>
+    /// True for the top-level <c>backups/</c> folder or a path under it. An export never holds one, and an import or restore of
+    /// an archive an older <c>dmc</c> wrote with one leaves it out.
+    /// </summary>
+    /// <param name="path">A path inside the campaign, with <c>/</c> separators.</param>
+    public static bool InBackups(string path) =>
+        path == BackupFolder.FolderName || path.StartsWith(BackupFolder.FolderName + "/", StringComparison.Ordinal);
 
     /// <summary>Reads every campaign file of a campaign folder into memory, by relative path in ordinal order.</summary>
     /// <param name="campaignFolder">The campaign folder.</param>

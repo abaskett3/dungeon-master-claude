@@ -276,6 +276,18 @@ public sealed partial class VerifyTests
     }
 
     [TestMethod]
+    public void APassClearsEveryMarkEvenWhenAnotherBackupIsNamed()
+    {
+        var (root, backup) = Start();
+        using var __ = root;
+        string other = "rorn_backup_20200101000000.zip";
+        File.Copy(root.InBackups(backup), root.InBackups(other));
+        Assert.AreEqual(0, Verify("--backup", other).ExitCode);
+        Assert.IsFalse(File.Exists(root.InBackups(backup + ".migrating")), "the marked backup's mark goes too");
+        CollectionAssert.AreEqual(new[] { "current" }, MigrationRoot.Run("standard", MigrationRoot.Name).StdoutLines);
+    }
+
+    [TestMethod]
     public void BackupAndAccountingCanBeNamed()
     {
         var (root, backup) = Start(drops: ["mix-tracker"]);

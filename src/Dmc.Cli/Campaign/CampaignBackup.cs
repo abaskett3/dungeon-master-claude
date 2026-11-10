@@ -9,7 +9,7 @@ internal sealed record BackupResult(string FileName, int Files, int Removed, IRe
 
 /// <summary>
 /// <c>dmc campaign backup NAME [--prune oldest|old]</c> (contracts/campaign-commands.md § backup; research R8): refuses while
-/// a migration is unfinished; writes the backup with the exporter; checks it whole; marks the migration under way; and only
+/// a migration is unfinished; writes the backup with the exporter; checks it whole; marks the migration under way when one is pending; and only
 /// then removes the older backups the player agreed to, each with its companion files. A removal that fails is reported and
 /// does not fail the backup.
 /// </summary>
@@ -30,13 +30,15 @@ internal static class CampaignBackup
             throw new DmcException($"{name} has an unfinished migration from {marked}: finish it or restore it");
 
         var earlier = BackupFolder.List(campaign, name);
+        bool pending = MigrationPending(root, campaign, name);
         var export = CampaignExporter.Backup(root, name, now);
         string fileName = Path.GetFileName(export.Archive);
         try
         {
             var summary = ExportSummary.Open(export.Archive);
             summary.ReadCampaign();
-            File.WriteAllText(BackupFolder.Companion(export.Archive, BackupFolder.MigratingSuffix), "");
+            if (pending)
+                File.WriteAllText(BackupFolder.Companion(export.Archive, BackupFolder.MigratingSuffix), "");
         }
         catch (Exception e) when (e is DmcException or IOException or UnauthorizedAccessException)
         {
@@ -61,6 +63,27 @@ internal static class CampaignBackup
             }
         }
         return new BackupResult(fileName, export.Files, removed, stuck);
+    }
+
+    /// <summary>
+    /// True when the campaign is behind the kit, so the backup starts a migration and gets the mark. A campaign that is
+    /// current or ahead gets a plain backup: a mark there could never be cleared by <c>verify</c>, which has nothing to
+    /// verify, and would hold play until a restore. A kit or record that cannot be read gets no mark either; the backup is
+    /// still worth having, and <c>standard</c> reports the problem.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="name">The campaign's name.</param>
+    static bool MigrationPending(string root, string campaign, string name)
+    {
+        try
+        {
+            return MigrationSet.Read(root).Pending(StandardRecord.Read(campaign, name)).Count > 0;
+        }
+        catch (DmcException)
+        {
+            return false;
+        }
     }
 
     /// <summary>Deletes a file if it is there.</summary>

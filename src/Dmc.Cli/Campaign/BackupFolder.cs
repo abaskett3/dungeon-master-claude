@@ -18,7 +18,7 @@ internal enum PruneMode
 
 /// <summary>One counted backup of a campaign.</summary>
 /// <param name="FileName">Its file name in <c>backups/</c>.</param>
-/// <param name="Stamp">The 14-digit local time in its name.</param>
+/// <param name="Stamp">The 14-digit local time in its name (ordering uses the manifest's UTC time; see <see cref="BackupFolder.List"/>).</param>
 /// <param name="Suffix">The clash suffix: 1 without one, else the <c>-N</c>.</param>
 internal sealed record Backup(string FileName, string Stamp, int Suffix);
 
@@ -44,7 +44,7 @@ internal static partial class BackupFolder
     /// <summary>The companion written by a passing <c>verify</c>: the path and SHA-256 of every campaign file.</summary>
     public const string VerifiedSuffix = ".verified.tsv";
 
-    /// <summary>The companion written by <c>backup</c> and removed by a passing <c>verify</c> or a <c>restore</c>: a migration is under way.</summary>
+    /// <summary>The companion written by <c>backup</c> when a migration is pending, and removed by a passing <c>verify</c> or a <c>restore</c>: a migration is under way.</summary>
     public const string MigratingSuffix = ".migrating";
 
     /// <summary>Every companion suffix, in the order they are removed.</summary>
@@ -79,7 +79,11 @@ internal static partial class BackupFolder
         return new Backup(fileName, match.Groups[1].Value, suffix);
     }
 
-    /// <summary>The counted backups of a campaign, oldest first: by the time in the name, then the suffix.</summary>
+    /// <summary>
+    /// The counted backups of a campaign, oldest first: by the UTC time in each one's manifest, then the suffix. A backup
+    /// whose manifest cannot be read is placed by the local time in its name. The names alone would misorder two backups
+    /// taken either side of a clock going back an hour, which makes the later one's name the earlier.
+    /// </summary>
     /// <param name="campaignFolder">The campaign folder.</param>
     /// <param name="campaign">The campaign's name.</param>
     public static IReadOnlyList<Backup> List(string campaignFolder, string campaign)
@@ -90,8 +94,40 @@ internal static partial class BackupFolder
         return [.. new DirectoryInfo(folder).EnumerateFiles()
             .Select(f => Parse(campaign, f.Name))
             .OfType<Backup>()
-            .OrderBy(b => b.Stamp, StringComparer.Ordinal)
-            .ThenBy(b => b.Suffix)];
+            .Select(b => (Backup: b, Taken: ExportSummary.ExportedAt(Path.Combine(folder, b.FileName)) ?? NameTime(b.Stamp)))
+            .OrderBy(b => b.Taken)
+            .ThenBy(b => b.Backup.Stamp, StringComparer.Ordinal)
+            .ThenBy(b => b.Backup.Suffix)
+            .Select(b => b.Backup)];
+    }
+
+    /// <summary>The local time in a backup's name as UTC; the latest time there is when the digits are not a date.</summary>
+    /// <param name="stamp">The 14 digits.</param>
+    static DateTime NameTime(string stamp) =>
+        DateTime.TryParseExact(stamp, "yyyyMMddHHmmss", CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeLocal | DateTimeStyles.AdjustToUniversal, out var time) ? time : DateTime.MaxValue;
+
+    /// <summary>Opens a backup with <see cref="ExportSummary.Open"/> and refuses it unless it is a backup of the campaign.</summary>
+    /// <param name="backup">The backup's path.</param>
+    /// <param name="campaign">The campaign it must belong to.</param>
+    /// <exception cref="DmcException">The backup is not a usable export, or it is another campaign's.</exception>
+    public static ExportSummary Open(string backup, string campaign)
+    {
+        var summary = ExportSummary.Open(backup);
+        return summary.Manifest.Campaign == campaign
+            ? summary
+            : throw new DmcException($"{Path.GetFileName(backup)} is a backup of {summary.Manifest.Campaign}, not {campaign}");
+    }
+
+    /// <summary>Removes every <c>.migrating</c> mark in a campaign's <c>backups/</c>: the migration is finished or undone.</summary>
+    /// <param name="campaignFolder">The campaign folder.</param>
+    public static void ClearMarks(string campaignFolder)
+    {
+        string folder = Of(campaignFolder);
+        if (!Directory.Exists(folder))
+            return;
+        foreach (string mark in Directory.EnumerateFiles(folder, "*" + MigratingSuffix))
+            CampaignBackup.Remove(mark);
     }
 
     /// <summary>The path of a backup's companion file.</summary>

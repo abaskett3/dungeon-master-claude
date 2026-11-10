@@ -24,7 +24,7 @@ adventures/
     .standard                the campaign's standard: one whole number (no file means 1); written by dmc campaign verify and standard --init
     backups/                 backups of the campaign taken before a migration (dmc campaign backup); never exported
       <campaign>_backup_<yyyyMMddHHmmss>.zip   a whole campaign export, checked when written
-      <backup>.zip.migrating                   a migration from this backup is under way
+      <backup>.zip.migrating                   a migration from this backup is under way (only when one was pending)
       <backup>.zip.accounting.tsv              what the migration reworded or dropped, written by DMC
       <backup>.zip.verified.tsv                the migrated campaign's files and hashes, written by a passing verify
     player-options.md        this campaign's settings and overrides
@@ -105,8 +105,8 @@ verified or restored). The resume says one line when a campaign is not current, 
 | File | What reads and writes it |
 |---|---|
 | `.standard` | Written only by `dmc campaign verify` on a pass and by `dmc campaign standard NAME --init` (the new-campaign skill); restored with a backup. Read by `standard`, `verify`, `import`, `refresh` and `update`. DMC never edits it. |
-| `backups/<campaign>_backup_<stamp>.zip` | Written by `dmc campaign backup`, a campaign export checked whole. Removed only by `backup --prune`, on the player's yes to the question `dmc campaign backups` prints when three or more are kept. Read by `verify` and `restore`. Never part of an export or of another backup, and an import refuses an archive that holds one. |
-| `backups/<backup>.zip.migrating` | Written by `backup`; removed by a passing `verify` or by any `restore`. While it exists the migration is unfinished: `backup` refuses, and `verify` and `restore` use that backup. |
+| `backups/<campaign>_backup_<stamp>.zip` | Written by `dmc campaign backup`, a campaign export checked whole. Removed only by `backup --prune`, on the player's yes to the question `dmc campaign backups` prints when three or more are kept. Read by `verify` and `restore`. Never part of an export or of another backup; an import of an export made by an older `dmc` that holds one leaves it out. Ordered by the UTC time in its manifest. |
+| `backups/<backup>.zip.migrating` | Written by `backup` when the campaign is behind the kit; every mark of the campaign is removed by a passing `verify` or by any `restore`. While it exists the migration is unfinished: `backup` refuses, and `verify` and `restore` use that backup. |
 | `backups/<backup>.zip.accounting.tsv` | Written by DMC during a migration, one tab-separated line per unit the migration did not keep verbatim: `<id>`, `reworded` or `dropped:<class>`, and an anchor or a reason; `skipped`, a file and a reason for a file left unmigrated. `verify` reads it. |
 | `backups/<backup>.zip.verified.tsv` | Written by a passing `verify`: each campaign file's path and SHA-256. `restore` reads it to warn about play since the migration. |
 

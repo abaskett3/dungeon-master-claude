@@ -23,7 +23,8 @@ internal enum OptionsOutcome
 /// <param name="Files">How many files it holds.</param>
 /// <param name="Options">What happened to the general player options.</param>
 /// <param name="Module">The module the campaign needs, and whether this DMC folder has it.</param>
-internal sealed record ImportResult(string Name, string Folder, int Files, OptionsOutcome Options, ModuleState Module);
+/// <param name="LeftOut">How many files under a top-level <c>backups/</c> were left out: an export an older <c>dmc</c> wrote can hold them.</param>
+internal sealed record ImportResult(string Name, string Folder, int Files, OptionsOutcome Options, ModuleState Module, int LeftOut);
 
 /// <summary>
 /// <c>dmc campaign import</c>: creates <c>adventures/&lt;name&gt;</c> from an export, all or nothing (research R5). The whole
@@ -64,11 +65,11 @@ internal static class CampaignImporter
         try
         {
             Directory.CreateDirectory(staging);
-            Extract(summary, staging);
+            int files = Extract(summary, staging);
             var options = Commit(summary, adventures, staging, target);
             if (DeleteStaging(staging) is { } stuck)
                 err?.WriteLine($"dmc campaign: done, but could not delete {stuck}; it is safe to delete.");
-            return new ImportResult(name, Path.GetFullPath(target), summary.Manifest.Files.Count, options, summary.Module(root));
+            return new ImportResult(name, Path.GetFullPath(target), files, options, summary.Module(root), summary.Manifest.Files.Count - files);
         }
         catch (Exception e)
         {
@@ -97,8 +98,9 @@ internal static class CampaignImporter
     /// </summary>
     /// <param name="summary">The export, already checked.</param>
     /// <param name="staging">The staging folder, which exists.</param>
+    /// <returns>How many campaign files were written.</returns>
     /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
-    static void Extract(ExportSummary summary, string staging) =>
+    static int Extract(ExportSummary summary, string staging) =>
         Extract(summary, Path.Combine(staging, "campaign"), staging);
 
     /// <summary>
@@ -107,16 +109,23 @@ internal static class CampaignImporter
     /// </summary>
     /// <param name="summary">The export, already checked.</param>
     /// <param name="campaign">The folder to extract into; made if missing.</param>
+    /// <returns>How many campaign files were written.</returns>
     /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
-    internal static void ExtractCampaign(ExportSummary summary, string campaign) => Extract(summary, campaign, null);
+    internal static int ExtractCampaign(ExportSummary summary, string campaign) => Extract(summary, campaign, null);
 
-    /// <summary>Extracts the campaign into a folder and, when a staging folder is given, the general player options beside it.</summary>
+    /// <summary>
+    /// Extracts the campaign into a folder and, when a staging folder is given, the general player options beside it. Files
+    /// and folders under a top-level <c>backups/</c> are left out: an export never holds one, but an older <c>dmc</c>'s export
+    /// of a campaign that had such a folder does, and the backups of one campaign are not another's.
+    /// </summary>
     /// <param name="summary">The export, already checked.</param>
     /// <param name="campaign">The folder for the campaign's files.</param>
     /// <param name="staging">The folder for the general player options; null to leave them out.</param>
+    /// <returns>How many campaign files were written.</returns>
     /// <exception cref="DmcException">A file's size or checksum differs from the manifest.</exception>
-    static void Extract(ExportSummary summary, string campaign, string? staging)
+    static int Extract(ExportSummary summary, string campaign, string? staging)
     {
+        int written = 0;
         // Every file gets the export's time, the same one: the archive keeps no per-file times, and files written in archive order would otherwise
         // look newer or older than each other, which the map redraw (live.json against live-data.js) reads as a change.
         ExportSummary.TryParseTimestamp(summary.Manifest.ExportedAt, out var stamp);
@@ -130,15 +139,19 @@ internal static class CampaignImporter
 
             if (staging is not null && summary.Manifest.PlayerOptions is { } options)
                 ExtractFile(summary.Path, Find(ExportSummary.PlayerOptionsEntry), options, ArchivePaths.Combine(staging, ExportSummary.PlayerOptionsEntry), stamp);
-            foreach (var file in summary.Manifest.Files)
+            foreach (var file in summary.Manifest.Files.Where(f => !CampaignFiles.InBackups(f.Path)))
+            {
                 ExtractFile(summary.Path, Find(ExportSummary.CampaignPrefix + file.Path), file, ArchivePaths.Combine(campaign, file.Path), stamp);
-            foreach (string folder in summary.Manifest.Folders)
+                written++;
+            }
+            foreach (string folder in summary.Manifest.Folders.Where(f => !CampaignFiles.InBackups(f)))
                 Directory.CreateDirectory(ArchivePaths.Combine(campaign, folder));
         }
         catch (InvalidDataException)
         {
             throw new DmcException($"{summary.Path} is not a dmc campaign export");
         }
+        return written;
     }
 
     /// <summary>
@@ -249,10 +262,10 @@ internal static class CampaignImporter
         return outcome;
     }
 
-    /// <summary>Deletes the staging folder with everything in it, if it is there.</summary>
+    /// <summary>Deletes a staging folder with everything in it, if it is there: an import's, or one of restore's.</summary>
     /// <param name="staging">The staging folder.</param>
-    /// <returns>Null; or the folder's path when it could not be deleted (another program holds something in it open) and is left behind, safe to delete.</returns>
-    static string? DeleteStaging(string staging)
+    /// <returns>Null when it is gone; or the folder's path when it could not be deleted (another program holds something in it open) and is left behind.</returns>
+    internal static string? DeleteStaging(string staging)
     {
         try
         {

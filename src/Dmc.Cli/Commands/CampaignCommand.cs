@@ -48,7 +48,7 @@ a way back.
             pending), ahead of it, or in the middle of an unfinished migration. Changes nothing, except --init.
   backups   lists the campaign's backups, oldest first, and ends with the question to ask the player when it is time
             to remove old ones.
-  backup    writes a checked backup to adventures/NAME/backups/ and marks a migration as under way.
+  backup    writes a checked backup to adventures/NAME/backups/ and, when a migration is pending, marks it as under way.
   verify    checks that every line of the backup is in the migrated campaign or accounted for, and that each pending
             migration's checks pass; then records the new standard. Changes nothing when it fails.
   restore   puts the campaign back as a backup holds it, keeping backups/. Without --yes, prints the plan only.
@@ -123,6 +123,9 @@ A published module is not exported; ingest it again from your own copy.
     {
         var result = CampaignImporter.Import(DmcFolder.Require(), request, io.Err);
         io.Out.WriteLine($"imported {result.Name}: {result.Files} files to {result.Folder}");
+        if (result.LeftOut > 0)
+            io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"left out backups/ ({result.LeftOut} files): an export made by an older dmc held it, and backups stay with their campaign"));
         switch (result.Options)
         {
             case OptionsOutcome.Written:
@@ -174,7 +177,10 @@ A published module is not exported; ingest it again from your own copy.
     {
         string root = DmcFolder.Require();
         string adventures = Path.Combine(root, "adventures");
-        string name = CampaignExporter.FindCampaign(adventures, request.Name ?? ActiveCampaign(adventures));
+        string named = request.Name ?? Dmc.Size.SizeReport.ActiveName(adventures)
+            ?? throw new DmcException("no active campaign: name one (dmc campaign standard NAME)");
+        Recover(root, named, io);
+        string name = CampaignExporter.FindCampaign(adventures, named);
         string campaign = Path.Combine(adventures, name);
         if (request.Init)
         {
@@ -189,14 +195,18 @@ A published module is not exported; ingest it again from your own copy.
         return 0;
     }
 
-    /// <summary>The active campaign: the first line of <c>adventures/.active-campaign</c>.</summary>
-    /// <param name="adventures">The <c>adventures/</c> folder.</param>
-    /// <exception cref="DmcException">No campaign is active.</exception>
-    static string ActiveCampaign(string adventures)
+    /// <summary>
+    /// Puts back what an interrupted restore of the campaign left (<see cref="CampaignRestorer.Recover"/>), and prints what it
+    /// did. Every migration verb runs it first, so a campaign never reads as current while its backups or its mark sit in a
+    /// restore's staging folder.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="name">The campaign's name, as given.</param>
+    /// <param name="io">Standard output gets the line, if there is one.</param>
+    static void Recover(string root, string name, Io io)
     {
-        string active = Path.Combine(adventures, ".active-campaign");
-        string? name = File.Exists(active) ? File.ReadLines(active).Select(l => l.Trim().TrimStart('﻿')).FirstOrDefault() : null;
-        return string.IsNullOrEmpty(name) ? throw new DmcException("no active campaign: name one (dmc campaign standard NAME)") : name;
+        if (CampaignRestorer.Recover(root, name) is { } line)
+            io.Out.WriteLine(line);
     }
 
     /// <summary>Lists a campaign's backups and, when it is due, the removal question.</summary>
@@ -204,7 +214,9 @@ A published module is not exported; ingest it again from your own copy.
     /// <param name="io">Standard output gets the count, the file names and the question.</param>
     static int RunBackups(BackupsRequest request, Io io)
     {
-        string adventures = Path.Combine(DmcFolder.Require(), "adventures");
+        string root = DmcFolder.Require();
+        Recover(root, request.Name, io);
+        string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, request.Name));
         var backups = BackupFolder.List(campaign, request.Name);
         io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{backups.Count} backups"));
@@ -220,7 +232,9 @@ A published module is not exported; ingest it again from your own copy.
     /// <param name="io">Standard output gets the result line.</param>
     static int RunBackup(BackupRequest request, Io io)
     {
-        var result = CampaignBackup.Take(DmcFolder.Require(), request.Name, request.Prune);
+        string root = DmcFolder.Require();
+        Recover(root, request.Name, io);
+        var result = CampaignBackup.Take(root, request.Name, request.Prune);
         string line = string.Create(CultureInfo.InvariantCulture,
             $"backed up {request.Name}: {result.Files} files to {BackupFolder.FolderName}/{result.FileName}");
         if (request.Prune != PruneMode.None)
@@ -237,7 +251,9 @@ A published module is not exported; ingest it again from your own copy.
     /// <exception cref="DmcException">The verification failed (after its lines are printed), or cannot run.</exception>
     static int RunVerify(VerifyRequest request, Io io)
     {
-        var outcome = CampaignVerifier.Run(DmcFolder.Require(), request.Name, request.Options);
+        string root = DmcFolder.Require();
+        Recover(root, request.Name, io);
+        var outcome = CampaignVerifier.Run(root, request.Name, request.Options);
         foreach (string line in outcome.Lines)
             io.Out.WriteLine(line);
         return outcome.Failure is null ? 0 : throw new DmcException("verification failed: " + outcome.Failure);

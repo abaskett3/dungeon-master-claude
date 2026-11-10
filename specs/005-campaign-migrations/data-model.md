@@ -48,7 +48,7 @@ A campaign export (existing ZIP with `manifest.json`), plus a name and a place.
 |---|---|
 | path | `adventures/<campaign>/backups/<campaign>_backup_<yyyyMMddHHmmss>.zip`, local time; a clash takes `-2`, `-3` before `.zip` |
 | contents | the campaign's files, `backups/` excluded (FR-005d), plus `.standard` as it was |
-| order | by the timestamp in the name, then the suffix; the oldest has the smallest |
+| order | by the manifest's `exportedAt` (UTC), then the timestamp in the name, then the suffix; the oldest comes first. A file whose manifest cannot be read is placed by the local time in its name. The name alone would misorder two backups either side of a clock going back an hour |
 | counted | only names matching `^<campaign>_backup_\d{14}(-\d+)?\.zip$` |
 | companions | beside it, named after the whole backup file and each removed with it: `<backup file>.accounting.tsv` (written by DMC during a migration), `<backup file>.verified.tsv` (written by a passing `verify`), `<backup file>.migrating` (written by `backup`, removed by a passing `verify` or any `restore`) |
 | limit | the retention rule of FR-005a, all in `BackupFolder`: `backups` prints the question as an `ask:` line, `backup --prune` applies a yes |

@@ -260,7 +260,7 @@ dmc campaign import exports/the-silver-egg-202610220605.zip --as silver-egg-copy
 ```
 
 - **Back up.** `export` writes `exports/<campaign>-<date and time>.zip` in the DMC folder and changes nothing in `adventures/`. Keep a copy somewhere else too. A second export in the same minute is numbered `-2`.
-- **Backups are left out.** A campaign's own `backups/` folder (below) is never put in an export.
+- **Backups are left out.** A campaign's own `backups/` folder (below) is never put in an export. An export made by an older `dmc` may hold one; `import` leaves it out and says so.
 - **Restore, or make a copy.** `import` creates `adventures/<name>` from an export. It never replaces a campaign: if the name is taken, it says so, and you choose another with `--as`. It checks every file against the checksums in the file first, so a damaged export is refused and nothing is left half done. It never touches your general `adventures/player-options.md` (it writes one only if you have none) and never changes which campaign is active: start a session and ask DMC to resume the new name.
 - **Move to another computer.** Copy the `.zip` across (the file name does not matter), install `dmc` and a DMC folder there, and import it. If the export was made before an update, `import` says the campaign is behind and DMC offers to bring it up to date when you resume it; if it was made by a newer `dmc`, update `dmc` first. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/dmc-ingest-module`.
 - **Look first.** `show` says what a file holds (campaign, date, files, size, module) and writes nothing.

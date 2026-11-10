@@ -46,8 +46,9 @@ public sealed class StandardTests
         using var root = new MigrationRoot();
         root.WriteCampaign();
         root.WriteMigrations(4);
-        root.SetStandard("4\n");
+        root.SetStandard("2\n");
         string backup = root.Backup();
+        root.SetStandard("4\n");
         CollectionAssert.AreEqual(new[] { $"unfinished: {backup}" }, MigrationRoot.Run("standard", MigrationRoot.Name).StdoutLines);
     }
 

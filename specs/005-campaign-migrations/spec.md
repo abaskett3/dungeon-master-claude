@@ -320,8 +320,8 @@ content, that the campaign is reported as behind, and that the migration then br
   result, and the mark of an unfinished migration (see the plan).
 - **FR-005c**: A backup MUST be a campaign export, made by the toolkit's existing campaign export, written to the
   `backups/` folder in the campaign's own root folder (`adventures/<campaign>/backups/`, made when needed) and named
-  `<campaign>_backup_<yyyyMMddHHmmss>.zip` (local time). The oldest backup is the one with the earliest timestamp in
-  its name. A backup MUST never replace an existing file.
+  `<campaign>_backup_<yyyyMMddHHmmss>.zip` (local time). The oldest backup is the one taken first, by the time its
+  export records (amendment A12). A backup MUST never replace an existing file.
 - **FR-005d**: A backup MUST NOT contain the `backups/` folder or anything in it, so a backup never holds earlier
   backups and its size does not grow with their number. The same holds for any campaign export. An import MUST NOT
   create, fill, change or remove the `backups/` folder of the campaign it writes.

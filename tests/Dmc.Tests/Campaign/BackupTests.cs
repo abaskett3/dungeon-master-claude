@@ -91,6 +91,7 @@ public sealed class BackupTests
         using var root = new MigrationRoot();
         root.WriteCampaign();
         root.SetStandard("1\n");
+        root.WriteMigrations(2);
         int files = Directory.GetFiles(root.Campaign(), "*", SearchOption.AllDirectories).Length;
         var before = DateTime.Now;
         var result = MigrationRoot.Run("backup", MigrationRoot.Name);
@@ -116,12 +117,39 @@ public sealed class BackupTests
     {
         using var root = new MigrationRoot();
         root.WriteCampaign();
+        root.WriteMigrations(2);
         string first = root.Backup();
         string[] before = CampaignFixtures.Snapshot(root.Campaign());
         var result = MigrationRoot.Run("backup", MigrationRoot.Name);
         Assert.AreEqual(1, result.ExitCode);
         Assert.AreEqual($"dmc campaign: rorn has an unfinished migration from {first}: finish it or restore it", result.Stderr.TrimEnd());
         CollectionAssert.AreEqual(before, CampaignFixtures.Snapshot(root.Campaign()));
+    }
+
+    [TestMethod]
+    public void ABackupOfACurrentCampaignHasNoMarkAndLeavesItCurrent()
+    {
+        // Nothing is pending, so verify would have nothing to clear a mark with: a mark here would hold play until a restore.
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        string first = root.Backup();
+        Assert.IsFalse(File.Exists(root.InBackups(first + ".migrating")), "no mark without a pending migration");
+        CollectionAssert.AreEqual(new[] { "current" }, MigrationRoot.Run("standard", MigrationRoot.Name).StdoutLines);
+        Assert.AreEqual(0, MigrationRoot.Run("backup", MigrationRoot.Name).ExitCode, "another backup is not refused");
+    }
+
+    [TestMethod]
+    public void BackupsAreOrderedByWhenTheyWereTakenEvenWhenTheClockWentBack()
+    {
+        // The clocks go back at 02:00 summer time: 01:45 summer time (05:45 UTC) is followed by 01:30 winter time (06:30 UTC),
+        // so the later backup's name sorts first. The manifest's UTC time puts them right.
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        var before = CampaignBackup.Take(root.Folder, MigrationRoot.Name, PruneMode.None, new DateTime(2026, 11, 1, 5, 45, 0, DateTimeKind.Utc));
+        File.Move(root.InBackups(before.FileName), root.InBackups("rorn_backup_20261101014500.zip"));
+        var after = CampaignBackup.Take(root.Folder, MigrationRoot.Name, PruneMode.None, new DateTime(2026, 11, 1, 6, 30, 0, DateTimeKind.Utc));
+        File.Move(root.InBackups(after.FileName), root.InBackups("rorn_backup_20261101013000.zip"));
+        CollectionAssert.AreEqual(new[] { "rorn_backup_20261101014500.zip", "rorn_backup_20261101013000.zip" }, Listed(root));
     }
 
     [TestMethod]

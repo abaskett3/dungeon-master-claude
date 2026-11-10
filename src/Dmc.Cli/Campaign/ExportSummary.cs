@@ -117,7 +117,8 @@ internal sealed class ExportSummary
     /// <summary>
     /// Reads every campaign file of the export into memory and checks each against the manifest's size and SHA-256 (check
     /// 5, as import makes it while it extracts), so a backup is known whole before <c>backup</c>, <c>verify</c> or
-    /// <c>restore</c> trusts it. Reading an entry stops as soon as it is longer than declared.
+    /// <c>restore</c> trusts it. Reading an entry stops as soon as it is longer than declared. Files under a top-level
+    /// <c>backups/</c>, which only an older <c>dmc</c>'s export can hold, are left out unread, as import leaves them out.
     /// </summary>
     /// <returns>The campaign's files by their path in the campaign (without <c>campaign/</c>), in ordinal order.</returns>
     /// <exception cref="DmcException">The file cannot be read, or an entry is missing, larger or smaller than declared, or does not match its checksum.</exception>
@@ -128,7 +129,7 @@ internal sealed class ExportSummary
         {
             using var zip = ZipFile.Open(Path, ZipArchiveMode.Read, Encoding.UTF8);
             var entries = zip.Entries.ToDictionary(e => e.FullName, StringComparer.Ordinal);
-            foreach (var file in Manifest.Files)
+            foreach (var file in Manifest.Files.Where(f => !CampaignFiles.InBackups(f.Path)))
             {
                 var entry = entries.GetValueOrDefault(CampaignPrefix + file.Path)
                     ?? throw new DmcException($"{Path} is damaged: {CampaignPrefix + file.Path} is missing");
@@ -144,6 +145,25 @@ internal sealed class ExportSummary
             throw new DmcException($"cannot read {Path}: {e.Message.TrimEnd('.', '\r', '\n', ' ')}");
         }
         return files;
+    }
+
+    /// <summary>
+    /// The time a backup was written, from its manifest's <c>exportedAt</c> (UTC), so backups can be ordered across a
+    /// clock change that makes the local time in their names go backwards. Reads only the manifest and checks nothing else.
+    /// </summary>
+    /// <param name="path">The backup file.</param>
+    /// <returns>The time, or null when the file cannot be read or has no usable manifest.</returns>
+    internal static DateTime? ExportedAt(string path)
+    {
+        try
+        {
+            using var zip = ZipFile.Open(path, ZipArchiveMode.Read, Encoding.UTF8);
+            return zip.GetEntry(ManifestEntry) is { } entry && TryParseTimestamp(ReadManifest(path, entry).ExportedAt, out var time) ? time : null;
+        }
+        catch (Exception e) when (e is DmcException or IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Reads one entry, counting and hashing as it goes, and refuses it unless it is exactly the file the manifest describes.</summary>
@@ -331,12 +351,6 @@ internal sealed class ExportSummary
     static DmcException Unportable(string path, string entry, string reason) =>
         new($"{path} holds an entry that cannot be imported: {entry} ({reason})");
 
-    /// <summary>The refusal for an archive that holds the campaign's <c>backups/</c> folder, which an export never writes (research R12).</summary>
-    /// <param name="path">The export file.</param>
-    /// <param name="entry">The entry under <c>backups/</c>.</param>
-    static DmcException HoldsBackups(string path, string entry) =>
-        new($"{path} is damaged: {entry} is under backups/, which an export never holds");
-
     /// <summary>Check 3: every path of the manifest is safe, none is the same as another when case is ignored, and none is both a file and a folder.</summary>
     /// <param name="path">The export file, for the messages.</param>
     /// <param name="manifest">The manifest.</param>
@@ -363,15 +377,11 @@ internal sealed class ExportSummary
         {
             if (ArchivePaths.Refusal(file) is { } why)
                 throw Unportable(path, CampaignPrefix + file, why);
-            if (!CampaignFiles.Counts(file) && file != StandardRecord.FileName)
-                throw HoldsBackups(path, CampaignPrefix + file);
         }
         foreach (string folder in manifest.Folders)
         {
             if (ArchivePaths.Refusal(folder) is { } why)
                 throw Unportable(path, CampaignPrefix + folder + "/", why);
-            if (!CampaignFiles.Counts(folder))
-                throw HoldsBackups(path, CampaignPrefix + folder + "/");
         }
 
         // Campaign files and folders compared together: on a case-insensitive file system they share one namespace.

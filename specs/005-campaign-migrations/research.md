@@ -248,8 +248,9 @@ rest settle what the spec left to the plan. The code facts were read on 2026-11-
 
 ## R12. Import of an old export
 
-- **Decision.** `import` changes in two ways. It refuses an archive that holds a `backups/` entry (the exporter
-  leaves it out, so only a crafted file has one). After creating the campaign it prints one extra line when the
+- **Decision.** `import` changes in two ways. It leaves out a `backups/` folder an archive holds (the exporter leaves
+  it out, but an export made before this change carries whatever `backups/` folder the campaign had; amendment A12
+  replaced the refusal first planned here). After creating the campaign it prints one extra line when the
   campaign is not current, reading the DMC folder's `migrations/`: `NAME is behind (standard C, kit K): ask DMC to
   bring it up to date`, or `NAME is ahead (standard C, kit K): update dmc`; nothing when current. `.standard`
   travels inside the archive, and the imported files are unchanged.
@@ -294,3 +295,21 @@ Made during implementation (2026-11-10), each recorded in the contract or the da
   Migration 004 declares a fifth drop class, `repeats-player-options`, for the notes about the player that the player
   options already say (step 9 of the migration; the fixture shows it). The refresh line is printed only after a refresh
   that updated files, so a refresh with nothing to do stays silent; the resume tells the player at every session.
+
+Made after the code review of PR #176 (2026-11-10):
+
+- **A12.** Seven changes to the contract.
+  - **`backup` marks only when a migration is pending.** On a current campaign the mark could never be cleared by
+    `verify`, so play would wait on a restore.
+  - **A passing `verify` clears every mark of the campaign**, so `--backup` naming another backup leaves none.
+  - **Recovery from an interrupted restore never deletes backups or the campaign.**
+    - A staging folder still holding the moved `backups/` is kept until they are back. They go back file by file
+      when the campaign has a `backups/` again.
+    - The campaign renamed aside is deleted only when its staging folder of the same id is gone, which means the
+      rename into place was done. Otherwise the player is asked which to keep.
+    - Recovery runs first in `standard`, `backups`, `backup` and `verify` too, so a campaign never reads as current
+      while its mark is in a staging folder.
+  - **Backups are ordered by the manifest's UTC time**, not the local time in their names, which goes back an hour
+    once a year.
+  - **`import` and `restore` leave an older export's `backups/` out instead of refusing the file.** A player who
+    exported a campaign with such a folder before this change could otherwise never import it again.

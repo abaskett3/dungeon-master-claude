@@ -21,8 +21,8 @@ internal sealed record VerifyOutcome(IReadOnlyList<string> Lines, string? Failur
 /// passes only when the backup is whole; every content unit of the backup's campaign files is found in the migrated
 /// campaign or accounted for (reworded with an anchor that is there, or dropped under a class a pending migration
 /// declares); no file was skipped; and every check the pending migrations name passes. On a pass it records the kit's
-/// standard in <c>.standard</c>, writes the verified record beside the backup and removes the backup's <c>.migrating</c>
-/// mark. The campaign files are compared without the top-level <c>backups/</c> folder and <c>.standard</c>.
+/// standard in <c>.standard</c>, writes the verified record beside the backup and removes every <c>.migrating</c> mark of
+/// the campaign. The campaign files are compared without the top-level <c>backups/</c> folder and <c>.standard</c>.
 /// </summary>
 internal static partial class CampaignVerifier
 {
@@ -75,6 +75,7 @@ internal static partial class CampaignVerifier
         string label = options.Accounting ?? $"{BackupFolder.FolderName}/{backupName}{BackupFolder.AccountingSuffix}";
         var accounting = AccountingFile.Read(accountingPath, label);
         var currentFiles = CampaignFiles.Read(campaign);
+        var newText = currentFiles.ToDictionary(f => f.Key, f => Text(f.Value), StringComparer.Ordinal);
         var drops = MigrationSet.Drops(pending);
 
         // The migrated campaign: every unit, and every line long enough to contain an old unit.
@@ -104,7 +105,7 @@ internal static partial class CampaignVerifier
             }
             else if (entry.Disposition == Disposition.Reworded)
             {
-                if (AnchorFound(entry.Detail, currentFiles, newUnits))
+                if (AnchorFound(entry.Detail, newText.Values, newUnits))
                     reworded++;
                 else
                     problems.Add($"{line} (anchor not found: {Cut(entry.Detail)})");
@@ -120,7 +121,6 @@ internal static partial class CampaignVerifier
         }
 
         var oldText = old.ToDictionary(f => f.Key, f => Text(f.Value), StringComparer.Ordinal);
-        var newText = currentFiles.ToDictionary(f => f.Key, f => Text(f.Value), StringComparer.Ordinal);
         var input = new CheckInput(oldText, newText, accounting);
         var checkLines = MigrationSet.Checks(pending).SelectMany(c => MigrationChecks.Run(c, input)).ToList();
 
@@ -150,7 +150,8 @@ internal static partial class CampaignVerifier
 
         StandardRecord.Write(campaign, set.Kit);
         WriteVerified(BackupFolder.Companion(backup, BackupFolder.VerifiedSuffix), currentFiles);
-        CampaignBackup.Remove(BackupFolder.Companion(backup, BackupFolder.MigratingSuffix));
+        // Every mark, not only this backup's: --backup may name another backup than the marked one, and the migration is done.
+        BackupFolder.ClearMarks(campaign);
         lines.Add(string.Create(CultureInfo.InvariantCulture,
             $"verified {name}: {units.Count} units, {matched} matched, {reworded} accounted, {dropped} dropped; standard {set.Kit}"));
         return new VerifyOutcome(lines, null);
@@ -163,10 +164,7 @@ internal static partial class CampaignVerifier
     /// <exception cref="DmcException">The backup is damaged, another campaign's, or holds an unreadable record.</exception>
     internal static SortedDictionary<string, byte[]> OpenBackup(string backup, string name, out int standard)
     {
-        var summary = ExportSummary.Open(backup);
-        if (summary.Manifest.Campaign != name)
-            throw new DmcException($"{Path.GetFileName(backup)} is a backup of {summary.Manifest.Campaign}, not {name}");
-        var all = summary.ReadCampaign();
+        var all = BackupFolder.Open(backup, name).ReadCampaign();
         standard = all.TryGetValue(StandardRecord.FileName, out var record)
             ? StandardRecord.Parse(record) ?? throw new DmcException($"{Path.GetFileName(backup)} holds an unreadable {StandardRecord.FileName}")
             : StandardRecord.Baseline;
@@ -211,13 +209,13 @@ internal static partial class CampaignVerifier
 
     /// <summary>True when a rewording's anchor occurs in the migrated campaign: in a file's text, or in a unit once whitespace is collapsed.</summary>
     /// <param name="anchor">The anchor.</param>
-    /// <param name="files">The migrated campaign's files.</param>
+    /// <param name="texts">The migrated campaign's files as text, decoded once for the whole run.</param>
     /// <param name="units">The migrated campaign's units.</param>
-    static bool AnchorFound(string anchor, SortedDictionary<string, byte[]> files, HashSet<string> units)
+    static bool AnchorFound(string anchor, IEnumerable<string> texts, HashSet<string> units)
     {
         string collapsed = Whitespace.Replace(anchor, " ").Trim();
         return units.Any(u => u.Contains(collapsed, StringComparison.Ordinal))
-            || files.Values.Any(b => Text(b).Contains(anchor, StringComparison.Ordinal));
+            || texts.Any(t => t.Contains(anchor, StringComparison.Ordinal));
     }
 
     /// <summary>Writes the verified record: one <c>path\tsha256</c> line per campaign file.</summary>

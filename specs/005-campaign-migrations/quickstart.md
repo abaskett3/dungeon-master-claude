@@ -62,7 +62,7 @@ failure naming the file. Then delete one line from
 
 ```
 dmc campaign restore demo                  # prints the plan; nothing changes
-dmc campaign restore demo --yes            # restored demo from backups/<latest>: N files
+dmc campaign restore demo --yes            # restored demo from <latest backup file>: N files
 ```
 
 The campaign equals the backup file for file, `.standard` holds what it held then, and `backups/` is untouched. Change

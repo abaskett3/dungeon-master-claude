@@ -12,7 +12,7 @@
 ## History
 
 - s1: crossed on Mara's ferry without paying, and was let off.
-- s2: found the drowned ledger in the reeds.
+- s2: saw a cult lantern moving in the reeds.
 
 ## Relationships
 

@@ -48,6 +48,8 @@ Run `dmc update` in a terminal. It replaces `dmc` with the latest release, then 
 
 Changes made to the toolkit's repository never reach you before a release, and you choose when to update: `dmc play` refreshes your folder from the `dmc` you have, and never downloads anything.
 
+An update can change what DMC keeps in a campaign's files. When it does, `dmc update` (or `dmc refresh`) says how many of your campaigns are behind the new rules, and the next time you resume one DMC offers, in one line, to bring its files up to date. See [Bringing a campaign up to date](#bringing-a-campaign-up-to-date).
+
 ### Starting a session
 
 Run `dmc play` in a terminal, from any folder. It does these things:
@@ -258,13 +260,45 @@ dmc campaign import exports/the-silver-egg-202610220605.zip --as silver-egg-copy
 ```
 
 - **Back up.** `export` writes `exports/<campaign>-<date and time>.zip` in the DMC folder and changes nothing in `adventures/`. Keep a copy somewhere else too. A second export in the same minute is numbered `-2`.
+- **Backups are left out.** A campaign's own `backups/` folder (below) is never put in an export. An export made by an older `dmc` may hold one; `import` leaves it out and says so.
 - **Restore, or make a copy.** `import` creates `adventures/<name>` from an export. It never replaces a campaign: if the name is taken, it says so, and you choose another with `--as`. It checks every file against the checksums in the file first, so a damaged export is refused and nothing is left half done. It never touches your general `adventures/player-options.md` (it writes one only if you have none) and never changes which campaign is active: start a session and ask DMC to resume the new name.
-- **Move to another computer.** Copy the `.zip` across (the file name does not matter), install `dmc` and a DMC folder there, and import it. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/dmc-ingest-module`.
+- **Move to another computer.** Copy the `.zip` across (the file name does not matter), install `dmc` and a DMC folder there, and import it. If the export was made before an update, `import` says the campaign is behind and DMC offers to bring it up to date when you resume it; if it was made by a newer `dmc`, update `dmc` first. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/dmc-ingest-module`.
 - **Look first.** `show` says what a file holds (campaign, date, files, size, module) and writes nothing.
 - **Run it inside your DMC folder.** `dmc campaign` finds `adventures/` in the DMC folder (the current folder if it is one, else the first recorded), and fails with `no DMC folder: run dmc install` when there is none.
 
 An export holds everything in the campaign, including `story/dm-notes.md`, so do not open it before you have played the story, and do not send it to anyone who will play it. To bring in a campaign played elsewhere (a chat export or transcript), use `/dmc-new-campaign` instead. Every message and option is in [dmc-reference.md](dmc-reference.md#campaign).
 
+### Bringing a campaign up to date
+
+When an update changes what DMC keeps in a campaign's files (for example, finished fights now leave the DM notes for an
+archive), an older campaign keeps its old shape until it is brought up to date. Resume tells you in one line when a
+campaign is behind; say yes, or ask DMC at any time to "bring my campaign files up to date". You can say no: nothing
+changes, and the offer comes back next time. DMC does not start in the middle of a fight or with a roll pending.
+
+What happens, in order:
+
+1. **DMC tells you what will change**, including anything it may remove and why (a session-by-session log that one line
+   replaces, say), and waits for your yes.
+2. **A backup is taken**: the whole campaign, checked, in `adventures/<campaign>/backups/`. When you already keep three,
+   DMC asks whether the oldest may go (or, with more, all but the latest two); a no keeps them all.
+3. **DMC rewrites the files**, following the steps for each change in order, and asks you about anything it is unsure of
+   (whether a fight is really over, say). A file it does not recognise, because you edited it by hand, is left as it is
+   and named to you.
+4. **`dmc` checks that nothing was lost.** Every line of the backup must be in the new files, or be one DMC says it
+   reworded (and the new wording must be there), or be one it removed under a heading of what it told you it may
+   remove; and each change's new shape must be in place. If anything is unaccounted for, the campaign is not marked up
+   to date, the backup is untouched, and DMC offers to put the files back.
+5. **When it passes**, DMC tells you where the backup is, and mentions anything the next full save will trim.
+
+What the check proves: no line was lost verbatim or without a stated reason. It cannot prove a reworded line kept its
+meaning; that is why removals are limited to what you were told and doubtful content is kept and shown to you.
+
+**Going back.** `dmc campaign restore <campaign>` shows what would change (and warns if you have played since the
+migration, because that play would be lost); `dmc campaign restore <campaign> --yes` puts the files back as the backup
+holds them, keeping the backups. DMC can run it for you.
+
+**If a session ends part way** through a migration, the next resume says a migration was interrupted, and play waits
+until DMC finishes it (against the same backup) or you restore.
 ### Moving campaigns from a repository checkout
 
 Before DMC had a DMC folder, you played in a checkout of the toolkit's repository, and your campaigns, feedback, modules and rules files were in its `adventures/`, `feedback/`, `modules/` and `rules/` folders (git ignored them). To play from a DMC folder instead, move them across. **DMC never runs these commands: you run them yourself, in your own terminal.**

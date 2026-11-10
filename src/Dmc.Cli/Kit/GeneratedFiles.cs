@@ -7,7 +7,7 @@ namespace Dmc.Kit;
 /// target out of the player's own folders (FR-012). <c>kit/</c> is embedded in the program (see <c>Dmc.Cli.csproj</c>) under
 /// the logical name <c>kit/&lt;path&gt;</c>:
 /// <c>kit/dm-rules.md</c> becomes <c>CLAUDE.md</c>, <c>kit/settings.json</c> becomes <c>.claude/settings.json</c>,
-/// <c>kit/skills/**</c> becomes <c>.claude/skills/**</c> and <c>kit/templates/**</c> becomes <c>templates/**</c>.
+/// <c>kit/skills/**</c> becomes <c>.claude/skills/**</c>, <c>kit/templates/**</c> becomes <c>templates/**</c> and <c>kit/migrations/**</c> becomes <c>migrations/**</c> (the migrations DMC follows to bring a campaign's files up to date; spec 005).
 /// </summary>
 public static class GeneratedFiles
 {
@@ -30,6 +30,7 @@ public static class GeneratedFiles
         ("kit/settings.json", ".claude/settings.json"),
         ("kit/skills/", ".claude/skills/"),
         ("kit/templates/", "templates/"),
+        ("kit/migrations/", "migrations/"),
     ];
 
     /// <summary>Every generated file of this program, in ordinal order of path, read from the embedded <c>kit/</c>.</summary>

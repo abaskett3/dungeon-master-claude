@@ -162,6 +162,8 @@ terminal, not inside a Claude Code session.
             var result = Refresher.Refresh(folder, machine.Files, machine.Version, machine.Now());
             foreach (string line in Refresher.Report("dmc refresh", folder, result, machine.Version))
                 io.Out.WriteLine(line);
+            if (result.Updated > 0 && Refresher.BehindLine("dmc refresh", folder) is { } behind)
+                io.Out.WriteLine(behind);
         }
     }
 

@@ -15,6 +15,7 @@ public sealed class ArchivePathsTests
     [DataRow("Château/Écu.md")] // not ASCII
     [DataRow("notes/two words.md")]
     [DataRow("maps/.gitkeep")] // a leading dot is not a trailing one
+    [DataRow(".standard")] // the campaign's standard record (spec 005, research R2)
     [DataRow("a.b.c")]
     [DataRow("console.md")] // starts like a reserved name but is not one
     [DataRow("com10.txt")]

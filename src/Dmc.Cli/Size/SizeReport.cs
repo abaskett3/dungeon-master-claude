@@ -41,19 +41,24 @@ internal static class SizeReport
     public static string Target(string dmcFolder, string? name)
     {
         string adventures = Path.Combine(dmcFolder, "adventures");
-        if (name is null)
-        {
-            string active = Path.Combine(adventures, ".active-campaign");
-            name = File.Exists(active) ? Measurement.ReadLines(active).Select(l => l.Text.Trim()).FirstOrDefault() : null;
-            if (string.IsNullOrEmpty(name))
-                throw new DmcException("no active campaign: name one (dmc size NAME)");
-        }
+        name ??= ActiveName(adventures) ?? throw new DmcException("no active campaign: name one (dmc size NAME)");
         if (name.StartsWith('.'))
             throw new DmcException($"{name} is not a campaign (a folder starting with a dot is a staging folder)");
         // One plain folder name: not empty or blank, no separator, no drive (C: is a folder on Windows), not "..".
         if (name.Trim().Length == 0 || name.IndexOfAny(['/', '\\', ':']) >= 0 || name is ".." || !Directory.Exists(Path.Combine(adventures, name)))
             throw new DmcException($"no campaign {name} in adventures/");
         return name;
+    }
+
+    /// <summary>The active campaign's name: the first line of <c>adventures/.active-campaign</c>, trimmed and without a byte-order mark. <c>dmc size</c> and <c>dmc campaign standard</c> both read it here.</summary>
+    /// <param name="adventures">The <c>adventures/</c> folder.</param>
+    /// <returns>The name, or null when the file is missing or its first line is blank.</returns>
+    /// <exception cref="DmcException">The file cannot be read.</exception>
+    internal static string? ActiveName(string adventures)
+    {
+        string active = Path.Combine(adventures, ".active-campaign");
+        string? name = File.Exists(active) ? Measurement.ReadLines(active).Select(l => l.Text.Trim().TrimStart('﻿')).FirstOrDefault() : null;
+        return string.IsNullOrEmpty(name) ? null : name;
     }
 
     /// <summary>Measures a campaign: its read set (<see cref="ReadSet.Build"/>) and its flags (<see cref="Flags.Find"/>). Writes nothing.</summary>

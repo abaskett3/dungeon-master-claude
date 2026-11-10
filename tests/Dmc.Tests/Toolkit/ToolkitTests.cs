@@ -50,8 +50,8 @@ public sealed partial class ToolkitTests
         Directory.EnumerateFiles(Path.Combine(TestEnv.Root, folder), "*.md", SearchOption.AllDirectories)
             .Select(f => Path.GetRelativePath(TestEnv.Root, f).Replace('\\', '/')).Order(StringComparer.Ordinal).ToArray();
 
-    /// <summary>The prompts a DMC folder gets, as files of <c>kit/</c>: the rules, the skills and the templates. DMC reads these in play.</summary>
-    static string[] KitPrompts() => ["kit/dm-rules.md", .. MarkdownUnder("kit/skills"), .. MarkdownUnder("kit/templates")];
+    /// <summary>The prompts a DMC folder gets, as files of <c>kit/</c>: the rules, the skills, the templates and the migrations. DMC reads these in play.</summary>
+    static string[] KitPrompts() => ["kit/dm-rules.md", .. MarkdownUnder("kit/skills"), .. MarkdownUnder("kit/templates"), .. MarkdownUnder("kit/migrations")];
 
     /// <summary>The prompts that stay in the repository: the developer <c>CLAUDE.md</c>, the README and the developer skills (not Spec Kit's).</summary>
     static string[] DeveloperPrompts() =>
@@ -215,17 +215,18 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// A player's session may not edit or write the generated files, and may not run <c>dmc update</c>, <c>install</c> or
-    /// <c>refresh</c> (FR-005, FR-016): deny rules anchored at the project folder with <c>/</c>, and the three commands in both shells.
+    /// <c>refresh</c> (FR-005, FR-016): <c>Edit</c> deny rules anchored at the project folder with <c>/</c>, and the three commands
+    /// in both shells. Claude Code applies an <c>Edit</c> rule to every tool that edits files, <c>Write</c> included, and never
+    /// matches a <c>Write(...)</c> rule (it warns that such a rule has no effect), so the kit holds none.
     /// </summary>
     [TestMethod]
     public void TheKitSettingsProtectTheGeneratedFiles()
     {
         string[] denied = Settings(KitSettings)["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
-        foreach (string tool in new[] { "Edit", "Write" })
-        {
-            foreach (string path in new[] { "/CLAUDE.md", "/.claude/**", "/templates/**", "/.dmc/**" })
-                CollectionAssert.Contains(denied, $"{tool}({path})");
-        }
+        foreach (string path in new[] { "/CLAUDE.md", "/.claude/**", "/templates/**", "/migrations/**", "/.dmc/**" })
+            CollectionAssert.Contains(denied, $"Edit({path})");
+        var allowed = Settings(KitSettings)["permissions"]!["allow"]!.AsArray().Select(r => (string)r!);
+        Assert.IsFalse(denied.Concat(allowed).Any(r => r.StartsWith("Write(", StringComparison.Ordinal)), "Claude Code never matches a Write(...) rule; Edit(...) covers Write");
         foreach (string tool in new[] { "Bash", "PowerShell" })
         {
             foreach (string command in new[] { "update", "install", "refresh" })
@@ -724,13 +725,13 @@ public sealed partial class ToolkitTests
             Assert.IsNotNull(GeneratedFiles.TargetOf(name), name);
     }
 
-    /// <summary>The ten player skills are in <c>kit/skills</c> under <c>dmc-&lt;name&gt;</c>, and each says so in its front matter.</summary>
+    /// <summary>The eleven player skills are in <c>kit/skills</c> under <c>dmc-&lt;name&gt;</c>, and each says so in its front matter.</summary>
     [TestMethod]
     public void EveryPlayerSkillFolderAndNameIsDmcPrefixed()
     {
         CollectionAssert.AreEqual(new[]
         {
-            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-draw-map", "dmc-ingest-module", "dmc-new-campaign",
+            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-draw-map", "dmc-ingest-module", "dmc-migrate-campaign", "dmc-new-campaign",
             "dmc-record-feedback", "dmc-resume-campaign", "dmc-rewind-campaign", "dmc-setup-rules", "dmc-update-game-state",
         }, SkillNames());
         foreach (string name in SkillNames())

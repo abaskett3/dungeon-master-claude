@@ -4,7 +4,7 @@ This document is for anyone who reads or edits a campaign's files by hand, chang
 
 ## Layout
 
-Everything below is in a **DMC folder**, the folder a player plays in (written by `dmc install`). Next to the player's folders it holds the files `dmc` writes and keeps up to date: `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/dmc-*/` and `templates/` (their source is `kit/` in the repository), and `.dmc/manifest.json`, which lists them with their hashes and makes the folder a DMC folder. `dmc install`, `dmc refresh` and `dmc play` write only those, and never anything under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/`; a generated file the player edited is kept under `.dmc/replaced/<yyyyMMdd-HHmmss>/` before it is replaced. The player's own files (their `.claude/settings.local.json`, their own skills) are never touched.
+Everything below is in a **DMC folder**, the folder a player plays in (written by `dmc install`). Next to the player's folders it holds the files `dmc` writes and keeps up to date: `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/dmc-*/`, `templates/` and `migrations/` (their source is `kit/` in the repository; `migrations/` holds the numbered files DMC follows to bring an older campaign's files up to date, see [Bringing a campaign up to date](#bringing-a-campaign-up-to-date)), and `.dmc/manifest.json`, which lists them with their hashes and makes the folder a DMC folder. `dmc install`, `dmc refresh` and `dmc play` write only those, and never anything under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/`; a generated file the player edited is kept under `.dmc/replaced/<yyyyMMdd-HHmmss>/` before it is replaced. The player's own files (their `.claude/settings.local.json`, their own skills) are never touched.
 
 `feedback/` sits in the DMC folder, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
 
@@ -18,7 +18,15 @@ adventures/
   .reviewed-sessions         session ids already reviewed by /review-transcript
   .transcript-review/        output of dmc digest show, one folder for all campaigns (rewritten on each review)
   .dmc-import-<id>/          staging folder of a running dmc campaign import (deleted when it ends; a leftover is safe to delete)
+  .restore-<campaign>-<id>/  staging folder of a running dmc campaign restore (a later restore cleans up a leftover)
+  .replaced-<campaign>-<id>/ the campaign renamed aside during a restore (a later restore puts it back if the restore was interrupted)
   <campaign>/
+    .standard                the campaign's standard: one whole number (no file means 1); written by dmc campaign verify and standard --init
+    backups/                 backups of the campaign taken before a migration (dmc campaign backup); never exported
+      <campaign>_backup_<yyyyMMddHHmmss>.zip   a whole campaign export, checked when written
+      <backup>.zip.migrating                   a migration from this backup is under way (only when one was pending)
+      <backup>.zip.accounting.tsv              what the migration reworded or dropped, written by DMC
+      <backup>.zip.verified.tsv                the migrated campaign's files and hashes, written by a passing verify
     player-options.md        this campaign's settings and overrides
     game-state.md            the present moment
     character-sheets/
@@ -85,6 +93,26 @@ The player options, the session log and the module files have no budget: the ful
 
 Spoilers: the player can read and edit any file, but `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md`, NPC sheets (their secrets) and anything under `modules/` give away what is ahead.
 
+## Bringing a campaign up to date
+
+When the toolkit changes what campaign files should hold, the change ships a **migration**: a numbered file in
+`migrations/` of the DMC folder (`002-sheet-history-last.md`, and so on) that DMC follows to move an older campaign's
+files to the new shape. A campaign's **standard** is the number in its `.standard` file (1 when there is none); the
+kit's is the highest migration number. `dmc campaign standard NAME` says `current`, `behind` (with the pending
+migrations), `ahead` (the files were written by a newer `dmc`) or `unfinished` (a migration was started and not
+verified or restored). The resume says one line when a campaign is not current, and offers the migration.
+
+| File | What reads and writes it |
+|---|---|
+| `.standard` | Written only by `dmc campaign verify` on a pass and by `dmc campaign standard NAME --init` (the new-campaign skill); restored with a backup. Read by `standard`, `verify`, `import`, `refresh` and `update`. DMC never edits it. |
+| `backups/<campaign>_backup_<stamp>.zip` | Written by `dmc campaign backup`, a campaign export checked whole. Removed only by `backup --prune`, on the player's yes to the question `dmc campaign backups` prints when three or more are kept. Read by `verify` and `restore`. Never part of an export or of another backup; an import of an export made by an older `dmc` that holds one leaves it out. Ordered by the UTC time in its manifest. |
+| `backups/<backup>.zip.migrating` | Written by `backup` when the campaign is behind the kit; every mark of the campaign is removed by a passing `verify` or by any `restore`. While it exists the migration is unfinished: `backup` refuses, and `verify` and `restore` use that backup. |
+| `backups/<backup>.zip.accounting.tsv` | Written by DMC during a migration, one tab-separated line per unit the migration did not keep verbatim: `<id>`, `reworded` or `dropped:<class>`, and an anchor or a reason; `skipped`, a file and a reason for a file left unmigrated. `verify` reads it. |
+| `backups/<backup>.zip.verified.tsv` | Written by a passing `verify`: each campaign file's path and SHA-256. `restore` reads it to warn about play since the migration. |
+
+A backup's companion files go with it when it is pruned. Verification compares the campaign's files without `backups/`
+and `.standard`. The procedure is the `dmc-migrate-campaign` skill; the commands are in
+[dmc-reference.md](dmc-reference.md#migrations), and the user guide says what the player sees.
 ## Which file wins
 
 Each kind of fact has one home, so that two files cannot disagree about it:

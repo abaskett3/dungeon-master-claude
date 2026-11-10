@@ -534,4 +534,51 @@ public sealed class CampaignImportRefusalTests
         Assert.AreEqual(NotAnExport(scene), caught.Message);
         Assert.IsFalse(Directory.Exists(scene.Target.Adventures), "a refused archive makes no folder");
     }
+
+    // ---------- backups (spec 005, research R12) ----------
+
+    [TestMethod]
+    public void AnOlderExportWithABackupsFolderImportsWithoutIt()
+    {
+        // An export made before spec 005 holds whatever backups/ folder the campaign had: the import leaves it out and says how much.
+        using var scene = new Scene().Build(p => p.AddFile("backups/x.zip", Encoding.UTF8.GetBytes("a backup")));
+        int declared = ExportSummary.Open(scene.Zip).Manifest.Files.Count;
+        var result = CampaignImporter.Import(scene.Target.Folder, new ImportRequest(scene.Zip, null), TextWriter.Null);
+        Assert.AreEqual(1, result.LeftOut);
+        Assert.AreEqual(declared - 1, result.Files);
+        Assert.IsFalse(Directory.Exists(Path.Combine(result.Folder, "backups")));
+        Assert.IsTrue(File.Exists(Path.Combine(result.Folder, "game-state.md")), "the rest of the campaign is imported");
+    }
+
+    [TestMethod]
+    public void TheImportSaysItLeftBackupsOut()
+    {
+        using var scene = new Scene().Build(p => p.AddFile("backups/x.zip", Encoding.UTF8.GetBytes("a backup")));
+        using var root = new MigrationRoot();
+        var result = MigrationRoot.Run("import", scene.Zip);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.Contains(result.StdoutLines,
+            "left out backups/ (1 files): an export made by an older dmc held it, and backups stay with their campaign");
+    }
+
+    [TestMethod]
+    public void AnOlderExportWithAnEmptyBackupsFolderImportsWithoutIt()
+    {
+        using var scene = new Scene().Build(p =>
+        {
+            p.Folders.Add("backups");
+            p.Entries.Add(("campaign/backups/", []));
+        });
+        var result = CampaignImporter.Import(scene.Target.Folder, new ImportRequest(scene.Zip, null), TextWriter.Null);
+        Assert.AreEqual(0, result.LeftOut);
+        Assert.IsFalse(Directory.Exists(Path.Combine(result.Folder, "backups")));
+    }
+
+    [TestMethod]
+    public void AnImportNeverMakesABackupsFolder()
+    {
+        using var scene = new Scene().Build();
+        var result = CampaignImporter.Import(scene.Target.Folder, new ImportRequest(scene.Zip, null), TextWriter.Null);
+        Assert.IsFalse(Directory.Exists(Path.Combine(result.Folder, "backups")));
+    }
 }

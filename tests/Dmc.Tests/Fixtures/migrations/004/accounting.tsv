@@ -1,0 +1,14 @@
+# 004: made with dmc campaign verify --list of after/ against a backup of before/.
+# Moved Opposition rows and closed threads match verbatim in story/dm-notes-archive.md and need no line.
+2cd5c0491c2e	dropped:scene-history	the session log for s3 already holds it
+44490beac056	reworded	Mara takes first watch and Wren the second
+f271cfeba7af	dropped:finished-arc-beat	the ambush happened in s2.3
+c693f2a9623b	dropped:finished-arc-beat	the ledger was found in s3.2
+0edd7e569feb	dropped:mix-tracker	the Last played line replaces the log
+181f8b2ace48	dropped:mix-tracker	the log of sessions
+7e8a82f9db63	dropped:mix-tracker	the log of sessions
+4394be8dc305	dropped:mix-tracker	the log of sessions
+57907c6fdddc	dropped:mix-tracker	the log of sessions
+45b714824268	dropped:overtaken-plan	the goblins are dead
+29ab6e02fa6d	dropped:repeats-player-options	the overrides say I roll my own dice
+360e87d635db	dropped:repeats-player-options	the overrides say short descriptions

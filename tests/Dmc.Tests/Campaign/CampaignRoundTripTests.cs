@@ -289,4 +289,73 @@ public sealed class CampaignRoundTripTests
         AssertSameFolder(campaign, root.Campaign("silver-egg-copy"));
         CollectionAssert.AreEqual(before, Snapshot(campaign), "the original is untouched");
     }
+
+    // ---------- the standard record travels, and import says when it is not current (spec 005, research R2, R12) ----------
+
+    /// <summary>Exports the sample campaign of a migration root with the real exporter, with <c>.standard</c> holding a value or absent.</summary>
+    static string ExportWithStandard(MigrationRoot root, string? standard)
+    {
+        root.WriteCampaign();
+        if (standard is not null)
+            root.SetStandard(standard);
+        var result = MigrationRoot.Run("export", MigrationRoot.Name, "--out", Path.Combine(root.Folder, "out.zip"));
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        return Path.Combine(root.Folder, "out.zip");
+    }
+
+    [TestMethod]
+    public void TheStandardRecordIsExportedAndImportedByteForByte()
+    {
+        using var root = new MigrationRoot();
+        string zip = ExportWithStandard(root, "4\n");
+        CollectionAssert.Contains(ExportSummary.Open(zip).Manifest.Files.Select(f => f.Path).ToArray(), ".standard");
+        var result = MigrationRoot.Run("import", zip, "--as", "copy");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        AssertSameFolder(root.Campaign(), root.Campaign("copy"));
+        Assert.AreEqual("4\n", root.Read(".standard", "copy"));
+    }
+
+    [TestMethod]
+    [DataRow("1\n")]
+    [DataRow(null)]
+    public void AnOldExportImportsUnchangedAndSaysItIsBehind(string? standard)
+    {
+        using var root = new MigrationRoot();
+        root.WriteMigrations(4);
+        string zip = ExportWithStandard(root, standard);
+        var result = MigrationRoot.Run("import", zip, "--as", "copy");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("copy is behind (standard 1, kit 4): ask DMC to bring it up to date", result.StdoutLines[^1]);
+        AssertSameFolder(root.Campaign(), root.Campaign("copy"));
+        StringAssert.StartsWith(MigrationRoot.Run("standard", "copy").Stdout, "behind: standard 1, kit 4: ");
+    }
+
+    [TestMethod]
+    public void ANewerExportImportsUnchangedSaysItIsAheadAndCannotBeVerified()
+    {
+        using var root = new MigrationRoot();
+        root.WriteMigrations(4);
+        string zip = ExportWithStandard(root, "9\n");
+        var result = MigrationRoot.Run("import", zip, "--as", "copy");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("copy is ahead (standard 9, kit 4): update dmc", result.StdoutLines[^1]);
+        AssertSameFolder(root.Campaign(), root.Campaign("copy"));
+
+        var verify = MigrationRoot.Run("verify", "copy");
+        Assert.AreEqual(1, verify.ExitCode);
+        Assert.AreEqual("", verify.Stdout);
+        Assert.AreEqual("dmc campaign: copy is ahead (standard 9, kit 4): update dmc", verify.Stderr.TrimEnd());
+        Assert.AreEqual("9\n", root.Read(".standard", "copy"));
+    }
+
+    [TestMethod]
+    public void ACurrentCampaignsImportPrintsNoExtraLine()
+    {
+        using var root = new MigrationRoot();
+        root.WriteMigrations(4);
+        string zip = ExportWithStandard(root, "4\n");
+        var result = MigrationRoot.Run("import", zip, "--as", "copy");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        StringAssert.StartsWith(result.StdoutLines[^1], "to play it, start a session");
+    }
 }

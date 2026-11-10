@@ -138,6 +138,43 @@ public static class Refresher
     }
 
     /// <summary>
+    /// The line <c>dmc refresh</c> and <c>dmc update</c> print after a refresh that updated files of a DMC folder when any of its campaigns is not
+    /// current against the freshly written <c>migrations/</c>: behind, unfinished, or with a record that cannot be read
+    /// (contracts/campaign-commands.md, spec 005 FR-012). A campaign ahead of the kit is not counted: a newer <c>dmc</c> will
+    /// come with the update.
+    /// </summary>
+    /// <param name="prefix">The command, for example <c>dmc refresh</c>.</param>
+    /// <param name="folder">The DMC folder.</param>
+    /// <returns>The line, or null when every campaign is current or there is none.</returns>
+    public static string? BehindLine(string prefix, string folder)
+    {
+        string adventures = Path.Combine(folder, "adventures");
+        if (!Directory.Exists(adventures))
+            return null;
+        int behind = 0;
+        foreach (var campaign in new DirectoryInfo(adventures).EnumerateDirectories().Where(d => !d.Name.StartsWith('.')))
+        {
+            try
+            {
+                var state = Campaign.StandardRecord.Status(folder, campaign.Name).State;
+                if (state is Campaign.StandardState.Behind or Campaign.StandardState.Unfinished)
+                    behind++;
+            }
+            catch (Exception e) when (e is DmcException or IOException or UnauthorizedAccessException)
+            {
+                behind++;
+            }
+        }
+        return behind switch
+        {
+            0 => null,
+            1 => $"{prefix}: {folder}: 1 campaign is behind the new rules: ask DMC to bring it up to date",
+            _ => string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                $"{prefix}: {folder}: {behind} campaigns are behind the new rules: ask DMC to bring them up to date"),
+        };
+    }
+
+    /// <summary>
     /// Whether a DMC folder is already what this program would write: it has a manifest of this version and every generated
     /// file is there and the same as the program's copy. <c>dmc play</c> asks this before it starts Claude Code.
     /// </summary>

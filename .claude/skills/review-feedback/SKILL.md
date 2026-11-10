@@ -55,6 +55,7 @@ Then file an issue, or make the change, under CLAUDE.md § Git and GitHub.
 - Make each change in the one place it belongs. Do not restate a rule in several files.
 - Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.
 - If `kit/dm-rules.md` grows, look for something in it that the entries show DMC never needed, and cut or move it to a skill.
+- A change that alters what campaign files should hold (a template, or a skill's rule for a campaign file's shape) adds the next-numbered migration in `kit/migrations/` and its golden fixture under `tests/Dmc.Tests/Fixtures/migrations/NNN/`, written for a campaign its author has never seen, or says in the PR why none is needed (a new optional field, say). The format is `specs/005-campaign-migrations/contracts/migration-file.md`; `.docs/development.md` § Changing a campaign-file standard says how to build and test one. Never add a clause to a skill that repairs older files as it goes.
 - Under the entry's Worker notes, write a short note of what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges.
 - Remove any stopgap option line that an older entry names under Done in play once its fix has shipped (`dmc-record-feedback` no longer writes them).
 - Never delete an entry file: a closed status is the record.

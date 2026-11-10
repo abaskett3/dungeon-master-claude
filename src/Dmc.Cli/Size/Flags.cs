@@ -49,6 +49,12 @@ internal static partial class Flags
     /// <summary>The section of <c>dm-notes.md</c> about the player.</summary>
     const string AboutThePlayer = "About this player";
 
+    /// <summary>
+    /// The words that end the line of a flag the full save cannot act on (a file it never trims, such as a session log
+    /// near the Read cap), so that the save, told to act on every line, knows to leave this one.
+    /// </summary>
+    internal const string NotTheSaves = "(not the full save's to trim)";
+
     /// <summary>DONE or RESOLVED as a whole word, in capitals.</summary>
     [GeneratedRegex(@"\b(DONE|RESOLVED)\b")]
     private static partial Regex DoneWord();
@@ -68,11 +74,12 @@ internal static partial class Flags
             if (part.Budget == BudgetKind.Canon && part.FileTokens >= Budgets.CanonLimit)
                 flags.Add(new Flag(FlagKind.CanonOverLimit, part.Path,
                     $"{part.Path} {Fmt(part.FileTokens)} is over its {Fmt(Budgets.CanonLimit)} limit: read it in sections; "
-                    + $"a full save archives it down to {Fmt(Budgets.CanonArchiveMark)}", true));
+                    + $"a full save archives it down to {Fmt(Budgets.CanonArchiveMark)} (move about {Fmt(part.FileTokens - Budgets.CanonArchiveMark)})", true));
 
             if (part.Tokens >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines)
                 flags.Add(new Flag(FlagKind.NearCap, part.Path,
-                    $"{part.Path} {Fmt(part.Tokens)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume", trimmed));
+                    $"{part.Path} {Fmt(part.Tokens)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume"
+                    + (trimmed ? "" : $" {NotTheSaves}"), trimmed));
 
             if (Budgets.Of(part.Budget) is { } budget && part.Tokens > budget)
                 flags.Add(new Flag(FlagKind.OverBudget, part.Path, $"{part.Path} {Fmt(part.Tokens)} is over its {Fmt(budget)} budget", true));
@@ -83,8 +90,9 @@ internal static partial class Flags
                 flags.AddRange(CanonFlags(part));
 
             // Only the files the full save trims (a session log or a digest is prose nobody splits, so a flag there could never
-            // be fixed), and only their content: the templates' own guidance, in the preamble and in comments, is not counted.
-            if (trimmed && part.Kind == PartKind.Whole && Measurement.ContentLines(part.Lines).Count(l => l.Text.Length > Budgets.LongLineCharacters) is var longLines and > 0)
+            // be fixed), in the part the resume reads whatever its kind (a sheet to its history, canon's always-read sections),
+            // and only their content: the templates' own guidance, in the preamble and in comments, is not counted.
+            if (trimmed && Measurement.ContentLines(part.Lines).Count(l => l.Text.Length > Budgets.LongLineCharacters) is var longLines and > 0)
                 flags.Add(new Flag(FlagKind.LongLines, part.Path,
                     $"{part.Path}: {Count(longLines, "line")} over {Budgets.LongLineCharacters} characters", true));
         }

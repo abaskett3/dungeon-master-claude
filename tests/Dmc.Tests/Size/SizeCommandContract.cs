@@ -92,7 +92,7 @@ public abstract class SizeCommandContract
         Assert.AreEqual("", result.Stderr);
         CollectionAssert.AreEqual(new[]
         {
-            "story/canon.md 19.2k is over its 19k limit: read it in sections; a full save archives it down to 16k",
+            "story/canon.md 19.2k is over its 19k limit: read it in sections; a full save archives it down to 16k (move about 3.2k)",
             "game-state.md 4.1k is over its 4k budget",
         }, result.StdoutLines);
     }
@@ -105,6 +105,8 @@ public abstract class SizeCommandContract
         int canon = Array.FindIndex(lines, l => l.TrimStart().StartsWith("story/canon.md", StringComparison.Ordinal));
         StringAssert.Contains(lines[canon], "read in sections");
         Assert.AreEqual("    (the search for the scene's names is not counted)", lines[canon + 1]);
+        string sections = lines.Single(l => l.StartsWith("  story/canon.md: ", StringComparison.Ordinal));
+        StringAssert.StartsWith(sections, "  story/canon.md: Timeline 19.2k", "canon's own sections are listed when it is over its limit, the archive step's guide");
     }
 
     [TestMethod]

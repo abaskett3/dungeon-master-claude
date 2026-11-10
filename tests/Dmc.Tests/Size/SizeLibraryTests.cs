@@ -194,6 +194,19 @@ public sealed class SizeLibraryTests
         Assert.IsTrue(ReadSet.Mentions("at anselm's shrine", "Brother Anselm"));
         Assert.IsFalse(ReadSet.Mentions("Kibilson", "Kibil Rornson"), "a whole word only");
         Assert.IsFalse(ReadSet.Mentions("an ox", "Ox Lee"), "words under three letters are not tried");
+        Assert.IsFalse(ReadSet.Mentions("Brann, the innkeeper", "The Grey Lady"), "an article is not a name");
+        Assert.IsFalse(ReadSet.Mentions("Captain Mira at the gate", "Captain Rhys of the Watch"), "nor is a title");
+        Assert.IsTrue(ReadSet.Mentions("the Grey Lady waits", "The Grey Lady"), "the whole title still matches");
+    }
+
+    [TestMethod]
+    public void ACompanionIsNotMatchedToAnotherSheetThroughATitleTheyShare()
+    {
+        Write(_root, "character-sheets/npc-ivy.md", Sheet("Sister Ivy"));
+        Write(_root, "character-sheets/npc-maren.md", Sheet("Maren, cleric of Lathander"));
+        Write(_root, "game-state.md", GameState(["Sister Maren"]));
+        string[] sheets = [.. Paths().Where(p => p.StartsWith("character-sheets/", StringComparison.Ordinal))];
+        CollectionAssert.AreEqual(new[] { "character-sheets/npc-maren.md" }, sheets);
     }
 
     [TestMethod]
@@ -359,7 +372,8 @@ public sealed class SizeLibraryTests
         Write(_root, "story/dm-notes.md", NotesOfSize(Budgets.NearCapTokens * 4 - 1));
         Assert.IsEmpty(FlagsOf(FlagKind.NearCap), "19,999 tokens");
         Write(_root, "story/dm-notes.md", NotesOfSize(Budgets.NearCapTokens * 4));
-        Assert.AreEqual("story/dm-notes.md 20k is near the Read cap (25k): it may be cut short at resume", FlagsOf(FlagKind.NearCap).Single().Line);
+        Assert.AreEqual("story/dm-notes.md 20k is near the Read cap (25k): it may be cut short at resume", FlagsOf(FlagKind.NearCap).Single().Line,
+            "a file the save trims carries no 'not the save's' ending");
 
         Write(_root, "story/dm-notes.md", NotesOfLines(Budgets.NearCapLines - 1));
         Assert.IsEmpty(FlagsOf(FlagKind.NearCap), "1,599 lines");
@@ -374,6 +388,7 @@ public sealed class SizeLibraryTests
         var flag = FlagsOf(FlagKind.NearCap).Single();
         Assert.AreEqual("story/sessions/session-001.md", flag.Path);
         Assert.IsFalse(flag.HoldsTheSave);
+        StringAssert.EndsWith(flag.Line, Flags.NotTheSaves, "the full save is told to leave a file it never trims");
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget), "a session log has no budget");
     }
 
@@ -460,6 +475,9 @@ public sealed class SizeLibraryTests
         Assert.IsEmpty(FlagsOf(FlagKind.LongLines), "the preamble and comments are the template's guidance, and 400 characters is allowed");
         Write(_root, "story/summary.md", $"# Summary\n\n## Recent\n\n{line401}\n{line401}\n");
         Assert.AreEqual("story/summary.md: 2 lines over 400 characters", FlagsOf(FlagKind.LongLines).Single().Line);
+        Write(_root, "character-sheets/pc-a.md", "# Ada\n\n## About\n\n" + line401 + "\n\n## History\n\n" + line401 + "\n");
+        Assert.AreEqual("character-sheets/pc-a.md: 1 line over 400 characters", FlagsOf(FlagKind.LongLines).Single(f => f.Path == "character-sheets/pc-a.md").Line,
+            "a sheet read to its history is checked in the part read, not in the history");
         Write(_root, "story/sessions/session-001.md", "# Session 1\n\n## Scenes\n\n" + line401 + "\n");
         Assert.IsFalse(FlagsOf(FlagKind.LongLines).Any(f => f.Path.StartsWith("story/sessions/", StringComparison.Ordinal)), "a session log is prose nobody splits");
     }
@@ -547,6 +565,8 @@ public sealed class SizeLibraryTests
         Directory.CreateDirectory(Path.Combine(_root, "adventures", ".staging"));
         Assert.AreEqual(".staging is not a campaign (a folder starting with a dot is a staging folder)",
             Assert.Throws<DmcException>(() => SizeReport.Target(_root, ".staging")).Message);
+        foreach (string bad in new[] { "", " ", "C:", "a/b", "a\\b" })
+            Assert.AreEqual($"no campaign {bad} in adventures/", Assert.Throws<DmcException>(() => SizeReport.Target(_root, bad)).Message, $"\"{bad}\"");
         File.Delete(Path.Combine(_root, "adventures", ".active-campaign"));
         Assert.AreEqual("no active campaign: name one (dmc size NAME)", Assert.Throws<DmcException>(() => SizeReport.Target(_root, null)).Message);
     }

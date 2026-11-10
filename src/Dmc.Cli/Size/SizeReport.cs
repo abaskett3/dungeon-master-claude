@@ -50,7 +50,8 @@ internal static class SizeReport
         }
         if (name.StartsWith('.'))
             throw new DmcException($"{name} is not a campaign (a folder starting with a dot is a staging folder)");
-        if (name.IndexOfAny(['/', '\\']) >= 0 || name is ".." || !Directory.Exists(Path.Combine(adventures, name)))
+        // One plain folder name: not empty or blank, no separator, no drive (C: is a folder on Windows), not "..".
+        if (name.Trim().Length == 0 || name.IndexOfAny(['/', '\\', ':']) >= 0 || name is ".." || !Directory.Exists(Path.Combine(adventures, name)))
             throw new DmcException($"no campaign {name} in adventures/");
         return name;
     }
@@ -92,14 +93,18 @@ internal static class SizeReport
         }
         lines.Add($"  {"total".PadRight(width)} {Fmt(result.Total),6}");
 
-        var sectioned = result.Parts.Where(p => p.State == EntryState.Measured && SectionedKinds.Contains(p.Budget)
-                                                && p.Kind == PartKind.Whole && p.Sections.Count > 1).ToList();
+        // Canon's sections are those of the whole file even when it is read in sections: that is where the archive step looks.
+        var sectioned = result.Parts
+            .Where(p => p.State == EntryState.Measured && SectionedKinds.Contains(p.Budget)
+                        && (p.Kind == PartKind.Whole || p.Budget == BudgetKind.Canon))
+            .Select(p => (Part: p, Sections: p.Budget == BudgetKind.Canon ? Measurement.Sections(p.FileLines) : p.Sections.ToList()))
+            .Where(x => x.Sections.Count > 1).ToList();
         if (sectioned.Count > 0)
         {
             lines.Add("largest sections:");
-            foreach (var part in sectioned)
+            foreach (var (part, sections) in sectioned)
             {
-                var largest = part.Sections.OrderByDescending(s => s.Bytes).ToList();
+                var largest = sections.OrderByDescending(s => s.Bytes).ToList();
                 string shown = string.Join(", ", largest.Take(SectionsShown).Select(s => $"{Cut(s.Heading, HeadingWidth)} {Fmt(s.Tokens)}"));
                 string more = largest.Count > SectionsShown ? $" (+{largest.Count - SectionsShown} more)" : "";
                 lines.Add($"  {part.Path}: {shown}{more}");

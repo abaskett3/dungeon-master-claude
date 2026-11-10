@@ -72,6 +72,10 @@ public sealed class OutputBytesTests
         }
     }
 
+    /// <summary>
+    /// <c>dmc size</c>'s full report and its <c>--check</c> form, through the real process, on a fixture with a non-ASCII
+    /// name and a flag so both print: no byte-order mark, no CR, exit 0.
+    /// </summary>
     [TestMethod]
     public void TheSizeReportAndItsCheckFormArePlainUtf8WithLfLineEnds()
     {

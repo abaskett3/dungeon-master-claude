@@ -76,7 +76,21 @@ internal static partial class ReadSet
     /// <param name="File">Its file name.</param>
     /// <param name="Title">Its <c># </c> title, or the file name without <c>.md</c> when it has none.</param>
     /// <param name="Pc">True for a <c>pc-*.md</c> sheet.</param>
-    sealed record Sheet(string File, string Title, bool Pc);
+    /// <param name="Lines">The sheet's lines, read once for both its title and its measurement.</param>
+    sealed record Sheet(string File, string Title, bool Pc, List<Line> Lines);
+
+    /// <summary>
+    /// Words never matched on their own when a sheet's first or last word is tried: articles, prepositions and titles,
+    /// which a Present line or another sheet's title holds as often as the name (a "Sister Ivy" is not "Sister Maren").
+    /// </summary>
+    static readonly HashSet<string> CommonWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "the", "a", "an", "of", "and", "at", "in", "on", "to", "from", "old", "young", "little", "big",
+        "captain", "sergeant", "lieutenant", "commander", "general", "corporal", "private", "watchman", "guard",
+        "sister", "brother", "mother", "father", "aunt", "auntie", "uncle", "granny", "grandma", "grandpa",
+        "lady", "lord", "sir", "dame", "master", "mistress", "madam", "king", "queen", "prince", "princess",
+        "duke", "duchess", "baron", "baroness", "count", "countess", "elder", "high", "priest", "priestess", "doctor",
+    };
 
     /// <summary>
     /// The read set of a campaign, in the resume's order: item 1 (both player-options files), 2 (<c>game-state.md</c>),
@@ -98,7 +112,9 @@ internal static partial class ReadSet
 
         string gameStatePath = Path.Combine(root, "game-state.md");
         var gameState = File.Exists(gameStatePath) ? Measurement.ReadLines(gameStatePath) : [];
-        parts.Add(Whole(gameStatePath, "game-state.md", BudgetKind.GameState));
+        parts.Add(File.Exists(gameStatePath)
+            ? new Part("game-state.md", PartKind.Whole, EntryState.Measured, BudgetKind.GameState, gameState, null, gameState)
+            : Part.Absent("game-state.md", EntryState.Missing, BudgetKind.GameState, "missing"));
         parts.Add(Whole(Path.Combine(root, "story", "summary.md"), "story/summary.md", BudgetKind.Summary));
         parts.Add(Whole(Path.Combine(root, "story", "dm-notes.md"), "story/dm-notes.md", BudgetKind.DmNotes));
         parts.AddRange(Sheets(root, gameState));
@@ -142,9 +158,10 @@ internal static partial class ReadSet
                 // Not a sheet: the bit parts, and the history a full save moves out of a sheet (resume reads neither).
                 if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
                     continue;
-                var first = Measurement.ReadLines(Path.Combine(folder, file)).FirstOrDefault(l => l.Text.StartsWith("# ", StringComparison.Ordinal));
+                var lines = Measurement.ReadLines(Path.Combine(folder, file));
+                var first = lines.FirstOrDefault(l => l.Text.StartsWith("# ", StringComparison.Ordinal));
                 string title = first.Text is { } t ? t[2..].Trim() : Path.GetFileNameWithoutExtension(file);
-                sheets.Add(new Sheet(file, title, file.StartsWith("pc-", StringComparison.Ordinal)));
+                sheets.Add(new Sheet(file, title, file.StartsWith("pc-", StringComparison.Ordinal), lines));
             }
         }
 
@@ -156,7 +173,9 @@ internal static partial class ReadSet
         bool hasParty = Measurement.SectionLines(gameState, "Party status").Count > 0;
         foreach (string block in CompanionBlocks(gameState))
         {
+            // The best match first: the same name, then the whole title within the block, then a distinctive word of it.
             var match = sheets.FirstOrDefault(s => string.Equals(s.Title, block, StringComparison.OrdinalIgnoreCase))
+                        ?? sheets.FirstOrDefault(s => IsWholeWord(block, s.Title))
                         ?? sheets.FirstOrDefault(s => Mentions(block, s.Title));
             if (match is null)
                 parts.Add(Part.Absent($"character-sheets: {block}", EntryState.NotFound, BudgetKind.OtherSheet, "not found"));
@@ -168,7 +187,7 @@ internal static partial class ReadSet
         foreach (var npc in sheets.Where(s => !s.Pc && !chosen.Contains(s) && Mentions(scene, s.Title)))
             chosen.Add(npc);
 
-        var result = chosen.Select(s => SheetPart(folder, s)).ToList();
+        var result = chosen.Select(SheetPart).ToList();
         result.AddRange(parts);
         if (gameState.Count > 0 && (!hasParty || !gameState.Any(l => l.Text.Contains("**Present**", StringComparison.Ordinal))))
             result.Add(Part.Absent("character-sheets: companions and NPCs present", EntryState.NotFound, BudgetKind.None,
@@ -223,8 +242,9 @@ internal static partial class ReadSet
 
     /// <summary>
     /// Whether a text names a sheet's character: its whole title, its first word or its last word (a surname), each as a
-    /// whole word and ignoring case. Words shorter than three letters are not tried. A text that names someone off scene
-    /// also matches, which counts a sheet the resume may not read: the measurement errs toward a flag, not away from one.
+    /// whole word and ignoring case. Words shorter than three letters and <see cref="CommonWords"/> are not tried alone. A
+    /// text that names someone off scene also matches, which counts a sheet the resume may not read: the measurement errs
+    /// toward a flag, not away from one.
     /// </summary>
     /// <param name="text">The text to search.</param>
     /// <param name="title">The sheet's title.</param>
@@ -239,16 +259,23 @@ internal static partial class ReadSet
             tries.Add(words[0]);
             tries.Add(words[^1]);
         }
-        return tries.Select(w => w.Trim(',', '.', ';', ':', '(', ')', '"', '\'')).Where(w => w.Length >= 3)
-            .Any(w => Regex.IsMatch(text, $@"(?<!\w){Regex.Escape(w)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
+        return IsWholeWord(text, title)
+               || tries.Skip(1).Select(w => w.Trim(',', '.', ';', ':', '(', ')', '"', '\''))
+                   .Where(w => w.Length >= 3 && !CommonWords.Contains(w))
+                   .Any(w => IsWholeWord(text, w));
     }
 
+    /// <summary>Whether a text holds a word or phrase as a whole word (not inside a longer one), ignoring case.</summary>
+    /// <param name="text">The text to search.</param>
+    /// <param name="word">The word or phrase.</param>
+    static bool IsWholeWord(string text, string word) =>
+        word.Length > 0 && Regex.IsMatch(text, $@"(?<!\w){Regex.Escape(word)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     /// <summary>A sheet down to its history: the lines before its last <c>## </c> heading when that is a history heading; the whole sheet otherwise (history in the middle is read whole).</summary>
-    /// <param name="folder">The <c>character-sheets</c> folder.</param>
-    /// <param name="sheet">The sheet.</param>
-    static Part SheetPart(string folder, Sheet sheet)
+    /// <param name="sheet">The sheet, with its lines.</param>
+    static Part SheetPart(Sheet sheet)
     {
-        var lines = Measurement.ReadLines(Path.Combine(folder, sheet.File));
+        var lines = sheet.Lines;
         int last = -1;
         for (int i = 0; i < lines.Count; i++)
             if (Measurement.IsSectionHeading(lines[i].Text))

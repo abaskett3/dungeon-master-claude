@@ -84,18 +84,24 @@ One line per flag, the same wording as the full report's flag lines, at most 12;
 because the resume acts on it before reading:
 
 ```
-story/canon.md 21.2k is over its 19k limit: read it in sections; a full save archives it down to 16k
+story/canon.md 21.2k is over its 19k limit: read it in sections; a full save archives it down to 16k (move about 5.2k)
 story/dm-notes.md 20.4k is near the Read cap (25k): it may be cut short at resume
 ```
+
+A line about a file the full save never trims (a session log or module file near the cap) ends `(not the full save's to trim)`.
 
 How the prompts act on the lines:
 
 | Line | Resume (`dmc-resume-campaign` step 2) | Full save (`dmc-campaign-full-save` step 7) |
 |---|---|---|
-| canon over its limit | reads canon in sections (item 7) | archives down to the mark (step 4), runs the check again |
+| canon over its limit | reads canon in sections (item 7) | archives at least the amount the line names, in one go (step 4), runs the check again |
 | near the Read cap | reads that file in parts if it comes back cut; tells the player in one line out of character | trims the file |
 | over its budget, a section over its budget | ignored | trims dead text; or names it in the step 8 report with why it stays |
 | a bloat flag | ignored | fixes it; or names it in the step 8 report with why it stays |
+
+## Stability
+
+Issue #172's migration (`specs/005-campaign-migrations/`) runs `dmc size NAME --check` after a migration and reads its lines. It merges after this feature and adds that step itself. The subcommand's name, `--check`, its silence when all is well and the wording of its lines are therefore a contract with it: a change to any of them is made with that feature in mind and said in the PR.
 
 ## What the prompts may write
 

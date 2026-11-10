@@ -287,6 +287,10 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
   return). A long file of live facts is legitimate, as a long canon is today.
 - **FR-016**: The command MUST give its per-file measurements in a form the campaign migration of issue #172 can use
   for its size verification, without that feature depending on this one or this one on it.
+- **FR-016a**: If issue #172's campaign migration (`specs/005-campaign-migrations/`) has merged before this feature's
+  PR, this PR MUST add the `dmc size` step to `kit/skills/dmc-migrate-campaign/SKILL.md`, as that feature's decision
+  C1 requires, and move the migration's size check from line counts against the old targets to `dmc size`. If this
+  PR merges first, the migration's PR does it instead.
 - **FR-017**: The command MUST be tested on fixture campaigns built from the templates (real campaigns are git-ignored),
   on every platform CI builds, covering each rule of FR-002, each flag of FR-006 to FR-009 and each failure.
 - **FR-018**: The documentation MUST change in the same pull request: `.docs/campaign-files.md` and

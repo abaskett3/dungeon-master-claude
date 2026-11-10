@@ -362,6 +362,11 @@ about size, a resume of a campaign near the cap says one line, and a full save n
 - [ ] T048 Run quickstart § 2 by hand on a scratch DMC folder and § 3 on the long campaign (`dmc size --folder
   D:\Claude\dmc rorns-landing`, read-only), and record the report's total, the dm-notes and canon lines and the
   flags in the PR description (SC-003, SC-004, SC-008).
+- [ ] T050 Before opening the PR, check whether issue #172's migration has merged (`git log origin/main --
+  kit/skills/dmc-migrate-campaign/SKILL.md`). If it has, add the `dmc size <campaign> --check` step to that skill as
+  its decision C1 requires, move its size check from line counts against the old targets to `dmc size`, rerun T031
+  (which would otherwise fail on any line target it states), and say so in the PR. If it has not, say in the PR that
+  the migration's PR must add the step (FR-016a).
 - [ ] T049 Write the PR description per `CLAUDE.md` § Git and GitHub: what changed, why (the PR #173 review), the
   sources (spec, research, issue #174), how it was tested (T047, T048), the documents changed, `Part of #174` or
   `Closes #174`, and a migration line: none needed, because the change alters when canon is archived and what the save

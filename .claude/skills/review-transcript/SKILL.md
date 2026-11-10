@@ -53,6 +53,7 @@ Check `git log` for changes to the prompts made after the session. Do not record
 - A file edited many times in one reply, or a file that keeps growing (compare its size in the transcript with its template). Bookkeeping that costs more calls than the play it records.
 - Output tokens far above the visible text and tool calls: that is reasoning effort, a model setting and not a prompt, but report it.
 - How much of the starting context is the toolkit's own text (`CLAUDE.md`, loaded skills) and how much is the harness.
+- What a resume of the campaign reads now: run `dmc size --folder <dmc folder> <campaign>` and put its total and flags, with the date measured, in the context entry. It measures the files as they are today, not as they were when each session was played, so compare it with the context sizes in the digest rather than reading it as theirs.
 - Long replies to short questions, and blocks repeated unchanged from one reply to the next.
 
 **Consistency**

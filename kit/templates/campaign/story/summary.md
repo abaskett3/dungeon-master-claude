@@ -1,6 +1,6 @@
 # The story so far
 
-A briefing for a DM taking over this campaign. Rewritten at every full save and kept under about 600 words: recent events in some detail, older arcs compressed to a few sentences each.
+A briefing for a DM taking over this campaign. Rewritten at every full save and kept within the size `dmc size` checks: recent events in some detail, older arcs compressed to a few sentences each.
 
 ## Premise
 

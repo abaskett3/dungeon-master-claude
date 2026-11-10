@@ -126,7 +126,8 @@ internal static partial class ReadSet
     /// The sheets the resume reads (step 2.5): every PC's; each companion's, a <c>### </c> block under Party status other
     /// than <see cref="NotCompanions"/>; and each NPC's whose name is in the Scene block's Present line or the Combat
     /// tracker. Each is read down to its history, and listed once. A companion block with no sheet is
-    /// <see cref="EntryState.NotFound"/>. <c>minor-npcs.md</c> is never read.
+    /// <see cref="EntryState.NotFound"/>. <c>minor-npcs.md</c> and the <c>&lt;sheet&gt;-history.md</c> files the full save
+    /// moves old history to are never read.
     /// </summary>
     /// <param name="root">The campaign folder.</param>
     /// <param name="gameState">The lines of <c>game-state.md</c> (empty when it is missing).</param>
@@ -138,7 +139,8 @@ internal static partial class ReadSet
         {
             foreach (string file in Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal))
             {
-                if (file == "minor-npcs.md")
+                // Not a sheet: the bit parts, and the history a full save moves out of a sheet (resume reads neither).
+                if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
                     continue;
                 var first = Measurement.ReadLines(Path.Combine(folder, file)).FirstOrDefault(l => l.Text.StartsWith("# ", StringComparison.Ordinal));
                 string title = first.Text is { } t ? t[2..].Trim() : Path.GetFileNameWithoutExtension(file);

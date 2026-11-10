@@ -144,7 +144,7 @@ public sealed class SizeLibraryTests
     }
 
     [TestMethod]
-    public void ArchivesOlderLogsMinorNpcsAndMapsAreNeverListed()
+    public void ArchivesOlderLogsMinorNpcsMovedHistoryAndMapsAreNeverListed()
     {
         Write(_root, "story/canon-archive.md", "# Archive\n");
         Write(_root, "story/dm-notes-archive.md", "# Archive\n");
@@ -152,12 +152,16 @@ public sealed class SizeLibraryTests
         Write(_root, "story/sessions/session-002.md", LogOf(1));
         Write(_root, "character-sheets/minor-npcs.md", "# Minor NPCs\n\n- Bob, a farmer\n");
         Write(_root, "maps/live.json", "{}");
+        Write(_root, "character-sheets/npc-kibil-rornson.md", Sheet("Kibil Rornson"));
+        Write(_root, "character-sheets/npc-kibil-rornson-history.md", "# Kibil Rornson: history\n\n- s1: met\n");
+        Write(_root, "game-state.md", GameState(["Kibil Rornson"], present: "Kibil"));
         string[] paths = Paths();
         CollectionAssert.DoesNotContain(paths, "story/canon-archive.md");
         CollectionAssert.DoesNotContain(paths, "story/dm-notes-archive.md");
         CollectionAssert.DoesNotContain(paths, "story/sessions/session-001.md");
         CollectionAssert.Contains(paths, "story/sessions/session-002.md");
-        Assert.IsFalse(paths.Any(p => p.Contains("minor-npcs") || p.StartsWith("maps/", StringComparison.Ordinal)));
+        Assert.IsFalse(paths.Any(p => p.Contains("minor-npcs") || p.Contains("-history.md") || p.StartsWith("maps/", StringComparison.Ordinal)));
+        CollectionAssert.Contains(paths, "character-sheets/npc-kibil-rornson.md");
     }
 
     // ---------- the sheets ----------

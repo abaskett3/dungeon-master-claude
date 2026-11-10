@@ -126,6 +126,14 @@ dmc campaign import exports/the-silver-egg-<date and time>.zip --as silver-egg-c
 
 `export` writes to `exports/` in your DMC folder, `import` never replaces a campaign, and `show` writes nothing. The export holds spoilers (`story/dm-notes.md`), so do not send it to someone who will play the campaign. All options and messages are in [dmc-reference.md](.docs/dmc-reference.md#campaign), and the guide has [the same, and how to move campaigns from a repository checkout](.docs/user-guide.md#moving-campaigns-from-a-repository-checkout).
 
+### How big your files are
+
+`dmc size` shows what DMC reads when a session starts, file by file, in estimated tokens, with the largest sections and anything to trim. It changes nothing; the next full save trims what it flags. DMC runs `dmc size --check` itself at every resume and full save, which prints nothing when all is well. See [dmc-reference.md](.docs/dmc-reference.md#size).
+
+```
+dmc size the-silver-egg
+```
+
 ### Long sessions
 
 Every message re-reads the whole conversation, so a long one uses more of your usage limit with each message, and details blur as it grows. DMC therefore keeps sessions short and reloads from the files, which are always up to date.

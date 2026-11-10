@@ -360,6 +360,36 @@ to play it, start a session and ask DMC to resume silver-egg-copy
 
 If cleaning up after a failure fails, one more line on stderr names the leftover staging folder (`dmc campaign: could not delete <folder>; it is safe to delete.`), as `dmc pdf` does; a successful import whose staging folder cannot be deleted says `dmc campaign: done, but could not delete <folder>; it is safe to delete.`
 
+## size
+
+Added in the next release.
+
+```
+dmc size [NAME] [--check] [--folder PATH]
+```
+
+Measures what a resume of a campaign reads, in estimated tokens (bytes ÷ 4): each file `dmc-resume-campaign` step 2 reads, chosen by that step's rules, and the part of it the resume reads. It never writes, moves or deletes anything.
+
+| Argument | Meaning |
+|---|---|
+| `NAME` | A campaign folder under `adventures/`. Default: the active campaign (`adventures/.active-campaign`). A name starting with a dot is a staging folder and is refused. |
+| `--check` | The form DMC runs in play: print only what to act on, one line each, at most 12 (the twelfth then says how many more), and nothing when all is well. |
+| `--folder` | The DMC folder. Default: the one `dmc folder` prints. `review-transcript` passes it, since it runs in this repository. |
+
+**What it reads.** Both player-options files, `game-state.md`, `story/summary.md`, `story/dm-notes.md`; every PC's sheet, each companion's (a `###` block under Party status other than "With the party, not companions") and each NPC's whose title, first or last word is in the Present line or the Combat tracker, each down to its history when that is its last section (not `minor-npcs.md` or a `-history.md` file); the latest `story/sessions/session-NNN.md` from its third-last scene, or whole when it has fewer than three or the last full save does not cover it; `story/canon.md`, whole under its limit and otherwise only its always-read sections (the search the resume also does is not counted); and for a module campaign `module-progress.md`, the module's `index.md` and the digest section it names. A missing file is listed and counts nothing. A toolkit test keeps these rules in step with the skill.
+
+**What it flags.** A part read of 20,000 estimated tokens or 1,600 lines (near the Read tool's cap); a file over its budget, or a section of `dm-notes.md` over its own; canon over its limit; more than one Last played line or a Mix tracker; Opposition rows with none left alive; DONE or RESOLVED lines outside the Arc plan; a Prices, debts and promises section over 3,000; and lines over 400 characters in a trimmed file's content. The budgets are in [campaign-files.md](campaign-files.md#how-big-the-files-may-be).
+
+```
+$ dmc size --check
+story/canon.md 21.2k is over its 19k limit: read it in sections; a full save archives it down to 16k (move about 5.2k)
+story/dm-notes.md 20.5k is near the Read cap (25k): it may be cut short at resume
+story/dm-notes.md 20.5k is over its 10k budget
+story/dm-notes.md Opposition: 4 rows with none left alive
+```
+
+The full report has a header line, one line per file (path, tokens, budget or limit, what is read), a `total` line, `largest sections:` (at most four per file read whole, `(+N more)`), and `flags:` with the same lines as `--check` or `nothing to flag`; about 40 lines for a long campaign. Tokens are shown below 1,000 as a whole number and above as thousands with one decimal, rounded up. A line about a file the full save never trims (a session log near the cap) ends `(not the full save's to trim)`, and the full save leaves it. The largest sections of canon are those of the whole file, even when it is read in sections. A sheet's name is matched on its whole title, or on its first or last word unless that is an article, a preposition or a title such as Captain or Sister. The name and the `--check` lines are relied on by issue #172's migration, which runs `dmc size NAME --check` after migrating: a change to them is a change to that contract too. A measured campaign exits 0 whatever it flags; a failure is one line and exit 1 (`no active campaign: name one (dmc size NAME)`, `no campaign <NAME> in adventures/`, `<path> is not a DMC folder`, `cannot read <path>: <reason>`), a usage mistake exit 2.
+
 ## context-check
 
 ```

@@ -3,8 +3,10 @@
     "allow": [
       "Bash(dmc folder)",
       "Bash(dmc digest *)",
+      "Bash(dmc size *)",
       "PowerShell(dmc folder)",
-      "PowerShell(dmc digest *)"
+      "PowerShell(dmc digest *)",
+      "PowerShell(dmc size *)"
     ]
   }
 }

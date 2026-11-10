@@ -18,6 +18,7 @@ public static class CommandTable
         new PdfCommand(),
         new DigestCommand(),
         new CampaignCommand(),
+        new SizeCommand(),
         new PlayCommand(),
         new InstallCommand(),
         new FolderCommand(),

@@ -55,15 +55,33 @@ adventures/
 | `character-sheets/pc-<name>.md` | Abilities, combat numbers and attacks, features, spellcasting, inventory, story, relationships, notes | On level-up, new items, relationships or goals | `templates/pc-sheet.md` | Yes, every PC |
 | `character-sheets/npc-<name>.md` | How to play them (voice note, the names they use for people and places), what they know, secrets, relationships, history with the PC, stat block with every attack's reach or range | When an NPC is introduced, recurs or changes | `templates/npc-sheet.md`; the `character-sheet-update` skill gives a companion the full `templates/pc-sheet.md` | Companions, and NPCs in the current scene |
 | `character-sheets/minor-npcs.md` | One line each: name, role, place, a trait, attitude to the PC | When a named bit part appears | `templates/campaign/character-sheets/minor-npcs.md` | No |
-| `story/summary.md` | Premise, earlier arcs, recent events, where things stand; under about 600 words | At every full save | `templates/campaign/story/summary.md` | Yes |
-| `story/canon.md` | Rulings, people, places, factions, lore, items, prices and promises, standing orders not in play, timeline (with one line per finished fight: what the characters did or said): one line per fact, with the session | The moment a fact is established; pruned at full saves | `templates/campaign/story/canon.md` | Whole under about 230 lines; past that, the Rulings, Prices, debts and promises, and a search for the scene's names, places and threads |
-| `story/canon-archive.md` | Facts moved out of `canon.md` once their subject can no longer come up (rulings never move) | At every full save that finds canon past about 230 lines, until it is under about 200 | none | No; searched when a subject returns |
+| `story/summary.md` | Premise, earlier arcs, recent events, where things stand; within its budget (below) | At every full save | `templates/campaign/story/summary.md` | Yes |
+| `story/canon.md` | Rulings, people, places, factions, lore, items, prices and promises, standing orders not in play, timeline (with one line per finished fight: what the characters did or said): one line per fact, with the session | The moment a fact is established; pruned at full saves | `templates/campaign/story/canon.md` | Whole under its limit (below); past that, the Rulings, Prices, debts and promises, and a search for the scene's names, places and threads |
+| `story/canon-archive.md` | Facts moved out of `canon.md` once their subject can no longer come up (rulings never move) | At every full save where `dmc size` finds canon over its limit, until it is under the archive mark (below) | none | No; searched when a subject returns |
 | `story/dm-notes.md` | The central conflict, the Arc plan (stages, finished ones cut to a line; a "Last played" line overwritten at each save; character arcs, side quests, party gaps, milestones and income), antagonists, the Opposition table (only enemies the party may still meet; a finished fight's rows move to the archive), secrets, open threads, foreshadowing, ideas, notes about what this player enjoys | When plans or threads change | `templates/campaign/story/dm-notes.md` | Yes |
 | `story/dm-notes-archive.md` | Closed threads, and the Opposition rows and stat blocks of finished fights (a rewind restores them) | At a full save | none | No; searched when a subject returns |
 | `character-sheets/<name>-history.md` | Dated history moved off a sheet by the full save once it is older than the current stretch of the story. Resume does not read it | When the full save trims a sheet | |
 | `story/sessions/session-NNN.md` | Each scene of a session (title, location, in-world time, beats) and a closing section. Every resume starts a new session, so one log is one sitting; scenes number from 1 in each, cited `sN.M` | At the end of every scene | `templates/session-log.md` | The last three scenes of the most recent one, or all of it after an unsaved session |
 | `maps/*.json` | See [The map files](#the-map-files) | When a reusable map is drawn; `live.json` whenever anyone moves | none | The map of the current location |
 | `module-progress.md` | Current position and the digest section to read next, chapter status, areas, encounters with the scaling used, module NPCs, treasure and clues, scripted events, deviations from the module | Whenever the party's position or the module's state changes | `templates/module-progress.md` | Yes, if present |
+
+### How big the files may be
+
+Every file the resume reads that the full save trims has a size budget, in estimated tokens (bytes ÷ 4), and canon has a limit that decides how the resume reads it. `dmc size` measures them (see [dmc-reference.md](dmc-reference.md#size)); the resume runs `dmc size <campaign> --check` once before it reads, and the full save's consistency check runs it and is not complete until it prints nothing or its report says why each line stays. The numbers are set in one place, `src/Dmc.Cli/Size/Budgets.cs`, and a toolkit test keeps this table equal to it; the reasons are in [decisions.md](decisions.md), "Size rules are measured in tokens by `dmc size`".
+
+| What | Budget (estimated tokens) |
+|---|---|
+| `game-state.md` | 4,000 |
+| `story/dm-notes.md` | 10,000 |
+| its About this player section | 2,000 |
+| its Arc plan section | 1,500 |
+| `story/summary.md` | 3,000 |
+| a PC's sheet, down to its history | 6,000 |
+| any other sheet, down to its history | 4,000 |
+| `story/canon.md`: read whole below | 19,000 |
+| `story/canon.md`: a full save archives down to | 16,000 |
+
+The player options, the session log and the module files have no budget: the full save does not trim them. Any file the resume reads is flagged when it reaches 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call. `dmc size` also flags what the templates say should not stay in a file read whole: more than one Last played line or a per-session Mix tracker, Opposition rows with none left alive, DONE or RESOLVED lines outside the Arc plan, a Prices, debts and promises section over 3,000, and lines over 400 characters.
 
 Spoilers: the player can read and edit any file, but `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md`, NPC sheets (their secrets) and anything under `modules/` give away what is ahead.
 

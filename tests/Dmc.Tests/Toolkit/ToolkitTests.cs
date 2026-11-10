@@ -4,6 +4,7 @@ using Dmc.Campaign;
 using Dmc.Commands;
 using Dmc.Digest;
 using Dmc.Kit;
+using Dmc.Size;
 using Dmc.Tests.Distribution;
 using Dmc.Tests.Support;
 
@@ -1082,5 +1083,99 @@ public sealed partial class ToolkitTests
         Assert.IsFalse(File.Exists(Path.Combine(TestEnv.Root, "play.ps1")));
         Assert.IsFalse(File.Exists(Path.Combine(TestEnv.Root, "play.sh")));
         CollectionAssert.AreEqual(new[] { "--model", "sonnet", "--effort", "high" }, PlayCommand.FixedArguments.ToArray());
+    }
+
+    // ---------- dmc size and the size rules ----------
+
+    /// <summary>The text of one numbered section (<c>## N. ...</c>) of a skill, up to the next numbered section.</summary>
+    /// <param name="file">The skill, relative to the repository root.</param>
+    /// <param name="number">The section's number.</param>
+    static string SkillSection(string file, int number)
+    {
+        string text = Read(file);
+        int start = text.IndexOf($"\n## {number}.", StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(0, start, $"{file} has no section {number}");
+        int end = text.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        return end < 0 ? text[start..] : text[start..end];
+    }
+
+    /// <summary>
+    /// <c>dmc size</c> follows the read rules of <c>dmc-resume-campaign</c> § 2 in its own code (<c>ReadSet</c>); every marker
+    /// that code relies on must still be in § 2 word for word, so a change to the rules fails here until the code follows.
+    /// </summary>
+    [TestMethod]
+    public void ResumeStepTwoStillHoldsEveryMarkerDmcSizeReads()
+    {
+        string section = SkillSection("kit/skills/dmc-resume-campaign/SKILL.md", 2);
+        foreach (string marker in ReadSet.Markers)
+            StringAssert.Contains(section, marker, $"dmc-resume-campaign § 2 no longer says \"{marker}\", which dmc size's ReadSet relies on");
+    }
+
+    /// <summary>Canon's limit is measured in tokens by <c>dmc size</c>: no kit prompt counts canon's lines any more.</summary>
+    [TestMethod]
+    public void NoKitRuleCountsCanonInLines()
+    {
+        foreach (string file in KitPrompts())
+        {
+            string text = Read(file);
+            Assert.DoesNotContain("230", text, $"{file} still states the old 230-line canon limit");
+            Assert.DoesNotContain("pattern `^`, count mode", text, $"{file} still counts lines with Grep");
+        }
+    }
+
+    /// <summary>A size target written in lines or words.</summary>
+    [GeneratedRegex(@"about \d+ (lines|words)", RegexOptions.IgnoreCase)]
+    private static partial Regex LineOrWordTarget();
+
+    /// <summary>Every size rule is measured the same way, in tokens by <c>dmc size</c>: no kit prompt states one in lines or words (SC-006).</summary>
+    [TestMethod]
+    public void NoSizeRuleInTheKitIsInLinesOrWords()
+    {
+        foreach (string file in KitPrompts())
+        {
+            var match = LineOrWordTarget().Match(Read(file));
+            Assert.IsFalse(match.Success, $"{file} states a size in lines or words (\"{match.Value}\"): name the check dmc size makes instead");
+        }
+    }
+
+    /// <summary>The resume and the full save run the play form of <c>dmc size</c>, and <c>review-transcript</c> the full report of a DMC folder.</summary>
+    [TestMethod]
+    public void TheResumeAndTheFullSaveRunDmcSizeCheck()
+    {
+        StringAssert.Contains(SkillSection("kit/skills/dmc-resume-campaign/SKILL.md", 2), "`dmc size <campaign> --check`");
+        StringAssert.Contains(SkillSection("kit/skills/dmc-campaign-full-save/SKILL.md", 7), "`dmc size <campaign> --check`");
+        StringAssert.Contains(Read(".claude/skills/review-transcript/SKILL.md"), "dmc size --folder");
+    }
+
+    /// <summary>
+    /// The budgets live in <c>Budgets</c>; <c>.docs/campaign-files.md</c> lists them for readers and the reference repeats the
+    /// thresholds, so this keeps both copies equal to the code (a number changed in one place only fails here).
+    /// </summary>
+    [TestMethod]
+    public void TheDocumentedBudgetsEqualTheCode()
+    {
+        static string N(int value) => value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        string files = Read(".docs/campaign-files.md");
+        (string What, int Value)[] rows =
+        [
+            ("`game-state.md`", Budgets.GameState),
+            ("`story/dm-notes.md`", Budgets.DmNotes),
+            ("its About this player section", Budgets.DmNotesAboutThePlayer),
+            ("its Arc plan section", Budgets.DmNotesArcPlan),
+            ("`story/summary.md`", Budgets.Summary),
+            ("a PC's sheet, down to its history", Budgets.PcSheet),
+            ("any other sheet, down to its history", Budgets.OtherSheet),
+            ("`story/canon.md`: read whole below", Budgets.CanonLimit),
+            ("`story/canon.md`: a full save archives down to", Budgets.CanonArchiveMark),
+        ];
+        foreach (var (what, value) in rows)
+            StringAssert.Contains(files, $"| {what} | {N(value)} |", $"campaign-files.md must list {what} at {N(value)}, as Budgets does");
+        foreach (string doc in new[] { ".docs/campaign-files.md", ".docs/dmc-reference.md" })
+        {
+            string text = Read(doc);
+            StringAssert.Contains(text, $"{N(Budgets.NearCapTokens)} estimated tokens or {N(Budgets.NearCapLines)} lines", doc);
+            StringAssert.Contains(text, $"Prices, debts and promises section over {N(Budgets.CanonPricesSection)}", doc);
+            StringAssert.Contains(text, $"lines over {Budgets.LongLineCharacters} characters", doc);
+        }
     }
 }

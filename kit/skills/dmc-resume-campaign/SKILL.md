@@ -15,7 +15,7 @@ Use the campaign the player named. Otherwise read `adventures/.active-campaign`.
 
 Open each file with the Read tool, one call per file (several calls can go in one message). Do not join files together with a shell command: output over a few thousand words is cut to a short preview, and you would resume without having read your own notes. If any read comes back shortened, read that file again in parts before going on.
 
-1. `adventures/player-options.md` (the player's general preferences; create it from `templates/player-options.md` if missing), then the campaign's own `player-options.md`, which overrides it.
+1. `adventures/player-options.md` (the player's general preferences; create it from `templates/player-options.md` if missing), then the campaign's own `player-options.md`, which overrides it. If its Predecessor line names a folder that is not in `adventures/`, tell the player in a line that the earlier campaign's files are missing and facts from it cannot be checked.
 2. `game-state.md`: where things stand right now.
 3. `story/summary.md`: the story so far.
 4. `story/dm-notes.md`: your plans, secrets and open threads.

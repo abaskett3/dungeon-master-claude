@@ -17,7 +17,7 @@ name: Release
 # Every third-party action is pinned to a full commit SHA, with its version in a comment.
 #
 # Triggers: a pushed tag dmc-v*, which releases; a pull request that touches this file, .github/release/, tools/,
-# src/Dmc.Cli/Dmc.Cli.csproj, or one of the build settings every release build uses (Directory.Build.props,
+# kit/ (what dmc install writes into a DMC folder, which the build job checks file by file), src/Dmc.Cli/Dmc.Cli.csproj, or one of the build settings every release build uses (Directory.Build.props,
 # Directory.Packages.props, global.json), and a manual run (workflow_dispatch), both dry runs.
 #
 # An archive holds exactly dmc and its native libraries: the pack step copies only the program and the *.dll and *.so
@@ -32,6 +32,7 @@ on:
       - .github/workflows/release.yml
       - .github/release/**
       - tools/**
+      - kit/**
       - src/Dmc.Cli/Dmc.Cli.csproj
       - Directory.Build.props
       - Directory.Packages.props
@@ -209,8 +210,10 @@ jobs:
             for d in adventures feedback modules rules; do
               { [ -d "$folder/$d" ] && [ -z "$(ls -A "$folder/$d")" ]; } || { echo "::error::$installer: $d/ is not an empty folder"; exit 1; }
             done
+            # migrations/ is generated too (kit/migrations/, issue #172): it must hold at least one migration.
+            ls "$folder"/migrations/[0-9][0-9][0-9]-*.md > /dev/null 2>&1 || { echo "::error::$installer: migrations/ holds no migration"; exit 1; }
             listing="$(ls -A "$folder" | LC_ALL=C sort | tr '\n' ' ')"
-            if [ "$listing" != ".claude .dmc CLAUDE.md adventures feedback modules rules templates " ]; then
+            if [ "$listing" != ".claude .dmc CLAUDE.md adventures feedback migrations modules rules templates " ]; then
               echo "::error::$installer: the DMC folder holds '$listing'"
               exit 1
             fi

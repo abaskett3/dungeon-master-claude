@@ -100,7 +100,7 @@ Printed by `verify`; not stored. Fields: backup used, pending migrations, units 
 
 A named function `(old campaign, new campaign, accounting) -> list of failure lines`. Registered in
 `MigrationChecks`. Initial set (R7): `sheets-end-with-history` (002), `npc-sheets-have-names-line` (003),
-`no-dead-opposition-rows` and `fights-have-timeline` (004).
+`no-dead-opposition-rows`, `fights-have-timeline` and `one-last-played-line` (004).
 
 ## Fixture
 

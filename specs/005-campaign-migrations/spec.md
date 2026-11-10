@@ -27,9 +27,10 @@ standard for three files that resume reads whole. On the maintainer's one long c
 hold about 12k tokens of material the new rules remove:
 
 - **`story/dm-notes.md`** (94k bytes, at the Read tool's per-call cap, so it was truncated at resume): finished
-  fights' Opposition rows are deleted after each fight's story moves to one canon Timeline line; the per-session Mix
-  tracker becomes one overwritten line; overtaken plans and finished Arc plan beats go; "About this player" keeps
-  only what the player options do not say.
+  fights' Opposition rows move to `story/dm-notes-archive.md` (where a rewind can restore them) after each fight's
+  story moves to one canon Timeline line; closed threads move there too; the per-session Mix tracker becomes one
+  overwritten line; overtaken plans and finished Arc plan beats go; "About this player" keeps only what the player
+  options do not say.
 - **`game-state.md`** (27.6k bytes against a 100-line target): history leaves the Scene block, and standing orders
   that are not in play move to canon.
 - **the campaign's `player-options.md`**: a sequel gains a Predecessor line naming the earlier campaign's folder.
@@ -139,10 +140,11 @@ sheet without a "Names they use" line, and a sheet with history in the middle. C
 **Acceptance Scenarios**:
 
 1. **Given** a finished fight with an Opposition row, **When** the migration runs, **Then** the fight's story is
-   written as a canon Timeline line with its session and scene reference **before** its row is deleted, so a stop
-   at any moment never loses it.
+   written as a canon Timeline line with its session and scene reference **before** its row moves, with its stat
+   blocks, to `story/dm-notes-archive.md`, so a stop at any moment never loses it and a rewind can restore it.
 2. **Given** the migrated `dm-notes.md`, **When** it is checked, **Then** no finished fight keeps an Opposition row,
-   every finished fight has a Timeline line, and no Opposition row remains for a fight that is not alive.
+   every finished fight's row is in `story/dm-notes-archive.md` and has a Timeline line, no Opposition row remains
+   for a fight that is not alive, and closed threads have moved to `story/dm-notes-archive.md`.
 3. **Given** a per-session Mix tracker, overtaken plans and finished Arc beats, **When** the migration runs, **Then**
    the tracker is one overwritten line and the overtaken and finished items are gone from the resume file.
 4. **Given** "About this player" notes that repeat the player options, **When** the migration runs, **Then** only
@@ -250,7 +252,8 @@ content, that the campaign is reported as behind, and that the migration then br
   recorded as current until the player resolves it.
 - **Verification fails after migrating.** DMC tells the player which check failed, that the backup is untouched,
   and offers to revert; the campaign is not recorded as current, and play waits for the player's choice (FR-009c).
-- **Content was reworded, not just moved** (a fight's Opposition row becomes a one-line Timeline entry). Verification
+- **Content was reworded, not just moved** (a standing order rewritten as a canon line, a Scene block's history
+  summed up). Verification
   cannot match it by text alone: the migration says how the old unit maps to the new one, and a unit that cannot be
   matched is shown to the player, not passed silently.
 - **The backup is damaged or unreadable.** The step stops before migrating and offers to take another.

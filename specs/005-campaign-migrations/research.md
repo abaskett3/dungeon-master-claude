@@ -120,6 +120,14 @@ rest settle what the spec left to the plan. The code facts were read on 2026-11-
   first because it is smaller and nearer done, and so that the live run on the long campaign (T050) measures with
   `dmc size`. If 006 is not merged when this PR is otherwise ready, it is not held back: the PR leaves the step out
   and says so, and 006 adds it.
+- **The call (006's final form, 2026-11-10).** The step runs `dmc size NAME --check`. It prints nothing and exits 0
+  when all is well; otherwise one line per item, at most 12, the twelfth reading `... and N more: run dmc size NAME`.
+  The lines name a file (and a section) with its size against a budget, the Read cap or canon's limit, or a likely
+  leftover (an Opposition row with none alive, a Mix tracker, lines marked DONE or RESOLVED, lines over 400
+  characters). The skill says each line to the player as something the next full save trims, never as a migration
+  failure: verification has already passed. A failure (one line on stderr, exit 1) is said in one line and does not
+  undo the migration. The skill quotes no budget or line form, so 006's wording has one home. On Rorn's Landing
+  before migrating, the check printed 12 lines.
 - **Rationale.** The line targets live in `dmc-campaign-full-save`, and spec 006 is moving them to token budgets; a
   copy in a migration's front matter would be a second home (Constitution III) and would go stale when 006 lands. A
   migration cannot shrink a file below the live material it holds without dropping something still true, which would
@@ -134,14 +142,22 @@ rest settle what the spec left to the plan. The code facts were read on 2026-11-
   fails verification whatever DMC wrote (FR-010). Migration 002 names `sheets-end-with-history` (the last `## `
   section of every `character-sheets/pc-*.md` and `npc-*.md` is `## History`, or the older `## Notes` / `## History
   with the PC`); 003 names `npc-sheets-have-names-line` (every `character-sheets/npc-*.md` has the template's
-  "Names they use" line). Migration 004 names two checks, implemented in `Campaign/MigrationChecks.cs`:
+  "Names they use" line). Migration 004 names three checks, implemented in `Campaign/MigrationChecks.cs`:
   `no-dead-opposition-rows` (in `story/dm-notes.md`, under `## Opposition`, no table row whose second column starts
-  `0 /`, the "alive / started" form of the template) and `fights-have-timeline` (every old row that was dead in the
-  backup and is unaccounted has a `reworded` accounting entry whose anchor is a line under `## Timeline` in
-  `story/canon.md` that carries an `sN.M` reference). A check is a small named function; adding one is a code change
-  with its own test, so a migration can only name checks that exist (a test checks that).
-- **Rationale.** These are the two checks the issue names. Both rest on formats the templates already fix, not on
-  prose.
+  `0 /` or `0/`, the "alive / started" form of the template); `fights-have-timeline` (every Opposition row that was
+  dead in the backup is a row of `story/dm-notes-archive.md`, and a line under `## Timeline` in `story/canon.md`
+  carries an `sN.M` reference and the row's "Who" text, case-insensitive); and `one-last-played-line` (in
+  `story/dm-notes.md`, at most one line starting `Last played` and no section named `Mix tracker`, the marker
+  `dmc size` uses). A check is a small named function; adding one is a code change with its own test, so a migration
+  can only name checks that exist (a test checks that).
+- **Finished fights and closed threads move; they are not dropped.** The current standard (PR #173: the dm-notes
+  template, `dmc-update-game-state`, `dmc-campaign-full-save`) moves a finished group's row, with its stat blocks,
+  to `story/dm-notes-archive.md`, where `dmc-rewind-campaign` restores it, and moves closed threads there too. So
+  004 moves them verbatim: `verify` matches them in the archive and DMC accounts for nothing; there is no drop class
+  for them. Lines marked DONE or RESOLVED are closed threads by the full save's rule and move with them; a finished
+  Arc plan stage stays as its one line marked done.
+- **Rationale.** These are the checks the issue names, plus the Mix tracker, the largest single item the feedback
+  measured (19k bytes). All rest on formats the templates already fix, not on prose.
 - **Risk.** A hand-edited Opposition table that no longer matches the template makes the first check pass vacuously.
   The check reports "no Opposition table found" as a failure rather than a pass, which is the FR-010 behaviour.
 
@@ -264,3 +280,6 @@ The analysis of 2026-11-10 (`/speckit-analyze`) made these further amendments, e
 - **A8.** FR-011: a rerun verifies against the first attempt's backup, and play waits on an unfinished migration
   (R8, R10).
 - **A9.** FR-009: verification also checks each migrated file has its migration's shape (R7).
+- **A10.** Background and story 2 scenarios 1 and 2: a finished fight's row and a closed thread move to
+  `story/dm-notes-archive.md`, as the current standard does, rather than being deleted (R7; found against PR #173's
+  templates and skills and the 006 review, 2026-11-10).

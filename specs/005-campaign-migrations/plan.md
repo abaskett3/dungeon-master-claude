@@ -106,7 +106,8 @@ src/Dmc.Cli/
     ├── AccountingFile.cs                  # NEW: read and validate the TSV
     ├── CampaignVerifier.cs                # NEW: the four checks of R5, writes .standard on a pass
     ├── MigrationChecks.cs                 # NEW: sheets-end-with-history, npc-sheets-have-names-line,
-    │                                      #      no-dead-opposition-rows, fights-have-timeline
+    │                                      #      no-dead-opposition-rows, fights-have-timeline,
+    │                                      #      one-last-played-line
     └── CampaignRestorer.cs                # NEW: plan, replace, recovery
 
 tests/Dmc.Tests/

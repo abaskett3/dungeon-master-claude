@@ -12,9 +12,9 @@ front of it (the `review-feedback` rule for prompts).
 standard: 4
 title: Lean dm-notes and game-state; Predecessor line
 shipped: PR #173
-touches: [story/dm-notes.md, game-state.md, player-options.md, story/canon.md]
-drops: [opposition-row-finished, mix-tracker, overtaken-plan, finished-arc-beat, scene-history]
-checks: [no-dead-opposition-rows, fights-have-timeline]
+touches: [story/dm-notes.md, story/dm-notes-archive.md, game-state.md, player-options.md, story/canon.md]
+drops: [mix-tracker, overtaken-plan, finished-arc-beat, scene-history]
+checks: [no-dead-opposition-rows, fights-have-timeline, one-last-played-line]
 ---
 ```
 

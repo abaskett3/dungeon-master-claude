@@ -88,7 +88,7 @@ A prompt change that needs the new `dmc` (a new subcommand, say) should merge on
 
 ### Dry runs
 
-A pull request that changes the release files or the build settings every release build uses (`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `Dmc.Cli.csproj`), or a manual run from the Actions tab (`workflow_dispatch`), runs the same workflow as a dry run with version `0.0.0`: it builds, packs, hashes, installs and checks every archive, and the `dry-run` job signs the checksum list with `sign.sh` using a throwaway key made in the run (never the project's, and the secret is not used). It uploads the archives, the list, the signature and the install scripts as workflow artifacts, but publishes no release.
+A pull request that changes the release files, `kit/` (what `dmc install` writes, which the build job checks) or the build settings every release build uses (`Directory.Build.props`, `Directory.Packages.props`, `global.json`, `Dmc.Cli.csproj`), or a manual run from the Actions tab (`workflow_dispatch`), runs the same workflow as a dry run with version `0.0.0`: it builds, packs, hashes, installs and checks every archive, and the `dry-run` job signs the checksum list with `sign.sh` using a throwaway key made in the run (never the project's, and the secret is not used). It uploads the archives, the list, the signature and the install scripts as workflow artifacts, but publishes no release.
 
 ## How the install line and `dmc update` verify
 
@@ -148,3 +148,5 @@ Releases up to 0.1.4 were pinned by a pull request in `tools/dmc-release.json` a
 | 0.1.2 | `e312f80`, the merge of PR #25 | 2026-10-17 | PR #26, merged 2026-10-17 | Issue #6 Phase 2: `dmc roll "label:expr@target"` prints a line ready to paste, with hit or miss against an AC (a natural 20 hits, a natural 1 misses) and success or fail against a DC, plus `dmc roll --help`; `live.json` takes `initiative` and `current` and `dmc map` draws the turn order (PR #25). Also the code documentation and its build checks (PR #24). |
 
 Every release up to 0.1.4 was built, installed and smoke-tested on all platforms by the workflow before it was published. No release so far has needed a re-run of its tag workflow.
+
+**0.3.0 was never published.** The tag `dmc-v0.3.0` (on `36296ff`, the merge of PR #177) failed in `build` on all four platforms, and a re-run failed the same way: PR #176 added `migrations/` to the DMC folder, and the workflow's check of the installed folder still listed the folder without it. `dmc` itself was right; the check was stale. PR #176 had no dry run of the release workflow, because a change under `kit/` did not start one; it does now. The fix is on `main` and the changes ship as 0.3.1, as [When a release fails](#when-a-release-fails) says.

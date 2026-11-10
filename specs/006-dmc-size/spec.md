@@ -41,8 +41,8 @@ about 150 lines?".
 
 ### Session 2026-11-09
 
-The issue's open questions were settled from the PR #173 review session (2026-11-09), where the maintainer approved
-the analysis they rest on:
+The first four, the issue's open questions, were settled from the PR #173 review session (2026-11-09), where the
+maintainer approved the analysis they rest on. The last three were asked and answered in `/speckit-clarify`.
 
 - Q: What does a budget optimise for? → A: Consistency over token cost. Dead text (history, finished plans, copies of
   facts kept elsewhere) is cut; live facts are not pushed out of the always-read set to save tokens. So the canon
@@ -52,11 +52,19 @@ the analysis they rest on:
   slip counts can be compared before and after a change; and at resume, which already measures canon and says one line
   only when a file is near the Read cap (User Story 4, FR-015).
 - Q: How are budgets set? → A: A fixed budget per file, in tokens, as measured starting points to be tuned against
-  slip counts from `review-transcript`, and a total that is the sum of the budgets of the files a resume reads (so it
-  grows with the number of sheets). Not a share of the context window, which `dmc` does not know (FR-007).
+  slip counts from `review-transcript`. Not a share of the context window, which `dmc` does not know (FR-007).
 - Q: What happens to the other size targets, written in lines or words? → A: They all move to tokens with canon,
   because "lines are a poor stand-in for size" holds for every file, and the files that grew are the ones whose line
   targets nothing checked (FR-011).
+- Q: Does a bloat flag (not an over-budget file) hold up the full save? → A: Yes. Like a file over its budget, the
+  save is not complete until each flag is fixed or its report says why the flagged text stays (FR-015a).
+- Q: Do the files the full save never trims (both player-options files, the session log tail, a module's progress
+  and digest) get budgets? → A: No. They are measured, shown and counted in the total, and flagged only near the Read
+  cap. The total is shown with no budget of its own: with every trimmable file within budget, a total flag would leave
+  nothing to fix (FR-007).
+- Q: What does the command print when DMC runs it in play (full save, resume)? → A: Nothing when all is well (canon
+  under its limit, no file over budget, no flag); otherwise one short line per thing to act on. The full breakdown is
+  printed only when run by hand (FR-013a).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -127,28 +135,30 @@ whole, and that the full save skill archives the first and not the second.
 ### User Story 3 - Trouble is flagged before it shows up in play (Priority: P2)
 
 The report flags the conditions that, in the feedback, came before the slips: a file close to the Read tool's cap for
-one call, a resume total over a budget, canon over its limit, and the known bloat patterns from the campaign-file
+one call, a file over its budget, canon over its limit, and the known bloat patterns from the campaign-file
 standards. A player or maintainer sees what to fix while the story is still consistent.
 
 **Why this priority**: The numbers alone need reading; a flag says when to act. It turns the measurement into a
 warning.
 
-**Independent Test**: Give a fixture a `dm-notes.md` just under and just over the cap margin, a total just under and
-just over the budget, a Mix tracker of several dated lines, and an Opposition row with none left alive; check each
-flag appears when it should and not otherwise.
+**Independent Test**: Give a fixture a `dm-notes.md` just under and just over the cap margin, a `game-state.md` just
+under and just over its budget, a Mix tracker of several dated lines, and an Opposition row with none left alive;
+check each flag appears when it should and not otherwise.
 
 **Acceptance Scenarios**:
 
 1. **Given** a file whose part read is within the margin of the Read tool's cap, **When** the report is shown, **Then**
    it is flagged and the flag says the file may be cut short at resume.
-2. **Given** a file over its budget, or a total over the sum of the budgets, **When** the report is shown, **Then**
-   each is flagged with its budget beside it.
+2. **Given** a file over its budget, **When** the report is shown, **Then** it is flagged with its budget beside it.
+   **Given** a file without a budget (a player-options file, the session log tail, a module file), **Then** it is
+   shown and counted in the total but flagged only near the Read cap.
 3. **Given** canon over its limit, **When** the report is shown, **Then** canon is shown against its limit, in tokens,
    and the report says it will be read in sections.
 4. **Given** a `dm-notes.md` with more than the single "Last played" line or a per-session Mix tracker, an
    Opposition row with none left alive, or an Arc plan stage marked done that keeps more than its one line, **When**
    the report is shown, **Then** each is flagged as a likely leftover, naming the section.
-5. **Given** a campaign with nothing to flag, **When** the report is shown, **Then** it says so in one line.
+5. **Given** a campaign with nothing to flag, **When** the full report is shown, **Then** it says so in one line;
+   **When** DMC runs the play form, **Then** it prints nothing.
 6. **Given** any flag, **When** the command runs, **Then** it changes no file: it reports, and the full save or the
    player acts.
 
@@ -170,9 +180,9 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
 **Acceptance Scenarios**:
 
 1. **Given** a full save, **When** it reaches its consistency check, **Then** it measures with the command rather
-   than a line count, keeps trimming dead text while a file is over its budget, and does not call the save complete
-   until every file is within its budget or its report says which file is over and why it could not be trimmed (every
-   subject in it still live).
+   than a line count, keeps trimming dead text while a file is over its budget or a bloat flag stands, and does not
+   call the save complete until every file is within its budget and every flag is fixed, or its report names what is
+   left and why it stays (every subject in the file still live, or the flagged text still needed).
 2. **Given** a resume, **When** a file the resume reads is near the Read tool's cap, **Then** DMC says so in one line
    out of character; **When** nothing is flagged, **Then** nothing about size is said.
 3. **Given** a `review-transcript` run, **When** it records feedback about context, **Then** it records the campaign's
@@ -204,8 +214,9 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
 - **A file larger than the Read tool can return in one call.** It is flagged, and the report still gives its size.
 - **Line endings.** A file saved with Windows line endings counts its extra bytes; the estimate is stated as an
   estimate.
-- **The command is run in a play session.** It prints only a small report, since everything it prints lands in DMC's
-  context.
+- **The command is run in a play session.** The play form prints nothing when all is well and one line per item
+  otherwise, since everything it prints lands in DMC's context (FR-013a). A player who asks DMC "are your files too
+  big?" gets the full report, run by hand.
 - **`review-transcript` reviewing old sessions.** The command measures the files as they are now, not as they were
   when each session was played; the record says when it was measured.
 
@@ -227,9 +238,11 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
   are left out.
 - **FR-006**: The command MUST flag any file whose part read is within a margin of the Read tool's cap for one call,
   saying that the file may be cut short at resume.
-- **FR-007**: Each file the resume reads MUST have a budget in estimated tokens, fixed for every player, and the
-  command MUST flag each file over its budget and a total over the sum of the budgets of the files listed. The
-  budgets are starting points measured on the long campaign, recorded with their reason in `.docs/decisions.md` and
+- **FR-007**: Each file the resume reads that the full save trims (`game-state.md`, `dm-notes.md`, `summary.md`,
+  canon and the sheets) MUST have a budget in estimated tokens, fixed for every player, and the command MUST flag
+  each file over its budget. The files the full save never trims (both player-options files, the session log tail, a
+  module's progress and digest) have no budget: they are shown, counted in the total and flagged only near the Read
+  cap (FR-006). The total has no budget of its own. The budgets are starting points measured on the long campaign, recorded with their reason in `.docs/decisions.md` and
   tuned later against `review-transcript`'s slip counts. The review's starting points: `dm-notes.md` about 10k,
   `game-state.md` about 4k, `summary.md` about 3k, the read part of each sheet about 4k, and canon by its limit
   (FR-010). Every budget MUST sit well under the Read tool's cap, so no file is paged at resume.
@@ -258,14 +271,20 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
 - **FR-012**: The command MUST NOT write, move or delete anything: it reads the campaign and prints a report.
 - **FR-013**: Every failure MUST be one line, `dmc size: <message>`, and the report MUST be small, because what the
   command prints lands in DMC's context when DMC runs it.
+- **FR-013a**: The command MUST have two forms. The full report (FR-003 to FR-009) is what a person running it by hand
+  gets. The form DMC runs in play (the full save, the resume) prints nothing when all is well (canon under its limit,
+  no file over its budget, no flag), and otherwise one short line per thing to act on, for example "canon 21k over its
+  19k limit: read in sections", "dm-notes.md 22k near the Read cap" or "dm-notes.md Opposition: 3 rows with none
+  alive". Silence means canon is read whole.
 - **FR-014**: DMC MUST be able to run the command during play without a permission prompt, as it runs the other
   `dmc` commands it uses, and every prompt that names it MUST name a real subcommand, as the toolkit tests check.
 - **FR-015**: The command MUST run in the full save's consistency check, at resume (once, for both the canon
   decision and the near-cap warning) and in `review-transcript`, as User Story 4 gives. Wherever it runs in play, a
   campaign with nothing flagged MUST add nothing to the conversation beyond what that step already says.
-- **FR-015a**: The full save MUST NOT report itself complete while the command shows a file over its budget, unless
-  its report names the file and says why it could not be trimmed further (every subject left in it is live). A long
-  file of live facts is legitimate, as a long canon is today.
+- **FR-015a**: The full save MUST NOT report itself complete while the command shows a file over its budget or any
+  bloat flag of FR-008, unless its report names each one and says why it stays: a file that could not be trimmed
+  further because every subject left in it is live, or flagged text that is still needed (an enemy that fled and may
+  return). A long file of live facts is legitimate, as a long canon is today.
 - **FR-016**: The command MUST give its per-file measurements in a form the campaign migration of issue #172 can use
   for its size verification, without that feature depending on this one or this one on it.
 - **FR-017**: The command MUST be tested on fixture campaigns built from the templates (real campaigns are git-ignored),
@@ -285,7 +304,8 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
   with the file and section it concerns.
 - **Canon limit**: the token size under which the resume reads canon whole, and the lower mark the full save archives
   down to.
-- **Report**: the per-file measurements, the total, the sections of the files read whole, and the flags.
+- **Report**: in its full form, the per-file measurements, the total, the sections of the files read whole, and the
+  flags; in its play form, only the lines to act on, or nothing.
 
 ## Success Criteria *(mandatory)*
 
@@ -304,11 +324,11 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
 - **SC-006**: After the change, 0 size rules in the kit and the documents are counted in lines or words.
 - **SC-007**: For a campaign with nothing flagged, each step that runs the command in play adds 0 lines about size to
   what DMC says.
-- **SC-008**: The report for the long campaign fits in a short screen (about 40 lines or fewer), so running it in play
-  costs little context.
+- **SC-008**: The full report for the long campaign fits in a short screen (about 40 lines or fewer), and the play
+  form prints 0 lines for a campaign with nothing to act on and 1 line per item otherwise.
 - **SC-009**: Each flag appears on the fixture built to trigger it and on no fixture built not to, in 100% of cases.
-- **SC-010**: A full save of a campaign with a file over its budget never ends with a report that says it is complete
-  without naming that file.
+- **SC-010**: A full save of a campaign with a file over its budget or a bloat flag never ends with a report that says
+  it is complete without naming that file or flag.
 
 ## Assumptions
 
@@ -327,8 +347,9 @@ check what it says and that a campaign with nothing flagged adds nothing to the 
 - **Maps, archives and older logs are not counted**, since the resume does not read them (`dmc map` opens the live
   map; it is not read into context).
 - **The budgets are not derived.** Unlike 230 they are measured, and the review gave them as starting points to tune.
-  The review's earlier total of about 50k (what PR #40 achieved) is not kept as a separate number: the canon limit was
-  raised for consistency, so the total is the sum of the per-file budgets.
+  The review's earlier total of about 50k (what PR #40 achieved) is not kept as a budget: the canon limit was raised
+  for consistency, and the per-file budgets are what DMC can act on. The total is still shown, so the trend is
+  visible.
 - **Measuring does not shrink a file.** What removes dead text is PR #173's prompt changes and the full save; the
   command makes them checkable. A campaign whose files are already over budget is trimmed at its next full save, or by
   the migration of issue #172.

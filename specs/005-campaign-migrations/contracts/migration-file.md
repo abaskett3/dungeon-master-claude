@@ -15,12 +15,12 @@ shipped: PR #173
 touches: [story/dm-notes.md, game-state.md, player-options.md, story/canon.md]
 drops: [opposition-row-finished, mix-tracker, overtaken-plan, finished-arc-beat, scene-history]
 checks: [no-dead-opposition-rows, fights-have-timeline]
-size: {game-state.md: 100, story/dm-notes.md: 150}
 ---
 ```
 
-One `key: value` per line; lists in `[a, b]`, one map in `{k: v}`. Unknown keys are an error (so a typo is caught).
-Class names are lowercase words joined by hyphens.
+One `key: value` per line; lists in `[a, b]`. Unknown keys are an error (so a typo is caught). Class names are
+lowercase words joined by hyphens. `checks` names at least one check for the shape the migration produces. There
+are no size targets: sizes are `dmc size`'s (research R6).
 
 ## Body, in this order, with these headings
 
@@ -33,7 +33,7 @@ Class names are lowercase words joined by hyphens.
    and shown to the player (FR-013, FR-009b). Example: "a row is for a finished fight when its second column is
    `0 / N` or the session logs say the group was defeated; when the two disagree, keep the row and ask".
 4. **`## Declared drops`**: one line per class in `drops`: what it is, and why the new standard does not need it.
-5. **`## Done when`**: what a correct result looks like, in the terms of `checks` and `size`.
+5. **`## Done when`**: what a correct result looks like, in the terms of `checks`.
 
 ## Rules for the author
 
@@ -42,17 +42,18 @@ Class names are lowercase words joined by hyphens.
   it"), so running it over a current file changes nothing.
 - **No file outside `touches`** is changed. A new file is listed.
 - **Accounting.** Content a step rewords is accounted in the accounting file as `reworded` with an anchor; content a
-  step drops as `dropped:<class>`. The migration's golden fixture (`tests/Dmc.Tests/Fixtures/migrations/NNN/`) shows
-  one of each the migration can produce.
-- **A hand-edited file** whose shape a step does not recognise is left unchanged and named to the player; the
-  campaign is then not verified (FR-010).
+  step drops as `dropped:<class>`. DMC takes the ids from `dmc campaign verify NAME --list`. The migration's golden
+  fixture (`tests/Dmc.Tests/Fixtures/migrations/NNN/`) shows one of each the migration can produce.
+- **A hand-edited file** whose shape a step does not recognise is left unchanged, named to the player and given a
+  `skipped` line in the accounting file; the campaign is then not verified (FR-010). The migration's shape check
+  fails on it too, if DMC forgets the line.
 - **Size.** A migration that adds a token cost to the files resume reads says so in `## What changes`.
 - **A change to a standard is not finished without its migration** or a line in the PR description saying why none
   is needed (a change that adds a new optional field, for example).
 
 ## What `dmc` checks at build time (in `Dmc.Tests`)
 
-Numbers contiguous from 2 and equal to the file name; front matter well formed with no unknown key; every `checks`
-name exists in `MigrationChecks`; every `touches` path is a plausible campaign path (no `..`, not absolute, not
+Numbers contiguous from 2 and equal to the file name; front matter well formed with no unknown key; `checks` not
+empty and every name in it exists in `MigrationChecks`; every `touches` path is a plausible campaign path (no `..`, not absolute, not
 under `backups/`); all five headings present, in order; each `drops` class has a line under `## Declared drops`;
 a fixture folder with `before/`, `after/` and `accounting.tsv` exists.

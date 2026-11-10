@@ -312,8 +312,9 @@ content, that the campaign is reported as behind, and that the migration then br
   for the backups they keep.
 - **FR-005b**: Backups are counted and removed per campaign, and only the backups the migration took (files in the
   backup folder that follow the naming rule of FR-005c) are counted. A backup MUST NOT be removed without the
-  player's yes, and the new backup MUST NOT be skipped for any answer. Removing a backup also removes the record of
-  what the migration did with its content (the accounting file kept beside it, see the plan).
+  player's yes, and the new backup MUST NOT be skipped for any answer. Removing a backup also removes the files kept
+  beside it: the record of what the migration did with its content (the accounting file), the record of the verified
+  result, and the mark of an unfinished migration (see the plan).
 - **FR-005c**: A backup MUST be a campaign export, made by the toolkit's existing campaign export, written to the
   `backups/` folder in the campaign's own root folder (`adventures/<campaign>/backups/`, made when needed) and named
   `<campaign>_backup_<yyyyMMddHHmmss>.zip` (local time). The oldest backup is the one with the earliest timestamp in
@@ -321,6 +322,9 @@ content, that the campaign is reported as behind, and that the migration then br
 - **FR-005d**: A backup MUST NOT contain the `backups/` folder or anything in it, so a backup never holds earlier
   backups and its size does not grow with their number. The same holds for any campaign export. An import MUST NOT
   create, fill, change or remove the `backups/` folder of the campaign it writes.
+- **FR-005e**: The existing campaign export MUST be able to write into the campaign's `backups/` folder for this
+  purpose. It keeps refusing every other destination inside `adventures/`, and its default behaviour, name and
+  location for a player's own export do not change.
 - **FR-005f**: The toolkit MUST provide a new campaign command, `dmc campaign restore`, that reverts a campaign to a
   backup. The existing `dmc campaign import` is unchanged: it still only creates a campaign that does not exist yet.
   `restore` takes the campaign and a backup (the latest by default), checks the backup whole, tells the player
@@ -328,13 +332,11 @@ content, that the campaign is reported as behind, and that the migration then br
   backup's, including removing files the migration added, and leaves the campaign's `backups/` folder untouched. It
   is all or nothing: a failure part-way leaves the campaign as it was before the restore began. The player MUST be
   told this is how to revert.
-- **FR-005g**: Before replacing anything, `restore` MUST warn the player if the campaign has changed since the backup
-  (for example, sessions played after the migration), saying that those changes will be lost, and MUST make that part
-  of what the player confirms. `restore` takes no safety backup of the state it replaces, so a restore never
-  triggers the backup-limit question of FR-005a.
-- **FR-005e**: The existing campaign export MUST be able to write into the campaign's `backups/` folder for this
-  purpose. It keeps refusing every other destination inside `adventures/`, and its default behaviour, name and
-  location for a player's own export do not change.
+- **FR-005g**: Before replacing anything, `restore` MUST warn the player if the campaign has changed since the
+  migration was verified (for example, sessions played after the migration), saying that those changes will be lost,
+  and MUST make that part of what the player confirms. The changes the migration itself made are not what the
+  warning is about. `restore` takes no safety backup of the state it replaces, so a restore never triggers the
+  backup-limit question of FR-005a.
 - **FR-006**: Material that is still true MUST be written to its new home before its old copy is removed; the order
   of steps is part of each migration. At no point may a fact exist in no file.
 - **FR-007**: The step MUST preserve the adventure's content. A standard may drop what it no longer needs (data that
@@ -348,9 +350,10 @@ content, that the campaign is reported as behind, and that the migration then br
   declared it drops. Verification MUST compare the migrated files against the content of the backup taken in phase
   1, and MUST check that every unit of old content (a fact, a row, a line, a section) is either found in the
   migrated campaign or on the migration's declared-dropped list. It MUST also check that every finished fight has a Timeline line, that no Opposition row remains for
-  a fight that is not alive. It MUST report each resume file against its size target and flag a shortfall, which
-  is not a failure: a migration cannot shrink a file below the live material it holds. A campaign is recorded as
-  current only when verification passes.
+  a fight that is not alive, and that each migrated file has the shape its migration produces. Sizes are not part of
+  verification: they are measured by `dmc size` (spec 006), which the step runs after a pass once that command
+  exists; a file over its size target is a shortfall to report, not a failure, because a migration cannot shrink a
+  file below the live material it holds. A campaign is recorded as current only when verification passes.
 - **FR-009a**: The toolkit MUST give verification a way to read the files inside a backup without changing the
   campaign or the backup, and MUST check that the backup is whole (its checksums match) before the migration starts,
   so a damaged backup stops the step before anything changes.
@@ -365,7 +368,9 @@ content, that the campaign is reported as behind, and that the migration then br
 - **FR-010**: When a file's shape is not one a migration expects, the step MUST leave that file unchanged, say which
   file and why, and MUST NOT record the campaign as current.
 - **FR-011**: The step MUST be safe to interrupt and to run again: a repeated run completes the work without
-  duplicating or dropping content.
+  duplicating or dropping content, and verifies against the backup taken before the first attempt, not one taken of
+  half-migrated files. Play MUST NOT continue on a campaign whose migration is unfinished until the player finishes
+  it or restores the backup.
 - **FR-012**: A campaign that is behind MUST be flagged to the player in one line after `dmc update` and at resume,
   with an offer to migrate. A current campaign MUST produce no line.
 - **FR-013**: A migration that needs judgment MUST state, in the migration itself, how each judgment is made (what
@@ -414,9 +419,9 @@ content, that the campaign is reported as behind, and that the migration then br
   confirmation per campaign, with no manual file editing.
 - **SC-002**: On the fixture built to the pre-review standard, 100% of finished fights end with a Timeline line and
   0 Opposition rows remain for a fight that is not alive.
-- **SC-003**: On the maintainer's long campaign, the material the new rules remove (about 12k tokens across
+- **SC-003**: On a copy of the maintainer's long campaign, the material the new rules remove (about 12k tokens across
   `dm-notes.md`, `game-state.md` and the player options) is gone, and the resume files are within their size
-  targets or the shortfall is reported.
+  targets or the shortfall is reported (by `dmc size` once it exists, by hand until then).
 - **SC-004**: Running the step a second time on a campaign it just migrated changes 0 files.
 - **SC-005**: Interrupting the step at any point and running it again ends with the same result as an uninterrupted
   run, and no fact is missing from every file.
@@ -424,18 +429,18 @@ content, that the campaign is reported as behind, and that the migration then br
   or state why none is needed.
 - **SC-007**: A current campaign sees 0 lines about migration at resume, and a behind campaign sees exactly one.
 - **SC-008**: The skills contain 0 catch-up clauses for older campaign files once the cases are migrations.
+- **SC-009**: A player can restore the pre-migration state from the backup using only what DMC told them, in one
+  command and one confirmation, and the restored campaign matches the backup file for file with its `backups/`
+  folder unchanged.
 - **SC-010**: With 0, 2, 3 and 5 earlier backups and both answers to the removal question, the backups left on
   disk are exactly those FR-005a gives, and a new backup exists before every migration.
 - **SC-011**: 0 backups are removed without the player's yes, and 0 files outside `backups/` that follow the
   naming rule are removed.
+- **SC-012**: A backup made with 5 earlier backups present is no larger than one made with none, to within the
+  campaign's own changes.
 - **SC-013**: On the fixture, 100% of the old content units are found in the migrated campaign (new place or
   declared-dropped list), and removing one unit from the migrated fixture makes verification fail and
   name it.
-- **SC-012**: A backup made with 5 earlier backups present is no larger than one made with none, to within the
-  campaign's own changes.
-- **SC-009**: A player can restore the pre-migration state from the backup using only what DMC told them, in one
-  command and one confirmation, and the restored campaign matches the backup file for file with its `backups/`
-  folder unchanged.
 
 ## Assumptions
 
@@ -456,9 +461,10 @@ content, that the campaign is reported as behind, and that the migration then br
   campaign's folder, so this is a stated exception to "nothing is deleted from `adventures/`" (FR-007), limited to
   files that follow the backup naming rule. How a removal is carried out, given that DMC cannot run deletes itself in
   a play session (see `.docs/user-guide.md`), is a decision for the plan.
-- The planned size check (`dmc size`, filed separately) is the natural source of the size verification; if it
-  is not available yet, the step uses a line count against the existing targets, and the spec's checks do not
-  depend on its being built first.
+- The size check is `dmc size` (issue #174, spec 006), the one home of the size targets; a migration does not copy
+  them. Whichever of this feature and spec 006 merges second adds the `dmc size` call to the end of the migration
+  step. Until both are in, the step reports no sizes, and the spec's checks do not depend on `dmc size` being built
+  first.
 - "No data lost" means the adventure's content is preserved, as the user clarified. A standard may remove data and
   tokens it does not need (the issue's "material the new rules remove"), but only what its migration declares and
   the player sees (FR-009b); the backup keeps the old copy. Example layout: `D:\Claude\dmc\adventures\rorns-landing\backups\` holds the backups of that

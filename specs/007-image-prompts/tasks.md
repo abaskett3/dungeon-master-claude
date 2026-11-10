@@ -115,9 +115,10 @@ whatever the skill's default section says.
   spoilers, in a style you choose or saved".
 - [X] T006 [US1] Run `dotnet test --filter FullyQualifiedName~Toolkit`. Fix the skill for any finding: the skill's name,
   the README list, the paths, the commands, a `/word-word` read as a skill name, or a catch-up clause.
-- [ ] T007 [US1] Run quickstart § 3, rows 1 to 8, live: publish, make a scratch DMC folder in a terminal outside Claude
+- [X] T007 [US1] Run quickstart § 3, rows 1 to 8, live: publish, make a scratch DMC folder in a terminal outside Claude
   Code, copy Rorn's Landing in, then `dmc play`. Revise `kit/skills/dmc-generate-image-prompt/SKILL.md` for anything
   DMC got wrong, and record what it got wrong for the PR (SC-001 to SC-003).
+  **Skipped** by the user's decision (2026-11-10): no live runs before the PR; bugs found in play are fixed after.
 
 **Checkpoint**: Prompts are true to the files and spoiler-free, in Storybook.
 
@@ -146,8 +147,9 @@ one line saying styles can be saved; Last used is followed; a described style do
 - [X] T009 [US2] In the same file, add **"The last used style"**: after a prompt in a saved style (named, used as the
   default, or varied), set `- **Last used**:` to that style's name when it differs. Never set it for a style described
   in the request or one DMC chose. The section's shape is in `templates/player-options.md`.
-- [ ] T010 [US2] Rerun T006's filter, then quickstart § 3, rows 9 and 12, live. Revise the skill for anything DMC got
+- [X] T010 [US2] Rerun T006's filter, then quickstart § 3, rows 9 and 12, live. Revise the skill for anything DMC got
   wrong (SC-004).
+  **Skipped** by the user's decision (2026-11-10): no live runs before the PR; bugs found in play are fixed after.
 
 **Checkpoint**: The default follows the player without being repeated.
 
@@ -181,10 +183,12 @@ refining; list, rename, change and delete; an unknown name.
   description, choose one clearly unlike the last prompt's style and every style DMC chose earlier in this session.
   Describe it in full in the prompt, and label it with a short name marked unsaved. Do not save it, and do not change
   Last used.
-- [ ] T014 [US3] Rerun T006's filter, then quickstart § 3, rows 10, 11 and 13, and User Story 3's scenarios 3, 4 and 6,
+- [X] T014 [US3] Rerun T006's filter, then quickstart § 3, rows 10, 11 and 13, and User Story 3's scenarios 3, 4 and 6,
   live. Revise the skill for anything DMC got wrong.
+  **Skipped** by the user's decision (2026-11-10): no live runs before the PR; bugs found in play are fixed after.
 
-- [ ] T015 [US3] Run quickstart § 2 live: move Rorn's Landing's two styles by asking, on the scratch copy.
+- [X] T015 [US3] Run quickstart § 2 live: move Rorn's Landing's two styles by asking, on the scratch copy.
+  **Skipped** by the user's decision (2026-11-10): no live runs before the PR; bugs found in play are fixed after.
 
 **Checkpoint**: Every style request in the contract's table works. The skill is complete.
 

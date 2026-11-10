@@ -267,3 +267,7 @@ There is one PR for the whole feature (one issue, #178).
 - `install` and `refresh` refuse inside Claude Code. The live runs need a terminal outside the session.
 - Never run a live test on `D:\Claude\dmc` itself: always on a copy.
 - Commit after each task or logical group. The user merges.
+
+## Phase 7: Convergence
+
+- [X] T023 In `kit/skills/dmc-generate-image-prompt/SKILL.md` § Saved styles, let a save also take a style the player gives in words or points at (an old note in a campaign's `player-options.md`), word for word, and drop the old note, and any `story/dm-notes.md` line that only repeats it, when the player asks, per spec Assumptions and quickstart § 2 (partial)

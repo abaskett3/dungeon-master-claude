@@ -72,6 +72,7 @@ Saved styles live only in the general `adventures/player-options.md`, never in a
 | The player says | Do |
 |---|---|
 | "save that as Woodcut" | Save the last prompt's style, refinements included, under that name, and make it the last used |
+| "save this style as Woodcut: ...", or "save the Concept art style from my notes" | Save the words the player gives, or the note's style word for word, under that name. Make it the last used only if Last used is `none` or the note calls it the current default. On the player's word, remove the old note, and any `story/dm-notes.md` line that only repeats it |
 | "list my styles" | List the saved names, marking the last used |
 | "rename Woodcut to Ink" | Rename it in place; if Last used named it, rename it there too |
 | "change Woodcut to ..." | Rewrite its description |

@@ -59,12 +59,17 @@ to `<backup>.accounting.tsv` (absent counts as empty). Compares campaign files o
 folder or `.standard` (data-model.md). Changes nothing on a failure. Steps and rules are research R5.
 
 - **List (`--list`):** prints `unaccounted: <id> <file> <first 60 chars>` for the first 40 units not yet matched or
-  accounted (all with `--all`), then `N more` if cut, then `skipped: <file>` for each `skipped` line, then
-  `<k> to account`. Writes nothing. Exit 0. This is how DMC gets the ids it accounts for.
+  accounted (all with `--all`; a unit whose accounting line is wrong carries `(anchor not found: ...)` or
+  `(drop class X is not declared by the pending migrations)`), then `N more` if cut, then `skipped: <file>` for each
+  `skipped` line, then `check <name>: <failure>` for each failing check, then
+  `<k> to account in backups/<backup file>.accounting.tsv`. Writes nothing. Exit 0. This is how DMC gets the ids it
+  accounts for, and where to write them.
 - **Pass:** writes `.standard` (the kit's standard) and `<backup>.verified.tsv`, removes `<backup>.migrating`, and
-  prints `verified NAME: <u> units, <m> matched, <a> accounted, <n> dropped; standard K`. Exit 0.
+  prints `verified NAME: <u> units, <m> matched, <a> accounted, <n> dropped; standard K` (`<a>` reworded and `<n>`
+  dropped, so `u = m + a + n`). Exit 0.
 - **Fail:** prints the unaccounted lines as `--list` does, then `skipped: <file> <reason>` per skipped file, then one
-  line per failed check, then `dmc campaign: verification failed: <reason>`. Exit 1. `.standard` is not written and
+  line per failed check (`check <name>: <failure>`), then `dmc campaign: verification failed: <reason>; <backup file>
+  is untouched`. Exit 1. `.standard` is not written and
   the mark stays.
 - **Cannot verify:** the backup is missing, damaged or from another campaign; no pending migration is known; the
   accounting file has a bad line; two different units share an id. One line, exit 1. A bad accounting line names
@@ -100,5 +105,12 @@ of an interrupted earlier restore runs first and is reported in one line.
   (standard C, kit K): ask DMC to bring it up to date` or `NAME is ahead (standard C, kit K): update dmc`. Nothing
   when current.
 - **`show`**: unchanged.
-- **`dmc update` / `dmc refresh`**: after the refresh, one extra line when any campaign of a refreshed DMC folder is
-  behind: `n campaigns are behind the new rules: ask DMC to bring them up to date`. Nothing when none is.
+- **`dmc update` / `dmc refresh`**: after a refresh that updated files, one extra line when any campaign of the
+  refreshed DMC folder is behind or unfinished: `dmc refresh: <folder>: <n> campaigns are behind the new rules: ask DMC
+  to bring them up to date` (`1 campaign is behind ... bring it up to date`). Nothing when none is, or when the refresh
+  changed nothing (the resume tells the player then).
+
+Companion files are named after the whole backup file: `<backup file>.accounting.tsv`, `<backup file>.verified.tsv`,
+`<backup file>.migrating` (for example `rorn_backup_20261110120000.zip.accounting.tsv`), so DMC adds a suffix to the name
+`backup` printed and never has to strip one. The staging and aside folders of `restore` are
+`adventures/.restore-NAME-<id>/` and `adventures/.replaced-NAME-<id>/`.

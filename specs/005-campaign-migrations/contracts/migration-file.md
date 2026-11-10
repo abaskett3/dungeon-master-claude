@@ -13,7 +13,7 @@ standard: 4
 title: Lean dm-notes and game-state; Predecessor line
 shipped: PR #173
 touches: [story/dm-notes.md, story/dm-notes-archive.md, game-state.md, player-options.md, story/canon.md]
-drops: [mix-tracker, overtaken-plan, finished-arc-beat, scene-history]
+drops: [mix-tracker, overtaken-plan, finished-arc-beat, scene-history, repeats-player-options]
 checks: [no-dead-opposition-rows, fights-have-timeline, one-last-played-line]
 ---
 ```

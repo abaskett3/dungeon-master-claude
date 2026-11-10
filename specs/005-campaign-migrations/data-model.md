@@ -50,7 +50,7 @@ A campaign export (existing ZIP with `manifest.json`), plus a name and a place.
 | contents | the campaign's files, `backups/` excluded (FR-005d), plus `.standard` as it was |
 | order | by the timestamp in the name, then the suffix; the oldest has the smallest |
 | counted | only names matching `^<campaign>_backup_\d{14}(-\d+)?\.zip$` |
-| companions | beside it, each removed with the backup: `<backup name>.accounting.tsv` (written by DMC during a migration), `<backup name>.verified.tsv` (written by a passing `verify`), `<backup name>.migrating` (written by `backup`, removed by a passing `verify` or any `restore`) |
+| companions | beside it, named after the whole backup file and each removed with it: `<backup file>.accounting.tsv` (written by DMC during a migration), `<backup file>.verified.tsv` (written by a passing `verify`), `<backup file>.migrating` (written by `backup`, removed by a passing `verify` or any `restore`) |
 | limit | the retention rule of FR-005a, all in `BackupFolder`: `backups` prints the question as an `ask:` line, `backup --prune` applies a yes |
 
 ## Campaign files (what `verify` and `restore` compare)
@@ -60,14 +60,15 @@ side and the campaign's alike.
 
 ## Content unit
 
-A non-blank line of a campaign file, normalised: trimmed, whitespace runs collapsed to one space, a leading `- `,
+A non-blank line of a campaign file (a `.md` or `.txt` file; any other file, such as a map image, is one unit whose
+text is `file <path>`, matched when a file of that path exists), normalised: trimmed, whitespace runs collapsed to one space, a leading `- `,
 `* `, `+ `, `N. ` or `> ` removed, a heading's leading `#`s and the space after them removed, then compared
 case-sensitively. Headings are units. Skipped (structure, not content): markdown table separator rows (`|---|`),
 horizontal rules, and the inside of `<!-- ... -->` comments. A table row is one unit (its cells are not split). Its
 **id** is the first 12 hex digits of the SHA-256 of the normalised text (UTF-8). Two identical units share an id and
 are accounted once; two different texts that share an id in one verification fail it.
 
-## Accounting file: `<backup name>.accounting.tsv`
+## Accounting file: `<backup file>.accounting.tsv`
 
 Tab-separated, one unit per line, `#` lines ignored:
 
@@ -85,7 +86,7 @@ place of an id. `verify` never accepts it: the run fails and names the file.
 
 (`moved` is not a disposition: a unit that moved verbatim is matched and never listed.)
 
-## Verified record: `<backup name>.verified.tsv`
+## Verified record: `<backup file>.verified.tsv`
 
 Written by a passing `verify`: one line `<path>\t<sha256>` per campaign file (as above) of the migrated campaign.
 `restore` compares the campaign with it for its warning (research R9).

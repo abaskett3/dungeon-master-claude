@@ -284,3 +284,13 @@ The analysis of 2026-11-10 (`/speckit-analyze`) made these further amendments, e
 - **A10.** Background and story 2 scenarios 1 and 2: a finished fight's row and a closed thread move to
   `story/dm-notes-archive.md`, as the current standard does, rather than being deleted (R7; found against PR #173's
   templates and skills and the 006 review, 2026-11-10).
+
+Made during implementation (2026-11-10), each recorded in the contract or the data model:
+
+- **A11.** Companion files are named after the whole backup file (`<backup file>.accounting.tsv`), so DMC appends a
+  suffix to the name `backup` printed. `verify --list` ends `<k> to account in backups/<file>.accounting.tsv`, naming
+  where to write, and also prints the failing checks, so DMC can finish a step before the final run. A file that is not
+  `.md` or `.txt` (a map image) is one unit, its path, so a deleted image is caught without splitting bytes into lines.
+  Migration 004 declares a fifth drop class, `repeats-player-options`, for the notes about the player that the player
+  options already say (step 9 of the migration; the fixture shows it). The refresh line is printed only after a refresh
+  that updated files, so a refresh with nothing to do stays silent; the resume tells the player at every session.

@@ -20,7 +20,7 @@ usage: dmc <command> [args]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
   digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
-  campaign      export or import a whole campaign as one file: dmc campaign export|import|show NAME-or-FILE [--out PATH] [--force] [--as NAME]
+  campaign      export or import a whole campaign as one file, and bring its files up to date: dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE
   play          start a play session in your DMC folder: claude --model sonnet --effort high [args]
   install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
   folder        print the DMC folder this command would use
@@ -305,9 +305,14 @@ Added in release 0.1.4.
 dmc campaign export NAME [--out PATH] [--force]
 dmc campaign import FILE [--as NAME]
 dmc campaign show FILE
+dmc campaign standard [NAME] [--init]
+dmc campaign backups NAME
+dmc campaign backup NAME [--prune oldest|old]
+dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
+dmc campaign restore NAME [--from FILE] [--yes]
 ```
 
-Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. Each verb works on one campaign and never deletes or overwrites anything that was already there, except a file named by `--out` with `--force`.
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The other five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below.
 
 | Argument | Meaning |
 |---|---|
@@ -317,9 +322,9 @@ Moves a whole campaign in and out of one file: a backup, a copy under another na
 | `--force` | `export`: replace an existing file named by `--out`. It has no effect on the default name, which is never replaced (the next free `-2`, `-3`, ... is used). |
 | `--as` | `import`: the folder name to import under; lowercase letters, digits and hyphens, starting with a letter or digit. Default: the campaign name inside the file. |
 
-**export** writes one ZIP: `manifest.json` first, then the campaign under `campaign/`, and the general `adventures/player-options.md` as `player-options.md` when there is one. Every file is stored byte for byte (no line-ending or encoding change), empty folders are kept, and the manifest lists each file's size and SHA-256 with the module the campaign runs (read from the `**Module folder**:` line of `module-progress.md`). The default file name is `<NAME>-<YYYYMMDDHHmm>.zip` in local time to the minute, for example `the-silver-egg-202610220605.zip`; a second export in the same minute is `...-2.zip`. The file is written under a `.partial-` name and renamed when complete, so a file with its final name is always whole. Nothing under `adventures/` changes. The export holds the whole campaign, spoilers included (`story/dm-notes.md`). A published module is not exported: `modules/` is copyrighted and stays on its machine.
+**export** writes one ZIP: `manifest.json` first, then the campaign under `campaign/`, and the general `adventures/player-options.md` as `player-options.md` when there is one. Every file is stored byte for byte (no line-ending or encoding change), empty folders are kept, and the manifest lists each file's size and SHA-256 with the module the campaign runs (read from the `**Module folder**:` line of `module-progress.md`). The default file name is `<NAME>-<YYYYMMDDHHmm>.zip` in local time to the minute, for example `the-silver-egg-202610220605.zip`; a second export in the same minute is `...-2.zip`. The file is written under a `.partial-` name and renamed when complete, so a file with its final name is always whole. Nothing under `adventures/` changes. The campaign's top-level `backups/` folder is left out, so an export is the same size however many backups the campaign keeps. The export holds the whole campaign, spoilers included (`story/dm-notes.md`). A published module is not exported: `modules/` is copyrighted and stays on its machine.
 
-**import** checks the whole file before it writes anything: it is a ZIP with a manifest that has every field, its format is not newer than this `dmc`'s, every path is safe on every operating system (relative, `/` separators, no `..`, no `<>:"|?*`, no trailing dot or space, no `CON`, `NUL` and the other reserved names, no two paths that differ only by case), and the entries match the manifest exactly. It then extracts into `adventures/.dmc-import-<random>/`, checking each file's size and SHA-256 as it is written, and commits with renames on one volume: the general player options first, only when `adventures/player-options.md` does not exist, then the campaign folder. A campaign therefore appears whole or not at all. Every extracted file gets the export's time as its modification time, and a manifest that declares more than 100,000 files or 1 GB in all is refused. It never changes an existing campaign or an existing `adventures/player-options.md`, never replaces a folder of the same name, and never writes `adventures/.active-campaign`: to play the copy, start a session and ask DMC to resume it.
+**import** checks the whole file before it writes anything: it is a ZIP with a manifest that has every field, its format is not newer than this `dmc`'s, every path is safe on every operating system (relative, `/` separators, no `..`, no `<>:"|?*`, no trailing dot or space, no `CON`, `NUL` and the other reserved names, no two paths that differ only by case), and the entries match the manifest exactly, with none under a top-level `backups/` (an export never holds one, so such a file is refused as damaged). It then extracts into `adventures/.dmc-import-<random>/`, checking each file's size and SHA-256 as it is written, and commits with renames on one volume: the general player options first, only when `adventures/player-options.md` does not exist, then the campaign folder. A campaign therefore appears whole or not at all. Every extracted file gets the export's time as its modification time, and a manifest that declares more than 100,000 files or 1 GB in all is refused. It never changes an existing campaign or an existing `adventures/player-options.md`, never replaces a folder of the same name, and never writes `adventures/.active-campaign`: to play the copy, start a session and ask DMC to resume it.
 
 **show** prints what a file holds, from its manifest alone, and writes nothing.
 
@@ -336,11 +341,11 @@ general player options: kept your existing adventures/player-options.md
 to play it, start a session and ask DMC to resume silver-egg-copy
 ```
 
-`export` prints one line (`and the general player options` is left out when there is no general file). `import` prints up to four lines: the result; one for the general player options (`written to adventures/player-options.md` or `kept your existing adventures/player-options.md`, absent when the export holds none); one when the module is not in `modules/` (`module <folder> is not in modules/: ingest it from your own copy before play`, or `this is a module campaign, but its module-progress.md names no module folder`); and how to play it. `show` prints two or three: name, time (UTC), `dmc` version and format; file count, size and whether the general player options are included; and, for a module campaign, `module: <folder> (in modules/)`, `(not in modules/)` or `module: unknown (module-progress.md names no module folder)`. The size is in bytes below 1 KB, KB (1024 bytes) below 1 MB, else MB, with one decimal and a point.
+`export` prints one line (`and the general player options` is left out when there is no general file). `import` prints up to four lines: the result; one for the general player options (`written to adventures/player-options.md` or `kept your existing adventures/player-options.md`, absent when the export holds none); one when the module is not in `modules/` (`module <folder> is not in modules/: ingest it from your own copy before play`, or `this is a module campaign, but its module-progress.md names no module folder`); how to play it; and, when the campaign is not on the kit's standard, `<name> is behind (standard C, kit K): ask DMC to bring it up to date` or `<name> is ahead (standard C, kit K): update dmc`. The imported files are unchanged either way. `show` prints two or three: name, time (UTC), `dmc` version and format; file count, size and whether the general player options are included; and, for a module campaign, `module: <folder> (in modules/)`, `(not in modules/)` or `module: unknown (module-progress.md names no module folder)`. The size is in bytes below 1 KB, KB (1024 bytes) below 1 MB, else MB, with one decimal and a point.
 
 | Message (after `dmc campaign: `) | Exit |
 |---|---|
-| `give export, import or show (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
+| `give export, import, show, standard, backups, backup, verify or restore (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
 | `the following arguments are required: name` (or `file`), `unrecognized arguments: ...`, `argument --out: expected one argument` | 2 |
 | `--as must be lowercase letters, digits and hyphens, starting with a letter or digit` | 2 |
 | `no campaign "<name>" in adventures/ (there are: a, b)` (`(there are none)` when empty; folders starting with `.` are not campaigns) | 1 |
@@ -355,11 +360,109 @@ to play it, start a session and ask DMC to resume silver-egg-copy
 | `<path> was made by a newer dmc (format <n>): update dmc and try again` | 1 |
 | `adventures/<name> already exists: import under another name with --as NAME` | 1 |
 | `<path> holds an entry that cannot be imported: <entry> (<reason>)` (an unsafe or unportable path, a campaign name that is not one plain folder name, a duplicate when case is ignored) | 1 |
-| `<path> is damaged: <entry> is not in the manifest`, `... is missing`, `... appears twice`, `... is larger than the size in the manifest`, `... is smaller than ...`, `... does not match its checksum in the manifest` | 1 |
+| `<path> is damaged: <entry> is not in the manifest`, `... is missing`, `... appears twice`, `... is larger than the size in the manifest`, `... is smaller than ...`, `... does not match its checksum in the manifest`, `... is under backups/, which an export never holds` | 1 |
 | `could not import: <reason>` (a write failed; the staging folder is deleted and nothing is left under the target name) | 1 |
 
 If cleaning up after a failure fails, one more line on stderr names the leftover staging folder (`dmc campaign: could not delete <folder>; it is safe to delete.`), as `dmc pdf` does; a successful import whose staging folder cannot be deleted says `dmc campaign: done, but could not delete <folder>; it is safe to delete.`
 
+### Migrations
+
+Added after release 0.2.2, in the next release (spec 005, issue #172). A **standard** is a whole number. The kit's standard is the highest
+migration in `migrations/` of the DMC folder (`NNN-<slug>.md`, installed from `kit/migrations/`; 1 when there is none).
+A campaign's is the number in `adventures/<NAME>/.standard`, or 1 when there is no such file. A migration takes a
+campaign from `NNN-1` to `NNN`; DMC follows it (the `dmc-migrate-campaign` skill), and these verbs do the parts that
+must be exact. The format of a migration file is `specs/005-campaign-migrations/contracts/migration-file.md`.
+
+**Campaign files** are every file under `adventures/<NAME>/` except the top-level `backups/` folder and `.standard`:
+`verify` and `restore` compare only these.
+
+**standard** prints one line and changes nothing, except with `--init`. Without `NAME`, the active campaign.
+
+| Output | Meaning |
+|---|---|
+| `current` | the campaign's standard equals the kit's |
+| `behind: standard C, kit K: 002-slug.md, 003-slug.md` | the pending migrations, oldest first |
+| `ahead: standard C, kit K: update dmc` | the campaign was written by a newer `dmc` |
+| `unfinished: <backup file>` | a backup has a `.migrating` mark: a migration was started and not verified or restored (takes precedence) |
+| `initialised NAME at standard K` | `--init` on a campaign with no `.standard` (`dmc-new-campaign` runs it) |
+
+**backups** lists the counted backups, oldest first, after a line `N backups`. Counted means named
+`<NAME>_backup_<yyyyMMddHHmmss>.zip` or `...-<n>.zip`; any other file in `backups/` is never counted or removed. When the
+removal question is due, a last line holds it with the flag a yes allows: at exactly three,
+`ask: may the oldest backup, <file>, be removed? yes: --prune oldest`; above three,
+`ask: may the <n-2> oldest backups be removed, keeping the latest two? yes: --prune old`; below three, or while a
+migration is unfinished, none. DMC relays the question and holds none of these numbers.
+
+**backup** refuses while a migration is unfinished (`NAME has an unfinished migration from <file>: finish it or restore
+it`). Otherwise it writes an export of the campaign to `adventures/NAME/backups/NAME_backup_<yyyyMMddHHmmss>.zip` (local
+time; `-2`, `-3` on a clash; never replacing a file), checks it whole (manifest, sizes and the SHA-256 of every file),
+writes `<file>.migrating` beside it, and only then, with `--prune`, removes the oldest counted backup (`oldest`) or every
+counted one before it but the latest two (`old`), each with its companions `<file>.accounting.tsv`, `<file>.verified.tsv`
+and `<file>.migrating`. It prints `backed up NAME: <n> files to backups/<file>`, with `; removed <k> older` after a
+prune and `; could not remove <files>` if a removal failed (the backup still stands). A failure before the mark removes
+the new file and removes nothing.
+
+**verify** compares the campaign with a backup: `--backup` (a file in `backups/` or a path; default the marked backup,
+else the latest) and its accounting file (`--accounting`; default `backups/<file>.accounting.tsv`; a missing file is
+empty). The pending migrations are those above the backup's `.standard`, up to the kit's. It passes only when:
+
+1. the backup is whole and is a backup of NAME;
+2. every **content unit** of the backup's campaign files is matched in the campaign or accounted for. A unit is a
+   non-blank line of a `.md` or `.txt` file, trimmed, with runs of whitespace collapsed, a leading `- `, `* `, `+ `,
+   `N. ` or `> ` and a heading's `#`s removed; table separator rows, horizontal rules and HTML comments are skipped. Any
+   other file is one unit, `file <path>`. A unit is matched when the same text is a unit of the campaign, or, for one of
+   20 characters or more, is contained in a longer one. Its id is the first 12 hex digits of the SHA-256 of its text;
+3. each unmatched unit has a line `<id>\treworded\t<anchor>` (an anchor of at least 8 characters that occurs in the
+   campaign) or `<id>\tdropped:<class>\t<reason>` (a class one of the pending migrations declares in `drops`);
+4. the accounting file has no `skipped\t<file>\t<reason>` line (a file DMC left unmigrated);
+5. every check the pending migrations name passes.
+
+On a pass it writes `.standard` (the kit's standard) and `<file>.verified.tsv` (the path and SHA-256 of each campaign
+file), removes `<file>.migrating`, and prints `verified NAME: <u> units, <m> matched, <a> accounted, <n> dropped;
+standard K` (`<a>` reworded, `<n>` dropped; `u = m + a + n`). On a failure it prints, then exits 1 with
+`verification failed: <what>; <file> is untouched`:
+
+```
+unaccounted: <id> <file> <first 60 characters> [(anchor not found: ...) | (drop class X is not declared by the pending migrations)]
+<n> more
+skipped: <file> <reason>
+check <name>: <what is wrong>
+```
+
+The first 40 unaccounted lines are printed, then `<n> more`; `--all` prints them all. `--list` prints the same lines
+(`skipped: <file>` without the reason) and `<k> to account in backups/<file>.accounting.tsv`, writes nothing and exits 0:
+this is how DMC gets the ids. A run that cannot verify is one line, exit 1: the campaign is ahead of the kit
+(`NAME is ahead (standard C, kit K): update dmc`), `NAME has no backup: dmc campaign backup NAME takes one`,
+`no backup <FILE>: ...`, a damaged backup, `<file> is a backup of <other>, not NAME`,
+`no migration is pending: <file> is at standard B and the kit at K`, a bad accounting line
+(`<file> line <n>: <what is wrong>`), or `cannot verify: two different units share the id <id> (...)`.
+
+The checks (`MigrationChecks`): `sheets-end-with-history` (on each `character-sheets/pc-*.md` and `npc-*.md`, not the
+`-history.md` files, a `## History`, `## Notes` or `## History with the PC` section is last, with only history-like
+sections after it); `npc-sheets-have-names-line` (each `npc-*.md` has a "Names they use" line);
+`no-dead-opposition-rows` (`story/dm-notes.md` has an Opposition table and no row whose second cell starts `0 /` or
+`0/`); `fights-have-timeline` (each row that was finished in the backup is a row of `story/dm-notes-archive.md`, and a
+line under `## Timeline` in `story/canon.md` has a session reference such as `s3.2` and the row's Who text, ignoring
+case); `one-last-played-line` (`story/dm-notes.md` has at most one line starting Last played and no Mix tracker
+section).
+
+**restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
+`--yes` it prints the plan and changes nothing:
+
+```
+restore NAME from <file>: <r> files replaced, <d> removed, <a> added
+warning: NAME has changed since the migration was verified (<c> files): those changes will be lost
+confirm with --yes
+```
+
+The warning compares the campaign with `<file>.verified.tsv`, so it names play after the migration, not the
+migration's own changes; with no such record it compares with the backup and says `has changed since the backup`. With
+`--yes` it checks the backup whole, extracts it into `adventures/.restore-NAME-<id>/`, moves the campaign's `backups/`
+into it, renames the campaign to `adventures/.replaced-NAME-<id>`, renames the staging into place, deletes the old
+campaign and removes every `.migrating` mark; it prints `restored NAME from <file>: <n> files`. A failure before the
+rename into place puts the campaign back (`could not restore NAME: <reason>; the campaign is as it was`). A run that
+finds the campaign renamed aside by an interrupted restore puts it back first and says
+`recovered NAME from an interrupted restore`.
 ## size
 
 Added in the next release.
@@ -489,7 +592,7 @@ At most three lines, and, over a folder that already had a manifest, the refresh
 dmc refresh [FOLDER | --all]
 ```
 
-Rewrites the generated files of a DMC folder from the copy inside this `dmc`, and nothing else (contract `dmc-refresh.md`). The folder is the one given, or with `--all` every folder in `dmc.json` that is still a DMC folder, or else the folder `dmc folder` finds. For each file of the program's table (`kit/dm-rules.md` is `CLAUDE.md`, `kit/settings.json` is `.claude/settings.json`, `kit/skills/**` is `.claude/skills/**`, `kit/templates/**` is `templates/**`):
+Rewrites the generated files of a DMC folder from the copy inside this `dmc`, and nothing else (contract `dmc-refresh.md`). The folder is the one given, or with `--all` every folder in `dmc.json` that is still a DMC folder, or else the folder `dmc folder` finds. For each file of the program's table (`kit/dm-rules.md` is `CLAUDE.md`, `kit/settings.json` is `.claude/settings.json`, `kit/skills/**` is `.claude/skills/**`, `kit/templates/**` is `templates/**`, `kit/migrations/**` is `migrations/**`):
 
 | State of the file | What happens |
 |---|---|
@@ -503,11 +606,12 @@ Rewrites the generated files of a DMC folder from the copy inside this `dmc`, an
 
 The manifest is written last, so an interrupted refresh leaves the old one and the next refresh repairs the folder. Nothing under `adventures/`, `feedback/`, `modules/`, `rules/` or `exports/` is ever written, replaced or removed, whatever the table or a manifest says. Like `install`, it refuses first inside a Claude Code session.
 
-| Output (stdout, at most two lines per folder) | When |
+| Output (stdout, at most three lines per folder) | When |
 |---|---|
 | nothing | nothing to do |
 | `dmc refresh: <folder>: <n> files updated for dmc X.Y.Z` | files written, replaced or removed |
 | `dmc refresh: <folder>: <n> edited files kept in .dmc/replaced/<stamp>/` | hand edits were kept |
+| `dmc refresh: <folder>: <n> campaigns are behind the new rules: ask DMC to bring them up to date` (`1 campaign is behind ... bring it up to date`) | files were updated, and campaigns of the folder are behind the new `migrations/` or have an unfinished migration |
 
 | Message (stderr, exit 1 unless said) | When |
 |---|---|

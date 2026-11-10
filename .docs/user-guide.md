@@ -68,7 +68,7 @@ Type `/dmc-new-campaign`. DMC then:
 
 1. asks for a title (or offers a few) and creates the campaign folder under `adventures/`;
 2. asks whether this is an original adventure or a published module (see [Published modules](#published-modules));
-3. runs a short session zero: how you like dice handled, what you enjoy, narration length, the rules edition (2014 by default, or 2024), starting level, tone and lethality;
+3. runs a short session zero: how you like dice handled, what you enjoy, narration length, the rules edition (2014 by default, or 2024), starting level, tone and lethality, and, for a sequel, which earlier campaign it continues (DMC then checks that campaign's files for facts from it);
 4. builds your character with you, following the edition's rules. You make every choice; DMC explains options and does the arithmetic;
 5. writes its own notes for the world behind the curtain, and opens the first scene.
 
@@ -125,7 +125,7 @@ When positions matter, DMC opens a map in your web browser: a grid with walls, t
 - The map shows only what your character has seen.
 - The map is a local file, `adventures/<campaign>/maps/live.html`. Nothing is uploaded.
 
-If you prefer text maps in the terminal, tell DMC. If you play away from the computer's screen (so you cannot keep the browser tab open), tell DMC that too: it sends you the picture, `live.png`, after its reply text instead. For that case the hook does not help (a hook cannot send a file), so the order depends on DMC writing the text first.
+If you prefer text maps in the terminal, tell DMC. If you play away from the computer's screen (so you cannot keep the browser tab open), tell DMC that too: it sends you the picture, `live.png`, before its reply text instead. For that case the hook does not help (a hook cannot send a file), so the order depends on DMC writing the text first.
 
 ## Saving and breaks
 
@@ -163,7 +163,7 @@ Two files say how you want the game run. Both are plain text; edit them by hand 
 | File | Holds |
 |---|---|
 | `adventures/player-options.md` | Your preferences for every campaign: who rolls, how rolls are shown, how you talk with DMC, narration style, maps. Created from `templates/player-options.md` in your DMC folder the first time you play. |
-| `adventures/<campaign>/player-options.md` | One campaign's settings: edition, starting level, leveling, lethality, combat difficulty, tone, house rules, and any overrides of the general file. |
+| `adventures/<campaign>/player-options.md` | One campaign's settings: edition, starting level, leveling, lethality, combat difficulty, tone, house rules, the earlier campaign of a sequel, and any overrides of the general file. |
 
 The campaign file wins over the general file, which wins over DMC's defaults. When you ask for a change that could belong in either, DMC asks whether it is for this campaign or all of them.
 

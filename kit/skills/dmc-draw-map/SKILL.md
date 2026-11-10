@@ -80,7 +80,7 @@ The full format is in `.claude/skills/dmc-draw-map/map-format.md`.
 
 ## What must not be in these files
 
-The player can see everything in a map file. Put in only what the character can see or knows. Mark unexplored areas `?` or leave them empty. Hidden doors, unsprung traps, lurking enemies and anything else from `dm-notes.md` stay out until they are discovered; then add them.
+The player can see everything in a map file. Put in only what the character can see or knows. Mark unexplored areas `?` or leave them empty. Hidden doors, unsprung traps, lurking enemies and anything else from `dm-notes.md` stay out until they are discovered; then add them, in the same turn they are described. A player option against telling enemy numbers hides only what the character has not seen: an enemy the character has spotted is on the map. Never give a cell for something the map does not show.
 
 Draw only what exists now. Something the party is thinking of placing (a tripline, a lantern, a barricade) goes on the map when it has been placed, not while it is being discussed.
 

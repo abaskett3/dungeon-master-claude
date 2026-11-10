@@ -30,4 +30,4 @@ Enemy numbers and anything else the character does not know belong in `dm-notes.
 
 ## Timeline
 
-<!-- In-world dates of significant events, oldest first. -->
+<!-- In-world dates of significant events, oldest first. Each finished fight gets one line: what the characters did or said that others may talk about later, with sN.M. -->

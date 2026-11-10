@@ -21,7 +21,7 @@ The current arc of a homebrew campaign, or the stretch after a module ends. Plan
 - Progression: under milestone leveling, the level each milestone gives and where it falls; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
 - Wonder: other peoples, magic, monsters and marvels that appear in each stage.
 
-Mark a stage done when it ends, and a milestone awarded when it is given. Keep the section to about 25 lines.
+Mark a stage done when it ends, cut to one line (what changed), and a milestone awarded when it is given; delete finished beats. The full save's check of what was last played is one "Last played" line at the end of this section, overwritten each save, never a log. Keep the section to about 25 lines.
 -->
 
 ## Antagonists
@@ -31,9 +31,10 @@ Mark a stage done when it ends, and a milestone awarded when it is given. Keep t
 ## Opposition
 
 <!--
-The only place enemy numbers are kept. One row per enemy or group the party may meet.
+The only place enemy numbers are kept. One row per enemy or group the party may still meet.
 Update it when one dies, moves or is discovered; read it before stating or implying a count.
-Stat blocks are sized for the party actually present (see "Sizing fights" in CLAUDE.md).
+When a fight finishes a group, its row moves to dm-notes-archive.md (the story of the fight goes on one Timeline line in canon.md).
+Stat blocks are sized for the party actually present (see "Sizing fights" in CLAUDE.md): size from the sheets, and keep no copy of the party's numbers here.
 -->
 
 | Who | How many (alive / started) | Where now | Stat block (AC, HP, attacks) | The party knows |
@@ -57,4 +58,4 @@ Stat blocks are sized for the party actually present (see "Sizing fights" in CLA
 
 ## About this player
 
-<!-- Lasting statements, not a diary: what they have enjoyed, what fell flat, how they like to solve problems. Merge dated lines that say the same thing; about 40 lines at most. -->
+<!-- Lasting statements, not a diary: what they have enjoyed, what fell flat, how they like to solve problems. Nothing player-options.md already says. Merge dated lines that say the same thing; about 40 lines at most. -->

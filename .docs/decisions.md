@@ -390,6 +390,14 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** A feedback item that turns into a new feature or a change to `dmc`'s code is not "tuning", even when a hook only runs `dmc`; where the line falls is decided when the change is proposed.
 - **Source:** The user, after PR #161.
 
+## A spec given no issue gets one when it is written (issue #178)
+
+- **Date:** 2026-11-10
+- **Decision:** If `/speckit-specify` is given no issue, its session opens one at the end, once `spec.md` is written, and names it in the spec's Input line. The issue is short: the goal, why, a summary, and a link to the spec folder, which holds the detail. This settles the step that the entry "Spec Kit is kept for every toolkit change" left open when it made one issue per change the tracking point. Its home is `.docs/development.md` § Spec-driven changes.
+- **Reason:** Until spec 007, every spec started from an issue (#174 for 006; #172, from the third feedback review, for 005). Spec 007 started from the user's own description, and nothing said which step opens its issue. Opening it after the spec is written means the plan, the tasks and the PR can all cite the number from the start, and the work is visible on GitHub even when planning happens later in another session. Waiting until `/speckit-plan` would leave the spec citing no issue and depend on a later session remembering to open one. `/speckit-clarify` may still change the spec, so the issue points at the spec instead of repeating it, and does not go stale.
+- **Limits:** A spec dropped after `/speckit-specify` leaves an issue to close. The rule lives in the development docs, not in the `speckit-specify` skill, because a Spec Kit upgrade would overwrite an edit to the skill.
+- **Source:** The user, 2026-11-10, while specifying `specs/007-image-prompts/` (issue #178).
+
 ## Players install `dmc`, which writes and updates a DMC folder (issue #67)
 
 - **Date:** 2026-10-24

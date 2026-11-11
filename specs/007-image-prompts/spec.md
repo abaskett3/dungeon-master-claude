@@ -55,7 +55,8 @@ player can name, save and switch between.
 - Q: Where are saved image styles, and the last one used, kept? → A: In the general `adventures/player-options.md`,
   shared by every campaign, so a style saved in one campaign is there in the next (FR-013).
 - Q: Is a prompt in several styles at once a feature of its own? → A: No. The player can ask DMC for it in words and
-  DMC will do it, but the skill defines one prompt per request in one style, and no request form for several.
+  DMC will do it, with no request form of its own. (Changed by PR #185's code review: the reply gives one label and
+  block per style; it had first allowed one prompt per request.)
 - Q: What if the player wants a different style but does not describe one ("try a different style", "surprise me")? →
   A: DMC picks a style itself, unlike the one just used and the ones it has offered this session, and treats it as a
   style the player described: used for that prompt, not saved unless asked (FR-011, FR-014).
@@ -140,8 +141,8 @@ the second, then ask for a prompt naming no style, and check it is in the second
    prompt naming no style, **Then** the prompt is in "Concept art".
 3. **Given** a style the player described in the request and did not save, **When** they next ask for a prompt naming no
    style, **Then** DMC uses the last *saved* style used, not the unsaved one.
-4. **Given** each prompt, **When** DMC shows it, **Then** it is out of character, in one block the player can copy
-   whole, labelled with the style's name, and nothing in the game changes: no time passes and no game state is touched.
+4. **Given** each prompt, **When** DMC shows it, **Then** it is out of character, alone in a code block the player
+   can copy whole, under a line naming the style, and nothing in the game changes: no time passes and no game state is touched.
 
 ---
 
@@ -190,8 +191,9 @@ and ask for a prompt naming that style.
   part in a line that reveals nothing more ("Shale hasn't seen that yet"), and offers the scene as the character knows it.
 - **A spoiler by implication**: a hidden figure's shadow, eyes in the trees, a disguised NPC's true colours or a cursed
   item's glow. Each counts as showing what is hidden, and none appears.
-- **A size the sheet gives in game terms only** ("Small", "Medium"): the prompt turns it into a comparison with
-  someone present (a Small creature next to a Medium human is about waist- to chest-high), never a bare size category.
+- **A size the files give in game terms only, or not at all** ("Small", "Medium"): the prompt compares the size
+  categories of the figures present: the same size is drawn the same (a human and an elf), a smaller one smaller (a
+  gnome beside the humans), a larger one bigger (a dragon over the humans), never as a bare category.
 - **Many people present** (a crowd at the Landing): the named characters are stated in full; the crowd is described as
   a crowd, consistent with the place's people (no species the setting's files do not put there).
 - **Two styles saved under similar names**: DMC asks which, in a line.
@@ -208,8 +210,11 @@ and ask for a prompt naming that style.
 - **FR-001**: The kit MUST provide a player skill `dmc-generate-image-prompt` that writes a prompt for an image-generation
   model of a moment in the campaign. DMC MUST use it whenever the player asks for an image prompt, by the slash command or
   in words.
-- **FR-002**: A prompt MUST be shown out of character, in one block the player can copy whole, labelled with the name of
-  the style used (for an unsaved style, a short name of what it is, marked unsaved), with nothing outside the block but the one-line notes of FR-009 and FR-010 when they apply.
+- **FR-002**: A prompt MUST be shown out of character, alone in a fenced code block so that a copy takes the prompt and
+  nothing more, under a line naming the style used (for an unsaved style, a short name of what it is, marked unsaved),
+  with nothing else but the one-line notes of FR-009 and FR-010 and the one-line nudge after a variation or a first
+  Storybook prompt, when they apply. A request for the same picture in several styles gets one such label and block
+  per style, with the notes once, after the last block.
 - **FR-003**: Writing a prompt MUST NOT change the game: no time passes, no roll is made, and no game state, canon or
   map changes. The only writes allowed are a detail the player gives under FR-009, the saved styles under FR-012 to FR-015, and
   the one line the session log already gives an out-of-character request.
@@ -222,14 +227,17 @@ and ask for a prompt naming that style.
   and who is present, from `game-state.md` and the latest session log. Where the request does not say who is in the picture
   or how wide the shot is, it MUST show everyone present in a wide shot of the whole scene; the player may ask for fewer
   figures, a closer shot or a different subject. A past moment the player names MUST be built from
-  its session log and the files as they stood then.
+  its session log and the files as they stood then: injuries from that scene, not from `game-state.md`, and a past look
+  from the sheet's history or the `-history.md` file the full save moves older history to.
 - **FR-006**: Every named figure in the prompt MUST be described from their sheet or minor-NPC row: species, sex where
   the files give it, age, build, colouring, clothing and gear, marks and injuries at that moment. The prompt MUST NOT add
   a trait the files contradict, and MUST NOT give a figure a species other than the one the files give.
 - **FR-007**: Each figure's size MUST be stated as a comparison with someone or something in the scene (for example
   "chest-high to the humans", "the size of a big hound"), taken from the files, so that sizes hold within a picture and
   from one picture to the next. A creature's kind MUST be named explicitly (a cat, a dog, a wyrmling), never left to a
-  word like "pet".
+  word like "pet". Where the files give no comparison, the figures' size categories in the campaign's rules MUST decide
+  it: figures of the same size are drawn the same size, and one of a smaller or larger size smaller or bigger than
+  them. A bare category or a height MUST NOT appear in the prompt.
 - **FR-008**: The prompt MUST include only what the player's character has perceived at that moment, as the rule "Say
   only what the listener could know" in the DM rules already requires of everything DMC tells the player: no hidden or
   undetected enemy, no true form of a disguised being, no secret from `story/dm-notes.md` or a sheet, no future event,
@@ -254,14 +262,16 @@ and ask for a prompt naming that style.
   FR-005 to FR-010 win, so a change of style never adds, drops or changes a figure. Scene details given with a style
   (rain, night) are content.
 - **FR-012**: The player MUST be able to save the style of the last prompt (as given or as refined over several prompts)
-  under a name, and to list, rename, change and delete saved styles, each confirmed in a line.
+  under a name, and to list, rename, change and delete saved styles, each confirmed in a line. A save or rename to a
+  name another saved style has, ignoring case, MUST ask in a line whether to replace that style; a replaced style that
+  was the last used gives its place to the new one. After a reply in several styles, "save that" MUST ask which.
 - **FR-013**: Saved styles and which one was used last MUST be kept in the general `adventures/player-options.md`,
   shared by every campaign, in a section of their own with a fixed shape, each style a name and its description. A
   campaign's `player-options.md` holds no styles.
 - **FR-014**: A style described in a request, a variation of a saved style, or a style chosen by DMC, MUST NOT be saved unless the player asks for it to be saved, and using an
   unsaved style (other than a variation, FR-015) MUST NOT change which saved style was used last.
 - **FR-015**: Using a saved style (named, as the default, or varied under FR-015a) MUST record it as the last used, only
-  when that changes.
+  when that changes. A reply in several styles MUST NOT change the last used.
 - **FR-015a**: A variation of a saved style MUST NOT change the saved style. DMC MUST say in a line that the saved style
   is unchanged and that the player can have the change saved into it; on the player's word it is saved and confirmed.
 - **FR-016**: A style name that matches no saved style MUST be answered with the saved names, and no prompt until the
@@ -311,8 +321,11 @@ and ask for a prompt naming that style.
 - The built-in default is described once, in the kit, and is not written into the player's options unless they save it.
 - A detail the player gives under FR-009 is an appearance fact like any other, so it belongs in the sheet, where the next
   prompt and the story both find it.
-- Stating a size the files give in game terms (Small, Medium) as a comparison is not a choice: it follows from the
-  rules' size categories, so FR-007 still applies to it.
+- Stating a size as a comparison where the files give only a size category (Small, Medium) or none is not a choice: it
+  follows from comparing the size categories in the campaign's rules, so FR-009 does not apply to it. D&D gives most
+  creatures a size category rather than a height, so the categories are the one firm measure (the user's ruling on
+  PR #186's review); a figure the files make taller or shorter than its category, such as a dwarf "chest-high to the
+  humans", keeps the files' comparison.
 - The skill reads the campaign's files and the session log; it relies on the existing rule that the files are the truth,
   and on the knowledge-boundary rule in the DM rules for spoilers, and does not restate either.
 - Rorn's Landing's two styles (Looney Tunes, the current default, and Concept art) move once, in play: the player asks

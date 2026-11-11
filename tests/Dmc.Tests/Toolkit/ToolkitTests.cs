@@ -913,10 +913,11 @@ public sealed partial class ToolkitTests
         string[] headings = Regex.Matches(template, @"^## (.+)$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToArray();
         Assert.AreEqual(1, headings.Count(h => h == "Image styles"), "kit/templates/player-options.md must have exactly one `## Image styles` heading");
         int at = Array.IndexOf(headings, "Image styles");
+        Assert.IsTrue(at > 0 && at < headings.Length - 1, "`## Image styles` lies between `## Style` and `## Other requests`, not first or last");
         Assert.AreEqual("Style", headings[at - 1], "`## Image styles` comes right after `## Style`");
         Assert.AreEqual("Other requests", headings[at + 1], "`## Image styles` comes right before `## Other requests`");
 
-        var section = Regex.Match(template, @"^## Image styles\n(.*?)(?=^## )", RegexOptions.Multiline | RegexOptions.Singleline).Groups[1].Value;
+        var section = Regex.Match(template, @"^## Image styles\n(.*?)(?=^## |\z)", RegexOptions.Multiline | RegexOptions.Singleline).Groups[1].Value;
         string[] lines = section.Split('\n').Where(l => l.Trim().Length > 0).ToArray();
         string[] bullets = lines.Where(l => l.StartsWith("- ", StringComparison.Ordinal)).ToArray();
         CollectionAssert.AreEqual(new[] { "- **Last used**: none" }, bullets, "the template's only bullet is `- **Last used**: none`");

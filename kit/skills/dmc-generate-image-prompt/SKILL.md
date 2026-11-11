@@ -18,7 +18,7 @@ With no campaign loaded, ask which campaign the picture is from, or write the pr
 
 ## The scene
 
-- **When**: the current moment, from `game-state.md` (place, time, light, weather, who is present) and the end of the latest session log. For a past moment the player names ("the reunion at the Landing"), find it under `story/sessions/` by the place or the people, read that scene, and take who was there, their injuries and the time from it. Where a figure looked different then, the sheet's History says how. Show nothing the character learned only later.
+- **When**: the current moment, from `game-state.md` (place, time, light, weather, who is present) and the end of the latest session log. For a past moment the player names ("the reunion at the Landing"), find it under `story/sessions/` by the place or the people, read that scene, and take who was there, their injuries and the time from it. Where a figure looked different then, the sheet's History says how, or `character-sheets/<sheet name>-history.md`, where the full save moves older history. Show nothing the character learned only later.
 - **Who and how wide**: unless the request says otherwise, everyone present, in a wide shot of the whole scene. The player may ask for fewer figures, a closer shot, a pose or another subject.
 - **Content the player supplies** ("Shale riding Kibil over the river") is kept. Every figure is still as the files describe them. Where the scene contradicts the story, say so in one line and offer the closest version that agrees ("Kibil can't carry Shale yet: he's hound-sized. Shale running beside him?").
 
@@ -26,8 +26,8 @@ With no campaign loaded, ask which campaign the picture is from, or write the pr
 
 Describe every named figure from their sheet in `character-sheets/`, or their row in `character-sheets/minor-npcs.md`:
 
-- **Species**, exactly as the files give it, with no trait of another species: a human gets no pointed ears, and a half-elf is a half-elf only if the sheet says so. Then sex where the files give it, age, build, colouring, clothing, gear, and marks and injuries at that moment (injuries and conditions from `game-state.md`).
-- **Size** as a comparison with someone or something in the picture: "a stocky dwarf, about chest-high to the humans beside him", "the size of a big hound". Use the comparison the files give, in the same words each time, so a size holds from picture to picture. A size given only as a category (Small, Medium) is turned into a comparison by the sizes in the campaign's rules; that follows from the rules and is not a choice.
+- **Species**, exactly as the files give it, with no trait of another species: a human gets no pointed ears, and a half-elf is a half-elf only if the sheet says so. Then sex where the files give it, age, build, colouring, clothing, gear, and marks and injuries at that moment (for the current moment from `game-state.md`, for a past one from its scene).
+- **Size** as a comparison with someone or something in the picture: "a stocky dwarf, about chest-high to the humans beside him", "the size of a big hound". Use the comparison the files give, in the same words each time, so a size holds from picture to picture. Where the files give none, compare the figures' size categories from the campaign's rules: figures of the same size are drawn the same size (a human and an elf, both Medium; a gnome and a halfling, both Small), and one of a smaller or larger size is drawn smaller or bigger than them ("a gnome, smaller than the humans beside her", "a dragon towering over the humans"). Never give a bare category or a height in the prompt. With no other figure in the picture, compare with something in the scene (a doorway, a cart). That follows from the rules and is not a choice.
 - **A creature** is named by its kind (a cat, a dog, a wyrmling) with its row's details, never only as "her pet".
 - **A crowd** is described as a crowd of the place's people, with no species the setting's files do not put there.
 
@@ -63,7 +63,7 @@ A style holds the look only. Where a style's words say who is shown or how wide 
 
 ## The last used style
 
-After a prompt in a saved style (named, used as the default, or varied), set `- **Last used**:` to that style's name if it is not already. A style described in the request, or one you chose, never changes it. The section's shape is in `templates/player-options.md`.
+After a prompt in a saved style (named, used as the default, or varied), set `- **Last used**:` to that style's name if it is not already. Any other style described in the request, and any style you chose, never changes it, and nor does a reply in several styles. The section's shape is in `templates/player-options.md`.
 
 ## Saved styles
 
@@ -78,7 +78,7 @@ Saved styles live only in the general `adventures/player-options.md`, never in a
 | "change Woodcut to ..." | Rewrite its description |
 | "delete Woodcut" | Remove its line; if it was the last used, set Last used to `none`, so the default is Storybook until another saved style is used |
 
-Confirm each in one line. A name that matches no saved style gets one line listing the saved names and no prompt, until the player picks or describes a style. Two saved names the request could mean get one line asking which.
+Confirm each in one line. A name that matches no saved style gets one line listing the saved names and no prompt, until the player picks or describes a style. Two saved names the request could mean get one line asking which. A save or rename to a name another saved style has, ignoring case, asks in one line whether to replace that style; if the style replaced was the last used, the new one takes its place there. After a reply in several styles, "save that" asks in one line which one.
 
 ## A variation
 
@@ -90,11 +90,6 @@ When the player asks for a different style without describing one ("try somethin
 
 ## What to show
 
-One prompt per request, out of character, in this shape and nothing else:
-
-```text
-<the style's name, or "<short name> (unsaved)">
-> <the prompt: the content, then the style, as one block of prose ready to copy>
-```
+Out of character, and nothing else: the style's name, or "<short name> (unsaved)", on a line of its own, then the prompt alone in a fenced code block, so a copy takes the prompt and nothing more. The prompt is the content, then the style, as one paragraph of prose. When the player asks for the same picture in several styles, give one such label and block per style, and the notes below once, after the last block.
 
 After the block, at most: one line naming missing details, one line on a contradiction, and one line of nudge. The nudge follows a variation (§ A variation), or a prompt in Storybook with no saved styles: which style it used, and that "save that as <name>" keeps a look. Follow the request on language or length for that prompt. The reply never mentions anything § What stays out keeps out. Then go back to the fiction.

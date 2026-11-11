@@ -5,14 +5,14 @@ checks.
 
 ## Image prompt (not stored)
 
-The text DMC shows, once per request.
+The text DMC shows, once per style the request asks for.
 
 | Part | Source | Rule |
 |---|---|---|
 | Label | The style's name, or a short name marked `unsaved` | FR-002 |
 | Content | `game-state.md`, the latest session log (or the named past scene), the sheets, `minor-npcs.md` | FR-005 to FR-010, FR-011a |
 | Style | Chosen in the order of FR-011 | FR-011 |
-| Notes | At most the missing-details line (FR-009) and the contradiction line (FR-010), after the block | FR-002 |
+| Notes | At most the missing-details line (FR-009), the contradiction line (FR-010) and the nudge, once, after the last block | FR-002 |
 
 The content has two rules:
 - **Who and what is shown:** everyone present in a wide shot of the whole scene, unless the request says otherwise

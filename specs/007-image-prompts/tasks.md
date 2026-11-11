@@ -96,7 +96,8 @@ whatever the skill's default section says.
      - species (never another, and no trait of another), sex, age, build, colouring, clothing, gear, and marks and
        injuries at that moment;
      - size as a comparison with someone or something present, with a size category turned into a comparison by the
-       rules' sizes;
+       rules' sizes (PR #186: by comparing the figures' size categories, the same size drawn the same, a smaller one
+       smaller, a larger one bigger);
      - a creature named by its kind, never "pet";
      - a crowd described as a crowd, of the place's people.
   4. **"What stays out"**: point at the DM rules' "Say only what the listener could know", and list the visual forms

@@ -67,6 +67,26 @@ public sealed class RecallLibraryTests
     }
 
     [TestMethod]
+    public void TextInsideHtmlCommentsIsNeverRanked()
+    {
+        Write(_root, $"adventures/{Sequel}/game-state.md",
+            "# Game state\n\n<!--\n- Troll (an example): AC 15, HP 84, speed 30 ft, regains 10 HP a turn\n-->\n" +
+            "- **Last full save**: never <!-- a troll example in an inline comment that is long enough -->\n");
+        Write(_root, $"adventures/{Sequel}/story/sessions/session-033.md",
+            "# Session 33\n\n### Scene 1: The bridge\n\nA troll under the old toll bridge demands a silver piece from every traveller.\n");
+        var lines = Run("troll");
+        CollectionAssert.AreEqual(new[] { $"{Sequel} story/sessions/session-033.md:5 s33.1 | A troll under the old toll bridge demands a silver piece from every traveller." }, lines);
+    }
+
+    [TestMethod]
+    public void QuotationMarksAndPluralPossessivesDoNotHideAWord()
+    {
+        Write(_root, $"adventures/{Sequel}/story/canon.md", "# Canon\n\n- The order is called 'Silver Hand' and meets in the Knights' hall at dusk (s5.2).\n");
+        var lines = Run("silver hand knights");
+        StringAssert.StartsWith(lines[0], $"{Sequel} story/canon.md:3 s5.2 | ");
+    }
+
+    [TestMethod]
     public void OfTwoLinesThatMatchAlikeCanonComesBeforeTheSessionLog()
     {
         Write(_root, $"adventures/{Sequel}/story/canon.md", "# Canon\n\n- The lantern on the ferry post is lit at dusk every evening.\n");

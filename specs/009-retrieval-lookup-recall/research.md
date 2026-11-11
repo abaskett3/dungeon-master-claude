@@ -35,7 +35,7 @@ the issue-179 session's `recall.py`, `recall_alias.py`, `sample.py` and `queries
   apostrophes folded to `'`), longer than one character and not in the prototype's common-word list (about 100 English
   function words plus *say, said, tell, told, get, got, one, thing, things*). Stemming is the prototype's "better
   stemming" variant (`recall_alias.py`): drop a trailing `'s`, then the first of `ation`, `ion`, `ing`, `ed`, `es`, `s`
-  that leaves at least four letters. Non-ASCII letters (accented names) are kept as letters, so "Rörn" is one word.
+  that leaves at least four letters. Non-ASCII letters (accented names) are kept as letters, so "Rörn" is one word, and apostrophes at a word's ends are dropped, so `'Silver Hand'` and `Knights'` match `silver` and `knight` (both changes from the prototype; the second from PR #187's code review).
   Known gaps, kept for now: a word and its plural can stem apart ("horse" stays, "horses" becomes "hors"), and short
   stems are left whole ("ruled"); the test measured the prototype with these gaps.
 - **Rationale:** These are the settings the spec's figures came from (29/30 named with the better stemming). The
@@ -48,7 +48,8 @@ the issue-179 session's `recall.py`, `recall_alias.py`, `sample.py` and `queries
 ## R3. Line units: what is ranked
 
 - **Decision:** Each line of a file in scope, trimmed of spaces, is a unit unless it is under 25 characters, a heading,
-  an HTML comment line, a table separator (`|---`), or inside a fenced code block. A unit keeps its campaign, file,
+  wholly inside an HTML comment (comment text is removed first, on one line or across several, since the templates'
+  guidance and examples live in comments), a table separator (`|---`), or inside a fenced code block. A unit keeps its campaign, file,
   1-based line number, tier, the scene it sits in (session logs) and the first `sN.M` citation it holds.
 - **Rationale:** The prototype's filter. Short lines and headings carry no fact by themselves; a stat block's name is a
   heading, which lookup (R7) finds and recall need not.
@@ -124,8 +125,9 @@ the issue-179 session's `recall.py`, `recall_alias.py`, `sample.py` and `queries
 
 ## R9. A rules reference kept as a PDF
 
-- **Decision:** `rules` is markdown when `rules/` holds a `*.md` file other than `index.md` (outside `extracted/`);
-  those files are searched like any source. Otherwise lookup searches `rules/index.md` by lines: every line (a table
+- **Decision:** `rules/`'s markdown other than `index.md` (outside `extracted/`) is searched like any source. It is a
+  PDF reference when it holds a `*.pdf` or `extracted/text/`; then, when no markdown heading matches (or there is no
+  markdown), lookup searches `rules/index.md` by lines: every line (a table
   row, a list item, a paragraph) that holds every word of the request is printed as `rules/index.md:<n>: <line>`,
   trimmed as R4 does, at most 8. If no index line matches and `rules/extracted/text/page-NNN.txt` exist, it prints one
   line naming the pages whose text holds the request as a phrase (case and spacing ignored), at most 10, for DMC to read

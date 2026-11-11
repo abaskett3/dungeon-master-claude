@@ -30,6 +30,19 @@ public sealed class WordsAndHeadingsTests
     }
 
     [TestMethod]
+    public void ApostrophesAtAWordsEndsAreDroppedAndInsideKept()
+    {
+        CollectionAssert.AreEqual(new[] { "silver", "hand", "knight", "hall", "don't" }, Words.Stems("'Silver Hand' Knights' hall, don't"));
+    }
+
+    [TestMethod]
+    public void CommentsAreRemovedAcrossLinesButNotInsideFences()
+    {
+        var file = MarkdownFile.FromText("x.md", "a <!-- one --> b\n<!--\nhidden\n-->\nc <!-- open\nstill --> d\n```\n<!-- kept -->\n```\n");
+        CollectionAssert.AreEqual(new[] { "a  b", "", "", "", "c ", " d", "```", "<!-- kept -->", "```" }, file.Visible);
+    }
+
+    [TestMethod]
     public void HeadingsAreAtxLinesOutsideFences()
     {
         var file = MarkdownFile.FromText("x.md",

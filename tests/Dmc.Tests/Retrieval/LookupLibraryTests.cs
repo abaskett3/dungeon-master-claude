@@ -152,6 +152,38 @@ public sealed class LookupLibraryTests
     }
 
     [TestMethod]
+    public void AMarkdownFileBesideARulesPdfDoesNotHideThePdf()
+    {
+        PdfRules(_root);
+        Write(_root, "rules/house-rules.md", "# House rules\n\n## Flanking\n\nFlanking gives advantage at this table.\n");
+        CollectionAssert.AreEqual(new[] { "rules/house-rules.md:3-5", "## Flanking", "", "Flanking gives advantage at this table." }, Lookup.Run(_root, "rules", "flanking"));
+        CollectionAssert.AreEqual(new[] { "rules: \"Fireball\" is on PDF pages 129, 130 (read them in rules/srd.pdf)" }, Lookup.Run(_root, "rules", "Fireball"));
+    }
+
+    [TestMethod]
+    public void ACommentedHeadingIsNotAHeading()
+    {
+        Write(_root, $"adventures/{Sequel}/story/sessions/session-034.md",
+            "# Session 34\n\n<!--\n### Scene N: an example scene heading\n-->\n\n### Scene 1: The real one\n\ntext\n");
+        var lines = Lookup.Run(_root, $"{Sequel}/story/sessions/session-034.md", "scene");
+        Assert.AreEqual($"adventures/{Sequel}/story/sessions/session-034.md:7-9", lines[0]);
+    }
+
+    [TestMethod]
+    public void TheTooLargeMarkCountsBytesAsDmcSizeDoes()
+    {
+        // A section of exactly 79,999 bytes: 14 for the heading, 799 lines of 100, and one of 85. dmc size's estimate,
+        // bytes ÷ 4 rounded down, is 19,999 tokens, under the 20,000 mark; rounding up would make it 20,000 and refuse it.
+        var text = new System.Text.StringBuilder("# Big\n").Append("## Just under\n");
+        for (int i = 0; i < 799; i++)
+            text.Append(new string('x', 99)).Append('\n');
+        text.Append(new string('y', 84)).Append('\n');
+        Write(_root, $"modules/{Module}/chapters/03-big.md", text.ToString());
+        var lines = Lookup.Run(_root, Module, "just under");
+        Assert.AreEqual("## Just under", lines[1], "a section of 79,999 bytes is 19,999 tokens, under the 20,000 mark, so it is printed");
+    }
+
+    [TestMethod]
     public void PdfRulesThatHoldNothingFail()
     {
         PdfRules(_root);

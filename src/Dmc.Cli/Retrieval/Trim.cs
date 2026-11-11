@@ -89,8 +89,8 @@ internal static class Trim
             int start = i;
             while (i < text.Length && IsWordChar(text[i]))
                 i++;
-            string word = text[start..i].Replace('’', '\'').ToLowerInvariant();
-            if (word.Length > 1 && !Words.IsCommon(word))
+            string? word = Words.Clean(text[start..i].Replace('’', '\'').ToLowerInvariant());
+            if (word is { Length: > 1 } && !Words.IsCommon(word))
                 found.Add((start, Words.Stem(word)));
         }
         return found;

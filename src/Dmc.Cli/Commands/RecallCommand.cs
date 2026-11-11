@@ -48,7 +48,7 @@ tokens. import/, exports/ and backups/ are never searched. It changes nothing an
             io.Out.WriteLine(Help);
             return 0;
         }
-        string folder = LookupCommand.Folder(request.Folder);
+        string folder = DmcFolder.FromOption(request.Folder);
         var (campaign, words) = Target(folder, request.Words);
         foreach (string line in Recall.Run(folder, campaign, string.Join(' ', words)))
             io.Out.WriteLine(line);
@@ -62,21 +62,16 @@ tokens. import/, exports/ and backups/ are never searched. It changes nothing an
     /// </summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="arguments">The positional arguments.</param>
-    /// <exception cref="DmcException">A staging folder is named, there is no active campaign, or the active one is missing.</exception>
+    /// <exception cref="DmcException">A staging folder is named, there is no active campaign, or the active one is missing (the messages of <see cref="SizeReport.Target"/>).</exception>
     static (string Campaign, IReadOnlyList<string> Words) Target(string dmcFolder, IReadOnlyList<string> arguments)
     {
-        string adventures = Path.Combine(dmcFolder, "adventures");
         string first = arguments[0];
         bool plain = first.Length > 0 && first.IndexOfAny(['/', '\\', ':']) < 0 && first is not "." and not "..";
-        if (arguments.Count > 1 && plain && Directory.Exists(Path.Combine(adventures, first)))
-        {
-            if (first.StartsWith('.'))
-                throw new DmcException($"{first} is not a campaign (a folder starting with a dot is a staging folder)");
-            return (first, arguments.Skip(1).ToList());
-        }
-        string active = SizeReport.ActiveName(adventures) ?? throw new DmcException("no active campaign: name one (dmc recall NAME WORDS)");
-        if (active.StartsWith('.') || active.IndexOfAny(['/', '\\', ':']) >= 0 || !Directory.Exists(Path.Combine(adventures, active)))
-            throw new DmcException($"the active campaign {active} is not in adventures/");
-        return (active, arguments);
+        if (arguments.Count > 1 && plain && Directory.Exists(Path.Combine(dmcFolder, "adventures", first)))
+            return (SizeReport.Target(dmcFolder, first, Usage), arguments.Skip(1).ToList());
+        return (SizeReport.Target(dmcFolder, null, Usage), arguments);
     }
+
+    /// <summary>How the "no active campaign" failure tells the user to name one.</summary>
+    const string Usage = "dmc recall NAME WORDS";
 }

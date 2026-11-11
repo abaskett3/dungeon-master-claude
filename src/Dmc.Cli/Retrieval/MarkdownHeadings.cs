@@ -10,63 +10,67 @@ namespace Dmc.Retrieval;
 internal sealed record Heading(int Level, string Text, int Line);
 
 /// <summary>
-/// A markdown file read once: its lines (line ends removed, a byte-order mark dropped), which of them are inside a
-/// fenced code block, and its headings. Both commands read files only through this, so a heading and a fence mean the
-/// same to lookup and to recall (research R3, R7).
+/// A markdown file read once: its lines (line ends removed, a byte-order mark dropped, as <c>dmc size</c> reads them,
+/// so their byte counts are the same), which of them are inside a fenced code block, each line's visible text (with
+/// HTML comments removed, since the templates' guidance and examples live in comments), and its headings. Both
+/// commands read files only through this, so a heading, a fence and a comment mean the same to lookup and to recall
+/// (research R3, R7).
 /// </summary>
 internal sealed class MarkdownFile
 {
     /// <summary>The path the file was read from.</summary>
     public string Path { get; }
 
-    /// <summary>The file's lines, without their line ends.</summary>
+    /// <summary>The file's lines, without their line ends, exactly as written.</summary>
     public string[] Lines { get; }
+
+    /// <summary>For each line (0-based), its bytes in the file, line end included, as <c>dmc size</c> counts them.</summary>
+    public int[] LineBytes { get; }
 
     /// <summary>For each line (0-based), true when it is part of a fenced code block, its fence lines included.</summary>
     public bool[] Fenced { get; }
 
-    /// <summary>The headings outside fenced code blocks, in order.</summary>
+    /// <summary>
+    /// For each line (0-based), its text with every HTML comment removed, including the parts of a comment that runs
+    /// over several lines; a fenced line is kept as written.
+    /// </summary>
+    public string[] Visible { get; }
+
+    /// <summary>The headings outside fenced code blocks and HTML comments, in order.</summary>
     public IReadOnlyList<Heading> Headings { get; }
 
-    /// <summary>Builds a file from text already read.</summary>
+    /// <summary>Builds a file from its bytes.</summary>
     /// <param name="path">The path, kept for messages and labels.</param>
-    /// <param name="text">The file's whole text.</param>
-    MarkdownFile(string path, string text)
+    /// <param name="bytes">The file's bytes.</param>
+    MarkdownFile(string path, byte[] bytes)
     {
         Path = path;
-        if (text.Length > 0 && text[0] == '﻿')
-            text = text[1..];
-        string[] lines = text.Split('\n');
-        if (lines.Length > 0 && lines[^1].Length == 0 && text.EndsWith('\n'))
-            lines = lines[..^1];
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].EndsWith('\r'))
-                lines[i] = lines[i][..^1];
-        }
-        Lines = lines;
-        Fenced = MarkdownHeadings.FencedLines(lines);
+        var lines = Size.Measurement.Split(bytes);
+        Lines = lines.Select(l => l.Text).ToArray();
+        LineBytes = lines.Select(l => l.Bytes).ToArray();
+        Fenced = MarkdownHeadings.FencedLines(Lines);
+        Visible = MarkdownHeadings.WithoutComments(Lines, Fenced);
         var headings = new List<Heading>();
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < Lines.Length; i++)
         {
-            if (!Fenced[i] && MarkdownHeadings.Parse(lines[i]) is { } h)
+            if (!Fenced[i] && MarkdownHeadings.Parse(Visible[i]) is { } h)
                 headings.Add(h with { Line = i + 1 });
         }
         Headings = headings;
     }
 
-    /// <summary>Reads a file as UTF-8.</summary>
+    /// <summary>Reads a file.</summary>
     /// <param name="path">The file.</param>
     /// <returns>The parsed file.</returns>
     /// <exception cref="IOException">The file cannot be read.</exception>
     /// <exception cref="UnauthorizedAccessException">The file cannot be read.</exception>
-    public static MarkdownFile Read(string path) => new(path, File.ReadAllText(path, Encoding.UTF8));
+    public static MarkdownFile Read(string path) => new(path, File.ReadAllBytes(path));
 
     /// <summary>Builds a file from text, for tests.</summary>
     /// <param name="path">A path to label it with.</param>
     /// <param name="text">Its text.</param>
     /// <returns>The parsed file.</returns>
-    public static MarkdownFile FromText(string path, string text) => new(path, text);
+    public static MarkdownFile FromText(string path, string text) => new(path, Encoding.UTF8.GetBytes(text));
 }
 
 /// <summary>
@@ -133,6 +137,59 @@ internal static partial class MarkdownHeadings
             }
         }
         return fenced;
+    }
+
+    /// <summary>
+    /// Each line with its HTML comments removed: everything from <c>&lt;!--</c> to the next <c>--&gt;</c>, on the same
+    /// line or a later one. Fenced lines are kept as written and do not open or close a comment; an unclosed comment
+    /// runs to the end of the file.
+    /// </summary>
+    /// <param name="lines">The file's lines.</param>
+    /// <param name="fenced">Which lines are fenced (<see cref="FencedLines"/>).</param>
+    /// <returns>One visible text per line.</returns>
+    public static string[] WithoutComments(string[] lines, bool[] fenced)
+    {
+        var visible = new string[lines.Length];
+        bool open = false;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (fenced[i])
+            {
+                visible[i] = lines[i];
+                continue;
+            }
+            var kept = new StringBuilder();
+            string line = lines[i];
+            int at = 0;
+            while (at < line.Length)
+            {
+                if (open)
+                {
+                    int close = line.IndexOf("-->", at, StringComparison.Ordinal);
+                    if (close < 0)
+                    {
+                        at = line.Length;
+                        break;
+                    }
+                    open = false;
+                    at = close + 3;
+                }
+                else
+                {
+                    int start = line.IndexOf("<!--", at, StringComparison.Ordinal);
+                    if (start < 0)
+                    {
+                        kept.Append(line, at, line.Length - at);
+                        break;
+                    }
+                    kept.Append(line, at, start - at);
+                    open = true;
+                    at = start + 4;
+                }
+            }
+            visible[i] = kept.ToString();
+        }
+        return visible;
     }
 
     /// <summary>The fence character a line starts with (after at most three spaces), how many, and the rest of the line.</summary>

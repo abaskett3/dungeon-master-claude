@@ -30,7 +30,8 @@ internal static partial class Lookup
     public static List<string> Run(string dmcFolder, string sourceArgument, string heading)
     {
         var source = LookupSource.Resolve(dmcFolder, sourceArgument);
-        if (source.IsPdfRules)
+        // A rules reference with no markdown of its own (a PDF, or text) is reached through its index and pages.
+        if (source.Kind == SourceKind.Rules && source.Files().Count == 0)
             return PdfRules(dmcFolder, source, heading);
 
         var candidates = new List<(MarkdownFile File, string Relative, int Index)>();
@@ -61,6 +62,10 @@ internal static partial class Lookup
             return lines;
         }
 
+        // A markdown file beside a rules PDF (house rules, say) does not hide the PDF: its index and pages come next.
+        if (source.Kind == SourceKind.Rules && source.File is null && source.HasPdf)
+            return PdfRules(dmcFolder, source, heading);
+
         var nearest = candidates
             .Select((c, order) => (Text: c.File.Headings[c.Index].Text, Shared: Words.Stems(c.File.Headings[c.Index].Text).Distinct().Count(wanted.Contains), order))
             .Where(n => n.Shared > 0)
@@ -83,8 +88,9 @@ internal static partial class Lookup
         int first = heading.Line;
         int last = MarkdownHeadings.SectionEnd(file.Headings, index, file.Lines.Length);
         var body = file.Lines[(first - 1)..last];
-        long bytes = body.Sum(l => (long)Encoding.UTF8.GetByteCount(l) + 1);
-        long tokens = (bytes + 3) / 4;
+        // Bytes as they are in the file, line ends included, and bytes ÷ 4 rounded down: the estimate dmc size flags with.
+        long bytes = file.LineBytes[(first - 1)..last].Sum(b => (long)b);
+        long tokens = bytes / 4;
         string where = $"{Shown(dmcFolder, file.Path)}:{first}-{last}";
         if (tokens >= Budgets.NearCapTokens || body.Length >= Budgets.NearCapLines)
         {
@@ -113,7 +119,7 @@ internal static partial class Lookup
             int total = 0;
             for (int i = 0; i < index.Lines.Length; i++)
             {
-                string line = index.Lines[i].Trim();
+                string line = index.Visible[i].Trim();
                 if (line.Length == 0 || index.Fenced[i] || MarkdownHeadings.Parse(line) is not null || TableSeparator().IsMatch(line))
                     continue;
                 if (!wanted.IsSubsetOf(Words.Stems(line)))

@@ -38,8 +38,9 @@ internal static partial class LineUnits
         {
             if (markdown.Fenced[i])
                 continue;
-            string text = markdown.Lines[i].Trim();
-            if (MarkdownHeadings.Parse(markdown.Lines[i]) is { } heading)
+            // The text outside HTML comments: a template's guidance and examples are not facts of the campaign.
+            string text = markdown.Visible[i].Trim();
+            if (MarkdownHeadings.Parse(markdown.Visible[i]) is { } heading)
             {
                 open[heading.Level] = heading.Text;
                 for (int level = heading.Level + 1; level < open.Length; level++)
@@ -48,7 +49,7 @@ internal static partial class LineUnits
                     scene = $"{session}.{int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)}";
                 continue;
             }
-            if (text.Length < ShortestUnit || text.StartsWith("<!--", StringComparison.Ordinal) || text.StartsWith("|--", StringComparison.Ordinal) || TableSeparator().IsMatch(text))
+            if (text.Length < ShortestUnit || text.StartsWith("|--", StringComparison.Ordinal) || TableSeparator().IsMatch(text))
                 continue;
 
             string? cited = session is not null ? scene : Citation().Match(text) is { Success: true } c ? c.Value : null;

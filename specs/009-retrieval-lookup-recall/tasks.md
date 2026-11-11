@@ -268,9 +268,9 @@ small questions file written in a temporary folder.
 
 - [X] T028 [US1] Confirm `quickstart.md` § Step 1 and § The recall test match the shipped commands and the harness
   (names, paths, parameters), and link them from the PR description.
-- [ ] T029 [US1] After the merge, the maintainer: `dmc update`, resume Rorn's Landing, accept migration 004, run
+- [X] T029 [US1] (Done 2026-11-11: 66.5k against 76k; the rest is three files over budget for the next full save. Posted on issue #179.) After the merge, the maintainer: `dmc update`, resume Rorn's Landing, accept migration 004, run
   `dmc size rorns-landing`; post the total on issue #179 beside the 76k baseline (SC-001).
-- [ ] T030 [US1] After T029, convert the prototype's `queries.py` into the maintainer's
+- [X] T030 [US1] (Done 2026-11-11: named 28/30 in output and 22/30 first, indirect 23/30 and 12/30, all at or above the prototype; largest output 5,984 bytes; no tuning needed. Posted on issue #179.) After T029, convert the prototype's `queries.py` into the maintainer's
   `recall-test/questions.tsv` in the DMC folder (never committed), run `tools/recall-test.ps1` against
   `rorns-landing`, and post the two summary lines on issue #179 (SC-002, SC-003). If a figure is below the prototype's
   (28/30 named, 22/30 indirect), open a follow-up to tune the weights (research R1) or the trim (R4). Also run
@@ -298,7 +298,7 @@ small questions file written in a temporary folder.
 - [X] T037 Tick the finished tasks here; commit on `009-retrieval-lookup-recall`; push; open the PR with a full
   description (what, why, sources, tests, documents changed, no migration and why, the live run, T029 and T030 left
   for after the merge) and `Part of #179` on its own line; check it with `gh pr view <n> --json body`.
-- [ ] T038 Run `/speckit-converge` until it adds no tasks, then the code review once on the finished PR; bring its
+- [X] T038 (Converged with no tasks added; the code review's fixes are in PR #188.) Run `/speckit-converge` until it adds no tasks, then the code review once on the finished PR; bring its
   fixes to the user for approval before committing them; wait for CI to pass before asking the user to merge.
 
 ---

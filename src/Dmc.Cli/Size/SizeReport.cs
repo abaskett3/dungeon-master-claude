@@ -36,12 +36,13 @@ internal static class SizeReport
     /// </summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="name">The campaign named on the command line, or null.</param>
+    /// <param name="usage">How the "no active campaign" failure tells the user to name one; <c>dmc recall</c> passes its own.</param>
     /// <returns>The campaign's folder name.</returns>
     /// <exception cref="DmcException">No campaign is named or active, or the name is not a campaign (contract § Failures).</exception>
-    public static string Target(string dmcFolder, string? name)
+    public static string Target(string dmcFolder, string? name, string usage = "dmc size NAME")
     {
         string adventures = Path.Combine(dmcFolder, "adventures");
-        name ??= ActiveName(adventures) ?? throw new DmcException("no active campaign: name one (dmc size NAME)");
+        name ??= ActiveName(adventures) ?? throw new DmcException($"no active campaign: name one ({usage})");
         if (name.StartsWith('.'))
             throw new DmcException($"{name} is not a campaign (a folder starting with a dot is a staging folder)");
         // One plain folder name: not empty or blank, no separator, no drive (C: is a folder on Windows), not "..".

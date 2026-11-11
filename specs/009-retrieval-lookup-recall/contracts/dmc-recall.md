@@ -50,7 +50,7 @@ old-road story/dm-notes-archive.md:40 DM | Oswin is the smugglers' lookout andâ€
 | Exit | Message |
 |---|---|
 | 1 | `dmc recall: no active campaign: name one (dmc recall NAME WORDS)` |
-| 1 | `dmc recall: the active campaign <name> is not in adventures/` |
+| 1 | `dmc recall: no campaign <name> in adventures/` (the active campaign's folder is missing) |
 | 1 | `dmc recall: <name> is not a campaign (a folder starting with a dot is a staging folder)` |
 | 1 | `dmc recall: nothing to search for in "<words>": every word is a common one` |
 | 1 | `dmc recall: no DMC folder: run dmc install`, or `<path> is not a DMC folder` |

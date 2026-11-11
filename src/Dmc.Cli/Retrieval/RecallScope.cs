@@ -105,14 +105,13 @@ internal static partial class RecallScope
         var modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var place in campaigns)
         {
-            string? value = LineValue(Path.Combine(place.Folder, "module-progress.md"), ModuleFolderLine());
-            if (value is null)
-                continue;
-            string name = Clean(value, "modules/");
-            if (name.Length == 0 || name.Contains('<') || !modules.Add(name))
+            // The same reading of the Module folder line as dmc campaign export's, so the two never disagree.
+            string progress = Path.Combine(place.Folder, "module-progress.md");
+            string? name = ReadText(progress) is { } text ? Campaign.CampaignExporter.ModuleFolder(text) : null;
+            if (name is null || !modules.Add(name))
                 continue;
             string folder = Path.Combine(dmcFolder, "modules", name);
-            if (!IsPlainName(name) || !Directory.Exists(folder))
+            if (!Directory.Exists(folder))
             {
                 notices.Add($"{place.Label}: module folder modules/{name}/ not found, not searched");
                 continue;
@@ -167,12 +166,22 @@ internal static partial class RecallScope
     /// <param name="pattern">A pattern whose group 1 is the value.</param>
     static string? LineValue(string path, Regex pattern)
     {
+        var match = ReadText(path) is { } text ? pattern.Match(text) : Match.Empty;
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// A file's text, or null when it is missing or cannot be read. Recall reads the same file again as part of the
+    /// scope, and that read names an unreadable file in a notice.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    static string? ReadText(string path)
+    {
         if (!File.Exists(path))
             return null;
         try
         {
-            var match = pattern.Match(File.ReadAllText(path, Encoding.UTF8));
-            return match.Success ? match.Groups[1].Value : null;
+            return File.ReadAllText(path, Encoding.UTF8);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -198,10 +207,6 @@ internal static partial class RecallScope
     /// <summary>The Predecessor line of a campaign's <c>player-options.md</c>; group 1 is its value.</summary>
     [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*Predecessor\*\*:[ \t]*(.*?)[ \t]*\r?$", RegexOptions.Multiline)]
     private static partial Regex PredecessorLine();
-
-    /// <summary>The Module folder line of <c>module-progress.md</c>; group 1 is its value.</summary>
-    [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*Module folder\*\*:[ \t]*(.*?)[ \t]*\r?$", RegexOptions.Multiline)]
-    private static partial Regex ModuleFolderLine();
 
     /// <summary>An HTML comment.</summary>
     [GeneratedRegex(@"<!--.*?-->")]

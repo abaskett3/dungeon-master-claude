@@ -34,6 +34,21 @@ public static class DmcFolder
     public static string Require() => Find() ?? throw new DmcException(NoFolder);
 
     /// <summary>
+    /// The DMC folder a command's <c>--folder</c> option names, checked, or <see cref="Require"/>'s when it is not given.
+    /// <c>dmc size</c>, <c>dmc lookup</c> and <c>dmc recall</c> take their folder this way.
+    /// </summary>
+    /// <param name="given">The option's value, or null.</param>
+    /// <returns>The folder, as a full path.</returns>
+    /// <exception cref="DmcException">The folder given is not a DMC folder (<c>&lt;path&gt; is not a DMC folder</c>), or none is found.</exception>
+    public static string FromOption(string? given)
+    {
+        if (given is null)
+            return Require();
+        string folder = Path.GetFullPath(given);
+        return IsDmcFolder(folder) ? folder : throw new DmcException($"{given} is not a DMC folder");
+    }
+
+    /// <summary>
     /// Finds the DMC folder: <c>CLAUDE_PROJECT_DIR</c> if it is a DMC folder (a hook), else the current folder if it is one,
     /// else the first recorded folder that is still a DMC folder, else null.
     /// </summary>

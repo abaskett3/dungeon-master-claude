@@ -25,7 +25,7 @@ Options take unique prefixes and `--folder=PATH`, as every `dmc` command reading
 | A campaign | Its `*.md`, outside `import/`, `exports/`, `backups/` and dot folders |
 | A module | `index.md`, `chapters/*.md` and the other top-level `*.md` (`monsters.md`, `npcs.md`, `items.md`); never `source/` |
 | `rules`, markdown | Its `*.md` other than `index.md`, outside `extracted/` |
-| `rules`, PDF | `rules/index.md` by lines, then the page files in `rules/extracted/text/` for page numbers only |
+| `rules`, PDF (a `*.pdf` anywhere under `rules/`) | When no markdown heading matches exactly: `rules/index.md` by lines, then the page files in `rules/extracted/text/` for page numbers only |
 
 ## Output
 

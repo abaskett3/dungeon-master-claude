@@ -9,8 +9,9 @@ namespace Dmc.Retrieval;
 /// </summary>
 /// <remarks>
 /// Known gaps, kept with the prototype: a word and its plural can stem apart ("horse" stays, "horses" becomes "hors"),
-/// and a stem under four letters is left whole ("ruled"). The one deliberate change is that a letter of any script
-/// counts as a letter, where the prototype took ASCII only, so an accented name stays one word.
+/// and a stem under four letters is left whole ("ruled"). Two deliberate changes: a letter of any script counts as a
+/// letter, where the prototype took ASCII only, so an accented name stays one word; and apostrophes at a word's ends are
+/// dropped, so a quoted name or a plural possessive still matches (PR #187's code review).
 /// </remarks>
 internal static class Words
 {
@@ -48,7 +49,8 @@ internal static class Words
 
     /// <summary>
     /// The words of a text: runs of letters, digits and apostrophes in the lower-cased text, with the typographic
-    /// apostrophe folded to <c>'</c>. Every other character separates words.
+    /// apostrophe folded to <c>'</c> and the apostrophes at a word's ends removed (<see cref="Clean"/>). Every other
+    /// character separates words.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <returns>The words, in order.</returns>
@@ -64,12 +66,25 @@ internal static class Words
             }
             else if (word.Length > 0)
             {
-                yield return word.ToString();
+                if (Clean(word.ToString()) is { } clean)
+                    yield return clean;
                 word.Clear();
             }
         }
-        if (word.Length > 0)
-            yield return word.ToString();
+        if (word.Length > 0 && Clean(word.ToString()) is { } last)
+            yield return last;
+    }
+
+    /// <summary>
+    /// A word with the apostrophes at either end removed, so a quotation mark (<c>'Silver Hand'</c>) or a plural
+    /// possessive (<c>knights'</c>) does not stay on the stem; null when nothing is left. An apostrophe inside a word
+    /// (<c>Oswin's</c>, <c>don't</c>) is kept, and <see cref="Stem"/> drops a trailing <c>'s</c>.
+    /// </summary>
+    /// <param name="word">A lower-case run of letters, digits and apostrophes.</param>
+    public static string? Clean(string word)
+    {
+        string trimmed = word.Trim('\'');
+        return trimmed.Length == 0 ? null : trimmed;
     }
 
     /// <summary>

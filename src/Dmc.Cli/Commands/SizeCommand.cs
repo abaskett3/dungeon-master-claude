@@ -49,18 +49,7 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
             return 0;
         }
 
-        string folder;
-        if (request.Folder is { } given)
-        {
-            folder = Path.GetFullPath(given);
-            if (!DmcFolder.IsDmcFolder(folder))
-                throw new DmcException($"{given} is not a DMC folder");
-        }
-        else
-        {
-            folder = DmcFolder.Require();
-        }
-
+        string folder = DmcFolder.FromOption(request.Folder);
         string campaign = SizeReport.Target(folder, request.Name);
         var result = SizeReport.Measure(folder, campaign);
         var lines = request.Check ? Flags.CheckLines(result.Flags, campaign) : SizeReport.FullReport(result);

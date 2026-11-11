@@ -30,11 +30,13 @@ internal static partial class Lookup
     public static List<string> Run(string dmcFolder, string sourceArgument, string heading)
     {
         var source = LookupSource.Resolve(dmcFolder, sourceArgument);
-        if (source.IsPdfRules)
+        var files = source.Files();
+        // A rules reference with no markdown of its own (a PDF, or text) is reached through its index and pages.
+        if (source.Kind == SourceKind.Rules && files.Count == 0)
             return PdfRules(dmcFolder, source, heading);
 
         var candidates = new List<(MarkdownFile File, string Relative, int Index)>();
-        foreach (string relative in source.Files())
+        foreach (string relative in files)
         {
             var file = Read(dmcFolder, Path.Combine(source.Folder, relative));
             for (int i = 0; i < file.Headings.Count; i++)
@@ -44,6 +46,19 @@ internal static partial class Lookup
         string key = MarkdownHeadings.Key(heading);
         var matches = candidates.Where(c => key.Length > 0 && MarkdownHeadings.Key(c.File.Headings[c.Index].Text) == key).ToList();
         var wanted = Words.Stems(heading).ToHashSet(StringComparer.Ordinal);
+        // Markdown beside a rules PDF (house rules, say) wins only with an exact heading; otherwise the PDF's index and
+        // pages come first, and only when they hold nothing do the markdown's looser matches and nearest headings follow.
+        if (matches.Count == 0 && source.Kind == SourceKind.Rules && source.File is null && source.HasPdf)
+        {
+            try
+            {
+                return PdfRules(dmcFolder, source, heading);
+            }
+            catch (DmcException)
+            {
+                // Nothing in the PDF: fall through to the markdown.
+            }
+        }
         if (matches.Count == 0 && wanted.Count > 0)
         {
             matches = candidates.Where(c => wanted.IsSubsetOf(Words.Stems(c.File.Headings[c.Index].Text))).ToList();
@@ -60,6 +75,7 @@ internal static partial class Lookup
                 lines.Add($"(+{matches.Count - MatchesListed} more)");
             return lines;
         }
+
 
         var nearest = candidates
             .Select((c, order) => (Text: c.File.Headings[c.Index].Text, Shared: Words.Stems(c.File.Headings[c.Index].Text).Distinct().Count(wanted.Contains), order))
@@ -83,8 +99,9 @@ internal static partial class Lookup
         int first = heading.Line;
         int last = MarkdownHeadings.SectionEnd(file.Headings, index, file.Lines.Length);
         var body = file.Lines[(first - 1)..last];
-        long bytes = body.Sum(l => (long)Encoding.UTF8.GetByteCount(l) + 1);
-        long tokens = (bytes + 3) / 4;
+        // Bytes as they are in the file, line ends included, and bytes ÷ 4 rounded down: the estimate dmc size flags with.
+        long bytes = file.LineBytes[(first - 1)..last].Sum(b => (long)b);
+        long tokens = bytes / 4;
         string where = $"{Shown(dmcFolder, file.Path)}:{first}-{last}";
         if (tokens >= Budgets.NearCapTokens || body.Length >= Budgets.NearCapLines)
         {
@@ -113,7 +130,7 @@ internal static partial class Lookup
             int total = 0;
             for (int i = 0; i < index.Lines.Length; i++)
             {
-                string line = index.Lines[i].Trim();
+                string line = index.Visible[i].Trim();
                 if (line.Length == 0 || index.Fenced[i] || MarkdownHeadings.Parse(line) is not null || TableSeparator().IsMatch(line))
                     continue;
                 if (!wanted.IsSubsetOf(Words.Stems(line)))
@@ -156,9 +173,8 @@ internal static partial class Lookup
                 string listed = string.Join(", ", pages.Take(PagesListed));
                 if (pages.Count > PagesListed)
                     listed += $" (+{pages.Count - PagesListed} more)";
-                string pdf = Directory.EnumerateFiles(source.Folder, "*.pdf").Select(Path.GetFileName).Order(StringComparer.Ordinal).FirstOrDefault() is { } name
-                    ? $"rules/{name}"
-                    : "the rules PDF";
+                string pdf = Directory.EnumerateFiles(source.Folder, "*.pdf", SourceFiles.Listing).Select(p => Shown(dmcFolder, p)).Order(StringComparer.Ordinal).FirstOrDefault()
+                    ?? "the rules PDF";
                 return [$"rules: \"{request}\" is on PDF pages {listed} (read them in {pdf})"];
             }
         }

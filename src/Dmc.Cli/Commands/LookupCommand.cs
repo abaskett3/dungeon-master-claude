@@ -49,20 +49,9 @@ whose text holds the words. It changes nothing.
             io.Out.WriteLine(Help);
             return 0;
         }
-        string folder = Folder(request.Folder);
+        string folder = DmcFolder.FromOption(request.Folder);
         foreach (string line in Lookup.Run(folder, request.Source, request.Heading))
             io.Out.WriteLine(line);
         return 0;
-    }
-
-    /// <summary>The DMC folder: <c>--folder</c> when given, checked; otherwise the one <see cref="DmcFolder.Require"/> finds.</summary>
-    /// <param name="given">The <c>--folder</c> value, or null.</param>
-    /// <exception cref="DmcException">The folder given is not a DMC folder, or none is found.</exception>
-    internal static string Folder(string? given)
-    {
-        if (given is null)
-            return DmcFolder.Require();
-        string folder = Path.GetFullPath(given);
-        return DmcFolder.IsDmcFolder(folder) ? folder : throw new DmcException($"{given} is not a DMC folder");
     }
 }

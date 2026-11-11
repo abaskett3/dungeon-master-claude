@@ -11,7 +11,7 @@ them; this feature changes none of them.
 | Kind | `campaign`, `module` or `rules` (R8) |
 | Name | A folder in `adventures/` or `modules/`, or `rules`; a dot-prefixed folder is refused |
 | File | Optional: one path inside it (`<name>/<path>`), which limits the search to that file |
-| Files | Campaign: its `*.md` outside `import/`, `exports/`, `backups/` and dot folders. Module: `index.md`, `chapters/*.md`, other top-level `*.md`, never `source/`. Rules: its `*.md` other than `index.md` (markdown), or `index.md` and `extracted/text/` (PDF, R9) |
+| Files | Campaign: its `*.md` outside `import/`, `exports/`, `backups/` and dot folders. Module: `index.md`, `chapters/*.md`, other top-level `*.md`, never `source/`. Rules: its `*.md` other than `index.md`; and, when `rules/` holds a `*.pdf` or `extracted/text/` and no heading matches, `index.md` and `extracted/text/` (PDF, R9) |
 
 A name that is both a campaign and a module is refused (FR-024).
 
@@ -53,7 +53,7 @@ predecessor, and so on) and a **kind**. Built by R6:
 | Citation | The first `sN.M` (or `sN`) in the text, for other files |
 | DM-only | True for `dm-notes.md`, `dm-notes-archive.md`, `module-progress.md`, every module line, and lines under a heading containing "Secret" in an NPC sheet |
 
-Lines under 25 characters, headings, comment lines, table separators and fenced code are not units (R3).
+HTML comment text is removed first; lines then under 25 characters, headings, table separators and fenced code are not units (R3).
 
 ## Hit
 

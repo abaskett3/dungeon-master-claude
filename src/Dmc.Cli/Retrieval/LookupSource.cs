@@ -80,8 +80,12 @@ internal sealed record LookupSource(SourceKind Kind, string Name, string Folder,
         return resolved with { File = file };
     }
 
-    /// <summary>True when this is the rules reference kept as a PDF: <c>rules/</c> holds no markdown other than <c>index.md</c> (research R9).</summary>
-    public bool IsPdfRules => Kind == SourceKind.Rules && Files().Count == 0;
+    /// <summary>
+    /// True for a rules reference kept as a PDF: a <c>*.pdf</c> anywhere under <c>rules/</c>, whatever markdown sits
+    /// beside it (research R9). An <c>extracted/</c> folder alone does not count: <c>dmc-setup-rules</c> says one can be
+    /// left over after its PDF was removed.
+    /// </summary>
+    public bool HasPdf => Kind == SourceKind.Rules && Directory.EnumerateFiles(Folder, "*.pdf", SourceFiles.Listing).Any();
 
     /// <summary>The markdown files the source searches, relative to its folder with <c>/</c>, in ordinal order. For a narrowed source, the one file.</summary>
     public IReadOnlyList<string> Files()
@@ -136,14 +140,23 @@ internal static class SourceFiles
         Markdown(folder, rel => !rel.Equals("index.md", StringComparison.OrdinalIgnoreCase)
                                 && !rel.StartsWith("extracted/", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The <c>*.md</c> files under a folder that <paramref name="keep"/> accepts, skipping every folder whose name starts with a dot.</summary>
+    /// <summary>How folders are listed: recursively, hidden files included, and a folder that cannot be listed skipped rather than failing the whole command.</summary>
+    internal static readonly EnumerationOptions Listing = new()
+    {
+        RecurseSubdirectories = true,
+        IgnoreInaccessible = true,
+        AttributesToSkip = 0,
+        MatchType = MatchType.Win32,
+    };
+
+    /// <summary>The <c>*.md</c> files under a folder that <paramref name="keep"/> accepts, skipping every folder whose name starts with a dot and any folder that cannot be listed.</summary>
     /// <param name="folder">The folder.</param>
     /// <param name="keep">Takes a relative path with <c>/</c>.</param>
     static List<string> Markdown(string folder, Func<string, bool> keep)
     {
         if (!Directory.Exists(folder))
             return [];
-        return Directory.EnumerateFiles(folder, "*.md", SearchOption.AllDirectories)
+        return Directory.EnumerateFiles(folder, "*.md", Listing)
             .Select(p => Path.GetRelativePath(folder, p).Replace('\\', '/'))
             .Where(rel => !rel.Split('/').SkipLast(1).Any(part => part.StartsWith('.')))
             .Where(keep)

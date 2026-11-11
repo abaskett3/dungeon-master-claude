@@ -173,6 +173,45 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    /// <summary>The lookup cases that must fail, as test data.</summary>
+    public static IEnumerable<object[]> LookupErrors { get; } = Retrieval.RetrievalCases.LookupErrors().Select(c => new object[] { c }).ToArray();
+
+    /// <summary>The recall cases that must fail, as test data.</summary>
+    public static IEnumerable<object[]> RecallErrors { get; } = Retrieval.RetrievalCases.RecallErrors().Select(c => new object[] { c }).ToArray();
+
+    /// <summary>Every bad argument and every source <c>dmc lookup</c> cannot search prints one line and no stack trace, and writes nothing.</summary>
+    [TestMethod]
+    [DynamicData(nameof(LookupErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfLookupPrintsOneLine(CommandCase test) => OneLineAndNoWrites(test, "lookup");
+
+    /// <summary>Every bad argument and every campaign <c>dmc recall</c> cannot search prints one line and no stack trace, and writes nothing.</summary>
+    [TestMethod]
+    [DynamicData(nameof(RecallErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfRecallPrintsOneLine(CommandCase test) => OneLineAndNoWrites(test, "recall");
+
+    /// <summary>Seeds a working folder for a case, runs it, and checks one line on failure and an unchanged folder.</summary>
+    /// <param name="test">The case.</param>
+    /// <param name="command">The command it runs.</param>
+    static void OneLineAndNoWrites(CommandCase test, string command)
+    {
+        string before = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(before);
+        try
+        {
+            test.Seed?.Invoke(before);
+            string[] seeded = Entries(before);
+            test.Run(command, (result, folder) =>
+            {
+                AssertOneLine(result, test.Describe(command));
+                CollectionAssert.AreEqual(seeded, Entries(folder), "a failed run must not write anything");
+            });
+        }
+        finally
+        {
+            Directory.Delete(before, recursive: true);
+        }
+    }
+
     /// <summary>The size cases that must fail, as test data.</summary>
     public static IEnumerable<object[]> SizeErrors { get; } = SizeCases.ErrorCases().Select(c => new object[] { c }).ToArray();
 

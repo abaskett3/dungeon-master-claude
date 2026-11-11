@@ -101,6 +101,29 @@ public sealed class OutputBytesTests
     }
 
     [TestMethod]
+    public void LookupAndRecallWriteUtf8WithLfAndNoByteOrderMark()
+    {
+        string root = Retrieval.RetrievalFixtures.NewChain();
+        try
+        {
+            // An accent in a line both commands print, so the bytes are checked as UTF-8.
+            Retrieval.RetrievalFixtures.Write(root, "adventures/new-road/story/canon.md", "# Canon\r\n\r\n## Prices\r\n\r\n- Élodie charges 2 gp for a lantern at the ferry (s3.1).\r\n");
+            foreach (string[] args in new[] { new[] { "lookup", "--folder", root, "new-road", "prices" }, ["recall", "--folder", root, "new-road", "lantern", "ferry"] })
+            {
+                var result = DmcRunner.BlackBox(args);
+                Assert.AreEqual(0, result.ExitCode, result.Stderr);
+                AssertNoBom(result.StdoutBytes, args[0] + " stdout");
+                Assert.IsFalse(result.Stdout.Contains('\r'), args[0] + " wrote a CR");
+                StringAssert.Contains(result.Stdout, "Élodie charges 2 gp");
+            }
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    [TestMethod]
     public void NonAsciiIsWrittenAsUtf8()
     {
         var result = DmcRunner.BlackBox(["roll", "é中"]);

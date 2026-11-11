@@ -136,6 +136,14 @@ dmc campaign import exports/the-silver-egg-<date and time>.zip --as silver-egg-c
 dmc size the-silver-egg
 ```
 
+### Finding something in your files
+
+DMC looks facts up with two commands of its own, so it reads only what it needs. `dmc recall` finds the lines that best match some words across a campaign, the campaign it continues and their modules, best first. `dmc lookup` prints one section, such as a monster's stat block or a page of canon, by its heading. Neither changes anything, and you never need to run them: DMC does, and falls back to searching the files itself if they fail. See [dmc-reference.md](.docs/dmc-reference.md#recall).
+
+```
+dmc recall my-sequel ferry price
+dmc lookup my-module goblin boss
+```
 ### Long sessions
 
 Every message re-reads the whole conversation, so a long one uses more of your usage limit with each message, and details blur as it grows. DMC therefore keeps sessions short and reloads from the files, which are always up to date.

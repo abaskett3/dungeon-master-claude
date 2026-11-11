@@ -263,6 +263,8 @@ Campaigns are ordinary text files under `adventures/`. You can read and edit you
 
 **How big your campaign's files are.** The longer a campaign runs, the more DMC reads when a session starts, and past a point it starts losing track. `dmc size` shows what a resume reads, file by file, in estimated tokens, the largest sections, and anything to trim (a file close to what DMC can read in one go, a file over its budget, leftovers such as finished fights). Run it in a terminal in your DMC folder (`dmc size`, or `dmc size <campaign>`), or ask DMC "are your files too big?". It changes nothing: the next full save trims what it flags, and says what it kept and why. [campaign-files.md](campaign-files.md#how-big-the-files-may-be) lists the budgets.
 
+**Finding a fact in your files.** When a character, place or promise from long ago comes back, DMC recalls it with `dmc recall`, which searches the campaign, the campaign it continues and their modules and returns only the best-matching lines; for a module's area, a stat block or a rules entry it uses `dmc lookup`, which prints that one section. You need do nothing. Both only read, and if either fails DMC searches the files itself, so the game goes on. You can run them in a terminal too: `dmc recall <campaign> <words>`, `dmc lookup <campaign, module or rules> <heading>`.
+
 Feedback about DMC is under `feedback/` in the DMC folder, outside every campaign. To back up a campaign, restore one or move to another computer, see [Back up, copy or move a campaign](#back-up-copy-or-move-a-campaign). Keep a backup outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
 ### Back up, copy or move a campaign

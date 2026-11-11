@@ -498,3 +498,35 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** Image styles are not story lore or canon (the user's ruling, 2026-11-10), so moving them needs no proof that nothing was lost. No campaign file changes shape, and an optional section an older file can simply lack is the case `.docs/development.md` § Changing a campaign-file standard names as needing none. Writing the section on the first save is the skill's ordinary write, not a repair of an older file. A migration would also have to reach the general file, outside any campaign: a new front-matter key, the general file in `verify`, a guarded restore of it and a fixture, for two notes in one campaign.
 - **Limits:** The old notes stay in a campaign until the player asks for them to be moved.
 - **Source:** Issue #178; `specs/007-image-prompts/research.md` R9.
+
+## Retrieval runs over the markdown, with no stored index (issue #179)
+
+- **Date:** 2026-11-10
+- **Decision:** `dmc lookup` and `dmc recall` read the markdown files on every call and build what they need in memory: no vector database, no graph database, no SQLite store and no index on disk. The markdown stays the source of truth, and play never depends on `dmc`: when it fails, DMC searches and reads the files as before.
+- **Reason:** The slips that hurt are exact facts (a name, a price, a ruling), which keyword search finds and embeddings blur; an embedding model would need a network or a large model inside a Native AOT binary. The measured corpus (a sequel, its predecessor and a module, a few megabytes) parses and indexes in well under a second, so an index built on the fly cannot go stale, and hand-editing, export, backup, migration and verify keep working on plain files.
+- **Limits:** A paraphrase that shares no word with the line it means is missed; the fallback covers it, and embeddings are revisited only if `review-transcript` shows such misses that a second search does not fix.
+- **Source:** Issue #179 (its decision table and evidence); `specs/009-retrieval-lookup-recall/`.
+
+## Recall ranks by keyword relevance weighted by authority (issue #179)
+
+- **Date:** 2026-11-10
+- **Decision:** `dmc recall` ranks line units by BM25 (k1 1.4, b 0.6, the issue prototype's settings, its common words and its suffix stripper) times a weight per file: canon 1.30, archives and history 1.20, sheets 1.15, other campaign files 1.05, session logs 1.00, a module 0.80, and × 0.95 per step back the Predecessor chain. It searches the campaign, its Predecessor chain and each of their modules, ranked below every campaign file; a hit is one line, trimmed to 700 characters around the match, within 6,000 bytes in all.
+- **Reason:** In the issue's recall test, plain BM25 over lines put the answer in the capped output for 28 of 30 named and 22 of 30 indirect questions, and curated lines (canon, archives, sheets) proved more reliable than narrative. A moderate weight lets canon win where the match is about equal without hiding a much better session-log line (a tie-break alone would never lift canon; hard tiers would bury the best match). A predecessor's module is reached because recall already reads the predecessor's options and a printed name or number only that module holds would otherwise be out of reach (the user's answer in `/speckit-clarify`). Neighbouring lines are not shown: they would halve the hits that fit.
+- **Limits:** The weights are starting values. The recall test is rerun on the maintainer's play folder after migration 004 (`tools/recall-test.ps1`), and a follow-up tunes the weights or the trim if the figures fall. The stemmer misses some pairs ("horse" and "horses").
+- **Source:** Issue #179; `specs/009-retrieval-lookup-recall/research.md` R1 to R6.
+
+## Lookup matches headings exactly, and never prints text cut from a PDF (issue #179)
+
+- **Date:** 2026-11-10
+- **Decision:** `dmc lookup` matches a heading by its normalised text (case, emphasis, punctuation and a trailing page reference ignored), then by all of the request's words; several matches print a list, never a guess. A rules reference kept as a PDF gives the matching rows of `rules/index.md`, or the PDF pages whose extracted text holds the words, as numbers only.
+- **Reason:** A near miss that printed the wrong stat block would be a wrong number stated as fact. Extracted PDF text drops digits from tables (the issue's module), and an entry's end is a guess in plain text, so lookup points at the pages and DMC reads them as before (the user's answer in `/speckit-clarify`; the page numbers are the plan's addition, since the index names no single entry).
+- **Limits:** A heading phrased differently from the request ("Goblin Chief" for "Goblin Boss") is not found; the failure names the nearest headings.
+- **Source:** Issue #179; `specs/009-retrieval-lookup-recall/research.md` R7 to R9.
+
+## Lookup and recall are for play only until Phase D (issue #179)
+
+- **Date:** 2026-11-10
+- **Decision:** The kit's play rules (`kit/dm-rules.md`, `dmc-setup-rules`, `dmc-new-campaign`) tell DMC to recall a returning subject and to look up a module section or rules entry, with the fallback to searching. `dmc-resume-campaign` and `dmc-campaign-full-save` keep their reads and searches. `kit/dm-rules.md` gains no line: the existing lines that say where facts come from were rewritten.
+- **Reason:** Changing what a resume reads is issue #179's Phase D, behind a gate: canon reading changes only after `review-transcript` shows no rise in slips with recall and lookup in use. The always-loaded rules stay lean (constitution II), and a toolkit test holds them to at most two lines more.
+- **Limits:** The saving at resume waits for Phase D; this phase lowers the cost of lookups in play.
+- **Source:** Issue #179; `specs/009-retrieval-lookup-recall/spec.md` FR-020a and § Clarifications.

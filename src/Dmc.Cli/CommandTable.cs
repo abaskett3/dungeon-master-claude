@@ -19,6 +19,8 @@ public static class CommandTable
         new DigestCommand(),
         new CampaignCommand(),
         new SizeCommand(),
+        new LookupCommand(),
+        new RecallCommand(),
         new PlayCommand(),
         new InstallCommand(),
         new FolderCommand(),

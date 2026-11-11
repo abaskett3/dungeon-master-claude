@@ -40,9 +40,9 @@ A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.
 
 ```
 $ dmc
-dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, update, --version)
+dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, size, lookup, recall, play, install, folder, refresh, update, --version)
 $ dmc foo
-dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, play, install, folder, refresh, update, --version)
+dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, size, lookup, recall, play, install, folder, refresh, update, --version)
 ```
 
 **Arguments.** `map`, `pdf`, `digest` and `campaign` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
@@ -505,6 +505,64 @@ story/dm-notes.md Opposition: 4 rows with none left alive
 ```
 
 The full report has a header line, one line per file (path, tokens, budget or limit, what is read), a `total` line, `largest sections:` (at most four per file read whole, `(+N more)`), and `flags:` with the same lines as `--check` or `nothing to flag`; about 40 lines for a long campaign. Tokens are shown below 1,000 as a whole number and above as thousands with one decimal, rounded up. A line about a file the full save never trims (a session log near the cap) ends `(not the full save's to trim)`, and the full save leaves it. The largest sections of canon are those of the whole file, even when it is read in sections. A sheet's name is matched on its whole title, or on its first or last word unless that is an article, a preposition or a title such as Captain or Sister. The name and the `--check` lines are relied on by issue #172's migration, which runs `dmc size NAME --check` after migrating: a change to them is a change to that contract too. A measured campaign exits 0 whatever it flags; a failure is one line and exit 1 (`no active campaign: name one (dmc size NAME)`, `no campaign <NAME> in adventures/`, `<path> is not a DMC folder`, `cannot read <path>: <reason>`), a usage mistake exit 2.
+
+## lookup
+
+Added in the next release (spec 009, issue #179).
+
+```
+dmc lookup SOURCE HEADING... [--folder PATH]
+```
+
+Prints one section of a markdown file exactly as written, found by its heading: from the heading down to the line before the next heading of the same or a higher level, sub-sections included. It never writes, moves or deletes anything. DMC runs it in play for a module's area, NPC or stat block and for a rules entry (`kit/dm-rules.md`); the resume and the full save do not use it.
+
+| Argument | Meaning |
+|---|---|
+| `SOURCE` | A campaign folder in `adventures/`, a module folder in `modules/`, or `rules`. `/<path>` after it searches one file (`new-road/story/canon.md`); a leading `adventures/` or `modules/` says which, when a campaign and a module share a name. A name starting with a dot is refused. |
+| `HEADING...` | The heading's words, as one argument or several. |
+| `--folder` | The DMC folder. Default: the one `dmc folder` prints. |
+
+**What it searches.** A campaign: its `*.md` outside `import/`, `exports/`, `backups/` and dot folders. A module: `index.md`, `chapters/` and its other top-level `*.md` (`monsters.md`, `npcs.md`, `items.md`), never `source/`. `rules`: its markdown other than `index.md`, outside `extracted/`; when there is none, the reference is a PDF (below).
+
+**Matching.** Headings are ATX headings (`#` to `######`) outside fenced code blocks. A heading matches when its text equals the request ignoring case, `*`, `_`, `` ` ``, punctuation, links' brackets and a trailing page reference in parentheses (`(PDF 212)`, `(p. 34)`); when none does, a heading holding every word of the request (by the stems `dmc recall` uses) matches. There is no fuzzy matching, so a near miss never prints the wrong stat block.
+
+**Output.** One match: a header line, `<file>:<first>-<last>` (relative to the DMC folder), then the section's lines with LF line ends and nothing else changed. Several: one line each, `<file>:<line>: <heading>`, at most 8, then `(+N more)`; ask again with more words or the `/<path>` form. A section of 20,000 estimated tokens or 1,600 lines (the mark `dmc size` uses for the Read tool's cap) prints one line instead: `<file>:<first>-<last>: section <heading> is <tokens> tokens, <lines> lines: read it in parts`.
+
+**A rules reference kept as a PDF** (no markdown besides `rules/index.md`): the lines of `rules/index.md` that hold every word of the request, at most 8, as `rules/index.md:<n>: <line>`; when none does and the PDF's text was extracted, one line naming the pages whose text holds the request as a phrase, at most 10: `rules: "fireball" is on PDF pages 131, 132 (read them in rules/<file>.pdf)`. It never prints text from the extracted pages, whose entry ends are guesses and whose digits can drop.
+
+All of these exit 0. A failure is one line and exit 1: `no heading "<heading>" in <source> (nearest: <a>; <b>; …)`, `<name> is both a campaign and a module: say adventures/<name> or modules/<name>`, `no source <name>: not a campaign, a module or rules (campaigns: …; modules: …)`, `<name> is not a source (a folder starting with a dot is a staging folder)`, `no <path> in <source>`, `rules: no rules reference in rules/ (set one up with /dmc-setup-rules)`, `rules: no "<words>" in rules/index.md or its pages`, `cannot read <path>: <reason>`, and the DMC folder failures every command has. A usage mistake exits 2.
+
+## recall
+
+Added in the next release (spec 009, issue #179).
+
+```
+dmc recall [NAME] WORDS... [--folder PATH]
+```
+
+Prints the lines that best match some words across a campaign, the campaigns its Predecessor lines name and their modules, best first, in at most 6,000 bytes (about 1,500 estimated tokens). It builds its index in memory on every call and stores nothing, so it cannot go stale; it never writes, moves or deletes anything. DMC runs it in play when a subject returns or a fact from an earlier session or campaign is needed (`kit/dm-rules.md`); the resume and the full save do not use it.
+
+| Argument | Meaning |
+|---|---|
+| `NAME` | A campaign folder in `adventures/`. It is the campaign only when it names one and at least one more argument follows; otherwise every argument is a word and the campaign is the active one. A misspelled name is therefore searched as a word. |
+| `WORDS...` | What to search for, as one argument or several. |
+| `--folder` | The DMC folder. Default: the one `dmc folder` prints. |
+
+**What it searches.** The campaign's `*.md` outside `import/`, `exports/`, `backups/` and dot folders; each campaign named by a `- **Predecessor**:` line in `player-options.md`, followed to the end of the chain (a loop once; backticks, `adventures/` and slashes allowed; `none` ends it); and each of those campaigns' modules, named by `- **Module folder**:` in `module-progress.md`, searched once, never their `source/`. A line is a unit unless it is under 25 characters, a heading, a comment line, a table separator or inside a fenced code block.
+
+**Ranking.** Okapi BM25 over line units (k1 1.4, b 0.6) on words lower-cased, with about 100 common English words dropped and a small suffix stripper (`'s`, then `ation`, `ion`, `ing`, `ed`, `es` or `s` when four letters stay), times the file's weight: `story/canon.md` 1.30; the archives and `-history.md` files 1.20; the sheets 1.15; the other campaign files 1.05; session logs 1.00; a module 0.80; each step back the Predecessor chain × 0.95. These are the settings of the issue's recall prototype, to be tuned if the recall test (below) shows a fall. A line matching about as well in canon comes before one in a session log, but a strong session-log match can beat a weak canon one.
+
+**Output.** First, at most three notices, then `(+N more skipped)`: `<campaign>: Predecessor <name> is not in adventures/, not searched`, `<campaign>: module folder modules/<name>/ not found, not searched`, `<path>: cannot be read (<reason>), skipped`. Then one line per hit:
+
+```
+<campaign or modules/<name>> <file>:<line> [<sN.M>] [DM] | <text>
+```
+
+The session is the scene's `sN.M` for a session-log line, or the first `sN` or `sN.M` the line cites. `DM` marks a line only the DM may see: `dm-notes.md`, `dm-notes-archive.md`, `module-progress.md`, a module, or an NPC sheet's Secrets section. A line over 700 characters shows the 700-character window around its matching words, with `…` where it was cut. When more lines match than fit, the last line is `(N more lines matched)`; when none does, the only line is `nothing matched: <words>`. Both exit 0.
+
+A failure is one line and exit 1: `nothing to search for in "<words>": every word is a common one`, `<name> is not a campaign (a folder starting with a dot is a staging folder)`, `no active campaign: name one (dmc recall NAME WORDS)`, `the active campaign <name> is not in adventures/`, and the DMC folder failures. A usage mistake exits 2.
+
+**The recall test.** `tools/recall-test.ps1` runs recall for each question of a questions file and counts the answers found; see [development.md](development.md#the-recall-test).
 
 ## context-check
 

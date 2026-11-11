@@ -95,6 +95,10 @@ The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README
 - `DMC_BIN` names another program to test, whatever version it prints.
 - The tests that run `dmc install`, `dmc refresh` or `dmc update` through the binary pass `CLAUDECODE` unset and a temporary home, and put back the `dmc.json` a development build writes beside itself in `artifacts/bin/`. Tests that expect no DMC folder to be found are skipped if that file lists one (a developer who tried `artifacts/bin/dmc install` has one).
 
+### The recall test
+
+`tools/recall-test.ps1` reruns issue #179's recall test (spec 009, SC-002): it runs `dmc recall` for each question of a tab-separated questions file (`id`, `named` or `indirect`, the question, an answer regex) and prints, per style, how often the answer was in the output and in the first hit. The questions quote campaign facts, so the file lives in the maintainer's DMC folder (suggested: `recall-test/questions.tsv`) and is never committed; the script never runs in CI, where `tests/Dmc.Tests/Retrieval/` checks recall on invented fixtures. Run it after a change to the ranking (`src/Dmc.Cli/Retrieval/`) and compare with the figures on the issue. Usage and format: `specs/009-retrieval-lookup-recall/contracts/recall-test.md`.
+
 ## CI
 
 `.github/workflows/tests.yml` runs for every push to `main` and every pull request, on `ubuntu-latest` (linux-x64) and `windows-latest` (win-x64), each:

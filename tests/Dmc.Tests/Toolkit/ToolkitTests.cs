@@ -145,7 +145,7 @@ public sealed partial class ToolkitTests
                     Assert.Contains(m.Groups[2].Value, choices, $"{file} names `dmc {m.Groups[1].Value} {m.Groups[2].Value}`, which is not one of: {string.Join(", ", choices)}");
             }
         }
-        CollectionAssert.IsSubsetOf(new[] { "roll", "map", "pdf", "digest", "folder" }, used.ToArray(), "the prompts name every subcommand DMC runs");
+        CollectionAssert.IsSubsetOf(new[] { "roll", "map", "pdf", "digest", "folder", "lookup", "recall" }, used.ToArray(), "the prompts name every subcommand DMC runs");
 
         // What DMC is told to run in play needs no permission prompt in either shell, and is not one a player-only deny rule takes.
         foreach (string file in KitPrompts())
@@ -1111,6 +1111,44 @@ public sealed partial class ToolkitTests
         Assert.IsFalse(File.Exists(Path.Combine(TestEnv.Root, "play.ps1")));
         Assert.IsFalse(File.Exists(Path.Combine(TestEnv.Root, "play.sh")));
         CollectionAssert.AreEqual(new[] { "--model", "sonnet", "--effort", "high" }, PlayCommand.FixedArguments.ToArray());
+    }
+
+    // ---------- dmc lookup and dmc recall in the play rules (spec 009) ----------
+
+    /// <summary>
+    /// The line count of <c>kit/dm-rules.md</c> before spec 009, which may add at most two (FR-022): the rules for lookup
+    /// and recall are rewritten into the lines that already say where facts come from.
+    /// </summary>
+    const int DmRulesLinesBeforeRetrieval = 212;
+
+    [TestMethod]
+    public void TheAlwaysLoadedRulesGrowByAtMostTwoLinesForLookupAndRecall()
+    {
+        int lines = Read("kit/dm-rules.md").TrimEnd('\n').Split('\n').Length;
+        Assert.IsLessThanOrEqualTo(DmRulesLinesBeforeRetrieval + 2, lines, $"kit/dm-rules.md has {lines} lines; spec 009 FR-022 allows at most {DmRulesLinesBeforeRetrieval + 2}");
+    }
+
+    [TestMethod]
+    public void ThePlayRulesNameRecallAndLookupAndKeepTheFallback()
+    {
+        string rules = Read("kit/dm-rules.md");
+        StringAssert.Contains(rules, "`dmc recall <campaign> <words>`", "the rules say how to recall a fact (FR-020)");
+        StringAssert.Contains(rules, "`dmc lookup rules <entry>`", "the rules say how to look a rules entry up (FR-020)");
+        StringAssert.Contains(rules, "`dmc lookup <module> <heading>`", "the rules say how to look a module section up (FR-020)");
+        StringAssert.Contains(rules, "If `dmc` fails or the recall does not hold it", "the rules keep the fallback to searching (FR-021)");
+        StringAssert.Contains(rules, "a fact not found is not a fact denied", "not found is not untrue (FR-021)");
+        StringAssert.Contains(Read("kit/skills/dmc-setup-rules/SKILL.md"), "`dmc lookup rules <entry>`");
+    }
+
+    [TestMethod]
+    public void TheResumeAndTheFullSaveDoNotUseLookupOrRecall()
+    {
+        foreach (string skill in new[] { "kit/skills/dmc-resume-campaign/SKILL.md", "kit/skills/dmc-campaign-full-save/SKILL.md" })
+        {
+            string text = Read(skill);
+            Assert.DoesNotContain("dmc recall", text, $"{skill}: changing what the resume and full save read is Phase D's, behind its gate (FR-020a)");
+            Assert.DoesNotContain("dmc lookup", text, $"{skill}: changing what the resume and full save read is Phase D's, behind its gate (FR-020a)");
+        }
     }
 
     // ---------- dmc size and the size rules ----------

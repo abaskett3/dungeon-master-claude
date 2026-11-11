@@ -39,4 +39,4 @@ Tell the player the rules reference is ready and which edition it covers. If tha
 
 ## Using it in play
 
-When a rule, spell, item or stat block matters and you are not certain of it, open the index, read the cited pages (or search `rules/extracted/text/` if the PDF was extracted), and apply what they say. Things the SRD does not include (many subclasses, some spells and monsters) are simply absent: say so and fall back to a web lookup or a recorded ruling.
+When a rule, spell, item or stat block matters and you are not certain of it, look it up with `dmc lookup rules <entry>`: for a markdown reference it prints the entry's section, and for a PDF the index rows or the pages to read. Otherwise, or when it finds nothing, open the index, read the cited pages (or search `rules/extracted/text/` if the PDF was extracted), and apply what they say. Things the SRD does not include (many subclasses, some spells and monsters) are simply absent: say so and fall back to a web lookup or a recorded ruling.

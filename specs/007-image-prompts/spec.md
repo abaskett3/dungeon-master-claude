@@ -190,8 +190,9 @@ and ask for a prompt naming that style.
   part in a line that reveals nothing more ("Shale hasn't seen that yet"), and offers the scene as the character knows it.
 - **A spoiler by implication**: a hidden figure's shadow, eyes in the trees, a disguised NPC's true colours or a cursed
   item's glow. Each counts as showing what is hidden, and none appears.
-- **A size the sheet gives in game terms only** ("Small", "Medium"): the prompt turns it into a comparison with
-  someone present (a Small creature next to a Medium human is about waist- to chest-high), never a bare size category.
+- **A size the files give in game terms only, or not at all** ("Small", "Medium"): the prompt takes the species' usual
+  height from the campaign's rules (a dwarf stands about 4 to 5 feet, a halfling about 3) and states it as a comparison
+  with someone present, never a bare size category: a dwarf and a human are both Medium.
 - **Many people present** (a crowd at the Landing): the named characters are stated in full; the crowd is described as
   a crowd, consistent with the place's people (no species the setting's files do not put there).
 - **Two styles saved under similar names**: DMC asks which, in a line.
@@ -208,8 +209,10 @@ and ask for a prompt naming that style.
 - **FR-001**: The kit MUST provide a player skill `dmc-generate-image-prompt` that writes a prompt for an image-generation
   model of a moment in the campaign. DMC MUST use it whenever the player asks for an image prompt, by the slash command or
   in words.
-- **FR-002**: A prompt MUST be shown out of character, in one block the player can copy whole, labelled with the name of
-  the style used (for an unsaved style, a short name of what it is, marked unsaved), with nothing outside the block but the one-line notes of FR-009 and FR-010 when they apply.
+- **FR-002**: A prompt MUST be shown out of character, alone in a fenced code block so that a copy takes the prompt and
+  nothing more, under a line naming the style used (for an unsaved style, a short name of what it is, marked unsaved),
+  with nothing else but the one-line notes of FR-009 and FR-010 when they apply. A request for the same picture in
+  several styles gets one such label and block per style.
 - **FR-003**: Writing a prompt MUST NOT change the game: no time passes, no roll is made, and no game state, canon or
   map changes. The only writes allowed are a detail the player gives under FR-009, the saved styles under FR-012 to FR-015, and
   the one line the session log already gives an out-of-character request.
@@ -222,14 +225,15 @@ and ask for a prompt naming that style.
   and who is present, from `game-state.md` and the latest session log. Where the request does not say who is in the picture
   or how wide the shot is, it MUST show everyone present in a wide shot of the whole scene; the player may ask for fewer
   figures, a closer shot or a different subject. A past moment the player names MUST be built from
-  its session log and the files as they stood then.
+  its session log and the files as they stood then: injuries from that scene, not from `game-state.md`, and a past look
+  from the sheet's history or the `-history.md` file the full save moves older history to.
 - **FR-006**: Every named figure in the prompt MUST be described from their sheet or minor-NPC row: species, sex where
   the files give it, age, build, colouring, clothing and gear, marks and injuries at that moment. The prompt MUST NOT add
   a trait the files contradict, and MUST NOT give a figure a species other than the one the files give.
 - **FR-007**: Each figure's size MUST be stated as a comparison with someone or something in the scene (for example
   "chest-high to the humans", "the size of a big hound"), taken from the files, so that sizes hold within a picture and
   from one picture to the next. A creature's kind MUST be named explicitly (a cat, a dog, a wyrmling), never left to a
-  word like "pet".
+  word like "pet". Where the files give no comparison, the species' usual height from the campaign's rules is used.
 - **FR-008**: The prompt MUST include only what the player's character has perceived at that moment, as the rule "Say
   only what the listener could know" in the DM rules already requires of everything DMC tells the player: no hidden or
   undetected enemy, no true form of a disguised being, no secret from `story/dm-notes.md` or a sheet, no future event,
@@ -254,7 +258,8 @@ and ask for a prompt naming that style.
   FR-005 to FR-010 win, so a change of style never adds, drops or changes a figure. Scene details given with a style
   (rain, night) are content.
 - **FR-012**: The player MUST be able to save the style of the last prompt (as given or as refined over several prompts)
-  under a name, and to list, rename, change and delete saved styles, each confirmed in a line.
+  under a name, and to list, rename, change and delete saved styles, each confirmed in a line. A save or rename to a
+  name already saved, ignoring case, MUST ask in a line whether to replace that style.
 - **FR-013**: Saved styles and which one was used last MUST be kept in the general `adventures/player-options.md`,
   shared by every campaign, in a section of their own with a fixed shape, each style a name and its description. A
   campaign's `player-options.md` holds no styles.
@@ -311,8 +316,9 @@ and ask for a prompt naming that style.
 - The built-in default is described once, in the kit, and is not written into the player's options unless they save it.
 - A detail the player gives under FR-009 is an appearance fact like any other, so it belongs in the sheet, where the next
   prompt and the story both find it.
-- Stating a size the files give in game terms (Small, Medium) as a comparison is not a choice: it follows from the
-  rules' size categories, so FR-007 still applies to it.
+- Stating a size as a comparison where the files give only a size category (Small, Medium) or none is not a choice: it
+  follows from the species' usual height in the campaign's rules, so FR-009 does not apply to it. The category alone is
+  not enough, since a dwarf and a human are both Medium.
 - The skill reads the campaign's files and the session log; it relies on the existing rule that the files are the truth,
   and on the knowledge-boundary rule in the DM rules for spoilers, and does not restate either.
 - Rorn's Landing's two styles (Looney Tunes, the current default, and Concept art) move once, in play: the player asks

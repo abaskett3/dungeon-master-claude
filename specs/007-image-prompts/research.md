@@ -74,11 +74,12 @@ from the kit, the `dmc` source and the Rorn's Landing campaign in `D:\Claude\dmc
 - **Decision:** The skill builds the content from the files in the order the dm-rules give for truth:
   - **The scene:** `game-state.md` (place, time, light, weather, who is present) and the tail of the latest session log.
   - **Each figure:** its sheet's species, sex, age, Appearance and gear, or its row in `minor-npcs.md`.
-  - **Injuries and conditions:** from `game-state.md`.
+  - **Injuries and conditions:** from `game-state.md` for the current moment, from that scene for a past one (R7).
 
   Two rules govern it:
-  - **Size:** stated as a comparison with someone present. A bare size category (Small, Medium) is turned into a
-    comparison using the rules' sizes. That is a rule, not a choice (spec, Assumptions).
+  - **Size:** stated as a comparison with someone present. Where the files give none, or only a size category (Small,
+    Medium), the species' usual height from the campaign's rules is stated against the others present: a dwarf and a
+    human are both Medium, so the category alone is not enough. That is a rule, not a choice (spec, Assumptions).
   - **Missing details** (FR-009): the prompt leaves out a detail the files do not hold. DMC names it after the block,
     and writes what the player then says to the sheet's Appearance line, or to the "Distinguishing trait or voice" cell
     of a minor NPC's row.
@@ -90,8 +91,9 @@ from the kit, the `dmc` source and the Rorn's Landing campaign in `D:\Claude\dmc
 ## R7. Past moments
 
 - **Decision:** For a past moment, the skill finds it in `story/sessions/` (searching for the place or the people the
-  player names), reads that scene, and takes who was there, injuries and the time from it. A sheet's history gives what
-  a figure looked like then, when it has changed since. Anything the log does not say is a missing detail (R6).
+  player names), reads that scene, and takes who was there, injuries and the time from it. A sheet's history, or the
+  `character-sheets/<sheet name>-history.md` file the full save moves older history to, gives what a figure looked like
+  then, when it has changed since. Anything the log does not say is a missing detail (R6).
 - **Rationale:** FR-005. The files keep only the current state, so the logs are the only record of how things stood.
 
 ## R8. What stays out

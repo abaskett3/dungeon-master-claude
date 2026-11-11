@@ -20,7 +20,7 @@ dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin
 dotnet test
 ```
 
-Expected: all pass, including `CampaignCloseTests`, `CloseFailureTests`, `ClosedCampaignFreezeTests`,
+Expected: all pass, including `ClosedCampaignTests`, `CampaignCloseTests`, `CloseFailureTests`, `ClosedCampaignFreezeTests`,
 `ClosingBackupTests`, `CampaignVerifyClosedTests` and the toolkit tests (research R12).
 
 ## 2. The plan writes nothing
@@ -81,8 +81,14 @@ In the scratch folder, `dmc play`, then ask DMC to close the copied finished cam
   before the close has `revealed sN`, `never revealed` or `abandoned` in § Secrets; `summary.md` has § How it ended
   with the date, every character's level, condition and place; the loose ends are canon lines in the character's
   terms; `dmc campaign standard` prints `closed: ...`.
-- `/clear`, then resume the closed campaign: DMC says it is closed, opens no scene, creates no session log, and offers a
-  sequel (SC-003). Repeat the resume three times.
+- Record the SHA-256 of every file under the closed campaign's folder. Then `/clear` and resume it: DMC says it is
+  closed, opens no scene, creates no session log, and offers a sequel (SC-003). Repeat the resume three times, then
+  compare the checksums: 0 files changed or added (SC-001's resume part).
+- Once more with `dmc` off the PATH for the session: resume still finds `.closed` with Glob and says the campaign is
+  closed (FR-010).
+- On a second copy of the campaign, before closing it: end the main story's last scene and check that DMC suggests
+  closing at most once; then close the last open thread and check it may suggest once more, and never closes on its
+  own (FR-001).
 
 ## 7. Measured cost
 

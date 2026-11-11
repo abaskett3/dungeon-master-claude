@@ -98,8 +98,8 @@ principle that settled these; the user answered them.
 
 ### User Story 1 - The player closes a finished campaign (Priority: P1)
 
-The story has ended. The player says they want to close the campaign (or DMC, seeing the story has ended, suggests it
-once and the player agrees). DMC says what closing means, that it cannot be undone and that the only way back to the
+The story has ended. The player says they want to close the campaign (or DMC suggests it, when the main story has ended or
+later when the last open thread is closed, and the player agrees). DMC says what closing means, that it cannot be undone and that the only way back to the
 story is a sequel, and asks the player to confirm. On a yes, DMC runs the closing save, writes the ending record and the
 account of its secrets, and has `dmc` take the closing backup, check it, place the second copy and set the closed mark.
 DMC then tells the player, out of character, that the campaign is closed, where the two copies are, and that a sequel
@@ -118,8 +118,8 @@ the closing save.
    permanent and that the way back is a sequel, and closes nothing until the player confirms.
 2. **Given** that confirmation question, **When** the player says no or anything other than a clear yes, **Then**
    nothing is written and the campaign plays on as before.
-3. **Given** a campaign whose story has ended, **When** the player has not asked to close it, **Then** DMC may suggest
-   closing once, and never closes it on its own.
+3. **Given** a campaign whose main story has ended, **When** the player has not asked to close it, **Then** DMC may
+   suggest closing then, and once more when the last open thread is closed, and never closes it on its own.
 4. **Given** a confirmed close, **When** the closing save runs, **Then** no canon line is moved to `canon-archive.md`,
    each fact it records carries its reason and means where the session established them, each DM secret is marked
    revealed (with its session), never revealed, or abandoned, and each loose end is written as a fact in the character's
@@ -153,8 +153,9 @@ sequel.
 2. **Given** a closed campaign, **When** `dmc campaign standard` runs on it, **Then** it reports the campaign as closed,
    whatever its standard, and resume makes no migration offer.
 3. **Given** a closed campaign, **When** any `dmc` command that writes campaign files is run on it (backup, restore,
-   verify's writes, standard `--init`, map and redraw), **Then** it refuses with one line naming the campaign as closed,
-   and changes nothing.
+   verify's writes, standard `--init`, map, and `pdf` or `digest` aimed into it), **Then** it refuses with one line
+   naming the campaign as closed, and changes nothing. `redraw`, which runs after every reply, does nothing and prints
+   nothing (FR-015).
 4. **Given** a closed campaign, **When** the player exports it, shows that export, verifies it against its closing
    backup, or runs lookup or recall over it, **Then** each works as for any campaign and writes nothing under the
    campaign folder.
@@ -199,8 +200,13 @@ and it imports.
   ("This must come before the close: afterwards its files are frozen").
 - **`dmc` is missing or fails during the close.** DMC writes nothing it cannot finish, says which step failed, and the
   campaign stays open; the closing files already written are kept and the close can be run again.
-- **The second copy cannot be written** (a full disk, a name clash). The close stops before the mark is set and says
-  why; a clash takes the next free name, as exports do today.
+- **The second copy cannot be written** (a full disk). The close stops, removes what that run wrote, mark included,
+  and says why (FR-011).
+- **A file already has the closing backup's name** in `backups/` or `exports/` (a leftover the player put there or a
+  cleanup that failed). The close checks before writing anything and fails with one line naming the file; it never
+  replaces the file or picks another name.
+- **The campaign is already closed.** Closing it again fails with one line saying it is already closed and that a
+  sequel continues its story, and changes nothing.
 - **A campaign closed by mistake.** Nothing reopens it: closed is closed, and the way on is a sequel (FR-018). The
   confirmation question (FR-002) is the guard.
 - **A sequel of a sequel.** Each campaign in a chain is closed on its own; closing one changes none of its predecessors.
@@ -214,8 +220,10 @@ and it imports.
 
 **Who closes, and when**
 
-- **FR-001**: Only the player closes a campaign. DMC MAY suggest closing, once, when the story has ended; it MUST NOT
-  close a campaign on its own.
+- **FR-001**: Only the player closes a campaign. DMC MAY suggest closing at two moments only: when the main story has
+  ended, and again when the last open thread in `story/dm-notes.md` § Open threads is closed (the user, 2026-11-11).
+  A no ends the suggestion until the next of those moments. DMC MUST NOT close a campaign on its own. The rule lives in
+  the close skill's description, which every session loads, so it costs no other prompt.
 - **FR-002**: Before closing, DMC MUST state that closing is permanent and that the only way back to the story is a
   sequel, and MUST wait for the player's clear yes. Anything else closes nothing.
 - **FR-003**: The closing procedure MUST be a new kit skill, `dmc-close-campaign`, which DMC loads only when the player
@@ -254,8 +262,9 @@ and it imports.
 - **FR-010**: The closed mark MUST be a file in the campaign folder that only `dmc` writes, beside `.standard`, so that
   it travels with an export, costs no context, cannot be set or cleared by DMC's edits, and can be tested by DMC without
   `dmc` (it exists or it does not).
-- **FR-011**: `dmc` MUST close a campaign in one command that, in order: refuses a campaign that is not current or has
-  an unfinished migration; sets the mark; writes the closing backup into the campaign's `backups/` under a name that
+- **FR-011**: `dmc` MUST close a campaign in one command that, in order: refuses a campaign that is already closed, is
+  not current, or has an unfinished migration, or whose closing backup's name is already taken in `backups/` or
+  `exports/` (never replacing that file or choosing another name); sets the mark; writes the closing backup into the campaign's `backups/` under a name that
   backup listing and pruning never count; checks it whole; writes the second copy to `exports/` in the DMC folder;
   checks it; and prints one line naming both files. A failure at any step MUST leave the campaign not closed (no mark),
   remove what that run wrote, and print one line saying what failed.
@@ -269,7 +278,7 @@ and it imports.
 - **FR-014**: Resume of a closed campaign MUST say it is closed, open no scene, and offer to start a sequel from it.
 - **FR-015**: Every `dmc` command that writes under a campaign folder MUST refuse a closed campaign with one line, `dmc
   <command>: <name> is closed: start a sequel to continue its story`, and change nothing. This covers backup, restore,
-  standard `--init`, map for files in that campaign, and verify's writes. `dmc redraw` is the exception in form: the
+  standard `--init`, map for files in that campaign, `pdf` and `digest` output aimed into it, and verify's writes. `dmc redraw` is the exception in form: the
   Stop hook runs it after every reply and turns its exit 2 into feedback to DMC (`.docs/dmc-reference.md` § redraw), so
   for a closed active campaign it MUST do nothing and print nothing, as it does today when nothing changed.
 - **FR-016**: `dmc campaign export`, `show`, `verify` (reporting only), `lookup` and `recall` MUST work on a closed
@@ -312,8 +321,9 @@ and it imports.
   behind, in 100% of injected failures.
 - **SC-005**: The closing save moves 0 canon lines to the archive, and every DM secret in `dm-notes.md` and
   `dm-notes-archive.md` has an outcome in the secrets account.
-- **SC-006**: The added cost to every ordinary play session and every ordinary full save is measured and stated, and is
-  no more than the closing procedure's entry point (its description or a pointer), never its steps.
+- **SC-006**: The added cost to every ordinary play session is measured and stated, and is at most the close skill's
+  description plus the two short rules that keep a closed campaign fixed (the resume skill's check and one clause in
+  `dm-rules.md`), under 100 tokens in all; never the close skill's steps. An ordinary full save gains nothing.
 
 ## Assumptions
 
@@ -331,4 +341,7 @@ and it imports.
   issue's "never changed again by ... a migration".
 - **The Silver Egg** is closed by hand after merging, as issue #180's "After merging" steps say; nothing for it ships in
   the kit.
-- **Out of scope** (issue #180): building a sequel's brief and digest (issue #179 Phase B), and reopening.
+- **Out of scope** (issue #180): building a sequel's brief and digest (issue #179 Phase B), and reopening. Also
+  verifying a campaign against any export other than its own closing backup or the file `--backup` names (an
+  imported copy found its source, a backup against the live campaign): issue #189, which reuses this change's byte
+  check.

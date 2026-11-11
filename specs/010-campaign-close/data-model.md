@@ -27,7 +27,7 @@ small files `dmc` writes.
 
 `StandardState` (`src/Dmc.Cli/Campaign/StandardRecord.cs`) gains a fifth value. The order in which `Status` decides is:
 
-1. **Closed**: `.closed` exists. Line: `closed: <closed at>`.
+1. **Closed**: `.closed` exists. Line: `closed: <closed at>`, or `closed: (mark unreadable)` when the mark cannot be read (the campaign is still closed).
 2. **Unfinished**: a backup has a `.migrating` mark.
 3. **Current**, **Behind**, **Ahead**: by comparing `.standard` with the kit.
 
@@ -47,7 +47,8 @@ State transitions:
 
 ## Closing backup
 
-`adventures/<campaign>/backups/<campaign>_closed_<yyyyMMddHHmmss>[-N].zip` (R4).
+`adventures/<campaign>/backups/<campaign>_closed_<yyyyMMddHHmmss>.zip` (R4): one name, fixed from the closing moment,
+never suffixed; a file already by that name stops the close before anything is written.
 
 - An ordinary export (manifest, sizes, SHA-256, the general player options if there are any), of the campaign with
   its mark, without `backups/`.
@@ -57,7 +58,8 @@ State transitions:
 
 ## Second copy
 
-`exports/<same file name>[-N].zip` in the DMC folder (R5): a byte copy of the closing backup, checked by SHA-256.
+`exports/<same file name>` in the DMC folder (R5): a byte copy of the closing backup, checked by SHA-256. Never
+replaces a file; a file already by that name stops the close before anything is written.
 
 ## Close plan and result
 
@@ -71,7 +73,8 @@ What `dmc campaign close` computes before writing (`CampaignCloser`):
 | Copy | The file name it will write in `exports/` |
 
 Refusals, checked in this order, each one line: no such campaign; already closed; unfinished migration; behind;
-ahead; a record or migration that cannot be read.
+ahead; a record or migration that cannot be read; a file already by the closing backup's name in `backups/` or
+`exports/`.
 
 ## Closing records, in the campaign's markdown
 

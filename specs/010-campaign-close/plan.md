@@ -41,7 +41,8 @@ the guard on other commands is one `File.Exists` per call; `redraw` gains one `F
 changed member, private ones included; the play context gains under 100 tokens and an ordinary full save 0, measured
 (R11)
 
-**Scale/Scope**: One new verb, five changed verbs (`standard`, `backups`, `backup`, `restore`, `verify`), the guard in
+**Scale/Scope**: One new verb, seven changed verbs (`standard`, `backups`, `backup`, `restore`, `verify`, `import`,
+`show`), the guard in
 `map`, `pdf`, `digest` and `redraw`, one new skill, three short prompt edits, one settings rule, about eight documents
 
 ## Constitution Check
@@ -96,15 +97,15 @@ src/Dmc.Cli/
     ├── CampaignCloser.cs                  # NEW: plan, the ordered close, the rollback, a test-only fault seam
     ├── CampaignArguments.cs               # EDIT: CloseRequest
     ├── StandardRecord.cs                  # EDIT: StandardState.Closed, checked first; the closed line
-    ├── BackupFolder.cs                    # EDIT: ClosedStem, ParseClosed
+    ├── BackupFolder.cs                    # EDIT: ClosedName, ParseClosed
     ├── CampaignExporter.cs                # EDIT: ClosingBackup (destination fixed to backups/, the closed stem)
     ├── CampaignBackup.cs, CampaignRestorer.cs   # EDIT: the refusal
     ├── CampaignVerifier.cs                # EDIT: the closed path: byte check against the closing backup, no writes
     └── ExportSummary.cs                   # EDIT: show's closed line when the file holds .closed
 
 tests/Dmc.Tests/
-├── Campaign/                              # NEW: CampaignCloseTests, CloseFailureTests, ClosedCampaignFreezeTests,
-│                                          #      ClosingBackupTests, CampaignVerifyClosedTests;
+├── Campaign/                              # NEW: ClosedCampaignTests, CampaignCloseTests, CloseFailureTests,
+│                                          #      ClosedCampaignFreezeTests, ClosingBackupTests, CampaignVerifyClosedTests;
 │                                          # EDIT: StandardTests, CampaignCommandContract
 └── Toolkit/                               # EDIT: ToolkitTests (skill list, the deny rule)
 

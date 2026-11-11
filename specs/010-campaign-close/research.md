@@ -43,16 +43,20 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   would do (`would close <name>: <N> files to backups/<file> and exports/<file>`), and writes nothing. With `--yes` it
   closes, in this order:
   1. Recover an interrupted restore (`CampaignRestorer.Recover`), as every migration verb does first.
-  2. Refuse unless `StandardRecord.Status` is `Current`: `behind` (ask DMC to bring it up to date first), `ahead`
-     (update dmc), `unfinished` (finish or restore the migration), or already `closed`.
-  3. Write `.closed` (R1), naming the backup file it is about to write.
-  4. Write the closing backup into `backups/` with the exporter (R4), and check it whole (`ExportSummary.Open` and
-     `ReadCampaign`, as `CampaignBackup.Take` does).
-  5. Copy it to `exports/` in the DMC folder (R5) through a `.partial-` file, and check the copy whole and its SHA-256
-     equal to the first.
-  6. Print one line: `closed <name>: <N> files to backups/<file> and exports/<file>`.
+  2. Refuse unless `StandardRecord.Status` is `Current`: already `closed` first (`<name> is already closed: start a
+     sequel to continue its story`), then `unfinished` (finish or restore the migration), `behind` (bring it up to
+     date first), `ahead` (update dmc).
+  3. Fix the closing backup's one file name from the closing moment (R4), and refuse if a file of that name is already
+     in `backups/` or `exports/` (`<name> cannot be closed: <folder>/<file> already exists`). Nothing is renamed to
+     get round a clash: a file already there is a leftover the player should look at, not one to work around.
+  4. Write `.closed` (R1), naming that file.
+  5. Write the closing backup into `backups/` under exactly that name with the exporter (R4), never replacing a file,
+     and check it whole (`ExportSummary.Open` and `ReadCampaign`, as `CampaignBackup.Take` does).
+  6. Copy it to `exports/` in the DMC folder under the same name (R5) through a `.partial-` file, never replacing a
+     file, and check the copy whole and its SHA-256 equal to the first.
+  7. Print one line: `closed <name>: <N> files to backups/<file> and exports/<file>`.
 
-  Any failure from step 3 on removes what this run wrote (the copy, the backup, then the mark, in that order) and
+  The plan (no `--yes`) runs steps 1 to 3 and prints the name step 3 fixed. Any failure from step 4 on removes what this run wrote (the copy, the backup, then the mark, in that order) and
   throws one `DmcException`: `could not close <name>: <step>: <reason>; it is still open`.
 - **Rationale**: FR-011 asks for one command and an order in which a failure leaves the campaign open. The plan form is
   `restore`'s pattern (decision of 2026-11-09): the close skill runs the plan first, before any closing save, so a
@@ -67,10 +71,12 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
 
 ## R4. The closing backup's name keeps it out of every count
 
-- **Decision**: `<campaign>_closed_<yyyyMMddHHmmss>.zip` (local time, as backups are named), with `-2`, `-3` ... on a
-  clash, written by a new `CampaignExporter.ClosingBackup` beside `Backup`, which fixes the destination to `backups/`
-  and the stem. `BackupFolder.Parse` matches only `_backup_`, so `List`, `AskLine`, `PruneSelection`, `Resolve` and
-  `Marked` never see it, with no change to them. `BackupFolder` gains `ClosedStem` and `ParseClosed` so the name has
+- **Decision**: `<campaign>_closed_<yyyyMMddHHmmss>.zip` (local time, as backups are named), with no `-2`, `-3` suffix:
+  the closer fixes the name once (R3 step 3) and refuses a clash rather than choosing another name (the user,
+  2026-11-11: a closed campaign cannot be closed again, and close checks and fails properly). It is written by a new
+  `CampaignExporter.ClosingBackup` beside `Backup`, which takes that exact file name, fixes the destination to
+  `backups/` and never replaces a file. The mark and the backup therefore always name the same file. `BackupFolder.Parse` matches only `_backup_`, so `List`, `AskLine`, `PruneSelection`, `Resolve` and
+  `Marked` never see it, with no change to them. `BackupFolder` gains `ClosedName` and `ParseClosed` so the name has
   one home.
 - **Rationale**: issue #180 noticed that files which do not match the backup pattern are already left alone; the test
   for SC-002 proves it stays so. Keeping the time format of backups makes the two sort together in a file listing.
@@ -80,8 +86,8 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
 
 ## R5. The second copy goes to `exports/` in the DMC folder
 
-- **Decision**: the same file name in `exports/`, made if missing, the next free `-N` on a clash (the exporter's
-  `FreeName`). Byte-for-byte the same file: copied, not exported again, and checked by SHA-256.
+- **Decision**: the same file name in `exports/`, made if missing; a file already there is refused by the plan (R3
+  step 3), never replaced or renamed around. Byte-for-byte the same file: copied, not exported again, and checked by SHA-256.
 - **Rationale**: it is the default home of an export outside a campaign (`.docs/dmc-reference.md` § campaign); it is
   never under `adventures/`, so recall and DMC's searches never see it twice; install, refresh and update never touch
   it (`.docs/architecture.md`). Copying instead of exporting twice guarantees "the same file" (US3.3) and that both
@@ -99,7 +105,10 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   `--init` refuses a closed campaign (FR-015). A mark that cannot be read is still a closed campaign: the state is the
   file's presence; only `verify` needs the content, and says when it cannot read it.
 - **Rationale**: FR-013 ("ahead of any other status"). Resume already runs this command first and branches on the first
-  word (`dmc-resume-campaign` § 1), so the closed branch costs one clause there and no new call.
+  word (`dmc-resume-campaign` § 1), so the closed branch costs one clause there and no new call. When `dmc` fails,
+  resume checks for the file itself with Glob before going on (FR-010: DMC can test the mark without `dmc`, and play
+  never depends on `dmc` to start); always globbing instead was rejected as a tool call on every resume for what
+  `dmc` already reports.
 
 ## R7. `verify` on a closed campaign checks bytes against the closing backup and writes nothing
 
@@ -115,6 +124,10 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   would miss added lines; for a frozen campaign the right test is the bytes.
 - **Alternatives considered**: a new verb (`dmc campaign check`): one more name for players to learn, when the issue
   says "`verify` still works".
+- **Deferred** (the user, 2026-11-11): verifying against any other export (a backup against the live campaign, an
+  import against its file, an imported closed copy finding its source in `exports/`) is issue #189, which reuses this
+  byte check. Here, a mark naming a backup that is not in `backups/` gets the existing `no backup <file>` line from
+  `BackupFolder.Resolve`, and `--backup` names the file.
 
 ## R8. Every `dmc` writer refuses a closed campaign in one place
 
@@ -122,9 +135,10 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   and one guard, `ClosedCampaign.Refuse(root, path, command)`, which finds whether a path lies under
   `adventures/<campaign>/` of a campaign with a mark and throws
   `<name> is closed: start a sequel to continue its story` (the `dmc <command>:` prefix comes from `CommandLine`, as
-  for every failure). Called by: `campaign backup`, `restore` (plan and `--yes`), `standard --init`, `close` (as
-  "already closed"), `map` (the map file's folder), `pdf --out` and `digest show --out`. `verify` takes R7's path
-  instead. `redraw` calls `ClosedCampaign.IsClosed` in `MapRedraw.Pending` and returns null, so it prints nothing and
+  for every failure). Called by: `campaign backup`, `restore` (plan and `--yes`), `standard --init`, `map` (the map file's
+  folder), `pdf --out` and `digest show --out`. `close` checks the mark itself and says
+  `<name> is already closed: start a sequel to continue its story`, the same advice in words that fit a second close
+  (the user, 2026-11-11). `verify` takes R7's path instead. `redraw` calls `ClosedCampaign.IsClosed` in `MapRedraw.Pending` and returns null, so it prints nothing and
   exits 0 (FR-015).
 - **Rationale**: FR-015 names the writers; the code search for `File.Write`, `File.Move`, `Directory.Create` and the
   rest found exactly these paths into a campaign folder (`Digester` writes to `adventures/.transcript-review` by
@@ -137,7 +151,9 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
 ## R9. The kit: one new skill, three short edits, no template change
 
 - **Decision**:
-  - **`kit/skills/dmc-close-campaign/SKILL.md`** (new). Its steps: 0, not mid-roll (as the migrate skill's step 0);
+  - **`kit/skills/dmc-close-campaign/SKILL.md`** (new). Its description carries FR-001's two moments to suggest
+    closing (the main story has ended; the last open thread is closed), since it is the one part of the skill every
+    session loads; no memory of a declined suggestion is kept, because the two moments are each passed once. Its steps: 0, not mid-roll (as the migrate skill's step 0);
     1, run `dmc campaign close <c>` (the plan) and stop on a refusal, offering `dmc-migrate-campaign` for `behind`;
     2, ask once (FR-002), naming an open scene or fight if there is one; 3, the closing save: follow
     `dmc-campaign-full-save` steps 1 to 8 with only these differences: step 4 prunes and splits but archives nothing,
@@ -146,7 +162,8 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
     `dm-notes-archive.md` back into § Secrets and marks each `revealed sN`, `never revealed` or `abandoned`, and moves
     no secret out; step 6 replaces § Where things stand with § How it ended (R10); step 7 leaves the size lines for
     `summary.md`, `dm-notes.md` and `canon.md` (a closed campaign is never resumed into play); 4, run
-    `dmc campaign close <c> --yes`; 5, tell the player out of character that it is closed, where the two copies are,
+    `dmc campaign close <c> --yes`; a rerun after a failed step 4 still runs steps 1 and 2 but skips step 3 when
+    `summary.md` already has § How it ended and every secret has an outcome; 5, tell the player out of character that it is closed, where the two copies are,
     and that a sequel can start from it (`dmc-new-campaign`, with its Predecessor line).
   - **`dmc-resume-campaign`** § 1: one clause for `closed`: say it is closed, read nothing for play, start no session
     log, change none of its files, and offer a sequel. A closed campaign stops the skill there.
@@ -179,8 +196,9 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
 
 - **Decision**: measured as bytes ÷ 4 (`.docs/decisions.md`, the skill descriptions entry) in the PR, for: the new
   skill's description (every session); the resume clause; the dm-rules clause. The migrate skill's clause is paid only
-  while migrating; the close skill's body only while closing. Target: under 100 tokens in all for an ordinary session,
-  and 0 for an ordinary full save (SC-006).
+  while migrating; the close skill's body only while closing. Target (SC-006): under 100 tokens in all for an ordinary session,
+  and 0 for an ordinary full save. The description keeps FR-001's two moments short (about: suggest only when the main
+  story ends or the last open thread closes), because it is the largest of the three.
 
 ## R12. Tests and what CI cannot run
 

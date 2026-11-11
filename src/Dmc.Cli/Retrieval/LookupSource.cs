@@ -81,11 +81,11 @@ internal sealed record LookupSource(SourceKind Kind, string Name, string Folder,
     }
 
     /// <summary>
-    /// True for a rules reference kept as a PDF: <c>rules/</c> holds a <c>*.pdf</c> or extracted page text in
-    /// <c>extracted/text/</c>, whatever markdown sits beside it (research R9).
+    /// True for a rules reference kept as a PDF: a <c>*.pdf</c> anywhere under <c>rules/</c>, whatever markdown sits
+    /// beside it (research R9). An <c>extracted/</c> folder alone does not count: <c>dmc-setup-rules</c> says one can be
+    /// left over after its PDF was removed.
     /// </summary>
-    public bool HasPdf => Kind == SourceKind.Rules
-                          && (Directory.EnumerateFiles(Folder, "*.pdf").Any() || Directory.Exists(System.IO.Path.Combine(Folder, "extracted", "text")));
+    public bool HasPdf => Kind == SourceKind.Rules && Directory.EnumerateFiles(Folder, "*.pdf", SourceFiles.Listing).Any();
 
     /// <summary>The markdown files the source searches, relative to its folder with <c>/</c>, in ordinal order. For a narrowed source, the one file.</summary>
     public IReadOnlyList<string> Files()
@@ -141,7 +141,7 @@ internal static class SourceFiles
                                 && !rel.StartsWith("extracted/", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>How folders are listed: recursively, hidden files included, and a folder that cannot be listed skipped rather than failing the whole command.</summary>
-    static readonly EnumerationOptions Listing = new()
+    internal static readonly EnumerationOptions Listing = new()
     {
         RecurseSubdirectories = true,
         IgnoreInaccessible = true,

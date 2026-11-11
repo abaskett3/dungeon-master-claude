@@ -49,7 +49,8 @@ the issue-179 session's `recall.py`, `recall_alias.py`, `sample.py` and `queries
 
 - **Decision:** Each line of a file in scope, trimmed of spaces, is a unit unless it is under 25 characters, a heading,
   wholly inside an HTML comment (comment text is removed first, on one line or across several, since the templates'
-  guidance and examples live in comments), a table separator (`|---`), or inside a fenced code block. A unit keeps its campaign, file,
+  guidance and examples live in comments; fences and comments are found in one pass, an opener inside an inline code
+  span or one that never closes is text, and `<!-->` closes at once), a table separator (`|---`), or inside a fenced code block. A unit keeps its campaign, file,
   1-based line number, tier, the scene it sits in (session logs) and the first `sN.M` citation it holds.
 - **Rationale:** The prototype's filter. Short lines and headings carry no fact by themselves; a stat block's name is a
   heading, which lookup (R7) finds and recall need not.
@@ -126,7 +127,7 @@ the issue-179 session's `recall.py`, `recall_alias.py`, `sample.py` and `queries
 ## R9. A rules reference kept as a PDF
 
 - **Decision:** `rules/`'s markdown other than `index.md` (outside `extracted/`) is searched like any source. It is a
-  PDF reference when it holds a `*.pdf` or `extracted/text/`; then, when no markdown heading matches (or there is no
+  PDF reference when a `*.pdf` is anywhere under it (an `extracted/` folder alone can be a leftover, `dmc-setup-rules` says); then an exact markdown heading wins, and otherwise, when no markdown heading matches (or there is no
   markdown), lookup searches `rules/index.md` by lines: every line (a table
   row, a list item, a paragraph) that holds every word of the request is printed as `rules/index.md:<n>: <line>`,
   trimmed as R4 does, at most 8. If no index line matches and `rules/extracted/text/page-NNN.txt` exist, it prints one

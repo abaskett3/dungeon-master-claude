@@ -227,7 +227,9 @@ internal static class CampaignExporter
     /// <summary>
     /// The module folder named by the <c>**Module folder**:</c> line, as <c>templates/module-progress.md</c> writes it
     /// (<c>`modules/&lt;module&gt;/`</c>); null when there is no such line, it names nothing, or it still holds the template's
-    /// placeholder or anything that is not one plain folder name.
+    /// placeholder or anything that is not one plain folder name. An HTML comment after the value, a <c>Modules/</c> prefix
+    /// in another case and backslashes are allowed; a name starting with a dot (a staging folder) is not a module.
+    /// <c>dmc recall</c> reads the line through this too.
     /// </summary>
     /// <param name="text">The text of <c>module-progress.md</c>.</param>
     internal static string? ModuleFolder(string text)
@@ -237,11 +239,15 @@ internal static class CampaignExporter
             int at = line.IndexOf(ModuleFolderMarker, StringComparison.Ordinal);
             if (at < 0)
                 continue;
-            string value = line[(at + ModuleFolderMarker.Length)..].Replace("`", "").Trim();
-            if (value.StartsWith(ModulesPrefix, StringComparison.Ordinal))
+            string value = line[(at + ModuleFolderMarker.Length)..];
+            int comment = value.IndexOf("<!--", StringComparison.Ordinal);
+            if (comment >= 0)
+                value = value[..comment];
+            value = value.Replace("`", "").Replace('\\', '/').Trim();
+            if (value.StartsWith(ModulesPrefix, StringComparison.OrdinalIgnoreCase))
                 value = value[ModulesPrefix.Length..];
-            value = value.TrimEnd('/', '\\').Trim();
-            return value.Length == 0 || value.Contains('/') || ArchivePaths.Refusal(value) is not null ? null : value;
+            value = value.TrimEnd('/').Trim();
+            return value.Length == 0 || value.Contains('/') || value.StartsWith('.') || ArchivePaths.Refusal(value) is not null ? null : value;
         }
         return null;
     }

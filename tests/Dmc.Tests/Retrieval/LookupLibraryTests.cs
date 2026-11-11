@@ -161,6 +161,24 @@ public sealed class LookupLibraryTests
     }
 
     [TestMethod]
+    public void ALooseHouseRuleMatchDoesNotHideThePdfButAnExactOneWins()
+    {
+        PdfRules(_root);
+        Write(_root, "rules/house-rules.md", "# House rules\n\n## Fireball variant\n\nFireball leaves the ground burning.\n");
+        CollectionAssert.AreEqual(new[] { "rules: \"fireball\" is on PDF pages 129, 130 (read them in rules/srd.pdf)" }, Lookup.Run(_root, "rules", "fireball"));
+        Assert.AreEqual("## Fireball variant", Lookup.Run(_root, "rules", "fireball variant")[1]);
+    }
+
+    [TestMethod]
+    public void ALeftoverExtractedFolderWithoutItsPdfIsNotAPdf()
+    {
+        PdfRules(_root);
+        File.Delete(Path.Combine(_root, "rules", "srd.pdf"));
+        Write(_root, "rules/house-rules.md", "# House rules\n\n## Fireball variant\n\nFireball leaves the ground burning.\n");
+        Assert.AreEqual("no heading \"wish\" in rules", Failure("rules", "wish"), "markdown's own failure, not the PDF path's");
+    }
+
+    [TestMethod]
     public void ACommentedHeadingIsNotAHeading()
     {
         Write(_root, $"adventures/{Sequel}/story/sessions/session-034.md",

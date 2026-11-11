@@ -43,6 +43,45 @@ public sealed class WordsAndHeadingsTests
     }
 
     [TestMethod]
+    public void AnOpenerThatNeverClosesIsTextAndHidesNothing()
+    {
+        var file = MarkdownFile.FromText("x.md", "templates keep guidance in <!-- comments\n## Later heading\nfact\n");
+        CollectionAssert.AreEqual(new[] { "templates keep guidance in <!-- comments", "## Later heading", "fact" }, file.Visible);
+        Assert.AreEqual("Later heading", file.Headings.Single().Text);
+    }
+
+    [TestMethod]
+    public void AnOpenerInACodeSpanIsTextAndEmptyCommentsCloseAtOnce()
+    {
+        var file = MarkdownFile.FromText("x.md", "use `<!--` for notes\na <!--> b <!---> c\n");
+        CollectionAssert.AreEqual(new[] { "use `<!--` for notes", "a  b  c" }, file.Visible);
+    }
+
+    [TestMethod]
+    public void AFenceLineInsideACommentDoesNotOpenAFence()
+    {
+        var file = MarkdownFile.FromText("x.md", "<!--\n```\nexample\n-->\n## After\n");
+        Assert.IsFalse(file.Fenced.Any(f => f), "nothing is fenced");
+        Assert.AreEqual("After", file.Headings.Single().Text);
+    }
+
+    [TestMethod]
+    public void AUtf16FileIsReadAsText()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N") + ".md");
+        try
+        {
+            File.WriteAllText(path, "# Notes\r\n\r\n## Oswin\r\n", new System.Text.UnicodeEncoding(bigEndian: false, byteOrderMark: true));
+            var file = MarkdownFile.Read(path);
+            CollectionAssert.AreEqual(new[] { "# Notes", "", "## Oswin" }, file.Lines);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
     public void HeadingsAreAtxLinesOutsideFences()
     {
         var file = MarkdownFile.FromText("x.md",

@@ -208,6 +208,24 @@ public sealed class RecallLibraryTests
     }
 
     [TestMethod]
+    public void AModuleLineWithACommentABackslashOrAnotherCaseIsStillFollowed()
+    {
+        foreach (string value in new[] { $"`modules/{Module}/` <!-- ingested s3 -->", $"modules\\{Module}\\", $"Modules/{Module}/" })
+        {
+            Write(_root, $"adventures/{Predecessor}/module-progress.md", "# Module progress\n\n- **Module folder**: " + value + "\n");
+            Assert.AreEqual(0, IndexOf(Run("reed hut stilts"), $"modules/{Module}"), value);
+        }
+    }
+
+    [TestMethod]
+    public void AStagingFolderIsNotAModule()
+    {
+        Write(_root, $"modules/.partial-{Module}/index.md", "# Index\n\n- A reed hut on stilts in the staging copy, long enough to rank.\n");
+        Write(_root, $"adventures/{Predecessor}/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/.partial-" + Module + "/`\n");
+        Assert.IsFalse(Run("reed hut stilts").Any(l => l.Contains(".partial-")));
+    }
+
+    [TestMethod]
     public void AMissingModuleFolderIsANotice()
     {
         Write(_root, $"adventures/{Predecessor}/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/sunken-keep/`\n");

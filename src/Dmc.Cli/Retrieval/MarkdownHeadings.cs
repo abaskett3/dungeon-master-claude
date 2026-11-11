@@ -48,8 +48,7 @@ internal sealed class MarkdownFile
         var lines = Size.Measurement.Split(bytes);
         Lines = lines.Select(l => l.Text).ToArray();
         LineBytes = lines.Select(l => l.Bytes).ToArray();
-        Fenced = MarkdownHeadings.FencedLines(Lines);
-        Visible = MarkdownHeadings.WithoutComments(Lines, Fenced);
+        (Fenced, Visible) = MarkdownHeadings.Scan(Lines);
         var headings = new List<Heading>();
         for (int i = 0; i < Lines.Length; i++)
         {
@@ -64,7 +63,22 @@ internal sealed class MarkdownFile
     /// <returns>The parsed file.</returns>
     /// <exception cref="IOException">The file cannot be read.</exception>
     /// <exception cref="UnauthorizedAccessException">The file cannot be read.</exception>
-    public static MarkdownFile Read(string path) => new(path, File.ReadAllBytes(path));
+    public static MarkdownFile Read(string path) => new(path, AsUtf8(File.ReadAllBytes(path)));
+
+    /// <summary>
+    /// A file's bytes as UTF-8: unchanged unless they start with a UTF-16 or UTF-32 byte-order mark (Windows PowerShell
+    /// 5.1 writes UTF-16 by default), which are decoded and re-encoded, so their lines still match.
+    /// </summary>
+    /// <param name="bytes">The file's bytes.</param>
+    static byte[] AsUtf8(byte[] bytes)
+    {
+        bool wide = bytes.Length >= 2 && ((bytes[0] == 0xFF && bytes[1] == 0xFE) || (bytes[0] == 0xFE && bytes[1] == 0xFF))
+                    || (bytes.Length >= 4 && bytes[0] == 0 && bytes[1] == 0 && bytes[2] == 0xFE && bytes[3] == 0xFF);
+        if (!wide)
+            return bytes;
+        using var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return Encoding.UTF8.GetBytes(reader.ReadToEnd());
+    }
 
     /// <summary>Builds a file from text, for tests.</summary>
     /// <param name="path">A path to label it with.</param>
@@ -106,64 +120,77 @@ internal static partial class MarkdownHeadings
     }
 
     /// <summary>
-    /// Which lines are part of a fenced code block: a fence opens with at least three <c>`</c> or <c>~</c> after at most
-    /// three spaces, and closes at a line of the same character, at least as many, and nothing but spaces after them.
-    /// An unclosed fence runs to the end of the file.
+    /// Fenced code blocks and HTML comments, worked out together in one pass so that neither hides the other: a fence
+    /// opens with at least three <c>`</c> or <c>~</c> after at most three spaces and closes at a line of the same
+    /// character, at least as many, and nothing else; a comment runs from <c>&lt;!--</c> to the next <c>--&gt;</c>, on
+    /// the same line or a later one. A fence line inside a comment does not open a fence, and a fenced line keeps any
+    /// <c>&lt;!--</c> as text. <c>&lt;!--</c> inside an inline code span is text. An opener that is never closed is
+    /// text too, so a stray <c>&lt;!--</c> in prose cannot hide the rest of a file; the empty comments <c>&lt;!--&gt;</c>
+    /// and <c>&lt;!---&gt;</c> close at once. An unclosed fence runs to the end of the file.
     /// </summary>
     /// <param name="lines">The file's lines.</param>
-    /// <returns>One flag per line.</returns>
-    public static bool[] FencedLines(string[] lines)
+    /// <returns>For each line, whether it is fenced, and its text with comments removed (a fenced line as written).</returns>
+    public static (bool[] Fenced, string[] Visible) Scan(string[] lines)
     {
-        var fenced = new bool[lines.Length];
-        char fence = '\0';
-        int length = 0;
-        for (int i = 0; i < lines.Length; i++)
+        var ignored = new HashSet<(int Line, int Column)>();
+        while (true)
         {
-            var (c, n, rest) = FenceRun(lines[i]);
-            if (fence == '\0')
-            {
-                if (n >= 3 && !(c == '`' && rest.Contains('`')))
-                {
-                    fence = c;
-                    length = n;
-                    fenced[i] = true;
-                }
-            }
-            else
-            {
-                fenced[i] = true;
-                if (c == fence && n >= length && rest.Trim().Length == 0)
-                    fence = '\0';
-            }
+            var (fenced, visible, unclosed) = ScanOnce(lines, ignored);
+            if (unclosed is not { } opener)
+                return (fenced, visible);
+            // That opener never closes: take it as text and scan again. Each pass ignores one more, so this ends.
+            ignored.Add(opener);
         }
-        return fenced;
     }
 
-    /// <summary>
-    /// Each line with its HTML comments removed: everything from <c>&lt;!--</c> to the next <c>--&gt;</c>, on the same
-    /// line or a later one. Fenced lines are kept as written and do not open or close a comment; an unclosed comment
-    /// runs to the end of the file.
-    /// </summary>
+    /// <summary>One pass of <see cref="Scan"/>, with some comment openers taken as text.</summary>
     /// <param name="lines">The file's lines.</param>
-    /// <param name="fenced">Which lines are fenced (<see cref="FencedLines"/>).</param>
-    /// <returns>One visible text per line.</returns>
-    public static string[] WithoutComments(string[] lines, bool[] fenced)
+    /// <param name="ignored">The openers (line and column, 0-based) to take as text.</param>
+    /// <returns>The flags and texts, and the opener of a comment still open at the end, if any.</returns>
+    static (bool[] Fenced, string[] Visible, (int, int)? Unclosed) ScanOnce(string[] lines, HashSet<(int Line, int Column)> ignored)
     {
+        var fenced = new bool[lines.Length];
         var visible = new string[lines.Length];
-        bool open = false;
+        char fence = '\0';
+        int fenceLength = 0;
+        bool inComment = false;
+        (int, int) opener = (0, 0);
+
         for (int i = 0; i < lines.Length; i++)
         {
-            if (fenced[i])
+            string line = lines[i];
+            if (fence != '\0')
             {
-                visible[i] = lines[i];
+                fenced[i] = true;
+                visible[i] = line;
+                var (c, n, after) = FenceRun(line);
+                if (c == fence && n >= fenceLength && after.Trim().Length == 0)
+                    fence = '\0';
                 continue;
             }
+            if (!inComment)
+            {
+                var (c, n, after) = FenceRun(line);
+                if (n >= 3 && !(c == '`' && after.Contains('`')))
+                {
+                    fence = c;
+                    fenceLength = n;
+                    fenced[i] = true;
+                    visible[i] = line;
+                    continue;
+                }
+                if (!line.Contains("<!--", StringComparison.Ordinal))
+                {
+                    visible[i] = line; // most lines: no comment, nothing to copy
+                    continue;
+                }
+            }
+
             var kept = new StringBuilder();
-            string line = lines[i];
             int at = 0;
             while (at < line.Length)
             {
-                if (open)
+                if (inComment)
                 {
                     int close = line.IndexOf("-->", at, StringComparison.Ordinal);
                     if (close < 0)
@@ -171,27 +198,50 @@ internal static partial class MarkdownHeadings
                         at = line.Length;
                         break;
                     }
-                    open = false;
+                    inComment = false;
                     at = close + 3;
+                    continue;
                 }
+                int start = NextOpener(line, at, i, ignored);
+                if (start < 0)
+                {
+                    kept.Append(line, at, line.Length - at);
+                    break;
+                }
+                kept.Append(line, at, start - at);
+                string rest = line[(start + 4)..];
+                if (rest.StartsWith('>'))
+                    at = start + 5;
+                else if (rest.StartsWith("->", StringComparison.Ordinal))
+                    at = start + 6;
                 else
                 {
-                    int start = line.IndexOf("<!--", at, StringComparison.Ordinal);
-                    if (start < 0)
-                    {
-                        kept.Append(line, at, line.Length - at);
-                        break;
-                    }
-                    kept.Append(line, at, start - at);
-                    open = true;
+                    inComment = true;
+                    opener = (i, start);
                     at = start + 4;
                 }
             }
             visible[i] = kept.ToString();
         }
-        return visible;
+        return (fenced, visible, inComment ? opener : null);
     }
 
+    /// <summary>The next <c>&lt;!--</c> at or after <paramref name="from"/> that opens a comment: not one taken as text, and not inside an inline code span (after an odd number of backticks on the line).</summary>
+    /// <param name="line">The line.</param>
+    /// <param name="from">Where to start looking.</param>
+    /// <param name="lineIndex">The line's 0-based index, to check <paramref name="ignored"/>.</param>
+    /// <param name="ignored">The openers taken as text.</param>
+    /// <returns>Its column, or -1.</returns>
+    static int NextOpener(string line, int from, int lineIndex, HashSet<(int Line, int Column)> ignored)
+    {
+        for (int start = line.IndexOf("<!--", from, StringComparison.Ordinal); start >= 0; start = line.IndexOf("<!--", start + 1, StringComparison.Ordinal))
+        {
+            bool inCode = line.AsSpan(0, start).Count('`') % 2 == 1;
+            if (!inCode && !ignored.Contains((lineIndex, start)))
+                return start;
+        }
+        return -1;
+    }
     /// <summary>The fence character a line starts with (after at most three spaces), how many, and the rest of the line.</summary>
     /// <param name="line">One line.</param>
     static (char Char, int Count, string After) FenceRun(string line)

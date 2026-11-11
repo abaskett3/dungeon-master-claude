@@ -252,7 +252,7 @@ small questions file written in a temporary folder.
   `kit/templates/campaign/player-options.md` (the Predecessor comment): the earlier campaign is "recalled with `dmc
   recall`", not "searched". Check `kit/migrations/` for a test that pins the template's comment text before changing
   it; if one does, leave the template and change only the skill.
-- [ ] T027 [US4] Publish, write a scratch DMC folder from the build, and do the live run of `quickstart.md` § 3: a
+- [X] T027 [US4] (Skipped by the user's decision on 2026-11-10; the PR says so.) Publish, write a scratch DMC folder from the build, and do the live run of `quickstart.md` § 3: a
   returning NPC is recalled before narrating; with `dmc` off the PATH the game goes on by searching. Note the result
   for the PR description.
 
@@ -295,7 +295,7 @@ small questions file written in a temporary folder.
 - [X] T035 [P] `.docs/development.md` (under Tests: the recall-test harness, where its questions file lives, that it
   never runs in CI) and `.docs/architecture.md` (the commands row and the `Retrieval/` folder).
 - [X] T036 Run `dotnet publish` and the full `dotnet test`; every test passes with the same skips as T001.
-- [ ] T037 Tick the finished tasks here; commit on `009-retrieval-lookup-recall`; push; open the PR with a full
+- [X] T037 Tick the finished tasks here; commit on `009-retrieval-lookup-recall`; push; open the PR with a full
   description (what, why, sources, tests, documents changed, no migration and why, the live run, T029 and T030 left
   for after the merge) and `Part of #179` on its own line; check it with `gh pr view <n> --json body`.
 - [ ] T038 Run `/speckit-converge` until it adds no tasks, then the code review once on the finished PR; bring its

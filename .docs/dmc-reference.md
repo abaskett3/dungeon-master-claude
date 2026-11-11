@@ -367,7 +367,7 @@ If cleaning up after a failure fails, one more line on stderr names the leftover
 
 ### Migrations
 
-Added after release 0.2.2, in the next release (spec 005, issue #172). A **standard** is a whole number. The kit's standard is the highest
+Added in release 0.3.1 (spec 005, issue #172). A **standard** is a whole number. The kit's standard is the highest
 migration in `migrations/` of the DMC folder (`NNN-<slug>.md`, installed from `kit/migrations/`; 1 when there is none).
 A campaign's is the number in `adventures/<NAME>/.standard`, or 1 when there is no such file. A migration takes a
 campaign from `NNN-1` to `NNN`; DMC follows it (the `dmc-migrate-campaign` skill), and these verbs do the parts that
@@ -478,7 +478,7 @@ command again`. A staging's `backups/` goes back into the campaign's (entry by e
 `backups/` again, never replacing a file), and the staging is deleted only when it holds none of them.
 ## size
 
-Added in the next release.
+Added in release 0.3.1.
 
 ```
 dmc size [NAME] [--check] [--folder PATH]

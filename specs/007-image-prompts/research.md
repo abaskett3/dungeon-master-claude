@@ -78,8 +78,10 @@ from the kit, the `dmc` source and the Rorn's Landing campaign in `D:\Claude\dmc
 
   Two rules govern it:
   - **Size:** stated as a comparison with someone present. Where the files give none, or only a size category (Small,
-    Medium), the species' usual height from the campaign's rules is stated against the others present: a dwarf and a
-    human are both Medium, so the category alone is not enough. That is a rule, not a choice (spec, Assumptions).
+    Medium), the figures' size categories are compared: the same size is drawn the same, a smaller one smaller, a
+    larger one bigger, and the prompt holds no bare category or height. D&D gives most creatures a size category, not
+    a height, so the categories are the one firm measure (the user's ruling on PR #186's review). That is a rule, not a
+    choice (spec, Assumptions), and since it gives the same answer every time, nothing is written back.
   - **Missing details** (FR-009): the prompt leaves out a detail the files do not hold. DMC names it after the block,
     and writes what the player then says to the sheet's Appearance line, or to the "Distinguishing trait or voice" cell
     of a minor NPC's row.

@@ -403,7 +403,7 @@ on a file left with the old line.
       - record what DMC said and wrote, for the PR.
 
       Steps 1 to 5 done on 2026-11-11 with the published binary in a manifest-only scratch folder, all as quickstart says (recall 127 ms); step 6, the live migration, is still to do: the user chose to open PR 1 first and run it before merging
-- [ ] T047 Open PR 1, then check it:
+- [X] T047 Open PR 1, then check it:
       - commit, push, and open the PR with the full description: what changed, why, the sources (spec 011 FR-001 to
         FR-005, FR-017 to FR-020a, FR-027, FR-028, FR-028a, and the research items), the tests, the documents
         changed, migration 005 and why it is needed, the measured cost, and `Part of #179` on its own line;

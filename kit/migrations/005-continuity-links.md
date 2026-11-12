@@ -1,7 +1,7 @@
 ---
 standard: 5
 title: Continuity links replace the Predecessor line
-shipped: PR #<n>
+shipped: PR #195
 touches: [player-options.md]
 drops: []
 checks: [continuity-section]

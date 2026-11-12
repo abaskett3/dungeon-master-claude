@@ -1,0 +1,3 @@
+# 005: made with dmc campaign verify --list of after/ against a backup of before/.
+# The Predecessor line's value moved to the new Continues line; the section's other lines are new.
+0d094c81a121	reworded	**Continues**: old-tale

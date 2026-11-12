@@ -20,6 +20,23 @@ public sealed class MigrationFilesTests
     static List<MigrationFile> Migrations() =>
         [.. Files().Select(name => MigrationFile.Parse(name, File.ReadAllText(Path.Combine(TestEnv.Root, "kit", "migrations", name)).Replace("\r\n", "\n")))];
 
+    /// <summary>
+    /// The optional <c>## Before the backup</c> section (spec 011 R13), asked before the backup so a stop changes nothing,
+    /// sits after <c>## What changes</c> and before <c>## Steps</c> wherever a migration has it; one without it is read too.
+    /// </summary>
+    [TestMethod]
+    public void BeforeTheBackupSitsBetweenWhatChangesAndStepsWhereverItIs()
+    {
+        foreach (var migration in Migrations().Where(m => m.Headings.Contains("Before the backup")))
+        {
+            var headings = migration.Headings.ToList();
+            int before = headings.IndexOf("Before the backup");
+            Assert.IsTrue(headings.IndexOf("What changes") < before && before < headings.IndexOf("Steps"), $"{migration.FileName}: {string.Join(", ", headings)}");
+        }
+        Assert.IsTrue(Migrations().Any(m => !m.Headings.Contains("Before the backup")), "a migration without the section is read as before");
+        Assert.IsTrue(Migrations().Any(m => m.Headings.Contains("Before the backup")), "migration 005 has the section");
+    }
+
     [TestMethod]
     public void EveryFileIsAMigrationAndTheyRunFromTwoWithoutAGap()
     {

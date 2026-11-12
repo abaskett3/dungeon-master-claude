@@ -298,12 +298,12 @@ on a file left with the old line.
 
 ### Tests
 
-- [ ] T030 [P] [US4] Add tests for `continuity-section` to `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`:
+- [X] T030 [P] [US4] Add tests for `continuity-section` to `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`:
       - it passes on the section with its three lines, whether they hold names or `none` (R14 puts the `none` case
         here);
       - it fails, naming the problem, when a `**Predecessor**` line is present, when `## Continuity` is missing, or
         when any of its three lines is missing.
-- [ ] T031 [P] [US4] Create the golden fixture `tests/Dmc.Tests/Fixtures/migrations/005/`:
+- [X] T031 [P] [US4] Create the golden fixture `tests/Dmc.Tests/Fixtures/migrations/005/`:
       - `before/player-options.md`: a standard-4 campaign file with `- **Predecessor**: old-tale` under `## Rules`,
         as in `tests/Dmc.Tests/Fixtures/migrations/004/after/player-options.md`;
       - `after/player-options.md`: the Predecessor line gone, and `## Continuity` after `## Rules` with Continues
@@ -311,7 +311,7 @@ on a file left with the old line.
       - `accounting.tsv`: the Predecessor line's unit `reworded`, anchored on the new Continues line.
 
       `MigrationGoldenTests` and `MigrationFilesTests.EveryMigrationHasAGoldenFixture` pick it up.
-- [ ] T032 [P] [US4] Add the tests for the optional section:
+- [X] T032 [P] [US4] Add the tests for the optional section:
       - in `tests/Dmc.Tests/Toolkit/MigrationFilesTests.cs`: a migration that has `## Before the backup` places it
         after `## What changes` and before `## Steps`; one without the section still passes (R13);
       - in `tests/Dmc.Tests/Toolkit/MigrationPromptTests.cs`: migration 005's `## Before the backup` holds
@@ -325,9 +325,9 @@ on a file left with the old line.
 
 ### Implementation
 
-- [ ] T033 [US4] Register `continuity-section` in `src/Dmc.Cli/Campaign/MigrationChecks.cs` (R14), with its XML
+- [X] T033 [US4] Register `continuity-section` in `src/Dmc.Cli/Campaign/MigrationChecks.cs` (R14), with its XML
       comment (makes T030 pass)
-- [ ] T034 [P] [US4] Write `kit/migrations/005-continuity-links.md` (R13, R14, data-model.md § Migration 005):
+- [X] T034 [P] [US4] Write `kit/migrations/005-continuity-links.md` (R13, R14, data-model.md § Migration 005):
       - **Front matter**: `standard: 5`, a title, `shipped: PR #<n>` (filled in by T047),
         `touches: [player-options.md]`, `drops: []`, `checks: [continuity-section]`.
       - **`## What changes`**.
@@ -350,13 +350,13 @@ on a file left with the old line.
         - delete the Predecessor line;
         - account its unit as `reworded`, anchored on the Continues line.
       - **`## Judgments`**, **`## Declared drops`** (none) and **`## Done when`**.
-- [ ] T035 [P] [US4] Edit § 2 of `kit/skills/dmc-migrate-campaign/SKILL.md`: after the player's yes, follow each
+- [X] T035 [P] [US4] Edit § 2 of `kit/skills/dmc-migrate-campaign/SKILL.md`: after the player's yes, follow each
       pending migration's `## Before the backup`, if it has one, before § 3. A stop there changes nothing, and the
       campaign stays `behind` and playable (R13). Write it as one generic sentence that names no migration. In
       `kit/skills/dmc-campaign-full-save/SKILL.md`, extend the campaign line: the folder named in
       `adventures/.active-campaign`, or the campaign the skill that called this one names (R13; about 10 tokens,
       counted in T045)
-- [ ] T036 [US4] Run the Campaign and Toolkit tests (golden, files, prompts, checks), then the full suite; fix until
+- [X] T036 [US4] Run the Campaign and Toolkit tests (golden, files, prompts, checks), then the full suite; fix until
       green
 
 **Checkpoint**: Campaigns at standard 4 migrate to 5; a stop before the backup leaves them playable. Commit.

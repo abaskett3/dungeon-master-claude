@@ -32,7 +32,8 @@ for all. For each, run `dmc campaign standard <campaign>`:
 
 Read each pending `migrations/NNN-*.md` it listed. Show the player each one's `## What changes`, and spell out each
 class under its `## Declared drops` (what may be removed and why). Ask once whether to go ahead, and wait. A no
-changes nothing.
+changes nothing. After a yes, follow each pending migration's `## Before the backup`, if it has one, before step 3; if
+it says to stop, stop there: nothing has changed, and the campaign stays playable.
 
 ## 3. Back up
 

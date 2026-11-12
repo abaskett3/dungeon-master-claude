@@ -39,7 +39,14 @@ internal static partial class MigrationChecks
         ["no-dead-opposition-rows"] = NoDeadOppositionRows,
         ["fights-have-timeline"] = FightsHaveTimeline,
         ["one-last-played-line"] = OneLastPlayedLine,
+        ["continuity-section"] = ContinuitySection,
     };
+
+    /// <summary>The campaign's own player options, which hold the Continuity section (spec 011).</summary>
+    const string PlayerOptions = "player-options.md";
+
+    /// <summary>The Continuity section's three lines, by name (spec 011 FR-001).</summary>
+    static readonly string[] ContinuityLines = ["Continues", "Side campaign of", "Shares a world with"];
 
     /// <summary>The names of every check, in the order they are registered.</summary>
     public static IReadOnlyCollection<string> Names => Registry.Keys;
@@ -217,4 +224,35 @@ internal static partial class MigrationChecks
         if (count > 1)
             yield return $"{DmNotes} has {count} Last played lines, where one belongs";
     }
+
+    /// <summary>
+    /// <c>continuity-section</c> (migration 005, spec 011 R14): the campaign's <c>player-options.md</c> has no Predecessor
+    /// line left, and has a <c>## Continuity</c> section holding its three lines (each <c>none</c> or names). A campaign
+    /// with no player options is not checked.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> ContinuitySection(CheckInput input)
+    {
+        if (!input.New.TryGetValue(PlayerOptions, out string? text))
+            yield break;
+        string[] lines = Lines(text);
+        if (lines.Any(l => PredecessorLine.IsMatch(l)))
+            yield return $"{PlayerOptions} still has a Predecessor line: the Continuity section replaces it";
+        int start = Array.FindIndex(lines, l => l.TrimEnd() == "## Continuity");
+        if (start < 0)
+        {
+            yield return $"{PlayerOptions} has no ## Continuity section";
+            yield break;
+        }
+        var section = lines.Skip(start + 1).TakeWhile(l => !l.StartsWith('#')).ToList();
+        foreach (string name in ContinuityLines)
+        {
+            if (!section.Any(l => l.TrimStart().StartsWith($"- **{name}**:", StringComparison.Ordinal)))
+                yield return $"{PlayerOptions}'s Continuity section has no {name} line";
+        }
+    }
+
+    /// <summary>The old Predecessor line of a campaign's player options, as recall read it before spec 011.</summary>
+    [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*Predecessor\*\*:", RegexOptions.CultureInvariant)]
+    private static partial Regex PredecessorLine { get; }
 }

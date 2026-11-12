@@ -1108,6 +1108,18 @@ public sealed partial class ToolkitTests
         }, body);
     }
 
+    /// <summary>
+    /// The full save works on the active campaign or on the one the skill that called it names, so closing a predecessor
+    /// from a sequel's migration never switches the active campaign (spec 011 R13).
+    /// </summary>
+    [TestMethod]
+    public void TheFullSaveTakesTheCampaignItsCallerNames()
+    {
+        string line = Read("kit/skills/dmc-campaign-full-save/SKILL.md").Split('\n').Single(l => l.StartsWith("The campaign folder is", StringComparison.Ordinal));
+        StringAssert.Contains(line, "adventures/.active-campaign");
+        StringAssert.Contains(line, "the skill that called this one names");
+    }
+
     [TestMethod]
     public void ANewCampaignGetsEveryFileTheRulesDescribeAndNoPromptIsEmpty()
     {

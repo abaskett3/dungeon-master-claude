@@ -135,6 +135,52 @@ public sealed class MigrationChecksTests
             Run("one-last-played-line", now: new() { ["story/dm-notes.md"] = "## Mix tracker\n\n| s | fight |\n" }));
     }
 
+    // ---------- continuity-section (spec 011, migration 005) ----------
+
+    /// <summary>A campaign's player options with a Rules section and then <paramref name="body"/>.</summary>
+    /// <param name="body">The text after the Rules section.</param>
+    static Dictionary<string, string> Options(string body) =>
+        new() { ["player-options.md"] = "# Player options (this campaign)\n\n## Rules\n\n- **Edition**: 5e 2014\n- **House rules**: none\n\n" + body };
+
+    [TestMethod]
+    [DataRow("old-tale", "none", "none")]
+    [DataRow("none", "none", "none")]
+    [DataRow("none <!-- a sequel -->", "main-tale", "far-tale, near-tale")]
+    public void AContinuitySectionWithItsThreeLinesPasses(string continues, string side, string shares) =>
+        Assert.IsEmpty(Run("continuity-section", now: Options(
+            $"## Continuity\n\n- **Continues**: {continues}\n- **Side campaign of**: {side}\n- **Shares a world with**: {shares}\n\n## Difficulty\n\n- **Lethality**: balanced\n")));
+
+    [TestMethod]
+    public void ALeftoverPredecessorLineFails()
+    {
+        CollectionAssert.AreEqual(new[] { "continuity-section: player-options.md still has a Predecessor line: the Continuity section replaces it" },
+            Run("continuity-section", now: Options("- **Predecessor**: old-tale\n\n## Continuity\n\n- **Continues**: old-tale\n- **Side campaign of**: none\n- **Shares a world with**: none\n")));
+    }
+
+    [TestMethod]
+    public void AFileWithNoContinuitySectionFails()
+    {
+        CollectionAssert.AreEqual(new[]
+        {
+            "continuity-section: player-options.md still has a Predecessor line: the Continuity section replaces it",
+            "continuity-section: player-options.md has no ## Continuity section",
+        }, Run("continuity-section", now: Options("- **Predecessor**: none\n")));
+    }
+
+    [TestMethod]
+    public void AContinuitySectionMissingALineFails()
+    {
+        CollectionAssert.AreEqual(new[]
+        {
+            "continuity-section: player-options.md's Continuity section has no Side campaign of line",
+            "continuity-section: player-options.md's Continuity section has no Shares a world with line",
+        }, Run("continuity-section", now: Options("## Continuity\n\n- **Continues**: old-tale\n\n## Difficulty\n\n- **Shares a world with**: far-tale\n")));
+    }
+
+    [TestMethod]
+    public void ACampaignWithNoPlayerOptionsIsNotChecked() =>
+        Assert.IsEmpty(Run("continuity-section", now: new() { ["story/canon.md"] = "# Canon\n" }));
+
     [TestMethod]
     public void AnUnknownCheckIsAnError() =>
         Assert.ThrowsExactly<DmcException>(() => Run("no-such-check"));

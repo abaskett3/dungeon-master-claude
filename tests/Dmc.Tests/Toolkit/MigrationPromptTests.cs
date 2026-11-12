@@ -36,10 +36,13 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section.Replace("\n", " "),
             "Migration stopped until the previous campaign is closed. You can close it by running: /dmc-close-campaign <predecessor>");
         Assert.DoesNotContain(".active-campaign", section, "the close is pointed at the predecessor by name, never by switching the active campaign");
+        // The live run asked "are you sure you want to keep it open?", where yes means stop: the question says what yes means.
+        StringAssert.Contains(section.Replace("\n", " ").Replace("    ", " "), "whether they are sure they want to go on without closing it. On yes, go on");
 
         string migrate = Read(MigrateSkill);
         int ask = At(migrate, "## 2. Ask", MigrateSkill), backUp = At(migrate, "## 3. Back up", MigrateSkill);
         StringAssert.Contains(migrate[ask..backUp], "## Before the backup");
+        StringAssert.Contains(migrate[ask..backUp].Replace("\n", " "), "come back here and go on to step 3");
     }
 
     [TestMethod]

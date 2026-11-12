@@ -1121,6 +1121,22 @@ public sealed partial class ToolkitTests
     }
 
     /// <summary>
+    /// The close skill closes the campaign the skill that called it names, not the active one, leaves the active campaign
+    /// as it is, and hands back to its caller; the migrate skill then goes on to its backup. Migration 005 closes a
+    /// sequel's predecessor this way (spec 011 R13; both found in quickstart step 6's live run).
+    /// </summary>
+    [TestMethod]
+    public void TheCloseSkillClosesTheCampaignItsCallerNames()
+    {
+        string text = Read("kit/skills/dmc-close-campaign/SKILL.md").Replace("\r\n", "\n").Replace('\n', ' ');
+        StringAssert.Contains(text, "unless the player, or the skill that called this one, named another");
+        StringAssert.Contains(text, "`adventures/.active-campaign` stays as it is");
+        StringAssert.Contains(text, "go back to that skill where it called this one");
+        string migrate = Read("kit/skills/dmc-migrate-campaign/SKILL.md").Replace("\r\n", "\n").Replace('\n', ' ');
+        StringAssert.Contains(migrate, "come back here and go on to step 3 for this campaign without asking again");
+    }
+
+    /// <summary>
     /// The play rules' line on recall says what each of the four labels a hit can carry means, in that one line
     /// (spec 011 FR-020): who knows a <c>(continues)</c> fact, that a <c>(sequel)</c> fact has not happened yet, and that
     /// a <c>(side)</c> or <c>(world)</c> fact is the world's.

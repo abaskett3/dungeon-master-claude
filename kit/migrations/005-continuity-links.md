@@ -28,8 +28,9 @@ If the Predecessor line names a folder, run `dmc campaign standard <predecessor>
   closing is permanent: it can never be played or changed again, and only a sequel continues its story.
   - **Yes**: follow `dmc-close-campaign` for that campaign, naming it, and skip its step 2: this was its question. If
     it refuses, say why in a line and stop. Once it is closed, go on.
-  - **No**: ask once more, simply, whether they are sure. On yes, go on: the Continues line will name the open
-    campaign, and nothing asks about it again. On no, stop and say this, with its folder name for `<predecessor>`:
+  - **No**: ask once more, simply, whether they are sure they want to go on without closing it. On yes, go on: the
+    Continues line will name the open campaign, and nothing asks about it again. On no, stop and say this, with its
+    folder name for `<predecessor>`:
 
     `Migration stopped until the previous campaign is closed. You can close it by running: /dmc-close-campaign <predecessor>`
 

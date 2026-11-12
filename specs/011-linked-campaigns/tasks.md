@@ -396,13 +396,24 @@ on a file left with the old line.
 - [X] T044 Check that every new and changed member has an XML doc comment, private ones included, and that
       `specs/011-linked-campaigns/` still matches what PR 1 ships
 - [X] T045 Measure the standing cost again as in T003, and record PR 1's share of FR-031's 150 tokens. Measured: +149 bytes, about 37 tokens (dm-rules +174, resume -82, full save +57, descriptions 0), and no command call added. After the code review's `(sequel)` clause (T048): +188 bytes, about 47 tokens (dm-rules +213)
-- [ ] T046 Run quickstart.md § PR 1 in a scratch DMC folder outside any checkout:
+- [X] T046 Run quickstart.md § PR 1 in a scratch DMC folder outside any checkout:
       - steps 1 to 5 with the release build;
       - step 6, migration 005's four paths, in a live `dmc play` with the player (or as the player decides);
       - step 7 is T045;
       - record what DMC said and wrote, for the PR.
 
-      Steps 1 to 5 done on 2026-11-11 with the published binary in a manifest-only scratch folder, all as quickstart says (recall 127 ms); step 6, the live migration, is still to do: the user chose to open PR 1 first and run it before merging
+      Steps 1 to 5 done on 2026-11-11 with the published binary in a manifest-only scratch folder, all as quickstart says (recall 127 ms; 120 ms after T048's fixes).
+      Step 6 done on 2026-11-12, as the user chose: headless Claude Code sessions (`claude -p`, Sonnet at high effort,
+      as `dmc play` starts them, the branch's `dmc` first on PATH) in a DMC folder installed from the branch, one pair
+      of campaigns per path, DMC answering for the player. All five paths pass after three kit fixes the runs found:
+      - the close skill closed the active campaign (the sequel) instead of the predecessor the migration named; it now
+        takes the campaign its caller names and leaves `.active-campaign` as it is;
+      - after the close, the migration did not resume; the close skill now hands back to its caller, and the migrate
+        skill goes on to its backup after a skill its Before the backup ran;
+      - "are you sure?" was once asked as "are you sure you want to keep it open?", where yes would stop; migration
+        005 now asks whether the player is sure they want to go on without closing it.
+      The runs also showed the migrate skill had no default campaign when the player accepts resume's offer (it once
+      took every behind campaign); it now takes the active one
 - [X] T047 Open PR 1, then check it:
       - commit, push, and open the PR with the full description: what changed, why, the sources (spec 011 FR-001 to
         FR-005, FR-017 to FR-020a, FR-027, FR-028, FR-028a, and the research items), the tests, the documents

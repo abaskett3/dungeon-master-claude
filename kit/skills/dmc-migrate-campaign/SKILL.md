@@ -17,8 +17,9 @@ line and finish that first. Do not edit `.standard`, anything in `migrations/`, 
 
 ## 1. Where each campaign stands
 
-Take the campaign the player named, or every folder in `adventures/` whose name does not start with a dot if they asked
-for all. For each, run `dmc campaign standard <campaign>`:
+Take the campaign the player named; the active one (`adventures/.active-campaign`) when they named none, as when they
+accept resume's offer; or every folder in `adventures/` whose name does not start with a dot if they asked for all. For
+each, run `dmc campaign standard <campaign>`:
 
 - `current`: say it is up to date, and go to the next campaign.
 - `closed: ...`: say it is closed and is never migrated, and go to the next campaign.
@@ -33,7 +34,8 @@ for all. For each, run `dmc campaign standard <campaign>`:
 Read each pending `migrations/NNN-*.md` it listed. Show the player each one's `## What changes`, and spell out each
 class under its `## Declared drops` (what may be removed and why). Ask once whether to go ahead, and wait. A no
 changes nothing. After a yes, follow each pending migration's `## Before the backup`, if it has one, before step 3; if
-it says to stop, stop there: nothing has changed, and the campaign stays playable.
+it says to stop, stop there: nothing has changed, and the campaign stays playable. When it has run another skill (a
+close, or a migration of another campaign), come back here and go on to step 3 for this campaign without asking again.
 
 ## 3. Back up
 

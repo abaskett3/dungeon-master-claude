@@ -65,8 +65,7 @@ The issue left these open for the specs. Each is settled here with its reason; `
   the sequel's folder (FR-013): an index, one file per kind of subject (people, places, factions, items, the world),
   the scene spine, the secrets, and the accounting. One `## ` heading per subject. No digest file over the near-cap
   margin `dmc size` uses (20,000 estimated tokens, below the 25,000 Read cap); a kind that would pass it is split into
-  parts by subject. Lines copied word for word keep their
-  length.
+  parts by subject. Lines copied word for word keep their length.
 - Q: How does a change to the digest's format reach copies already made? → A: Each digest records its format version
   in its index. A digest is never rewritten by play, and recall and lookup read every format version. A format change
   that older digests cannot meet ships a migration that rebuilds them from their campaign's closing backup, which is
@@ -203,7 +202,7 @@ it does today.
 2. **Given** a chain A ← B ← C where C holds A's and B's digests, **When** DMC recalls in C, **Then** the search covers
    C, both digests, B's and A's own folders and the modules of all three, in one call, within the output cap.
 3. **Given** a hit from a campaign other than the one recalled in, **When** it is printed, **Then** it names that
-   campaign and its link (continues, side campaign, same world, or digest), and a hit from this campaign carries no
+   campaign and its link (continues, sequel, side or world; a digest hit, its digested campaign's), and a hit from this campaign carries no
    label beyond its file.
 4. **Given** a linked campaign whose folder is missing from `adventures/` but whose digest the sequel holds, **When**
    DMC recalls, **Then** the digest is searched and no notice is printed for the missing folder; if there is no digest
@@ -428,16 +427,16 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   each, each module once. It MUST rank a digest's line above an equally matching line from the digested campaign's own
   folder, and every campaign's line above an equally matching module line, as today.
 - **FR-018**: Each hit MUST name the campaign or module it comes from; a hit from any campaign but the one recalled in,
-  or from a digest, MUST also say how it is linked (continues, side campaign, same world, digest). A line whose text is
+  or from a digest, MUST also say how it is linked: `continues`, `sequel`, `side` or `world` (research R2), a digest's hit carrying its digested campaign's. A line whose text is
   identical to a higher-ranked hit MUST be left out, so a digest's copy and its source are not both printed.
 - **FR-019**: `dmc lookup` MUST be able to print one subject's section of a digest by its heading.
 - **FR-020**: The play rules MUST say, in the lines that already say where facts come from, that a fact from a side
   campaign or a same-world campaign is a fact of the world, not something this campaign's characters know unless this
   campaign's files say they learned it; and that a fact from a continued campaign is known to the characters who were
   there. `kit/dm-rules.md` MUST grow by no more than one line.
-- **FR-020a**: Resume MUST read no file of another campaign and no digest file, except one legacy file `dmc` names
+- **FR-020a**: Resume MUST read no file of another campaign and no digest file, except the legacy files `dmc` names
   (FR-026). `dmc size` MUST leave the digest out of the resume total. Each digest file MUST be checked against the
-  near-cap margin (FR-013) when the digest is written (FR-013, by the digest's own check), since a digest never changes afterwards.
+  near-cap margin (FR-013) when the digest is written, by the digest's own check, since a digest never changes afterwards.
 
 **Proof that nothing was lost**
 

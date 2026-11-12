@@ -314,9 +314,10 @@ dmc campaign backup NAME [--prune oldest|old]
 dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
 dmc campaign restore NAME [--from FILE] [--yes]
 dmc campaign close NAME [--yes]
+dmc campaign links [NAME]
 ```
 
-Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign).
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign). `links` lists the campaigns linked to one; see [Linked campaigns](#linked-campaigns).
 
 | Argument | Meaning |
 |---|---|
@@ -487,7 +488,7 @@ same recovery first.
 ### Closing a campaign
 
 Added in spec 010 (issue #180). A finished campaign is closed for good: nothing changes it again and nothing reopens
-it; a sequel (`dmc-new-campaign`, with a Predecessor line) continues its story. DMC runs `close` under the
+it; a sequel (`dmc-new-campaign`, with a Continues line) continues its story. DMC runs `close` under the
 `dmc-close-campaign` skill, after the closing save and only on the player's yes.
 
 **The mark** is `adventures/NAME/.closed`: one line, `<yyyy-MM-ddTHH:mm:ssZ> <closing backup file name>` (UTC), then a
@@ -536,6 +537,43 @@ and writes nothing, pass or fail. It prints `verified NAME: closed, <n> files ma
 
 **import** of a closing backup works as for any export: the new campaign holds the mark, so it is closed too, and the
 last line says so.
+
+### Linked campaigns
+
+Added in spec 011 (issue #179, Phase B). A campaign's links are the three lines of the `## Continuity` section of its
+`player-options.md` (Continues, Side campaign of, Shares a world with), or, in a file with no such section, its old
+`- **Predecessor**:` line read as Continues; [campaign-files.md](campaign-files.md#linked-campaigns) has the shape.
+Values are read as folder names: an HTML comment, backticks, a leading `adventures/` and slashes are removed, `none`
+names nothing, and names compare ignoring case.
+
+**links** prints the campaign's linked set and writes nothing. It follows links both ways (a campaign is linked to the
+campaigns it names and to every campaign whose file names it), breadth first, each campaign once, and prints one line
+per campaign, nearest first, then by name; then one per module the set reaches whose folder exists; then the notices:
+
+```
+$ dmc campaign links rorns-landing
+the-silver-egg continues 1 closed digest
+side-quest side 1 open
+modules/the-crooked-moon module 1
+notice: rorns-landing: Shares a world with old-west is not in adventures/
+```
+
+A campaign line is `<name> <link> <steps> <open|closed|missing>[ digest]`. The link is `continues` (every step back
+along Continues lines: an earlier campaign of the chain), `sequel` (every step forward), `side` (one Side campaign of
+step, either way) or `world` (anything else). `missing` is a named folder that is not in `adventures/`; `digest` says a
+campaign nearer the start holds its digest, `digests/<name>/`. A module is `modules/<name> module <steps>`, at the
+distance of the nearest campaign that names it. A campaign with no links prints `no links` first. NAME defaults to the
+active campaign; a closed campaign can be listed.
+
+The notices, at most three and then `(+N more)`: `notice: <campaign>: <line> <name> is not in adventures/` (not when a
+campaign of the set holds that campaign's digest), `notice: <campaign>: <line> <value> is not a campaign folder name`,
+`notice: <campaign>: <line> names the campaign itself` and `notice: <campaign>: <line> has more than one name; only
+<first> is followed`, where `<line>` is `Continues`, `Side campaign of`, `Shares a world with` or `Predecessor`. A
+Continues link to an open campaign is never a notice: `dmc-new-campaign` and migration 005 check it with
+`dmc campaign standard`. In play the same notices come from `dmc size --check` (below), which the resume already runs.
+
+A failure is one line and exit 1 (`no active campaign: name one (dmc campaign links NAME)`, `no campaign "NAME" in
+adventures/ (there are: …)`); a usage mistake exits 2.
 ## size
 
 Added in release 0.3.1.
@@ -549,7 +587,7 @@ Measures what a resume of a campaign reads, in estimated tokens (bytes ÷ 4): ea
 | Argument | Meaning |
 |---|---|
 | `NAME` | A campaign folder under `adventures/`. Default: the active campaign (`adventures/.active-campaign`). A name starting with a dot is a staging folder and is refused. |
-| `--check` | The form DMC runs in play: print only what to act on, one line each, at most 12 (the twelfth then says how many more), and nothing when all is well. |
+| `--check` | The form DMC runs in play: print only what to act on, one line each, at most 12 (the twelfth then says how many more), and nothing when all is well. After the flags come the notices of the campaign's linked set ([Linked campaigns](#linked-campaigns)), at most three then `(+N more)`, each ending `(not the full save's to trim)`, so play hears of a broken link with no command of its own. |
 | `--folder` | The DMC folder. Default: the one `dmc folder` prints. `review-transcript` passes it, since it runs in this repository. |
 
 **What it reads.** Both player-options files, `game-state.md`, `story/summary.md`, `story/dm-notes.md`; every PC's sheet, each companion's (a `###` block under Party status other than "With the party, not companions") and each NPC's whose title, first or last word is in the Present line or the Combat tracker, each down to its history when that is its last section (not `minor-npcs.md` or a `-history.md` file); the latest `story/sessions/session-NNN.md` from its third-last scene, or whole when it has fewer than three or the last full save does not cover it; `story/canon.md`, whole under its limit and otherwise only its always-read sections (the search the resume also does is not counted); and for a module campaign `module-progress.md`, the module's `index.md` and the digest section it names. A missing file is listed and counts nothing. A toolkit test keeps these rules in step with the skill.
@@ -582,7 +620,9 @@ Prints one section of a markdown file exactly as written, found by its heading: 
 | `HEADING...` | The heading's words, as one argument or several. |
 | `--folder` | The DMC folder. Default: the one `dmc folder` prints. |
 
-**What it searches.** A campaign: its `*.md` outside `import/`, `exports/`, `backups/` and dot folders. A module: `index.md`, `chapters/` and its other top-level `*.md` (`monsters.md`, `npcs.md`, `items.md`), never `source/`. `rules`: its markdown other than `index.md`, outside `extracted/`; when a `*.pdf` is anywhere under `rules/`, a request no markdown heading matches exactly goes to the PDF (below) first, and the markdown's looser matches follow only if the PDF holds nothing; a reference with no markdown at all goes to its index and pages too. An `extracted/` folder without its PDF does not count.
+**What it searches.** A campaign: its `*.md` outside `import/`, `exports/`, `backups/` and dot folders, its digests
+included (`digests/<name>/`, spec 011), so a digest's subject is found by its heading like any other, and listed beside
+a sheet of the same heading; `<campaign>/digests/<name>/people.md` searches one digest file. A module: `index.md`, `chapters/` and its other top-level `*.md` (`monsters.md`, `npcs.md`, `items.md`), never `source/`. `rules`: its markdown other than `index.md`, outside `extracted/`; when a `*.pdf` is anywhere under `rules/`, a request no markdown heading matches exactly goes to the PDF (below) first, and the markdown's looser matches follow only if the PDF holds nothing; a reference with no markdown at all goes to its index and pages too. An `extracted/` folder without its PDF does not count.
 
 **Matching.** Headings are ATX headings (`#` to `######`) outside fenced code blocks. A heading matches when its text equals the request ignoring case, `*`, `_`, `` ` ``, punctuation, links' brackets and a trailing page reference in parentheses (`(PDF 212)`, `(p. 34)`); when none does, a heading holding every word of the request (by the stems `dmc recall` uses) matches. There is no fuzzy matching, so a near miss never prints the wrong stat block.
 
@@ -600,7 +640,7 @@ Added in the next release (spec 009, issue #179).
 dmc recall [NAME] WORDS... [--folder PATH]
 ```
 
-Prints the lines that best match some words across a campaign, the campaigns its Predecessor lines name and their modules, best first, in at most 6,000 bytes (about 1,500 estimated tokens). It builds its index in memory on every call and stores nothing, so it cannot go stale; it never writes, moves or deletes anything. DMC runs it in play when a subject returns or a fact from an earlier session or campaign is needed (`kit/dm-rules.md`); the resume and the full save do not use it.
+Prints the lines that best match some words across a campaign, the digests it holds, the campaigns linked to it and their modules, best first, in at most 6,000 bytes (about 1,500 estimated tokens). It builds its index in memory on every call and stores nothing, so it cannot go stale; it never writes, moves or deletes anything. DMC runs it in play when a subject returns or a fact from an earlier session or campaign is needed (`kit/dm-rules.md`); the resume and the full save do not use it.
 
 | Argument | Meaning |
 |---|---|
@@ -608,17 +648,17 @@ Prints the lines that best match some words across a campaign, the campaigns its
 | `WORDS...` | What to search for, as one argument or several. |
 | `--folder` | The DMC folder. Default: the one `dmc folder` prints. |
 
-**What it searches.** The campaign's `*.md` outside `import/`, `exports/`, `backups/` and dot folders; each campaign named by a `- **Predecessor**:` line in `player-options.md`, followed to the end of the chain (a loop once; backticks, `adventures/` and slashes allowed; `none` ends it); and each of those campaigns' modules, named by `- **Module folder**:` in `module-progress.md`, searched once, never their `source/`. HTML comments are removed first, on one line or across several (the templates' guidance and examples live in them); a `<!--` inside an inline code span, or one that never closes, is text. Lookup ignores headings inside comments too, and still prints a section as written, comments included. A UTF-16 or UTF-32 file is read as text. A line is then a unit unless it is under 25 characters, a heading, a table separator or inside a fenced code block.
+**What it searches.** The campaign's `*.md` outside `import/`, `exports/`, `backups/` and dot folders, its digests (`digests/<name>/`) included; every campaign of its linked set whose folder is there, the same way ([Linked campaigns](#linked-campaigns): the links of the Continuity sections, followed both ways, each campaign once; a file with no Continuity section is read through its Predecessor line); and each of those campaigns' modules, named by `- **Module folder**:` in `module-progress.md`, searched once at the distance of the nearest campaign naming it, never their `source/`. HTML comments are removed first, on one line or across several (the templates' guidance and examples live in them); a `<!--` inside an inline code span, or one that never closes, is text. Lookup ignores headings inside comments too, and still prints a section as written, comments included. A UTF-16 or UTF-32 file is read as text. A line is then a unit unless it is under 25 characters, a heading, a table separator or inside a fenced code block.
 
-**Ranking.** Okapi BM25 over line units (k1 1.4, b 0.6) on words lower-cased, apostrophes at their ends dropped, about 100 common English words dropped and a small suffix stripper (`'s`, then `ation`, `ion`, `ing`, `ed`, `es` or `s` when four letters stay), times the file's weight: `story/canon.md` 1.30; the archives and `-history.md` files 1.20; the sheets 1.15; the other campaign files 1.05; session logs 1.00; a module 0.80; each step back the Predecessor chain × 0.95. These are the settings of the issue's recall prototype, to be tuned if the recall test (below) shows a fall. A line matching about as well in canon comes before one in a session log, but a strong session-log match can beat a weak canon one.
+**Ranking.** Okapi BM25 over line units (k1 1.4, b 0.6) on words lower-cased, apostrophes at their ends dropped, about 100 common English words dropped and a small suffix stripper (`'s`, then `ation`, `ion`, `ing`, `ed`, `es` or `s` when four letters stay), times the file's weight: `story/canon.md` 1.30; a digest's files 1.20; the archives and `-history.md` files 1.20; the sheets 1.15; the other campaign files 1.05; session logs 1.00; a module 0.80; each step away in the linked set × 0.95 (for a digest, the steps to the campaign it digests, or one more than its holder's when that campaign is not in the set); and every file of a campaign whose digest a campaign nearer the start holds × 0.85, the last resort. So for a sequel holding its predecessor's digest, the sequel's canon is 1.30, the digest's copy of a line 1.14, the same line in the predecessor's own canon 1.05. These are the settings of the issue's recall prototype, to be tuned if the recall test (below) shows a fall. A line matching about as well in canon comes before one in a session log, but a strong session-log match can beat a weak canon one. Ties break by tier (a digest between canon and the archives), distance, campaign, file and line. A line whose text, normalised as migrations compare lines, is that of a line already printed is not printed again and counts among the lines matched, so a digest's copy is printed and its source is not.
 
-**Output.** First, at most three notices, then `(+N more skipped)`: `<campaign>: Predecessor <name> is not in adventures/, not searched`, `<campaign>: module folder modules/<name>/ not found, not searched`, `<path>: cannot be read (<reason>), skipped`. Then one line per hit:
+**Output.** First, at most three notices, then `(+N more skipped)`: the linked set's notices without their `notice: ` prefix, with `, not searched` after a missing folder or a value that is not a folder name (`<campaign>: Continues <name> is not in adventures/, not searched`), `<campaign>: module folder modules/<name>/ not found, not searched`, `<path>: cannot be read (<reason>), skipped`. Then one line per hit:
 
 ```
-<campaign or modules/<name>> <file>:<line> [<sN.M>] [DM] | <text>
+<campaign or modules/<name>>[ (<link>)] <file>:<line>[ (<digest link>)] [<sN.M>] [DM] | <text>
 ```
 
-The session is the scene's `sN.M` for a session-log line, or the first `sN` or `sN.M` the line cites. `DM` marks a line only the DM may see: `dm-notes.md`, `dm-notes-archive.md`, `module-progress.md`, a module, or an NPC sheet's Secrets section. A line over 700 characters shows the 700-character window around its matching words, with `…` where it was cut. When more lines match than fit, the last line is `(N more lines matched)`; when none does, the only line is `nothing matched: <words>`. Both exit 0.
+A campaign other than the one recalled in carries its link after its name (`continues`, `sequel`, `side` or `world`); a digest's line carries the link of the campaign it digests after its file, so it is not read as the holder's: `rorns-landing digests/the-silver-egg/people.md:88 (continues) s31.2 | …`. A module's line has none. The session is the scene's `sN.M` for a session-log line, or the first `sN` or `sN.M` the line cites. `DM` marks a line only the DM may see: `dm-notes.md`, `dm-notes-archive.md`, `module-progress.md`, a module, an NPC sheet's Secrets section, or a digest's secrets (`digests/<name>/secrets*.md`). A line over 700 characters shows the 700-character window around its matching words, with `…` where it was cut. When more lines match than fit, the last line is `(N more lines matched)`; when none does, the only line is `nothing matched: <words>`. Both exit 0.
 
 A failure is one line and exit 1: `nothing to search for in "<words>": every word is a common one`, `<name> is not a campaign (a folder starting with a dot is a staging folder)`, `no active campaign: name one (dmc recall NAME WORDS)`, `no campaign <name> in adventures/` (the active campaign's folder is missing), and the DMC folder failures. A usage mistake exits 2.
 

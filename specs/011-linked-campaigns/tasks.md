@@ -113,7 +113,7 @@ migration's check (US4) and the legacy lines (US3).
       - then the notices, each prefixed `notice: `, at most three, then `(+N more)`;
       - `no links` for a campaign alone;
       - NAME defaults to the campaign named in `adventures/.active-campaign`, and a closed NAME is allowed;
-      - `dmc campaign links: no campaign NAME in adventures/` and `dmc campaign links: no active campaign: name one`
+      - `dmc campaign: no campaign "NAME" in adventures/ (there are: …)` and `dmc campaign: no active campaign: name one (dmc campaign links NAME)`
         exit 1, and usage mistakes exit 2;
       - every byte of the DMC folder is unchanged.
 
@@ -155,7 +155,7 @@ migration's check (US4) and the legacy lines (US3).
       - one name at most on Continues and on Side campaign of;
       - then run `dmc campaign links <folder>` and tell the player each `notice:` line in one sentence.
 - [X] T012 [P] Edit `kit/skills/dmc-resume-campaign/SKILL.md`: delete the Predecessor sentence from § 2 item 1. In
-      § 1, where `dmc size <campaign> --check` already runs, say before "Any other line is for the full save" that a
+      § 2, where `dmc size <campaign> --check` already runs, say before "Any other line is for the full save" that a
       `notice:` line is told to the player in one sentence. Add no command call (FR-031). Keep the rule that the
       resume reads no other campaign and no `digests/` file (FR-020a)
 - [X] T013 [P] Edit `kit/skills/dmc-close-campaign/SKILL.md` § 5: "whose Predecessor line names this campaign" becomes
@@ -365,37 +365,37 @@ on a file left with the old line.
 
 ## Phase 6: PR 1 polish: documents, cost, live runs, the PR
 
-- [ ] T037 [P] Edit `.docs/campaign-files.md`:
+- [X] T037 [P] Edit `.docs/campaign-files.md`:
       - the Continuity section of `player-options.md`: its three lines, links followed both ways, and Continues
         naming a closed campaign;
       - `digests/`, a folder a sequel may hold, which recall and lookup search and resume never reads (its files
         are described in PR 2);
       - the sentence about the Predecessor line in § Closing a campaign;
       - § Which file wins: a digest over its campaign's folder, and canon over a module.
-- [ ] T038 [P] Edit `.docs/dmc-reference.md`:
+- [X] T038 [P] Edit `.docs/dmc-reference.md`:
       - a `dmc campaign links` section, from contracts/campaign-links.md;
       - `dmc recall`'s What it searches, Ranking (`Tier.Digest`, the last-resort factor, duplicates) and Output
         (labels, the changed notice), from contracts/recall-and-lookup.md;
       - `dmc lookup` over digests;
       - `dmc size --check`'s link notices;
       - the `campaign` verb list, and the sequel sentence of the close section.
-- [ ] T039 [P] Edit `.docs/user-guide.md`: linking campaigns (a sequel, a side campaign, the same world), what recall
+- [X] T039 [P] Edit `.docs/user-guide.md`: linking campaigns (a sequel, a side campaign, the same world), what recall
       reaches then, and the migration's question about an open predecessor
-- [ ] T040 [P] Edit `.docs/architecture.md`: recall's scope comes from `CampaignLinks`, and the link notices reach
+- [X] T040 [P] Edit `.docs/architecture.md`: recall's scope comes from `CampaignLinks`, and the link notices reach
       resume through the `dmc size --check` it already runs
-- [ ] T041 [P] Edit `.docs/development.md` § Changing a campaign-file standard: describe the optional
+- [X] T041 [P] Edit `.docs/development.md` § Changing a campaign-file standard: describe the optional
       `## Before the backup` section, where it sits, and that the migrate skill follows it before the backup (R13).
       Spec 005's contract is frozen and stays as it is
-- [ ] T042 [P] Add to `.docs/decisions.md`, each with its reason and the alternatives rejected:
+- [X] T042 [P] Add to `.docs/decisions.md`, each with its reason and the alternatives rejected:
       - links followed both ways (R2);
       - the digest's weight and the last-resort factor (R4);
       - duplicates found by the migrations' normalisation (R5);
       - the hit labels (R6);
       - the optional `## Before the backup` section (R13).
-- [ ] T043 [P] Edit `.docs/roadmap.md`: the status of issue #179 Phase B, PR 1 (links and recall)
-- [ ] T044 Check that every new and changed member has an XML doc comment, private ones included, and that
+- [X] T043 [P] Edit `.docs/roadmap.md`: the status of issue #179 Phase B, PR 1 (links and recall)
+- [X] T044 Check that every new and changed member has an XML doc comment, private ones included, and that
       `specs/011-linked-campaigns/` still matches what PR 1 ships
-- [ ] T045 Measure the standing cost again as in T003, and record PR 1's share of FR-031's 150 tokens
+- [X] T045 Measure the standing cost again as in T003, and record PR 1's share of FR-031's 150 tokens. Measured: +149 bytes, about 37 tokens (dm-rules +174, resume -82, full save +57, descriptions 0), and no command call added
 - [ ] T046 Run quickstart.md § PR 1 in a scratch DMC folder outside any checkout:
       - steps 1 to 5 with the release build;
       - step 6, migration 005's four paths, in a live `dmc play` with the player (or as the player decides);
@@ -715,7 +715,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - fold into canon any legacy read since the last save, marked as world knowledge unless the characters saw it,
         and record its session on `game-state.md`'s `- **Legacies folded**:` line (`<campaign> sN`, comma-separated),
         adding the line if the file has none (FR-025, FR-026).
-- [ ] T086 [P] [US3] In `kit/skills/dmc-resume-campaign/SKILL.md`, extend § 1's size-check sentence: for each
+- [ ] T086 [P] [US3] In `kit/skills/dmc-resume-campaign/SKILL.md`, extend § 2's size-check sentence: for each
       `legacy:` line, read that file, and no other file of that campaign. A `legacy due:` line is already covered by
       "for the full save"
 - [ ] T087 [US3] Run the Campaign, Size and Toolkit tests, then the full suite; fix until green

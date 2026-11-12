@@ -53,13 +53,13 @@ The notices keep their cap of three; the legacy lines are not capped.
 
 ## Failures
 
-One line, exit 1: `dmc campaign links: no campaign NAME in adventures/`; `dmc campaign links: no active campaign: name
-one`. Usage mistakes exit 2.
+One line, exit 1, in the form every `dmc campaign` verb uses: `dmc campaign: no campaign "NAME" in adventures/ (there
+are: …)`; `dmc campaign: no active campaign: name one (dmc campaign links NAME)`. Usage mistakes exit 2.
 
 ## Callers
 
 - `dmc-new-campaign` § 2 and § 1c, after writing the Continuity section: `dmc campaign links <folder>`, relaying each
   `notice:` line.
-- `dmc-resume-campaign` § 1, through the `dmc size --check` it already runs: each `notice:` line in one sentence; for
+- `dmc-resume-campaign` § 2, through the `dmc size --check` it already runs: each `notice:` line in one sentence; for
   each `legacy:` line, read that file (PR 3).
 - `dmc-campaign-full-save` (PR 3), through its `dmc size --check`: on `legacy due:`, rewrite `legacy.md`.

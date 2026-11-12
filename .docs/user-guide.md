@@ -183,7 +183,7 @@ Two files say how you want the game run. Both are plain text; edit them by hand 
 | File | Holds |
 |---|---|
 | `adventures/player-options.md` | Your preferences for every campaign: who rolls, how rolls are shown, how you talk with DMC, narration style, maps, and your saved image styles. Created from `templates/player-options.md` in your DMC folder the first time you play. |
-| `adventures/<campaign>/player-options.md` | One campaign's settings: edition, starting level, leveling, lethality, combat difficulty, tone, house rules, the earlier campaign of a sequel, and any overrides of the general file. |
+| `adventures/<campaign>/player-options.md` | One campaign's settings: edition, starting level, leveling, lethality, combat difficulty, tone, house rules, its links to other campaigns (see [Linked campaigns](#linked-campaigns)), and any overrides of the general file. |
 
 The campaign file wins over the general file, which wins over DMC's defaults. When you ask for a change that could belong in either, DMC asks whether it is for this campaign or all of them.
 
@@ -265,7 +265,7 @@ Campaigns are ordinary text files under `adventures/`. You can read and edit you
 
 **How big your campaign's files are.** The longer a campaign runs, the more DMC reads when a session starts, and past a point it starts losing track. `dmc size` shows what a resume reads, file by file, in estimated tokens, the largest sections, and anything to trim (a file close to what DMC can read in one go, a file over its budget, leftovers such as finished fights). Run it in a terminal in your DMC folder (`dmc size`, or `dmc size <campaign>`), or ask DMC "are your files too big?". It changes nothing: the next full save trims what it flags, and says what it kept and why. [campaign-files.md](campaign-files.md#how-big-the-files-may-be) lists the budgets.
 
-**Finding a fact in your files.** When a character, place or promise from long ago comes back, DMC recalls it with `dmc recall`, which searches the campaign, the campaign it continues and their modules and returns only the best-matching lines; for a module's area, a stat block or a rules entry it uses `dmc lookup`, which prints that one section. You need do nothing. Both only read, and if either fails DMC searches the files itself, so the game goes on. You can run them in a terminal too: `dmc recall <campaign> <words>`, `dmc lookup <campaign, module or rules> <heading>`.
+**Finding a fact in your files.** When a character, place or promise from long ago comes back, DMC recalls it with `dmc recall`, which searches the campaign, the campaigns linked to it and their modules and returns only the best-matching lines; for a module's area, a stat block or a rules entry it uses `dmc lookup`, which prints that one section. You need do nothing. Both only read, and if either fails DMC searches the files itself, so the game goes on. You can run them in a terminal too: `dmc recall <campaign> <words>`, `dmc lookup <campaign, module or rules> <heading>`.
 
 Feedback about DMC is under `feedback/` in the DMC folder, outside every campaign. To back up a campaign, restore one or move to another computer, see [Back up, copy or move a campaign](#back-up-copy-or-move-a-campaign). Keep a backup outside `adventures/`: DMC searches that folder, and an old copy can feed it stale facts.
 
@@ -320,6 +320,15 @@ holds them, keeping the backups. DMC can run it for you.
 **If a session ends part way** through a migration, the next resume says a migration was interrupted, and play waits
 until DMC finishes it (against the same backup) or you restore.
 
+**A sequel whose earlier campaign is still open.** The update that moves a sequel's link to its earlier campaign into the
+new Continuity section (see [Linked campaigns](#linked-campaigns)) first checks that campaign. If it is still open,
+DMC says so, explains that playing it on would make its story and the sequel's disagree, and asks once whether to close
+it now (closing is permanent). On yes it closes the earlier campaign as [Closing a campaign](#closing-a-campaign)
+describes, then goes on. On no it asks whether you are sure: yes goes on and keeps the link as it is; no stops with
+`Migration stopped until the previous campaign is closed. You can close it by running: /dmc-close-campaign <its name>`.
+All of this happens before the backup, so a stop changes nothing and the sequel stays playable; the update is offered
+again next time.
+
 ### Closing a campaign
 
 When a story is over, you can close its campaign for good: ask DMC to "close the campaign". DMC may suggest it once
@@ -339,6 +348,23 @@ reading (`dmc recall`, `dmc lookup`, `dmc campaign show` and `export`), but noth
 <campaign>` says whether any file differs from its closing backup. To go on with its characters, start a new campaign
 with `/dmc-new-campaign` and name the closed one as the one it continues: DMC searches the closed campaign's facts when
 they come up, and never writes to it.
+
+### Linked campaigns
+
+A campaign can be linked to others in its `player-options.md`, under `## Continuity`. DMC asks about them when you
+start a campaign, and you can edit them yourself:
+
+- **Continues**: the closed campaign a sequel carries on. Only a closed campaign can be continued; DMC offers to close
+  an open one first.
+- **Side campaign of**: the main campaign this one is played alongside, in the same world, with other characters.
+- **Shares a world with**: any other campaigns set in the same world, separated by commas.
+
+A link works both ways: a main campaign is linked to its side campaigns without naming them. When a subject comes up,
+`dmc recall` searches every linked campaign and their modules, and each line it finds from another campaign says how
+that campaign is linked. A fact from a campaign you continue is known to the characters who were there; a fact from a
+side campaign or another campaign of the world is a fact of the world, which this campaign's characters know only if
+its own files say they learned it. A link that cannot be followed (a folder that is not there, a name that is not a
+folder name) is mentioned in one line when you resume. `dmc campaign links <campaign>` lists them in a terminal.
 
 ### Moving campaigns from a repository checkout
 

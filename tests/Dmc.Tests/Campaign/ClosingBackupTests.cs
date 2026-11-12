@@ -63,6 +63,8 @@ public sealed class ClosingBackupTests
         Assert.AreEqual("rorn-copy is closed: start a sequel to continue its story", import.StdoutLines[^1]);
         Assert.IsTrue(root.Has(".closed", "rorn-copy"));
         CollectionAssert.AreEqual(new[] { "closed: " + mark.Time }, MigrationRoot.Run("standard", "rorn-copy").StdoutLines);
+        // The import's mark names a backup its backups/ never got, so backups does not claim it.
+        Assert.AreEqual("closed: no closing backup in backups/", MigrationRoot.Run("backups", "rorn-copy").StdoutLines[^1]);
 
         var verify = MigrationRoot.Run("verify", "rorn-copy", "--backup", copy);
         Assert.AreEqual(0, verify.ExitCode, verify.ToString());

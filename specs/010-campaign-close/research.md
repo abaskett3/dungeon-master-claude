@@ -49,21 +49,24 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   3. Fix the closing backup's one file name from the closing moment (R4), and refuse if a file of that name is already
      in `backups/` or `exports/` (`<name> cannot be closed: <folder>/<file> already exists`). Nothing is renamed to
      get round a clash: a file already there is a leftover the player should look at, not one to work around.
-  4. Write `.closed` (R1), naming that file.
-  5. Write the closing backup into `backups/` under exactly that name with the exporter (R4), never replacing a file,
-     and check it whole (`ExportSummary.Open` and `ReadCampaign`, as `CampaignBackup.Take` does).
-  6. Copy it to `exports/` in the DMC folder under the same name (R5) through a `.partial-` file, never replacing a
+  4. Write the closing backup into `backups/` under exactly that name with the exporter (R4), never replacing a file,
+     holding `.closed` (R1) added from memory, and check it whole and that it holds those mark bytes.
+  5. Copy it to `exports/` in the DMC folder under the same name (R5) through a `.partial-` file, never replacing a
      file, and check the copy whole and its SHA-256 equal to the first.
+  6. Write `.closed` into the campaign folder, the same bytes the backup holds.
   7. Print one line: `closed <name>: <N> files to backups/<file> and exports/<file>`.
 
-  The plan (no `--yes`) runs steps 1 to 3 and prints the name step 3 fixed. Any failure from step 4 on removes what this run wrote (the copy, the backup, then the mark, in that order) and
+  The plan (no `--yes`) runs steps 1 to 3 and prints the name step 3 fixed. Any failure from step 4 on removes what this run wrote (the mark, the copy, then the backup, in that order) and
   throws one `DmcException`: `could not close <name>: <step>: <reason>; it is still open`.
 - **Rationale**: FR-011 asks for one command and an order in which a failure leaves the campaign open. The plan form is
   `restore`'s pattern (decision of 2026-11-09): the close skill runs the plan first, before any closing save, so a
   campaign that cannot be closed (behind, unfinished) is found before DMC spends a full save on it; and a mistaken
-  `dmc campaign close` typed by DMC changes nothing without `--yes`. The mark goes before the backup so the backup holds
-  the campaign "as closed" (spec Assumptions). Removing the mark last on a rollback means there is never a moment when
-  a closing backup exists for a campaign without a mark on disk that a reader could take for finished.
+  `dmc campaign close` typed by DMC changes nothing without `--yes`. The backup holds
+  the campaign "as closed" (spec Assumptions) because the mark is added to it from memory. The mark goes into the
+  campaign folder last (changed after PR #190's review, which first had it first): a rollback catches only the failures
+  it is given, and a close stopped by Ctrl+C or a crash after an early mark would leave the campaign closed for good with
+  no closing backup, which nothing could undo. With the mark last, a stopped close leaves the campaign open, at worst
+  with a closing backup nothing counts; the rerun takes a new moment and so a new name.
 - **Alternatives considered**: separate verbs (`backup --closing`, `mark`) that the skill strings together (each step
   exact, but the order and the rollback would be the skill's, which is the judgment/exact split the wrong way round);
   writing the mark last (then the closing backup would not hold it, and an import of the closing backup would make an
@@ -157,13 +160,16 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
     session loads; no memory of a declined suggestion is kept, because the two moments are each passed once. Its steps: 0, not mid-roll (as the migrate skill's step 0);
     1, run `dmc campaign close <c>` (the plan) and stop on a refusal, offering `dmc-migrate-campaign` for `behind`;
     2, ask once (FR-002), naming an open scene or fight if there is one; 3, the closing save: follow
-    `dmc-campaign-full-save` steps 1 to 8 with only these differences: step 4 prunes and splits but archives nothing,
+    `dmc-campaign-full-save` steps 1 to 8 with only these differences: step 2 moves no history to a `-history.md`
+    file; step 4 prunes and splits but archives nothing,
     and sweeps for the reason and the means of each fact; step 4 also writes each loose end as a canon line in the
     character's terms, promises and debts under **Prices, debts and promises**; step 5 gathers every secret from
     `dm-notes-archive.md` back into § Secrets and marks each `revealed sN`, `never revealed` or `abandoned`, and moves
-    no secret out; step 6 replaces § Where things stand with § How it ended (R10); step 7 leaves the size lines for
-    `summary.md`, `dm-notes.md` and `canon.md` (a closed campaign is never resumed into play); 4, run
-    `dmc campaign close <c> --yes`; a rerun after a failed step 4 still runs steps 1 and 2 but skips step 3 when
+    no secret out; step 6 replaces § Where things stand with § How it ended (R10); step 7 leaves every size line and trims
+    nothing (a closed campaign is never resumed into play); step 8 sets the stamp only, with no Planned break line and
+    no report (PR #190's review: steps 2, 7 and 8 unchanged would have moved history out or told the player to resume);
+    4, run
+    `dmc campaign close <c> --yes`, and on a `delete them by hand` line name those files before a rerun; a rerun after a failed step 4 still runs steps 1 and 2 but skips step 3 when
     `summary.md` already has § How it ended and every secret has an outcome; 5, tell the player out of character that it is closed, where the two copies are,
     and that a sequel can start from it (`dmc-new-campaign`, with its Predecessor line).
   - **`dmc-resume-campaign`** § 1: one clause for `closed`: say it is closed, read nothing for play, start no session

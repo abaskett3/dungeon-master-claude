@@ -496,10 +496,11 @@ holds. It travels with every export and backup. The kit's settings deny DMC's ed
 (`Edit(/adventures/*/.closed)`), and every shell delete is already denied.
 
 **close** without `--yes` checks everything and prints `would close NAME: <n> files to backups/<file> and exports/<file>`,
-writing nothing. With `--yes` it writes the mark, then the **closing backup**
+writing nothing. With `--yes` it writes the **closing backup**
 `adventures/NAME/backups/NAME_closed_<yyyyMMddHHmmss>.zip` (local time, an ordinary export holding the mark, checked
 whole), then a byte copy of it under the same name in `exports/` of the DMC folder (checked whole, its SHA-256 equal),
-and prints `closed NAME: <n> files to backups/<file> and exports/<file>`. The three share one moment: the mark's time,
+then the mark `adventures/NAME/.closed` last, so a close that fails or is stopped part-way leaves the campaign open, and
+prints `closed NAME: <n> files to backups/<file> and exports/<file>`. The three share one moment: the mark's time,
 the manifest's `exportedAt` and the name. The name is fixed once and never suffixed. The closing backup's name does not
 match the counted backups' pattern, so `backups`, `--prune`, `verify` and `restore` never count, offer, prune or pick it.
 
@@ -510,7 +511,7 @@ match the counted backups' pattern, so `backups`, `--prune`, `verify` and `resto
 | `NAME is behind (standard C, kit K): bring it up to date before closing` | 1 |
 | `NAME is ahead (standard C, kit K): update dmc` | 1 |
 | `NAME cannot be closed: backups/<file> already exists` (or `exports/<file>`: a file already by the closing backup's name, which is left as it is) | 1 |
-| `could not close NAME: <step>: <reason>; it is still open` (`<step>` is `mark`, `backup`, `check backup`, `copy` or `check copy`; what the run wrote is removed, the copy, then the backup, then the mark) | 1 |
+| `could not close NAME: <step>: <reason>; it is still open` (`<step>` is `backup`, `check backup`, `copy`, `check copy` or `mark`; what the run wrote is removed, the mark, then the copy, then the backup) | 1 |
 | `could not close NAME: <step>: <reason>; could not remove <files>: delete them by hand` (a removal failed too) | 1 |
 
 **A closed campaign.** Every command that would write under its folder refuses with one line,
@@ -518,7 +519,8 @@ match the counted backups' pattern, so `backups`, `--prune`, `verify` and `resto
 `--prune`), `restore` (plan or `--yes`), `standard --init`, `map` on a file in it, `pdf` with an output folder in it
 (`--out`, or the default `extracted/` beside a PDF in it), and `digest show --out` into it. `redraw` with it active
 does nothing and prints nothing. `standard` prints `closed: <time>`; `backups` lists the counted backups as usual and
-ends with `closed: backups/<file>`, never an `ask:` line; `dmc update` and `dmc refresh` never count it as behind.
+ends with `closed: backups/<file>` (or `closed: no closing backup in backups/` when the folder holds none, as in an
+import of a closing backup), never an `ask:` line; `dmc update` and `dmc refresh` never count it as behind.
 `export`, `show`, `lookup`, `recall`, `size` and `map --measure` work as for any campaign and write nothing in it.
 
 **verify** on a closed campaign does not check a migration. It compares every file of the campaign but `backups/`

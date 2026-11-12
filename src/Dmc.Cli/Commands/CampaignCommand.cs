@@ -236,7 +236,11 @@ A published module is not exported; ingest it again from your own copy.
             io.Out.WriteLine(backup.FileName);
         if (ClosedCampaign.IsClosed(campaign))
         {
-            string? closing = ClosedCampaign.Read(campaign)?.Backup ?? BackupFolder.Closing(campaign, request.Name).FirstOrDefault();
+            // The mark's name only when the file is there: an imported closed campaign's mark names a backup its backups/ never got.
+            string? named = ClosedCampaign.Read(campaign)?.Backup;
+            string? closing = named is not null && File.Exists(Path.Combine(BackupFolder.Of(campaign), named))
+                ? named
+                : BackupFolder.Closing(campaign, request.Name).FirstOrDefault();
             io.Out.WriteLine(closing is null ? "closed: no closing backup in backups/" : $"closed: {BackupFolder.FolderName}/{closing}");
             return 0;
         }

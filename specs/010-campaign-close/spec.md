@@ -264,9 +264,9 @@ and it imports.
   `dmc` (it exists or it does not).
 - **FR-011**: `dmc` MUST close a campaign in one command that, in order: refuses a campaign that is already closed, is
   not current, or has an unfinished migration, or whose closing backup's name is already taken in `backups/` or
-  `exports/` (never replacing that file or choosing another name); sets the mark; writes the closing backup into the campaign's `backups/` under a name that
+  `exports/` (never replacing that file or choosing another name); writes the closing backup, holding the mark, into the campaign's `backups/` under a name that
   backup listing and pruning never count; checks it whole; writes the second copy to `exports/` in the DMC folder;
-  checks it; and prints one line naming both files. A failure at any step MUST leave the campaign not closed (no mark),
+  checks it; sets the mark last; and prints one line naming both files. A failure at any step MUST leave the campaign not closed (no mark),
   remove what that run wrote, and print one line saying what failed.
 - **FR-012**: The closing backup MUST hold the whole campaign as closed (its mark included) and MUST name the module the
   campaign ran without carrying the module's files.
@@ -330,8 +330,9 @@ and it imports.
 - **"verify still works" means it reports.** Issue #180 says both that a closed campaign's files never change and that
   `verify` still works on it. Today a passing `verify` writes `.standard` and a `.verified.tsv`; the only reading that
   keeps both statements is that `verify` on a closed campaign checks and reports, and writes nothing.
-- **The mark is written before the backup.** Issue #180 asks for "a checked export of the campaign as closed", so the
-  backup must contain the mark; a failed backup step then removes the mark (FR-011).
+- **The backup holds the mark, and the mark is set last.** Issue #180 asks for "a checked export of the campaign as
+  closed", so the backup must contain the mark; it is added to the backup from memory, and set in the campaign folder
+  only once both copies are checked, so a close stopped part-way leaves the campaign open (FR-011).
 - **The second copy goes to `exports/`.** It is the existing default for an export outside a campaign
   (`.docs/dmc-reference.md` § campaign), is never inside `adventures/` where DMC would search it, and install, refresh
   and update never touch it (`.docs/architecture.md`). The user guide already tells players to keep a further copy

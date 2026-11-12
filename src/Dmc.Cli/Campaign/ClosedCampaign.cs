@@ -6,7 +6,7 @@ namespace Dmc.Campaign;
 /// <summary>
 /// The closed mark, <c>adventures/&lt;campaign&gt;/.closed</c> (spec 010, research R1 and R8): one line, the UTC time of the close
 /// and the closing backup's file name, separated by one space, then a newline. Only <c>dmc campaign close --yes</c> writes
-/// it, and nothing removes it but the same run's rollback. Its presence is the state: a campaign with the file is closed
+/// it, as its last step, and nothing removes it but the same run's rollback. Its presence is the state: a campaign with the file is closed
 /// whatever the file holds. This class is the one home of the mark's name, its reading and writing, and the refusal every
 /// writing command gives for a closed campaign.
 /// </summary>
@@ -80,7 +80,16 @@ internal static class ClosedCampaign
     /// <param name="mark">The campaign's mark; null when it cannot be read.</param>
     public static string Line(Mark? mark) => "closed: " + (mark?.Time ?? "(mark unreadable)");
 
-    /// <summary>Writes the mark through a temporary file renamed into place, so a reader never sees half a mark.</summary>
+    /// <summary>The mark's bytes: the time, one space, the closing backup's file name and a newline, in UTF-8.</summary>
+    /// <param name="utc">The moment of the close.</param>
+    /// <param name="backupFileName">The closing backup's file name.</param>
+    public static byte[] Bytes(DateTime utc, string backupFileName) =>
+        Encoding.UTF8.GetBytes(new Mark(utc.ToUniversalTime(), backupFileName).Time + " " + backupFileName + "\n");
+
+    /// <summary>
+    /// Writes the mark through a temporary file renamed into place, so a reader never sees half a mark. The bytes are
+    /// <see cref="Bytes"/>, the same the closing backup already holds.
+    /// </summary>
     /// <param name="campaignFolder">The campaign folder.</param>
     /// <param name="utc">The moment of the close.</param>
     /// <param name="backupFileName">The closing backup's file name.</param>
@@ -89,10 +98,9 @@ internal static class ClosedCampaign
     {
         string path = PathOf(campaignFolder);
         string partial = path + ".partial-" + Guid.NewGuid().ToString("N")[..8];
-        string text = utc.ToUniversalTime().ToString(TimeFormat, CultureInfo.InvariantCulture) + " " + backupFileName + "\n";
         try
         {
-            File.WriteAllText(partial, text, new UTF8Encoding(false));
+            File.WriteAllBytes(partial, Bytes(utc, backupFileName));
             File.Move(partial, path, overwrite: false);
         }
         finally

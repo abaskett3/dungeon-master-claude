@@ -12,15 +12,17 @@ internal sealed record ClosePlan(string Name, int Files, string Backup, DateTime
 
 /// <summary>
 /// <c>dmc campaign close NAME [--yes]</c> (spec 010 contracts/campaign-close.md; research R3): closes a current campaign for
-/// good, in an order in which a failure leaves it open. The plan refuses a campaign that is already closed, unfinished,
-/// behind or ahead, and a closing backup name already taken in <c>backups/</c> or <c>exports/</c>, and writes nothing. The
-/// close then writes the mark, the closing backup (holding the mark), checks it whole, copies it to <c>exports/</c> and
-/// checks the copy; a failure at any step removes what this run wrote, the copy, then the backup, then the mark.
+/// good, in an order in which a failure, or the process being stopped, leaves it open. The plan refuses a campaign that is
+/// already closed, unfinished, behind or ahead, and a closing backup name already taken in <c>backups/</c> or
+/// <c>exports/</c>, and writes nothing. The close then writes the closing backup (holding the mark, added from memory),
+/// checks it whole, copies it to <c>exports/</c>, checks the copy, and writes the mark into the campaign last, so the
+/// campaign is closed only once both copies are checked. A failure at any step removes what this run wrote: the mark, then
+/// the copy, then the backup.
 /// </summary>
 internal static class CampaignCloser
 {
     /// <summary>The steps of a close, in order, as a failure names them.</summary>
-    internal static readonly string[] Steps = ["mark", "backup", "check backup", "copy", "check copy"];
+    internal static readonly string[] Steps = ["backup", "check backup", "copy", "check copy", "mark"];
 
     /// <summary>
     /// A test's fault seam (CloseFailureTests only): called with the name of each step just before it is done. An exception it
@@ -70,7 +72,7 @@ internal static class CampaignCloser
         return new ClosePlan(name, CampaignExporter.Count(root, name) + 1, file, moment);
     }
 
-    /// <summary>Closes a campaign: plans it, then writes the mark, the closing backup and its copy, each checked.</summary>
+    /// <summary>Closes a campaign: plans it, then writes the closing backup and its copy, each checked, and the mark last.</summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="name">The campaign's folder name.</param>
     /// <param name="now">The moment of the close; the clock when null.</param>
@@ -87,7 +89,9 @@ internal static class CampaignCloser
         bool hadBackups = Directory.Exists(backups), hadExports = Directory.Exists(exports);
         bool marked = false, backedUp = false, copied = false;
         string step = Steps[0];
+        byte[] mark = ClosedCampaign.Bytes(plan.Moment, plan.Backup);
 
+        // Starts a step: names it for a failure, and gives a test's fault seam its chance to fail it.
         void Begin(string next)
         {
             step = next;
@@ -96,33 +100,35 @@ internal static class CampaignCloser
 
         try
         {
-            Begin("mark");
-            ClosedCampaign.Write(campaign, plan.Moment, plan.Backup);
-            marked = true;
-
-            Begin("backup");
-            var export = CampaignExporter.ClosingBackup(root, name, plan.Backup, plan.Moment);
+            Begin(Steps[0]);
+            var export = CampaignExporter.ClosingBackup(root, name, plan.Backup, plan.Moment, mark);
             backedUp = true;
 
-            Begin("check backup");
+            Begin(Steps[1]);
             var held = BackupFolder.Open(backup, name).ReadCampaign();
-            if (!held.ContainsKey(ClosedCampaign.FileName))
-                throw new DmcException($"{plan.Backup} holds no {ClosedCampaign.FileName}");
+            if (!held.TryGetValue(ClosedCampaign.FileName, out var heldMark) || !heldMark.SequenceEqual(mark))
+                throw new DmcException($"{plan.Backup} does not hold the mark");
 
-            Begin("copy");
+            Begin(Steps[2]);
             Copy(backup, copy);
             copied = true;
 
-            Begin("check copy");
+            Begin(Steps[3]);
             BackupFolder.Open(copy, name).ReadCampaign();
             if (!Hash(copy).SequenceEqual(Hash(backup)))
                 throw new DmcException($"exports/{plan.Backup} differs from {BackupFolder.FolderName}/{plan.Backup}");
+
+            Begin(Steps[4]);
+            ClosedCampaign.Write(campaign, plan.Moment, plan.Backup);
+            marked = true;
 
             return plan with { Files = export.Files };
         }
         catch (Exception e) when (e is DmcException or IOException or UnauthorizedAccessException or InvalidDataException)
         {
             var left = new List<string>();
+            if (marked && !ClosedCampaign.Remove(campaign))
+                left.Add($"adventures/{name}/{ClosedCampaign.FileName}");
             if (copied && !CampaignBackup.Remove(copy))
                 left.Add($"exports/{plan.Backup}");
             if (backedUp && !CampaignBackup.Remove(backup))
@@ -131,8 +137,6 @@ internal static class CampaignCloser
                 RemoveIfEmpty(exports);
             if (!hadBackups)
                 RemoveIfEmpty(backups);
-            if (marked && !ClosedCampaign.Remove(campaign))
-                left.Add($"adventures/{name}/{ClosedCampaign.FileName}");
             string reason = e.Message.TrimEnd('.', '\r', '\n', ' ');
             throw new DmcException(left.Count == 0
                 ? $"could not close {name}: {step}: {reason}; it is still open"

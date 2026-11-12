@@ -65,17 +65,19 @@ internal static class CampaignExporter
 
     /// <summary>
     /// Writes a campaign's closing backup (spec 010 research R4): an export to the campaign's own <c>backups/</c> folder under
-    /// exactly the file name the close fixed, <c>&lt;campaign&gt;_closed_&lt;yyyyMMddHHmmss&gt;.zip</c>. The destination is fixed
-    /// here, never taken from <c>--out</c>, and a file already by that name is never replaced: the export fails instead.
+    /// exactly the file name the close fixed, <c>&lt;campaign&gt;_closed_&lt;yyyyMMddHHmmss&gt;.zip</c>, holding the campaign's
+    /// files and the closed mark the close will write last. The destination is fixed here, never taken from <c>--out</c>, and
+    /// a file already by that name is never replaced: the export fails instead.
     /// </summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="name">The campaign's folder name.</param>
     /// <param name="fileName">The closing backup's file name, from <see cref="BackupFolder.ClosedName"/>.</param>
     /// <param name="now">The moment of the close: the manifest's <c>exportedAt</c>.</param>
+    /// <param name="mark">The mark's bytes, held as <c>.closed</c> though the campaign folder does not hold it yet.</param>
     /// <returns>The file written and what it holds.</returns>
     /// <exception cref="DmcException">The campaign cannot be read, a file by that name exists, or the file could not be written. Nothing is left under the name.</exception>
-    public static ExportResult ClosingBackup(string root, string name, string fileName, DateTime now) =>
-        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true, fileName);
+    public static ExportResult ClosingBackup(string root, string name, string fileName, DateTime now, byte[] mark) =>
+        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true, fileName, mark);
 
     /// <summary>Counts the files an export of a campaign would hold now, reading and checking them as an export does but writing nothing.</summary>
     /// <param name="root">The DMC folder.</param>
@@ -105,7 +107,8 @@ internal static class CampaignExporter
     /// <param name="now">The moment of the export; the clock when null.</param>
     /// <param name="toBackups">True for a backup: the destination is the campaign's <c>backups/</c> folder and <c>--out</c> is not read.</param>
     /// <param name="fileName">For a closing backup, its exact file name in <c>backups/</c>, never replaced; null for an ordinary backup's free name or an export.</param>
-    static ExportResult Export(string root, ExportRequest request, DateTime? now, bool toBackups, string? fileName)
+    /// <param name="mark">For a closing backup, the closed mark's bytes, added as <c>.closed</c>; null otherwise.</param>
+    static ExportResult Export(string root, ExportRequest request, DateTime? now, bool toBackups, string? fileName, byte[]? mark = null)
     {
         DateTime moment = (now ?? DateTime.UtcNow).ToUniversalTime();
         string adventures = Path.Combine(root, "adventures");
@@ -125,6 +128,12 @@ internal static class CampaignExporter
             var files = new List<Item>();
             var folders = new List<string>();
             Walk(campaign, "", files, folders);
+            if (mark is not null)
+            {
+                if (files.Any(f => f.Path == ClosedCampaign.FileName))
+                    throw new DmcException($"{request.Name} already holds {ClosedCampaign.FileName}");
+                files.Add(new Item(ClosedCampaign.FileName, mark));
+            }
             files.Sort((a, b) => string.CompareOrdinal(a.Path, b.Path));
             folders.Sort(StringComparer.Ordinal);
             if (ArchivePaths.CaseClash(files.Select(f => f.Path).Concat(folders)) is { } clash)

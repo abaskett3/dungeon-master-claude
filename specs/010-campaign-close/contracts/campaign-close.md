@@ -24,7 +24,8 @@ dmc <command>: <name> is closed: start a sequel to continue its story
 | A step of `--yes` fails | `dmc campaign: could not close <name>: <step>: <reason>; it is still open` | 1 | nothing left from this run |
 | A step fails and a removal fails too | `dmc campaign: could not close <name>: <step>: <reason>; could not remove <files>: delete them by hand` | 1 | the files it names |
 
-`<step>` is one of `mark`, `backup`, `check backup`, `copy`, `check copy`. Before anything else the verb puts back an
+`<step>` is one of `backup`, `check backup`, `copy`, `check copy`, `mark`, in that order: the mark is set last, so a
+close stopped part-way leaves the campaign open. Before anything else the verb puts back an
 interrupted restore and prints that line, as every migration verb does.
 
 ## Changed verbs on a closed campaign
@@ -33,7 +34,7 @@ interrupted restore and prints that line, as every migration verb does.
 |---|---|
 | `dmc campaign standard [NAME]` | `closed: <closed at>` (`closed: (mark unreadable)` for a garbled mark), exit 0, ahead of every other status |
 | `dmc campaign standard NAME --init` | the refusal |
-| `dmc campaign backups NAME` | `0 backups` or the counted list as today, then `closed: backups/<closing backup>` (from the mark, else the one closing backup found; `closed: no closing backup in backups/` when there is none); never an `ask:` line |
+| `dmc campaign backups NAME` | `0 backups` or the counted list as today, then `closed: backups/<closing backup>` (from the mark when that file is in `backups/`, else the closing backup found there; `closed: no closing backup in backups/` when there is none); never an `ask:` line |
 | `dmc campaign backup NAME [--prune ...]` | the refusal |
 | `dmc campaign restore NAME [--from F] [--yes]` | the refusal, with or without `--yes` |
 | `dmc campaign verify NAME [--backup F] [--all]` | byte check against the closing backup (below); writes nothing |

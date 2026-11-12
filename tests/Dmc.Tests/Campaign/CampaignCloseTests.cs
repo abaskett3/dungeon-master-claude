@@ -7,7 +7,7 @@ namespace Dmc.Tests.Campaign;
 
 /// <summary>
 /// <c>dmc campaign close NAME [--yes]</c> (spec 010 contracts/campaign-close.md; research R3 to R5; FR-011): the plan writes
-/// nothing; the close writes the mark, the closing backup holding it and a byte-equal copy in <c>exports/</c>; every
+/// nothing; the close writes the closing backup holding the mark, a byte-equal copy in <c>exports/</c> and the mark last; every
 /// refusal is one line, exit 1, and writes nothing. Run in this process against a temporary DMC folder; a clash with a
 /// file already by the closing backup's name is checked through the library, which can fix the moment.
 /// </summary>

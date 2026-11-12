@@ -128,12 +128,12 @@ asks once, then makes a last full save with these differences, so a sequel finds
 | Each loose end, as a fact in the character's terms; promises and debts under **Prices, debts and promises** | `story/canon.md` |
 | The reason and the means of each fact, where the sessions established them | `story/canon.md`, on the fact's line |
 
-The closing save moves nothing to `story/canon-archive.md` and leaves the size budgets of `summary.md`, `dm-notes.md`
-and `canon.md` alone: a closed campaign is never resumed into play. There is no template change, so open campaigns
+The closing save moves nothing to `story/canon-archive.md` or to a sheet's `-history.md` file, trims nothing for size
+and adds no planned break: a closed campaign is never resumed into play. There is no template change, so open campaigns
 need no migration.
 
-`dmc campaign close <campaign> --yes` then writes the files below, in this order; a failure removes what the run wrote
-and leaves the campaign open.
+`dmc campaign close <campaign> --yes` then writes the two copies of the closing backup, each checked, and the mark
+last, so a failure, or the close being stopped part-way, leaves the campaign open; a failure removes what the run wrote.
 
 | File | What reads and writes it |
 |---|---|

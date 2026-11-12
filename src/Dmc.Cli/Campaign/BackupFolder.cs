@@ -90,7 +90,7 @@ internal static partial class BackupFolder
         return match.Success ? match.Groups[1].Value : null;
     }
 
-    /// <summary>The closing backups in a campaign's <c>backups/</c>, by file name in ordinal order; one for a closed campaign, none for an open one.</summary>
+    /// <summary>The closing backups in a campaign's <c>backups/</c>, by file name in ordinal order: usually one for a closed campaign and none for an open one, more only when a close was stopped before its mark and run again.</summary>
     /// <param name="campaignFolder">The campaign folder.</param>
     /// <param name="campaign">The campaign's name.</param>
     public static IReadOnlyList<string> Closing(string campaignFolder, string campaign)

@@ -10,9 +10,9 @@ A campaign is closed by a new kit skill, `dmc-close-campaign`, and a new verb, `
 skill does what needs judgment: it checks with the plan form of the verb, asks the player once, then runs a closing
 full save (the full save's steps, pointing to that skill, with no archiving of canon, a sweep for the why and how, an
 account of every secret in § Secrets, the loose ends as canon lines, and § How it ended in `summary.md`). The verb does
-what must be exact: it refuses a campaign that is not current, writes the mark `.closed`, writes a closing backup
-`<name>_closed_<stamp>.zip` that backup counting and pruning never see, copies it to `exports/`, checks both, and on
-any failure removes what it wrote. Afterwards `standard` reports `closed` first, every writing command refuses the
+what must be exact: it refuses a campaign that is not current, writes a closing backup `<name>_closed_<stamp>.zip`
+holding the mark, that backup counting and pruning never see, copies it to `exports/`, checks both, writes the mark
+`.closed` last, and on any failure removes what it wrote. Afterwards `standard` reports `closed` first, every writing command refuses the
 campaign through one guard, `redraw` does nothing, `verify` checks the bytes against the closing backup and writes
 nothing, and resume says it is closed and offers a sequel. No template changes and no migration. See
 [research.md](research.md).

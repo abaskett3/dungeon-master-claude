@@ -30,6 +30,7 @@ yes closes it; anything else closes nothing.
 
 Follow `dmc-campaign-full-save`, steps 1 to 8, with these differences and no others:
 
+- **Step 2, sheets.** Move no history to a `-history.md` file: each sheet keeps all of it.
 - **Step 4, canon.** Prune and split as usual, but archive nothing: no line moves to `story/canon-archive.md`. Sweep the
   canon for facts whose reason or means the sessions established, and put the reason and the means on the fact's line.
   Write each loose end (a debt, a promise, an unanswered question, where someone was left) as a canon line in the
@@ -40,14 +41,17 @@ Follow `dmc-campaign-full-save`, steps 1 to 8, with these differences and no oth
   short paragraph; the in-world date; one line per PC and companion with their final level, condition and where they
   are; one line per recurring NPC with where they are; and, only if there is any, what in the campaign folder is not
   canon (a test fight, an import), named so a sequel leaves it out.
-- **Step 7, sizes.** Leave any `dmc size` line for `story/summary.md`, `story/dm-notes.md` or `story/canon.md`: a closed
-  campaign is never resumed into play, so its ending record, its secrets and its canon stay whole.
+- **Step 7, sizes.** Leave every `dmc size` line and trim nothing: a closed campaign is never resumed into play, so
+  every file stays whole.
+- **Step 8, stamp.** Set the "Last full save" line only: no Planned break line and no report; § 5 reports.
 
 ## 4. Close
 
-Run `dmc campaign close <campaign> --yes`. On `closed ...`, go on. On `could not close ...`, tell the player which step
-failed and that the campaign is still open, and that the close can be run again. Running it again means steps 1 and 2
-again, then straight to this step if `story/summary.md` already has § How it ended and every secret has its outcome.
+Run `dmc campaign close <campaign> --yes`. On `closed ...`, go on. On a line ending `it is still open`, tell the player
+which step failed, that the campaign is still open, and that the close can be run again. On a line ending `delete them
+by hand`, name those files to the player and say the close can be run again once they have deleted them. On anything
+else, say it in a line and stop. Running it again means steps 1 and 2 again, then straight to this step if
+`story/summary.md` already has § How it ended and every secret has its outcome.
 
 ## 5. Report
 

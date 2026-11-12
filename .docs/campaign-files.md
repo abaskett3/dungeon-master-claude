@@ -8,10 +8,10 @@ Everything below is in a **DMC folder**, the folder a player plays in (written b
 
 `feedback/` sits in the DMC folder, beside `adventures/`. It is not part of any campaign: feedback about how DMC itself runs the game is kept there (see [Feedback entries](#feedback-entries)), never in a campaign folder.
 
-`exports/` sits in the DMC folder too. `dmc campaign export` writes its ZIP files there, one per export (`<campaign>-<YYYYMMDDHHmm>.zip`). Each file holds a whole campaign, `story/dm-notes.md` and other spoilers included, and is not part of any campaign; keep copies outside `adventures/`, where DMC would search them.
+`exports/` sits in the DMC folder too. `dmc campaign export` writes its ZIP files there, one per export (`<campaign>-<YYYYMMDDHHmm>.zip`), and `dmc campaign close` puts the copy of a closing backup there (`<campaign>_closed_<yyyyMMddHHmmss>.zip`). Each file holds a whole campaign, `story/dm-notes.md` and other spoilers included, and is not part of any campaign; keep copies outside `adventures/`, where DMC would search them.
 
 ```
-exports/                     one ZIP per dmc campaign export, in the DMC folder (whole campaigns, spoilers included)
+exports/                     one ZIP per dmc campaign export, and the copy of each closing backup, in the DMC folder (whole campaigns, spoilers included)
 adventures/
   player-options.md          the player's preferences for every campaign
   .active-campaign           the folder name of the campaign being played (one line)
@@ -22,8 +22,10 @@ adventures/
   .replaced-<campaign>-<id>/ the campaign renamed aside during a restore (a later restore puts it back if the restore was interrupted)
   <campaign>/
     .standard                the campaign's standard: one whole number (no file means 1); written by dmc campaign verify and standard --init
+    .closed                  only in a closed campaign: when it was closed and its closing backup; written by dmc campaign close --yes, never removed
     backups/                 backups of the campaign taken before a migration (dmc campaign backup); never exported
       <campaign>_backup_<yyyyMMddHHmmss>.zip   a whole campaign export, checked when written
+      <campaign>_closed_<yyyyMMddHHmmss>.zip   only in a closed campaign: the closing backup, never counted, pruned or removed
       <backup>.zip.migrating                   a migration from this backup is under way (only when one was pending)
       <backup>.zip.accounting.tsv              what the migration reworded or dropped, written by DMC
       <backup>.zip.verified.tsv                the migrated campaign's files and hashes, written by a passing verify
@@ -100,7 +102,7 @@ When the toolkit changes what campaign files should hold, the change ships a **m
 files to the new shape. A campaign's **standard** is the number in its `.standard` file (1 when there is none); the
 kit's is the highest migration number. `dmc campaign standard NAME` says `current`, `behind` (with the pending
 migrations), `ahead` (the files were written by a newer `dmc`) or `unfinished` (a migration was started and not
-verified or restored). The resume says one line when a campaign is not current, and offers the migration.
+verified or restored), or `closed: <time>` for a closed campaign, which is never migrated (see [Closing a campaign](#closing-a-campaign)). The resume says one line when a campaign is not current, and offers the migration.
 
 | File | What reads and writes it |
 |---|---|
@@ -113,6 +115,34 @@ verified or restored). The resume says one line when a campaign is not current, 
 A backup's companion files go with it when it is pruned. Verification compares the campaign's files without `backups/`
 and `.standard`. The procedure is the `dmc-migrate-campaign` skill; the commands are in
 [dmc-reference.md](dmc-reference.md#migrations), and the user guide says what the player sees.
+
+## Closing a campaign
+
+A finished campaign can be closed for good (spec 010, issue #180), when the player asks. The `dmc-close-campaign` skill
+asks once, then makes a last full save with these differences, so a sequel finds every fact where it looks first:
+
+| Record | Where |
+|---|---|
+| The ending: how the story ended, the in-world date, each PC's and companion's final level, condition and place, each recurring NPC's place, and what in the folder is not canon (a test fight, an import) | `story/summary.md` § How it ended, in place of § Where things stand |
+| Every secret, gathered back from `story/dm-notes-archive.md`, each line ending `revealed sN`, `never revealed` or `abandoned` | `story/dm-notes.md` § Secrets |
+| Each loose end, as a fact in the character's terms; promises and debts under **Prices, debts and promises** | `story/canon.md` |
+| The reason and the means of each fact, where the sessions established them | `story/canon.md`, on the fact's line |
+
+The closing save moves nothing to `story/canon-archive.md` or to a sheet's `-history.md` file, trims nothing for size
+and adds no planned break: a closed campaign is never resumed into play. There is no template change, so open campaigns
+need no migration.
+
+`dmc campaign close <campaign> --yes` then writes the two copies of the closing backup, each checked, and the mark
+last, so a failure, or the close being stopped part-way, leaves the campaign open; a failure removes what the run wrote.
+
+| File | What reads and writes it |
+|---|---|
+| `.closed` | One line, `<UTC time> <closing backup file name>`. Written only by `close --yes`; nothing removes it. Its presence closes the campaign: every `dmc` command that writes under the folder refuses, `standard` prints `closed: <time>`, resume says the campaign is closed and offers a sequel, and DMC is told never to change its files (`CLAUDE.md` § Accuracy) and is denied edits to the mark. Travels with every export, so an import of a closing backup is closed too. |
+| `backups/<campaign>_closed_<stamp>.zip` | The closing backup: an export of the campaign with its mark, checked whole. Its name is outside the counted backups' pattern, so no prune ever removes it. `verify` compares the campaign with it, byte for byte, and writes nothing. |
+| `exports/<campaign>_closed_<stamp>.zip` | A byte copy of the closing backup in the DMC folder, checked by SHA-256, so the campaign survives losing its folder. Keep a further copy somewhere else. |
+
+A sequel is a new campaign whose `player-options.md` Predecessor line names the closed one; `dmc recall` searches the
+closed campaign's files with the sequel's, and nothing writes to them.
 ## Which file wins
 
 Each kind of fact has one home, so that two files cannot disagree about it:

@@ -82,6 +82,8 @@ Start DMC the same way (`dmc play`) and type `/dmc-resume-campaign`. DMC reads t
 
 If the files disagree (HP on the sheet differs from the game state, say), DMC tells you what it found, proposes the likely truth and fixes the files once you confirm.
 
+A campaign you have closed (see [Closing a campaign](#closing-a-campaign)) is not resumed: DMC says it is closed, opens no scene, and offers to start a sequel.
+
 ## Everyday play
 
 ### Talking to DMC
@@ -317,6 +319,27 @@ holds them, keeping the backups. DMC can run it for you.
 
 **If a session ends part way** through a migration, the next resume says a migration was interrupted, and play waits
 until DMC finishes it (against the same backup) or you restore.
+
+### Closing a campaign
+
+When a story is over, you can close its campaign for good: ask DMC to "close the campaign". DMC may suggest it once
+when the main story ends, and once more when the last open thread is resolved; it never closes a campaign on its own.
+
+1. **DMC checks it can be closed.** A campaign whose files are behind the current rules is brought up to date first.
+2. **DMC asks once.** Closing is permanent: the campaign can never be played or changed again, and the only way back
+   to its story is a sequel. Anything but a clear yes closes nothing.
+3. **A last full save** that keeps everything a sequel will need: how the story ended and where everyone is, what
+   became of every secret (revealed, never revealed or abandoned), and every loose end written down as a fact.
+4. **`dmc` closes it**: it marks the campaign closed and writes a checked closing backup in
+   `adventures/<campaign>/backups/` (never removed when old backups are cleared) and a copy of it in `exports/`. If any
+   step fails, nothing is left from it and the campaign is still open; ask again.
+
+Keep a further copy of the file in `exports/` somewhere outside the DMC folder. A closed campaign still opens for
+reading (`dmc recall`, `dmc lookup`, `dmc campaign show` and `export`), but nothing changes it; `dmc campaign verify
+<campaign>` says whether any file differs from its closing backup. To go on with its characters, start a new campaign
+with `/dmc-new-campaign` and name the closed one as the one it continues: DMC searches the closed campaign's facts when
+they come up, and never writes to it.
+
 ### Moving campaigns from a repository checkout
 
 Before DMC had a DMC folder, you played in a checkout of the toolkit's repository, and your campaigns, feedback, modules and rules files were in its `adventures/`, `feedback/`, `modules/` and `rules/` folders (git ignored them). To play from a DMC folder instead, move them across. **DMC never runs these commands: you run them yourself, in your own terminal.**

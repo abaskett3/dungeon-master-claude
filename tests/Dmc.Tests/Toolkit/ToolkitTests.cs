@@ -240,6 +240,18 @@ public sealed partial class ToolkitTests
         Assert.IsNull(Settings(KitSettings)["enabledPlugins"], "the maintainer's own plugin setting is meaningless to players");
     }
 
+    /// <summary>
+    /// DMC's edits can neither set nor clear a campaign's closed mark (spec 010 FR-010, research R2): an <c>Edit</c> deny rule
+    /// for <c>adventures/*/.closed</c>, which beats the <c>Edit(adventures/**)</c> allow. Deleting it is already denied with
+    /// every shell delete.
+    /// </summary>
+    [TestMethod]
+    public void TheKitSettingsProtectTheClosedMark()
+    {
+        string[] denied = Settings(KitSettings)["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        CollectionAssert.Contains(denied, "Edit(/adventures/*/.closed)");
+    }
+
     [TestMethod]
     public void HooksAreCommands()
     {
@@ -731,7 +743,7 @@ public sealed partial class ToolkitTests
     {
         CollectionAssert.AreEqual(new[]
         {
-            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-draw-map", "dmc-generate-image-prompt", "dmc-ingest-module", "dmc-migrate-campaign", "dmc-new-campaign",
+            "dmc-campaign-full-save", "dmc-character-sheet-update", "dmc-close-campaign", "dmc-draw-map", "dmc-generate-image-prompt", "dmc-ingest-module", "dmc-migrate-campaign", "dmc-new-campaign",
             "dmc-record-feedback", "dmc-resume-campaign", "dmc-rewind-campaign", "dmc-setup-rules", "dmc-update-game-state",
         }, SkillNames());
         foreach (string name in SkillNames())

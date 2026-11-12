@@ -125,6 +125,101 @@ public sealed class StandardTests
         }
     }
 
+    /// <summary>A readable closed mark, as <c>dmc campaign close --yes</c> writes it.</summary>
+    const string Mark = "2026-11-12T03:10:00Z rorn_closed_20261111191000.zip\n";
+
+    [TestMethod]
+    [DataRow("unfinished")]
+    [DataRow("behind")]
+    [DataRow("ahead")]
+    [DataRow("current")]
+    public void AClosedCampaignIsClosedAheadOfEveryOtherStatus(string otherwise)
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.WriteMigrations(4);
+        switch (otherwise)
+        {
+            case "unfinished":
+                root.SetStandard("2\n");
+                root.Backup();
+                break;
+            case "behind":
+                root.SetStandard("2\n");
+                break;
+            case "ahead":
+                root.SetStandard("9\n");
+                break;
+            default:
+                root.SetStandard("4\n");
+                break;
+        }
+        StringAssert.StartsWith(MigrationRoot.Run("standard", MigrationRoot.Name).StdoutLines[0], otherwise);
+        root.Write(".closed", Mark);
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { "closed: 2026-11-12T03:10:00Z" }, result.StdoutLines);
+    }
+
+    [TestMethod]
+    public void AClosedCampaignIsClosedEvenWithAnUnreadableRecordOrKit()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.WriteMigrations(4);
+        root.SetStandard("x");
+        File.Delete(Path.Combine(root.Folder, "migrations", "003-test-3.md"));
+        root.Write(".closed", Mark);
+        CollectionAssert.AreEqual(new[] { "closed: 2026-11-12T03:10:00Z" }, MigrationRoot.Run("standard", MigrationRoot.Name).StdoutLines);
+    }
+
+    [TestMethod]
+    public void TheActiveCampaignClosedIsClosedWithNoName()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.Write(".closed", Mark);
+        File.WriteAllText(Path.Combine(root.Adventures, ".active-campaign"), "rorn\n");
+        CollectionAssert.AreEqual(new[] { "closed: 2026-11-12T03:10:00Z" }, MigrationRoot.Run("standard").StdoutLines);
+    }
+
+    [TestMethod]
+    public void AGarbledMarkStillReadsClosed()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.Write(".closed", "nonsense\nmore nonsense\n");
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { "closed: (mark unreadable)" }, result.StdoutLines);
+    }
+
+    [TestMethod]
+    public void InitOnAClosedCampaignIsRefusedAndWritesNothing()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.WriteMigrations(4);
+        root.Write(".closed", Mark);
+        var result = MigrationRoot.Run("standard", MigrationRoot.Name, "--init");
+        Assert.AreEqual(1, result.ExitCode);
+        Assert.AreEqual("", result.Stdout);
+        Assert.AreEqual("dmc campaign: rorn is closed: start a sequel to continue its story", result.Stderr.TrimEnd());
+        Assert.IsFalse(root.Has(".standard"));
+    }
+
+    [TestMethod]
+    public void RefreshesBehindLineDoesNotCountAClosedCampaign()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.WriteMigrations(4);
+        root.SetStandard("2\n");
+        StringAssert.Contains(Dmc.Kit.Refresher.BehindLine("dmc refresh", root.Folder), "1 campaign is behind");
+        root.Write(".closed", Mark);
+        Assert.IsNull(Dmc.Kit.Refresher.BehindLine("dmc refresh", root.Folder));
+    }
+
     [TestMethod]
     public void ABrokenMigrationsFolderIsOneLine()
     {

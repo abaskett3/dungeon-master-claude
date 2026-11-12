@@ -211,7 +211,8 @@ internal sealed class ExportSummary
 
     /// <summary>
     /// The lines <c>dmc campaign show</c> prints: who and when, how much, and (for a module campaign) which module and whether
-    /// this DMC folder has it. Two or three lines, built from the manifest alone. Control characters in the manifest's text
+    /// this DMC folder has it, and (for a closed campaign, spec 010) when it was closed. Two to four lines, built from the
+    /// manifest and, for the closed line only, the mark's entry. Control characters in the manifest's text
     /// print as <c>?</c>, so a crafted manifest cannot add lines.
     /// </summary>
     /// <param name="root">The DMC folder, to look for the module in.</param>
@@ -230,6 +231,30 @@ internal sealed class ExportSummary
             yield return $"module: {module.Folder} ({(module.Installed ? "in" : "not in")} modules/)";
         else if (module.Kind == ModuleKind.Unnamed)
             yield return "module: unknown (module-progress.md names no module folder)";
+        if (ClosedLine() is { } closed)
+            yield return closed;
+    }
+
+    /// <summary>
+    /// The <c>closed: &lt;time&gt;</c> line for an export that holds a campaign's closed mark (spec 010): a closing backup, or
+    /// an export of a closed campaign. Reads only that one small entry, checked against the manifest.
+    /// </summary>
+    /// <returns>The line, <c>closed: (mark unreadable)</c> when the mark is not one, or null when the export holds no mark.</returns>
+    string? ClosedLine()
+    {
+        var record = Manifest.Files.FirstOrDefault(f => f.Path == ClosedCampaign.FileName);
+        if (record is null)
+            return null;
+        try
+        {
+            using var zip = ZipFile.Open(Path, ZipArchiveMode.Read, Encoding.UTF8);
+            var entry = zip.GetEntry(CampaignPrefix + ClosedCampaign.FileName);
+            return ClosedCampaign.Line(entry is null ? null : ClosedCampaign.Parse(ReadChecked(entry, record)));
+        }
+        catch (Exception e) when (e is DmcException or IOException or InvalidDataException)
+        {
+            return ClosedCampaign.Line(null);
+        }
     }
 
     /// <summary>

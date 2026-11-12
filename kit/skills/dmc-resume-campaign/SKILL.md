@@ -11,7 +11,7 @@ Rebuild your picture of the campaign from the files. Do not rely on anything you
 
 Use the campaign the player named. Otherwise read `adventures/.active-campaign`. If neither gives one, list the folders in `adventures/` whose names do not start with a dot (staging folders left by an interrupted `dmc` command) and ask. Write the chosen folder name to `adventures/.active-campaign`.
 
-Then run `dmc campaign standard <campaign>` and say nothing if it prints `current`. Otherwise say one line, out of character: on `behind`, that the campaign's files are behind the current rules, offering to bring them up to date with `dmc-migrate-campaign` (a no changes nothing, and the offer comes back next time); on `ahead`, that `dmc` needs updating; on `unfinished`, that a migration was interrupted and play waits until the player finishes it with `dmc-migrate-campaign` or restores the backup with `dmc campaign restore <campaign>`.
+Then run `dmc campaign standard <campaign>` and say nothing if it prints `current`. Otherwise say one line, out of character: on `behind`, that the campaign's files are behind the current rules, offering to bring them up to date with `dmc-migrate-campaign` (a no changes nothing, and the offer comes back next time); on `ahead`, that `dmc` needs updating; on `unfinished`, that a migration was interrupted and play waits until the player finishes it with `dmc-migrate-campaign` or restores the backup with `dmc campaign restore <campaign>`; on `closed`, that it is closed and a sequel (`dmc-new-campaign`) continues it, then stop. If `dmc` fails, Glob `adventures/<campaign>/.closed`: if found, the same.
 
 ## 2. Read, in this order
 

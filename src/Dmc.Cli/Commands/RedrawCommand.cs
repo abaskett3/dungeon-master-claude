@@ -11,7 +11,8 @@ namespace Dmc.Commands;
 /// </summary>
 /// <remarks>
 /// <para>
-/// It prints nothing and exits 0 when there is nothing to do (no active campaign, no map file to draw, no change), and
+/// It prints nothing and exits 0 when there is nothing to do (no active campaign, a closed one, no map file to draw, no
+/// change), and
 /// on any failure that is not a refused map file. A map file that <see cref="MapChecker"/> refuses is the one case
 /// that is reported: one line on standard error and exit code 2, which for a Stop hook makes Claude Code hand the line
 /// to DMC and let it carry on, so DMC corrects the file and the reply that follows draws it.

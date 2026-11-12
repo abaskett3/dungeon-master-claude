@@ -125,11 +125,12 @@ internal static class Digester
     /// </exception>
     static void Show(DigestRequest request, Io io)
     {
+        string outDir = string.IsNullOrEmpty(request.Out) ? Path.Combine(DmcFolderOf(request), "adventures", ".transcript-review") : request.Out;
+        Campaign.ClosedCampaign.RefuseAt(outDir); // never write into a closed campaign (spec 010), checked before any log is read
         var sessions = Load(request).Where(s => s.Turns.Count > 0).ToList();
         if (sessions.Count == 0)
             throw new DmcException("No matching sessions with player messages.");
 
-        string outDir = string.IsNullOrEmpty(request.Out) ? Path.Combine(DmcFolderOf(request), "adventures", ".transcript-review") : request.Out;
         Directory.CreateDirectory(outDir);
         string today = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var report = new List<string> { "# Transcript statistics", "", $"Generated {today} by dmc digest.", "" };

@@ -43,6 +43,11 @@ internal sealed record VerifyRequest(string Name, VerifyOptions Options) : Campa
 /// <param name="Yes">Restore; without it the plan is printed and nothing changes.</param>
 internal sealed record RestoreRequest(string Name, string? From, bool Yes) : CampaignRequest;
 
+/// <summary><c>dmc campaign close NAME [--yes]</c> (spec 010).</summary>
+/// <param name="Name">A folder under <c>adventures/</c>.</param>
+/// <param name="Yes">Close; without it the plan is printed and nothing changes.</param>
+internal sealed record CloseRequest(string Name, bool Yes) : CampaignRequest;
+
 /// <summary>
 /// Reads the command line of <c>dmc campaign</c> the way <c>dmc digest</c> and <c>dmc pdf</c> do (see <see cref="Argparse"/>): an
 /// option may be shortened to a unique prefix, <c>--option=value</c> is understood, and a mistake is one line and exit code
@@ -52,13 +57,13 @@ internal static class CampaignArguments
 {
     /// <summary>The verbs. This is the only place they are spelled out in the program.</summary>
     public const string Export = "export", Import = "import", Show = "show", Standard = "standard", Backups = "backups",
-        Backup = "backup", Verify = "verify", Restore = "restore";
+        Backup = "backup", Verify = "verify", Restore = "restore", Close = "close";
 
     /// <summary>The verbs, in the order the usage lists them; <c>ToolkitTests</c> checks the prompts against this list.</summary>
-    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Restore];
+    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Restore, Close];
 
     /// <summary>The message for a missing or unknown verb (exit code 2).</summary>
-    const string NeedVerb = "give export, import, show, standard, backups, backup, verify or restore (try dmc campaign --help)";
+    const string NeedVerb = "give export, import, show, standard, backups, backup, verify, restore or close (try dmc campaign --help)";
 
     /// <summary>The message for an <c>--as</c> that is not a valid campaign name (exit code 2); <see cref="CampaignImporter"/> says the same when it is called with one.</summary>
     internal const string AsMessage = "--as must be lowercase letters, digits and hyphens, starting with a letter or digit";
@@ -75,6 +80,7 @@ internal static class CampaignArguments
         Backup => ["--help", "--prune"],
         Verify => ["--help", "--backup", "--accounting", "--list", "--all"],
         Restore => ["--help", "--from", "--yes"],
+        Close => ["--help", "--yes"],
         _ => ["--help"],
     };
 
@@ -170,7 +176,8 @@ internal static class CampaignArguments
             Backups => new BackupsRequest(target!),
             Backup => new BackupRequest(target!, prune),
             Verify => new VerifyRequest(target!, new VerifyOptions(Value("--backup"), Value("--accounting"), flags.Contains("--list"), flags.Contains("--all"))),
-            _ => new RestoreRequest(target!, Value("--from"), flags.Contains("--yes")),
+            Restore => new RestoreRequest(target!, Value("--from"), flags.Contains("--yes")),
+            _ => new CloseRequest(target!, flags.Contains("--yes")),
         };
     }
 

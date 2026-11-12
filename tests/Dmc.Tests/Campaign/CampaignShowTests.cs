@@ -189,6 +189,44 @@ public sealed class CampaignShowTests
         Assert.AreEqual($"{zip} is damaged: campaign/game-state.md is missing", caught.Message);
     }
 
+    // ---------- a closed campaign (spec 010) ----------
+
+    [TestMethod]
+    public void AClosingBackupShowsWhenTheCampaignWasClosed()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        var close = MigrationRoot.Run("close", MigrationRoot.Name, "--yes");
+        Assert.AreEqual(0, close.ExitCode, close.ToString());
+        var mark = ClosedCampaign.Read(root.Campaign())!;
+        foreach (string zip in new[] { root.InBackups(mark.Backup), Path.Combine(root.Folder, "exports", mark.Backup) })
+        {
+            var result = MigrationRoot.Run("show", zip);
+            Assert.AreEqual(0, result.ExitCode, result.ToString());
+            Assert.AreEqual("closed: " + mark.Time, result.StdoutLines[^1]);
+        }
+    }
+
+    [TestMethod]
+    public void AnExportOfAnOpenCampaignHasNoClosedLine()
+    {
+        using var root = new TempRoot();
+        string zip = Archive(root);
+        Assert.IsFalse(Show(root, zip).Any(l => l.StartsWith("closed:", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void AnExportOfAClosedCampaignWithAGarbledMarkSaysSo()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        root.Write(".closed", "garbled");
+        var export = MigrationRoot.Run("export", MigrationRoot.Name);
+        Assert.AreEqual(0, export.ExitCode, export.ToString());
+        string zip = export.StdoutLines.Single()[(export.StdoutLines.Single().IndexOf(" to ", StringComparison.Ordinal) + 4)..];
+        Assert.AreEqual("closed: (mark unreadable)", MigrationRoot.Run("show", zip).StdoutLines[^1]);
+    }
+
     // ---------- the size ----------
 
     [TestMethod]

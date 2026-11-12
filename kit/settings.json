@@ -68,6 +68,7 @@
       "Edit(/templates/**)",
       "Edit(/migrations/**)",
       "Edit(/.dmc/**)",
+      "Edit(/adventures/*/.closed)",
       "Bash(dmc update*)",
       "Bash(dmc install*)",
       "Bash(dmc refresh*)",

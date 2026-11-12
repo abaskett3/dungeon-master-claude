@@ -4,8 +4,9 @@ using Dmc.Size;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc recall [NAME] WORDS... [--folder PATH]</c>: the lines that best match some words across a campaign, its
-/// Predecessor chain and their modules, best first, within about 1,500 estimated tokens (contracts/dmc-recall.md).
+/// <c>dmc recall [NAME] WORDS... [--folder PATH]</c>: the lines that best match some words across a campaign, the
+/// digests it holds, the campaigns linked to it (spec 011) and their modules, best first, within about 1,500 estimated
+/// tokens (contracts/dmc-recall.md).
 /// </summary>
 /// <remarks>
 /// It never writes, moves or deletes a file and stores nothing. Hits and "nothing matched" exit 0; a failure is one
@@ -18,18 +19,21 @@ public sealed class RecallCommand : ICommand
     public string Name => "recall";
 
     /// <inheritdoc />
-    public string Summary => "the lines that best match some words in a campaign and what it continues: dmc recall [NAME] WORDS... [--folder PATH]";
+    public string Summary => "the lines that best match some words in a campaign and the campaigns linked to it: dmc recall [NAME] WORDS... [--folder PATH]";
 
     /// <summary>The text <c>--help</c> prints.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
 usage: dmc recall [NAME] WORDS... [--folder PATH]
 
-Searches a campaign's files, the campaigns its Predecessor lines name and their modules, and prints the lines that
-best match the words, best first: canon above archives, sheets, other story files and session logs, an earlier
-campaign a little lower, a module lowest. Each line shows its campaign, file and line, its session, and DM for a line
-only the DM may see; a long line is cut to the part around the match. The output stays within about 1,500 estimated
-tokens. import/, exports/ and backups/ are never searched. It changes nothing and stores nothing.
+Searches a campaign's files, the digests of closed campaigns it holds (digests/), every campaign linked to it through
+the Continuity sections of their player-options.md, and their modules, and prints the lines that best match the words,
+best first: canon above digests, archives, sheets, other story files and session logs, a linked campaign a little
+lower, a campaign whose digest is held nearer lower still, a module lowest. Each line shows its campaign and, for
+another campaign, its link (continues, sequel, side or world), its file and line, the link of a digest's campaign, its
+session, and DM for a line only the DM may see; a line printed once is not printed again from elsewhere, and a long
+line is cut to the part around the match. The output stays within about 1,500 estimated tokens. import/, exports/ and
+backups/ are never searched. It changes nothing and stores nothing.
 
   NAME      a campaign folder in adventures/, when it names one and words follow (default: the active campaign)
   WORDS     what to search for

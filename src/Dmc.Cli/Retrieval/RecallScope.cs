@@ -1,13 +1,15 @@
-using System.Text;
-using System.Text.RegularExpressions;
+using Dmc.Campaign;
 
 namespace Dmc.Retrieval;
 
-/// <summary>A file's authority for recall, most authoritative first (research R1). The order breaks ties between equal scores.</summary>
+/// <summary>A file's authority for recall, most authoritative first (research R1; spec 011 R4). The order breaks ties between equal scores.</summary>
 internal enum Tier
 {
     /// <summary><c>story/canon.md</c>.</summary>
     Canon,
+
+    /// <summary>A digest of a closed campaign, <c>digests/&lt;campaign&gt;/*.md</c> (spec 011): its curated facts, reorganised by subject.</summary>
+    Digest,
 
     /// <summary><c>story/canon-archive.md</c>, <c>story/dm-notes-archive.md</c> and <c>character-sheets/*-history.md</c>.</summary>
     Archive,
@@ -29,27 +31,29 @@ internal enum Tier
 /// <param name="Label">How a hit names it: the campaign's folder name, or <c>modules/&lt;name&gt;</c>.</param>
 /// <param name="Folder">Its folder, absolute.</param>
 /// <param name="IsModule">True for a module.</param>
-/// <param name="Distance">0 for the campaign recalled in, 1 for its predecessor, and so on; a module has its campaign's.</param>
-internal sealed record Place(string Label, string Folder, bool IsModule, int Distance);
+/// <param name="Distance">0 for the campaign recalled in, else its distance in the linked set; a module has its nearest campaign's.</param>
+/// <param name="Link">How a campaign other than the one recalled in is linked to it (<c>continues</c>, <c>sequel</c>, <c>side</c> or <c>world</c>); null for that campaign and for a module.</param>
+internal sealed record Place(string Label, string Folder, bool IsModule, int Distance, string? Link = null);
 
 /// <summary>One file in recall's scope.</summary>
 /// <param name="Place">The campaign or module it belongs to.</param>
 /// <param name="Relative">Its path in the place's folder, with <c>/</c>.</param>
 /// <param name="Tier">Its authority.</param>
 /// <param name="Weight">The factor its lines' relevance is multiplied by.</param>
-internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double Weight);
+/// <param name="DigestLink">For a digest's file, how the campaign it digests is linked to the one recalled in; null otherwise, and for a digest of that campaign itself.</param>
+internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double Weight, string? DigestLink = null);
 
 /// <summary>
-/// What recall searches (research R1, R6, R11): the campaign; each campaign its Predecessor line names, to the end of
-/// the chain; and each of their modules, once. Builds the list of files with their weights, and the notices for what
-/// could not be searched.
+/// What recall searches (research R1, R6, R11; spec 011 R4): the campaign; every campaign of its linked set
+/// (<see cref="CampaignLinks"/>) whose folder is there; the digests any of them hold; and each module any of them
+/// names, once. Builds the list of files with their weights, and the notices for what could not be searched.
 /// </summary>
-internal static partial class RecallScope
+internal static class RecallScope
 {
     /// <summary>The weight of a canon line: the highest, so canon wins over narrative that matches about as well.</summary>
     const double CanonWeight = 1.30;
 
-    /// <summary>The weight of an archive or history line: curated facts that can no longer come up often.</summary>
+    /// <summary>The weight of an archive or history line: curated facts that can no longer come up often. A digest's lines take it too.</summary>
     const double ArchiveWeight = 1.20;
 
     /// <summary>The weight of a sheet line.</summary>
@@ -64,69 +68,63 @@ internal static partial class RecallScope
     /// <summary>The weight of a module line: the module as printed, below every campaign file, since canon wins over it.</summary>
     const double ModuleWeight = 0.80;
 
-    /// <summary>The factor applied once per step back along the Predecessor chain.</summary>
+    /// <summary>The factor applied once per step away in the linked set.</summary>
     const double StepFactor = 0.95;
 
+    /// <summary>
+    /// The factor on every file of a campaign whose digest a campaign nearer the start holds: its own folder is the last
+    /// resort, so a digest's line (1.20 × 0.95 a step) ranks above the same line in the folder it digests (spec 011 R4).
+    /// </summary>
+    const double LastResortFactor = 0.85;
+
     /// <summary>The most notices printed before <c>(+N more skipped)</c>.</summary>
-    public const int NoticesShown = 3;
+    public const int NoticesShown = CampaignLinks.NoticesShown;
 
     /// <summary>Builds the scope of a recall in a campaign.</summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="campaign">The campaign's folder name in <c>adventures/</c>, already checked to exist.</param>
-    /// <param name="notices">Gets one line for each predecessor or module that could not be found.</param>
+    /// <param name="notices">Gets one line for each link that could not be followed and each module that could not be found.</param>
     /// <returns>The files to search, the campaign's first.</returns>
     public static List<ScopeFile> Build(string dmcFolder, string campaign, List<string> notices)
     {
-        string adventures = Path.Combine(dmcFolder, "adventures");
-        var campaigns = new List<Place>();
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        string? next = campaign;
-        for (int distance = 0; next is not null; distance++)
-        {
-            var place = new Place(next, Path.Combine(adventures, next), false, distance);
-            campaigns.Add(place);
-            visited.Add(next);
-            string? value = LineValue(Path.Combine(place.Folder, "player-options.md"), PredecessorLine());
-            next = null;
-            if (value is null)
-                continue;
-            string name = Clean(value, "adventures/");
-            if (name.Length == 0 || name.Equals("none", StringComparison.OrdinalIgnoreCase) || visited.Contains(name))
-                continue;
-            if (!IsPlainName(name) || !Directory.Exists(Path.Combine(adventures, name)))
-            {
-                notices.Add($"{place.Label}: Predecessor {name} is not in adventures/, not searched");
-                continue;
-            }
-            next = name;
-        }
+        var set = CampaignLinks.Build(dmcFolder, campaign);
+        foreach (var notice in set.Notices)
+            notices.Add(notice.NotSearched ? notice.Text + ", not searched" : notice.Text);
 
-        var places = new List<Place>(campaigns);
-        var modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var place in campaigns)
+        var places = new List<(Place Place, bool LastResort)> { (new Place(campaign, set.StartFolder, false, 0), false) };
+        foreach (var member in set.Members.Where(m => m.Present))
+            places.Add((new Place(member.Name, member.Folder, false, member.Distance, member.Label), member.DigestHolder is not null));
+        foreach (var module in set.Modules)
         {
-            // The same reading of the Module folder line as dmc campaign export's, so the two never disagree.
-            string progress = Path.Combine(place.Folder, "module-progress.md");
-            string? name = ReadText(progress) is { } text ? Campaign.CampaignExporter.ModuleFolder(text) : null;
-            if (name is null || !modules.Add(name))
-                continue;
-            string folder = Path.Combine(dmcFolder, "modules", name);
-            if (!Directory.Exists(folder))
+            if (!module.Present)
             {
-                notices.Add($"{place.Label}: module folder modules/{name}/ not found, not searched");
+                notices.Add($"{module.Via}: module folder modules/{module.Name}/ not found, not searched");
                 continue;
             }
-            places.Add(new Place($"modules/{name}", folder, true, place.Distance));
+            places.Add((new Place($"modules/{module.Name}", module.Folder, true, module.Distance), false));
         }
 
         var files = new List<ScopeFile>();
-        foreach (var place in places)
+        foreach (var (place, lastResort) in places)
         {
-            var relatives = place.IsModule ? SourceFiles.Module(place.Folder) : SourceFiles.Campaign(place.Folder);
-            foreach (string relative in relatives)
+            double factor = lastResort ? LastResortFactor : 1.0;
+            if (place.IsModule)
             {
-                var tier = place.IsModule ? Tier.Module : TierOf(relative);
-                files.Add(new ScopeFile(place, relative, tier, WeightOf(tier) * Math.Pow(StepFactor, place.Distance)));
+                foreach (string relative in SourceFiles.Module(place.Folder))
+                    files.Add(new ScopeFile(place, relative, Tier.Module, ModuleWeight * Math.Pow(StepFactor, place.Distance)));
+                continue;
+            }
+            foreach (string relative in SourceFiles.Campaign(place.Folder))
+            {
+                var tier = TierOf(relative);
+                if (tier != Tier.Digest)
+                {
+                    files.Add(new ScopeFile(place, relative, tier, WeightOf(tier) * Math.Pow(StepFactor, place.Distance) * factor));
+                    continue;
+                }
+                string digested = relative.Split('/')[1];
+                int distance = set.DigestDistance(digested, place.Distance);
+                files.Add(new ScopeFile(place, relative, tier, ArchiveWeight * Math.Pow(StepFactor, distance) * factor, set.DigestLabel(digested, place.Link)));
             }
         }
         return files;
@@ -139,6 +137,8 @@ internal static partial class RecallScope
         string path = relative.ToLowerInvariant();
         if (path == "story/canon.md")
             return Tier.Canon;
+        if (path.StartsWith("digests/", StringComparison.Ordinal) && path.Split('/').Length >= 3)
+            return Tier.Digest;
         if (path is "story/canon-archive.md" or "story/dm-notes-archive.md"
             || (path.StartsWith("character-sheets/", StringComparison.Ordinal) && path.EndsWith("-history.md", StringComparison.Ordinal)))
             return Tier.Archive;
@@ -154,61 +154,10 @@ internal static partial class RecallScope
     public static double WeightOf(Tier tier) => tier switch
     {
         Tier.Canon => CanonWeight,
-        Tier.Archive => ArchiveWeight,
+        Tier.Digest or Tier.Archive => ArchiveWeight,
         Tier.Sheet => SheetWeight,
         Tier.Story => StoryWeight,
         Tier.Session => SessionWeight,
         _ => ModuleWeight,
     };
-
-    /// <summary>The value after the first line of a file that <paramref name="pattern"/> matches, or null when the file or the line is missing or unreadable.</summary>
-    /// <param name="path">The file.</param>
-    /// <param name="pattern">A pattern whose group 1 is the value.</param>
-    static string? LineValue(string path, Regex pattern)
-    {
-        var match = ReadText(path) is { } text ? pattern.Match(text) : Match.Empty;
-        return match.Success ? match.Groups[1].Value : null;
-    }
-
-    /// <summary>
-    /// A file's text, or null when it is missing or cannot be read. Recall reads the same file again as part of the
-    /// scope, and that read names an unreadable file in a notice.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    static string? ReadText(string path)
-    {
-        if (!File.Exists(path))
-            return null;
-        try
-        {
-            return File.ReadAllText(path, Encoding.UTF8);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>A link's value as a folder name: an HTML comment, backticks, a leading <paramref name="prefix"/> and slashes removed.</summary>
-    /// <param name="value">The text after the line's colon.</param>
-    /// <param name="prefix"><c>adventures/</c> or <c>modules/</c>.</param>
-    static string Clean(string value, string prefix)
-    {
-        string name = CommentPattern().Replace(value, "").Trim().Trim('`').Trim().Replace('\\', '/');
-        if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            name = name[prefix.Length..];
-        return name.Trim('/');
-    }
-
-    /// <summary>True for one plain folder name: no separator, no drive, not <c>.</c> or <c>..</c>, not a dot folder.</summary>
-    /// <param name="name">The name.</param>
-    static bool IsPlainName(string name) => name.IndexOfAny(['/', '\\', ':']) < 0 && !name.StartsWith('.');
-
-    /// <summary>The Predecessor line of a campaign's <c>player-options.md</c>; group 1 is its value.</summary>
-    [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*Predecessor\*\*:[ \t]*(.*?)[ \t]*\r?$", RegexOptions.Multiline)]
-    private static partial Regex PredecessorLine();
-
-    /// <summary>An HTML comment.</summary>
-    [GeneratedRegex(@"<!--.*?-->")]
-    private static partial Regex CommentPattern();
 }

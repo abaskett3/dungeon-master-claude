@@ -6,9 +6,10 @@ using static Dmc.Tests.Retrieval.RetrievalFixtures;
 namespace Dmc.Tests.Retrieval;
 
 /// <summary>
-/// SC-004: a recall over a few megabytes of markdown (two campaigns and a module, the size of the measured play folder)
-/// finishes in under a second with the release build. CI builds <c>dmc</c> with Native AOT, so the bound there is one
-/// second, process start included; a local default build starts slower, so the local bound is looser.
+/// Spec 009 SC-004 and spec 011 SC-006: a recall over a few megabytes of markdown (a chain of three campaigns, a side
+/// campaign, a same-world campaign, a digest and a large module, the size of the measured play folder) finishes in under
+/// a second with the release build. CI builds <c>dmc</c> with Native AOT, so the bound there is one second, process start
+/// included; a local default build starts slower, so the local bound is looser.
 /// </summary>
 [TestClass]
 public sealed class RecallTimingTests
@@ -24,14 +25,23 @@ public sealed class RecallTimingTests
     [TestMethod]
     public void ARecallOverAFewMegabytesTakesUnderASecond()
     {
-        string root = NewChain();
+        string root = NewLinkedSet();
         try
         {
+            // The first campaign of the chain was played on a large module.
+            Write(root, $"adventures/{First}/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/" + Module + "/`\n");
+            Write(root, $"modules/{Module}/index.md", "# Fen Crossing\n");
             var random = new Random(179);
             int written = 0;
-            foreach (string folder in new[] { $"adventures/{Sequel}/story/sessions", $"adventures/{Predecessor}/story/sessions", $"modules/{Module}/chapters" })
+            string[] folders =
+            [
+                $"adventures/{Last}/story/sessions", $"adventures/{Middle}/story/sessions", $"adventures/{First}/story/sessions",
+                $"adventures/{SideTale}/story/sessions", $"adventures/{FarTale}/story/sessions", $"adventures/{Last}/digests/{Middle}",
+                $"modules/{Module}/chapters",
+            ];
+            foreach (string folder in folders)
             {
-                for (int file = 0; file < 20; file++)
+                for (int file = 0; file < 9; file++)
                 {
                     var text = new StringBuilder($"# File {file}\n\n### Scene 1: Somewhere\n\n");
                     while (text.Length < 50_000)
@@ -41,7 +51,8 @@ public sealed class RecallTimingTests
                             text.Append(Vocabulary[random.Next(Vocabulary.Length)]).Append(w % 7 == 6 ? ". " : " ");
                         text.Append(random.Next(1000)).Append('\n');
                     }
-                    string name = folder.EndsWith("sessions", StringComparison.Ordinal) ? $"session-{file + 100:000}.md" : $"{file + 10:00}-generated.md";
+                    string name = folder.EndsWith("sessions", StringComparison.Ordinal) ? $"session-{file + 100:000}.md"
+                        : folder.Contains("/digests/", StringComparison.Ordinal) ? $"people-{file + 1}.md" : $"{file + 10:00}-generated.md";
                     Write(root, $"{folder}/{name}", text.ToString());
                     written += text.Length;
                 }
@@ -55,7 +66,7 @@ public sealed class RecallTimingTests
             for (int run = 0; run < 3; run++)
             {
                 var clock = Stopwatch.StartNew();
-                var result = DmcRunner.BlackBox(["recall", "--folder", root, Sequel, "smuggler", "lantern", "ledger", "night"]);
+                var result = DmcRunner.BlackBox(["recall", "--folder", root, Last, "smuggler", "lantern", "ledger", "night"]);
                 clock.Stop();
                 Assert.AreEqual(0, result.ExitCode, result.Stderr);
                 best = Math.Min(best, clock.Elapsed.TotalSeconds);

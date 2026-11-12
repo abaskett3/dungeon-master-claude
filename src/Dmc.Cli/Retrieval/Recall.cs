@@ -3,9 +3,9 @@ using System.Text;
 namespace Dmc.Retrieval;
 
 /// <summary>
-/// <c>dmc recall</c>'s work (research R1, R4, R5, R11; contracts/dmc-recall.md): index every line unit of the scope in
-/// memory, rank the units by BM25 times their file's weight, and return the best as hit lines within the output cap.
-/// Reads only; stores nothing.
+/// <c>dmc recall</c>'s work (research R1, R4, R5, R11; contracts/dmc-recall.md; spec 011 R4 to R6): index every line unit
+/// of the scope in memory, rank the units by BM25 times their file's weight, and return the best as hit lines within the
+/// output cap, each line once, labelled with how its campaign is linked. Reads only; stores nothing.
 /// </summary>
 internal static class Recall
 {
@@ -66,13 +66,20 @@ internal static class Recall
 
         int used = output.Sum(Bytes);
         int shown = 0;
+        // A line printed once (spec 011 R5): a digest copies its campaign's lines word for word and ranks above them, so
+        // the copy is printed and the source counted among the rest, by the migrations' meaning of "the same line".
+        var printed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var unit in ranked)
         {
+            string same = Campaign.ContentUnits.Normalise(unit.Text) ?? unit.Text;
+            if (printed.Contains(same))
+                continue;
             string line = Hit(unit, wanted);
             bool more = shown + 1 < ranked.Count;
             if (used + Bytes(line) + (more ? ClosingLineRoom : 0) > CapBytes)
                 break;
             output.Add(line);
+            printed.Add(same);
             used += Bytes(line);
             shown++;
         }
@@ -132,13 +139,23 @@ internal static class Recall
             .ToList();
     }
 
-    /// <summary>One hit as printed: <c>&lt;place&gt; &lt;file&gt;:&lt;line&gt; [&lt;session&gt;] [DM] | &lt;text&gt;</c>, the text trimmed around the match.</summary>
+    /// <summary>
+    /// One hit as printed, the text trimmed around the match (spec 011 contracts/recall-and-lookup.md § Hit line):
+    /// <c>&lt;place&gt;[ (&lt;link&gt;)] &lt;file&gt;:&lt;line&gt;[ (&lt;digest link&gt;)][ &lt;session&gt;][ DM] | &lt;text&gt;</c>.
+    /// A campaign other than the one recalled in carries its link after its name; a digest's line carries the digested
+    /// campaign's link after the file, so it is not read as the holder's.
+    /// </summary>
     /// <param name="unit">The unit.</param>
     /// <param name="wanted">The query's stems.</param>
     static string Hit(LineUnit unit, IReadOnlySet<string> wanted)
     {
         var line = new StringBuilder();
-        line.Append(unit.File.Place.Label).Append(' ').Append(unit.File.Relative).Append(':').Append(unit.Line);
+        line.Append(unit.File.Place.Label);
+        if (unit.File.Place.Link is { } link)
+            line.Append(" (").Append(link).Append(')');
+        line.Append(' ').Append(unit.File.Relative).Append(':').Append(unit.Line);
+        if (unit.File.DigestLink is { } digest)
+            line.Append(" (").Append(digest).Append(')');
         if (unit.Session is not null)
             line.Append(' ').Append(unit.Session);
         if (unit.DmOnly)

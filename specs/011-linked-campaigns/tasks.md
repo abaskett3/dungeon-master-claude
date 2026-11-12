@@ -177,7 +177,7 @@ is found in `a`'s digest and labelled; the second appears once, from the digest;
 
 ### Tests
 
-- [ ] T015 [US2] Extend `tests/Dmc.Tests/Retrieval/RetrievalFixtures.cs`:
+- [X] T015 [US2] Extend `tests/Dmc.Tests/Retrieval/RetrievalFixtures.cs`:
       - the sequel's `player-options.md` gets the Continuity section, `- **Continues**: \`old-road\``, and old-road's
         is `none`; one variant keeps the old Predecessor line, for FR-005;
       - add a linked-set fixture in a builder of its own with its own temporary root (`BuildLinkedSet`, apart from
@@ -186,7 +186,7 @@ is found in `a`'s digest and labelled; the second appears once, from the digest;
         `digests/b/` in FR-013's shape (`index.md`, `people.md`, `places.md`, `world.md`, `spine.md`, `secrets.md`);
       - add a side campaign `d` (Side campaign of `c`) and a same-world campaign `e` (Shares a world with `c`);
       - give each campaign a canon line only it holds.
-- [ ] T016 [US2] Update and extend `tests/Dmc.Tests/Retrieval/RecallLibraryTests.cs` (needs T015):
+- [X] T016 [US2] Update and extend `tests/Dmc.Tests/Retrieval/RecallLibraryTests.cs` (needs T015):
       - Move the Predecessor tests to the Continuity section, and change the expected predecessor hit to
         `old-road (continues) story/canon-archive.md:3 s12.3 | ...`.
       - Change the missing-campaign notice to `<campaign>: Continues gone-road is not in adventures/, not searched`.
@@ -204,30 +204,30 @@ is found in `a`'s digest and labelled; the second appears once, from the digest;
         - a closed campaign with only a Predecessor line is still followed (FR-005);
         - recalling in the closed `a` labels the hits from `b` and `c` `(sequel)`;
         - a ring of Shares a world with links searches each campaign once.
-- [ ] T017 [P] [US2] In `tests/Dmc.Tests/Retrieval/RecallCommandContract.cs` (needs T015), test through the built
+- [X] T017 [P] [US2] In `tests/Dmc.Tests/Retrieval/RecallCommandContract.cs` (needs T015), test through the built
       `dmc`:
       - the hit lines of contracts/recall-and-lookup.md § Hit line: a labelled hit from another campaign, a digest
         hit, and a module hit with no label;
       - the 6,000-byte cap over the whole linked set;
       - the predecessor line's new expected start, `old-road (continues) story/canon-archive.md:3 s12.3 | `.
-- [ ] T018 [P] [US2] In `tests/Dmc.Tests/Retrieval/LookupLibraryTests.cs` (FR-019, R7):
+- [X] T018 [P] [US2] In `tests/Dmc.Tests/Retrieval/LookupLibraryTests.cs` (FR-019, R7):
       - `dmc lookup c <a heading in digests/b/people.md>` prints that section;
       - with a sheet of the same heading in `c/character-sheets/`, it prints the usual list of matches;
       - `dmc lookup c/digests/b/people.md <name>` searches that file only.
 
       No code change is expected. If one fails, fix it in `src/Dmc.Cli/Retrieval/LookupSource.cs`.
-- [ ] T019 [P] [US2] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs` (SC-001, FR-020a), test that a sequel's resume
+- [X] T019 [P] [US2] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs` (SC-001, FR-020a), test that a sequel's resume
       total is identical with and without a `digests/<name>/` folder of several files. No code change is expected,
       since `ReadSet.Build` names files only
-- [ ] T020 [P] [US2] Grow `tests/Dmc.Tests/Retrieval/RecallTimingTests.cs` to SC-006: a chain of three campaigns, a
+- [X] T020 [P] [US2] Grow `tests/Dmc.Tests/Retrieval/RecallTimingTests.cs` to SC-006: a chain of three campaigns, a
       side campaign, a same-world campaign, their digests and a large module, about 3 MB of markdown in all. One
       recall on the release build stays within 1 second and within the output cap, as the test checks today
 
 ### Implementation
 
-- [ ] T021 [P] [US2] In `src/Dmc.Cli/Retrieval/LineUnits.cs`, make a file DM-only also when its path is
+- [X] T021 [P] [US2] In `src/Dmc.Cli/Retrieval/LineUnits.cs`, make a file DM-only also when its path is
       `digests/<name>/secrets.md` (FR-012), and update the XML comment
-- [ ] T022 [US2] Rework `src/Dmc.Cli/Retrieval/RecallScope.cs` (needs T007):
+- [X] T022 [US2] Rework `src/Dmc.Cli/Retrieval/RecallScope.cs` (needs T007):
       - build the places from `CampaignLinks`, not by walking the Predecessor line: every member whose folder exists,
         and every module once, at its smallest distance;
       - give `Place` the member's link label, null for the recalled campaign and for modules;
@@ -242,7 +242,7 @@ is found in `a`'s digest and labelled; the second appears once, from the digest;
         not-a-folder-name notices;
       - delete `PredecessorLine` and anything else left unused;
       - rewrite the XML comments that describe the Predecessor chain.
-- [ ] T023 [US2] In `src/Dmc.Cli/Retrieval/Recall.cs` (needs T022):
+- [X] T023 [US2] In `src/Dmc.Cli/Retrieval/Recall.cs` (needs T022):
       - skip a hit whose `ContentUnits.Normalise` text equals that of a hit already printed, and count it in
         `(N more lines matched)` (R5);
       - print the label (contracts/recall-and-lookup.md § Hit line):
@@ -250,17 +250,17 @@ is found in `a`'s digest and labelled; the second appears once, from the digest;
         - `<place> <file>:<line> (<label>)...` for a digest hit, with the digested campaign's label;
         - no label on the recalled campaign's own files or on a module;
       - update the XML comments.
-- [ ] T024 [P] [US2] Update the XML comment and help text of `src/Dmc.Cli/Commands/RecallCommand.cs`: it searches
+- [X] T024 [P] [US2] Update the XML comment and help text of `src/Dmc.Cli/Commands/RecallCommand.cs`: it searches
       the campaign, its digests, its linked campaigns and their modules
-- [ ] T025 [P] [US2] Edit Accuracy item 1 of `kit/dm-rules.md` (FR-020):
+- [X] T025 [P] [US2] Edit Accuracy item 1 of `kit/dm-rules.md` (FR-020):
       - "the earlier campaigns its Predecessor line names" becomes the linked campaigns and their digests;
       - add one clause: a `(side)` or `(world)` hit is a fact of the world, which this campaign's characters do not
         know unless this campaign's files say they learned it, and a `(continues)` hit is known to those who were
         there;
       - grow the file by one line at most.
-- [ ] T026 [P] [US2] Update the header comment of `tools/recall-test.ps1`: recall follows the linked campaigns and
+- [X] T026 [P] [US2] Update the header comment of `tools/recall-test.ps1`: recall follows the linked campaigns and
       their digests, not the Predecessor line
-- [ ] T027 [US2] Run the Retrieval, Size and Toolkit tests, then the full suite; fix until green
+- [X] T027 [US2] Run the Retrieval, Size and Toolkit tests, then the full suite; fix until green
 
 **Checkpoint**: A digest written by hand in FR-013's shape is searched, ranked and looked up correctly. That is what
 FR-029 needs. Commit.
@@ -274,13 +274,13 @@ FR-029 needs. Commit.
 **Independent Test**: `b`'s canon says the party burned an inn the module describes intact. Recalling the inn in `c`
 ranks the canon line, or its digest copy, above the module's, and both are labelled.
 
-- [ ] T028 [US5] Add tests to `tests/Dmc.Tests/Retrieval/RecallLibraryTests.cs` (needs T016):
+- [X] T028 [US5] Add tests to `tests/Dmc.Tests/Retrieval/RecallLibraryTests.cs` (needs T016):
       - a module reached only through the side campaign `d` is searched, and its hits print
         `modules/<name> <file>:<line> DM | ...` with no label;
       - a module two members name is searched once, at the smaller distance;
       - the inn: the canon line (or its digest copy) ranks above the module line, and both are printed (US5
         scenarios 1 and 2).
-- [ ] T029 [US5] If T028 fails, fix the module list in `src/Dmc.Cli/Campaign/CampaignLinks.cs` or its use in
+- [X] T029 [US5] If T028 fails, fix the module list in `src/Dmc.Cli/Campaign/CampaignLinks.cs` or its use in
       `src/Dmc.Cli/Retrieval/RecallScope.cs`. FR-027 adds no rule and no kit text. US5 scenario 3 (no module text in a
       digest) is T050 and T063, in PR 2
 

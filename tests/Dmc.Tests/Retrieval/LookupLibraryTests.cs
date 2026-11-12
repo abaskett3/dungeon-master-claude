@@ -233,4 +233,57 @@ public sealed class LookupLibraryTests
         Assert.AreEqual($"no story/nothing.md in {Sequel}", Failure($"{Sequel}/story/nothing.md", "prices"));
         Assert.AreEqual("rules: no rules reference in rules/ (set one up with /dmc-setup-rules)", Failure("rules", "grappled"));
     }
+
+    [TestMethod]
+    public void ADigestsSubjectIsLookedUpLikeAnyHeadingOfTheCampaign()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            var lines = Lookup.Run(root, Last, "sister wren");
+            Assert.AreEqual($"adventures/{Last}/digests/{Middle}/people.md:3-5", lines[0]);
+            Assert.AreEqual("## Sister Wren", lines[1]);
+            StringAssert.Contains(string.Join('\n', lines), "keeps all its keys");
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    [TestMethod]
+    public void ADigestsSubjectAndASheetOfTheSameHeadingAreListed()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            Write(root, $"adventures/{Last}/character-sheets/npc-wren.md", "# Wren\n\n## Sister Wren\n\n- **Voice**: soft, never finishes a sentence\n");
+            var lines = Lookup.Run(root, Last, "sister wren");
+            CollectionAssert.AreEquivalent(new[]
+            {
+                $"adventures/{Last}/character-sheets/npc-wren.md:3: ## Sister Wren",
+                $"adventures/{Last}/digests/{Middle}/people.md:3: ## Sister Wren",
+            }, lines.ToArray());
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    [TestMethod]
+    public void OneDigestFileCanBeNamedAsTheSource()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            var lines = Lookup.Run(root, $"{Last}/digests/{First}/people.md", "tobin");
+            Assert.AreEqual($"adventures/{Last}/digests/{First}/people.md:3-5", lines[0]);
+            Assert.ThrowsExactly<DmcException>(() => Lookup.Run(root, $"{Last}/digests/{First}/people.md", "sister wren"));
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
 }

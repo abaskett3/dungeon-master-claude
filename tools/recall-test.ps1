@@ -3,8 +3,10 @@
 # answer is in the output and how often it is in the first hit. It is the repeatable form of the prototype that produced
 # the issue's figures (28/30 named and 22/30 indirect answers in the output).
 #
-# It is for the maintainer's own check on a real play folder, after the merge and after migration 004 has given the
-# sequel its Predecessor line. It never runs in CI and writes nothing. The questions file quotes campaign facts, so it
+# It is for the maintainer's own check on a real play folder, after the merge and after migration 005 has given the
+# sequel its Continuity section (spec 011): recall then searches the linked campaigns and the digests the sequel holds,
+# and spec 011 SC-004 reruns it once the predecessor's digest is in. It never runs in CI and writes nothing. The
+# questions file quotes campaign facts, so it
 # lives in the maintainer's DMC folder (suggested: recall-test/questions.tsv) and is never committed.
 #
 # Usage:     pwsh -File tools/recall-test.ps1 -Questions <file> [-Campaign <name>] [-Dmc <path>] [-Folder <DMC folder>]

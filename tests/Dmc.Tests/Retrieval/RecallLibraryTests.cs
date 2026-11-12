@@ -37,7 +37,7 @@ public sealed class RecallLibraryTests
     public void ALineOnlyThePredecessorHoldsIsFoundAndLabelledWithIt()
     {
         var lines = Run("giant eel free crossing");
-        Assert.AreEqual($"{Predecessor} story/canon-archive.md:3 s12.3 | - Oswin owes the party a free crossing for the giant eel they killed under his raft (s12.3).", lines[0]);
+        Assert.AreEqual($"{Predecessor} (continues) story/canon-archive.md:3 s12.3 | - Oswin owes the party a free crossing for the giant eel they killed under his raft (s12.3).", lines[0]);
     }
 
     [TestMethod]
@@ -89,8 +89,9 @@ public sealed class RecallLibraryTests
     [TestMethod]
     public void OfTwoLinesThatMatchAlikeCanonComesBeforeTheSessionLog()
     {
-        Write(_root, $"adventures/{Sequel}/story/canon.md", "# Canon\n\n- The lantern on the ferry post is lit at dusk every evening.\n");
-        Write(_root, $"adventures/{Sequel}/story/sessions/session-032.md", "# Session 32\n\n### Scene 1: Dusk\n\nThe lantern on the ferry post is lit at dusk every evening.\n");
+        // Lines that differ only in a word the query does not hold match alike; identical lines would print once (spec 011 R5).
+        Write(_root, $"adventures/{Sequel}/story/canon.md", "# Canon\n\n- The lantern on the ferry post is lit at dusk every evening by Oswin.\n");
+        Write(_root, $"adventures/{Sequel}/story/sessions/session-032.md", "# Session 32\n\n### Scene 1: Dusk\n\nThe lantern on the ferry post is lit at dusk every evening by Hedda.\n");
         var lines = Run("lantern dusk evening");
         Assert.IsLessThan(IndexOf(lines, "session-032.md"), IndexOf(lines, "story/canon.md"));
     }
@@ -106,14 +107,15 @@ public sealed class RecallLibraryTests
     }
 
     [TestMethod]
-    public void TheSameLineRanksBelowInThePredecessorAndLowestInTheModule()
+    public void ALikeLineRanksBelowInThePredecessorAndLowestInTheModule()
     {
-        const string line = "- The ford stones are slick with moss after the spring rain.";
-        Write(_root, $"adventures/{Sequel}/story/summary.md", "# Summary\n\n" + line + "\n");
-        Write(_root, $"adventures/{Predecessor}/story/summary.md", "# Summary\n\n" + line + "\n");
-        Write(_root, $"modules/{Module}/chapters/02-stones.md", "# Stones\n\n" + line + "\n");
+        // Lines that differ only in a word the query does not hold match alike; identical lines would print once (R5).
+        const string line = "- The ford stones are slick with moss after the spring rain, said ";
+        Write(_root, $"adventures/{Sequel}/story/summary.md", "# Summary\n\n" + line + "Oswin.\n");
+        Write(_root, $"adventures/{Predecessor}/story/summary.md", "# Summary\n\n" + line + "Hedda.\n");
+        Write(_root, $"modules/{Module}/chapters/02-stones.md", "# Stones\n\n" + line + "Tobin.\n");
         var lines = Run("ford stones moss spring rain");
-        int own = IndexOf(lines, $"{Sequel} story/summary.md"), earlier = IndexOf(lines, $"{Predecessor} story/summary.md"), module = IndexOf(lines, "02-stones.md");
+        int own = IndexOf(lines, $"{Sequel} story/summary.md"), earlier = IndexOf(lines, $"{Predecessor} (continues) story/summary.md"), module = IndexOf(lines, "02-stones.md");
         Assert.IsTrue(own >= 0 && own < earlier && earlier < module, string.Join('\n', lines));
     }
 
@@ -192,6 +194,24 @@ public sealed class RecallLibraryTests
     }
 
     [TestMethod]
+    public void AMissingCampaignOnTheContinuesLineIsANotice()
+    {
+        Write(_root, $"adventures/{Sequel}/player-options.md", "# Options\n\n" + Continuity("gone-road"));
+        var lines = Run("Oswin ferryman charges cart");
+        Assert.AreEqual($"{Sequel}: Continues gone-road is not in adventures/, not searched", lines[0]);
+    }
+
+    [TestMethod]
+    public void TheSameLineInTwoPlacesIsPrintedOnceAndTheOtherCounted()
+    {
+        const string line = "- The ford stones are slick with moss after the spring rain (s30.3).";
+        Write(_root, $"adventures/{Sequel}/story/summary.md", "# Summary\n\n" + line + "\n");
+        Write(_root, $"adventures/{Predecessor}/story/summary.md", "# Summary\n\n" + line + "\n");
+        var lines = Run("slick stones moss spring rain");
+        CollectionAssert.AreEqual(new[] { $"{Sequel} story/summary.md:3 s30.3 | " + line, "(1 more lines matched)" }, lines);
+    }
+
+    [TestMethod]
     public void ALoopInTheChainIsFollowedOnce()
     {
         Write(_root, $"adventures/{Predecessor}/player-options.md", "# Options\n\n- **Predecessor**: " + Sequel + "\n");
@@ -248,7 +268,156 @@ public sealed class RecallLibraryTests
         Assert.AreEqual(Tier.Sheet, RecallScope.TierOf("character-sheets/minor-npcs.md"));
         Assert.AreEqual(Tier.Session, RecallScope.TierOf("story/sessions/session-001.md"));
         Assert.AreEqual(Tier.Story, RecallScope.TierOf("maps/fen.md"));
+        Assert.AreEqual(Tier.Digest, RecallScope.TierOf("digests/old-road/people.md"));
+        Assert.AreEqual(Tier.Story, RecallScope.TierOf("digests/notes.md"));
         Assert.IsGreaterThan(RecallScope.WeightOf(Tier.Session), RecallScope.WeightOf(Tier.Canon));
         Assert.IsGreaterThan(RecallScope.WeightOf(Tier.Module), RecallScope.WeightOf(Tier.Session));
+    }
+}
+
+/// <summary>
+/// <c>dmc recall</c> over spec 011's linked set (<see cref="RetrievalFixtures.NewLinkedSet"/>): digests found first and
+/// labelled, a line printed once, the ranking of own canon, digest and digested campaign, side and same-world labels,
+/// DM-only secrets, missing folders, the old Predecessor line, and recall in a closed campaign (FR-017 to FR-018,
+/// research R4 to R6).
+/// </summary>
+[TestClass]
+public sealed class RecallLinkedSetTests
+{
+    /// <summary>The test's DMC folder, with the linked set.</summary>
+    string _root = "";
+
+    /// <summary>Makes the DMC folder.</summary>
+    [TestInitialize]
+    public void MakeFolder() => _root = NewLinkedSet();
+
+    /// <summary>Deletes it.</summary>
+    [TestCleanup]
+    public void RemoveFolder() => DmcFolders.Delete(_root);
+
+    /// <summary>Recalls in a campaign of the set.</summary>
+    /// <param name="query">The words.</param>
+    /// <param name="campaign">The campaign; the last of the chain by default.</param>
+    List<string> Run(string query, string campaign = Last) => Recall.Run(_root, campaign, query);
+
+    /// <summary>The index of the first output line that starts with <paramref name="start"/>, or -1.</summary>
+    /// <param name="lines">The output.</param>
+    /// <param name="start">What the line starts with.</param>
+    static int IndexOf(List<string> lines, string start) => lines.FindIndex(l => l.StartsWith(start, StringComparison.Ordinal));
+
+    /// <summary>The output as one string, for a failure message.</summary>
+    /// <param name="lines">The output.</param>
+    static string Show(List<string> lines) => string.Join('\n', lines);
+
+    [TestMethod]
+    public void AFactOnlyTheFirstCampaignHoldsComesFromTheDigestLabelledContinues()
+    {
+        var lines = Run("miller Tobin abbey bell millpond raiders");
+        Assert.AreEqual($"{Last} digests/{First}/places.md:5 (continues) s4.2 | {FirstLine}", lines[0]);
+        Assert.AreEqual(1, lines.Count(l => l.Contains("millpond")), Show(lines));
+    }
+
+    [TestMethod]
+    public void ALineInTheMiddleCanonAndItsDigestIsPrintedOnceFromTheDigest()
+    {
+        var lines = Run("Sister Wren ferry tolls iron box chapel altar");
+        Assert.AreEqual($"{Last} digests/{Middle}/places.md:5 (continues) s20.1 | {MiddleLine}", lines[0]);
+        Assert.AreEqual(1, lines.Count(l => l.Contains("iron box")), Show(lines));
+        StringAssert.Matches(lines[^1], new System.Text.RegularExpressions.Regex(@"^\(\d+ more lines matched\)$"));
+    }
+
+    [TestMethod]
+    public void OwnCanonRanksAboveTheDigestWhichRanksAboveTheDigestedCampaignsCanon()
+    {
+        var lines = Run("east gate Harrowby barred sunset");
+        Assert.AreEqual(0, IndexOf(lines, $"{Last} story/canon.md:5 s40.1 | "), Show(lines));
+        Assert.AreEqual(1, IndexOf(lines, $"{Last} digests/{Middle}/world.md:5 (continues) s20.4 | "), Show(lines));
+        Assert.AreEqual(2, IndexOf(lines, $"{Middle} (continues) story/canon.md:6 s20.4 | "), Show(lines));
+    }
+
+    [TestMethod]
+    public void SideAndSameWorldHitsAreLabelledAndTheCampaignsOwnAreNot()
+    {
+        Assert.AreEqual(0, IndexOf(Run("Thornwick bridge burned eclipse"), $"{SideTale} (side) story/canon.md:3 s3.1 | "));
+        Assert.AreEqual(0, IndexOf(Run("Greywater mine flooded valley copper prices"), $"{FarTale} (world) story/canon.md:3 s7.1 | "));
+        Assert.AreEqual(0, IndexOf(Run("reeve copper chain office smiles"), $"{Last} story/canon.md:6 s41.2 | "));
+    }
+
+    [TestMethod]
+    public void EveryLineOfADigestsSecretsIsDmOnly()
+    {
+        var lines = Run("abbot sold chapel relic smugglers gambling debts");
+        Assert.AreEqual(0, IndexOf(lines, $"{Last} digests/{Middle}/secrets.md:5 (continues) s22.3 DM | "), Show(lines));
+    }
+
+    [TestMethod]
+    public void AMissingFolderWhoseDigestIsHeldIsSearchedThroughTheDigestWithNoNotice()
+    {
+        Directory.Delete(Path.Combine(_root, "adventures", Middle), recursive: true);
+        var lines = Run("Sister Wren ferry tolls iron box chapel altar");
+        Assert.AreEqual($"{Last} digests/{Middle}/places.md:5 (continues) s20.1 | {MiddleLine}", lines[0]);
+        // The first campaign is out of reach now, but its digest still counts as an earlier campaign's.
+        Assert.AreEqual($"{Last} digests/{First}/places.md:5 (continues) s4.2 | {FirstLine}", Run("miller Tobin abbey bell millpond raiders")[0]);
+
+        Directory.Delete(Path.Combine(_root, "adventures", Last, "digests", Middle), recursive: true);
+        Assert.AreEqual($"{Last}: Continues {Middle} is not in adventures/, not searched", Run("Sister Wren ferry tolls iron box")[0]);
+    }
+
+    [TestMethod]
+    public void AClosedCampaignWithOnlyAPredecessorLineIsStillFollowed()
+    {
+        Write(_root, $"adventures/{Middle}/player-options.md", "# Campaign options\n\n- **Predecessor**: " + First + "\n");
+        Write(_root, $"adventures/{First}/story/sessions/session-005.md",
+            "# Session 5\n\n### Scene 1: The well\n\nThe old well behind the mill has been dry since the earthquake.\n");
+        var lines = Run("old well mill dry earthquake");
+        Assert.AreEqual(0, IndexOf(lines, $"{First} (continues) story/sessions/session-005.md:5 s5.1 | "), Show(lines));
+    }
+
+    [TestMethod]
+    public void RecallingInTheClosedFirstCampaignLabelsTheLaterOnesSequel()
+    {
+        var reeve = Run("reeve copper chain office smiles", First);
+        Assert.AreEqual(0, IndexOf(reeve, $"{Last} (sequel) story/canon.md:6 s41.2 | "), Show(reeve));
+        var wren = Run("Sister Wren ferry tolls iron box chapel altar", First);
+        Assert.AreEqual(0, IndexOf(wren, $"{Middle} (sequel) story/canon.md:5 s20.1 | "), Show(wren));
+    }
+
+    /// <summary>Makes <c>modules/moors</c>, a module some campaigns of the set name, with one chapter line.</summary>
+    /// <param name="line">The chapter's line.</param>
+    /// <param name="campaigns">The campaigns whose module progress names it.</param>
+    void Moors(string line, params string[] campaigns)
+    {
+        Write(_root, "modules/moors/index.md", "# The Moors\n");
+        Write(_root, "modules/moors/chapters/01-crossroads.md", "# Chapter 1: The crossroads\n\n" + line + "\n");
+        foreach (string campaign in campaigns)
+            Write(_root, $"adventures/{campaign}/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/moors/`\n");
+    }
+
+    [TestMethod]
+    public void AModuleReachedOnlyThroughTheSideCampaignIsSearchedAndItsHitsCarryNoLabel()
+    {
+        Moors("The standing stones on the moor hum at midnight when the wind is from the north.", SideTale);
+        var lines = Run("standing stones moor hum midnight");
+        Assert.AreEqual(0, IndexOf(lines, "modules/moors chapters/01-crossroads.md:3 DM | The standing stones"), Show(lines));
+    }
+
+    [TestMethod]
+    public void AModuleTwoCampaignsOfTheSetNameIsSearchedOnce()
+    {
+        Moors("The standing stones on the moor hum at midnight when the wind is from the north.", SideTale, First);
+        var lines = Run("standing stones moor hum midnight");
+        Assert.AreEqual(1, lines.Count(l => l.Contains("01-crossroads.md:3")), Show(lines));
+    }
+
+    [TestMethod]
+    public void ALinkedCampaignsCanonRanksAboveTheModuleAsPrinted()
+    {
+        // The party burned an inn the module describes standing (US5 scenario 2): canon wins over the module as printed.
+        Moors("The Crooked Lantern inn stands at the crossroads, two storeys of grey stone with a slate roof.", Middle);
+        Write(_root, $"adventures/{Middle}/story/canon.md", "# Canon\n\n## Places\n\n" + MiddleLine + "\n" +
+            "- The party burned the Crooked Lantern inn at the crossroads to the ground (s21.4).\n");
+        var lines = Run("Crooked Lantern inn crossroads");
+        int canon = IndexOf(lines, $"{Middle} (continues) story/canon.md:6 s21.4 | "), module = IndexOf(lines, "modules/moors chapters/01-crossroads.md:3 DM | ");
+        Assert.IsTrue(canon >= 0 && canon < module, Show(lines));
     }
 }

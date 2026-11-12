@@ -55,7 +55,7 @@ If the file already exists, read it, tell the player in a line or two what it sa
 - **Tone**: heroic, grim, comic.
 - **Lethality**: story, balanced or gritty. Explain each in a sentence.
 - **Setting and premise**: their idea, or pitch three short hooks and let them choose.
-- **Predecessor**: if this campaign continues an earlier one, that campaign's folder in `adventures/`. `dmc recall` searches its files with this campaign's when a subject from it returns.
+- **Continuity**: its links to other campaigns, one name or `none` on each line. **Continues**: for a sequel, the folder in `adventures/` of the campaign it carries on, which must be closed: if `dmc campaign standard <it>` does not say `closed`, say so and offer to close it first with `dmc-close-campaign`. **Side campaign of**: the main campaign this one is played alongside, in its world. **Shares a world with**: any other campaigns in the same world, separated by commas. Then run `dmc campaign links <folder>` and tell the player any `notice:` line in a sentence. `dmc recall` searches every linked campaign with this one.
 
 Leave defaults where the player has no preference.
 

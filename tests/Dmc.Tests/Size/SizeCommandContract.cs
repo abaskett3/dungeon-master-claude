@@ -79,6 +79,42 @@ public abstract class SizeCommandContract
     }
 
     [TestMethod]
+    public void TheCheckFormPrintsTheLinkNoticesAfterTheFlagsMarkedAsNotTheFullSaves()
+    {
+        Arrange(() =>
+        {
+            Write(_root, "player-options.md", "# Player options\n\n## Rules\n\n- **Edition**: 5e 2014\n\n## Continuity\n\n" +
+                "- **Continues**: gone\n- **Side campaign of**: lost\n- **Shares a world with**: far, away\n");
+            Write(_root, "game-state.md", GameState([]) + Filler(Budgets.GameState * 4));
+        });
+        var result = Size("--check");
+
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        CollectionAssert.AreEqual(new[]
+        {
+            "game-state.md 4.1k is over its 4k budget",
+            $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
+            $"notice: {Name}: Side campaign of lost is not in adventures/ (not the full save's to trim)",
+            $"notice: {Name}: Shares a world with far is not in adventures/ (not the full save's to trim)",
+            "(+1 more)",
+        }, result.StdoutLines);
+    }
+
+    [TestMethod]
+    public void TheCheckFormOfACampaignWithLinksAndNoProblemPrintsNothing()
+    {
+        Arrange(() =>
+        {
+            Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: none\n- **Side campaign of**: none\n" +
+                "- **Shares a world with**: other\n");
+            NewCampaign(_root, "other");
+        });
+        var result = Size("--check", Name);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        Assert.AreEqual("", result.Stdout + result.Stderr);
+    }
+
+    [TestMethod]
     public void TheCheckFormPrintsOneLinePerFlagCanonFirstAndExitsZero()
     {
         Arrange(() =>

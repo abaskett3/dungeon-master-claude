@@ -1084,6 +1084,30 @@ public sealed partial class ToolkitTests
         }
     }
 
+    /// <summary>
+    /// A new campaign's links live in a Continuity section right after Rules, three lines of <c>none</c>, and the old
+    /// Predecessor line is gone (spec 011 FR-001; data-model.md § Continuity section).
+    /// </summary>
+    [TestMethod]
+    public void TheCampaignOptionsTemplateHasTheContinuitySectionAndNoPredecessorLine()
+    {
+        string text = Read("kit/templates/campaign/player-options.md");
+        Assert.DoesNotContain("**Predecessor**", text);
+        var lines = text.Split('\n').ToList();
+        int rules = lines.IndexOf("## Rules");
+        Assert.IsGreaterThanOrEqualTo(0, rules, "the template has no ## Rules section");
+        int next = lines.FindIndex(rules + 1, l => l.StartsWith("## ", StringComparison.Ordinal));
+        Assert.AreEqual("## Continuity", lines[next], "the section after ## Rules is not ## Continuity");
+        int end = lines.FindIndex(next + 1, l => l.StartsWith("## ", StringComparison.Ordinal));
+        var body = lines.GetRange(next + 1, (end < 0 ? lines.Count : end) - next - 1).Where(l => l.Length > 0).ToArray();
+        CollectionAssert.AreEqual(new[]
+        {
+            "- **Continues**: none <!-- a sequel: the closed campaign's folder in adventures/ -->",
+            "- **Side campaign of**: none <!-- a campaign played alongside a main one, in its world: that campaign's folder -->",
+            "- **Shares a world with**: none <!-- other campaigns in the same world, folders separated by commas -->",
+        }, body);
+    }
+
     [TestMethod]
     public void ANewCampaignGetsEveryFileTheRulesDescribeAndNoPromptIsEmpty()
     {

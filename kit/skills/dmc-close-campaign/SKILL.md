@@ -57,4 +57,4 @@ else, say it in a line and stop. Running it again means steps 1 and 2 again, the
 
 Tell the player, out of character, that the campaign is closed, and where its two copies are (the two paths the
 `closed` line names); suggest keeping a further copy somewhere else. Say that `dmc-new-campaign` can start a sequel,
-whose Predecessor line names this campaign so its facts are found when they return.
+whose Continues line names this campaign, so its facts are found when they return.

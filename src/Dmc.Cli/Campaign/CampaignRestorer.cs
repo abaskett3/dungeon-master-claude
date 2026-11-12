@@ -35,7 +35,7 @@ internal static class CampaignRestorer
     /// <param name="from">The backup named by <c>--from</c>; null for the marked backup, else the latest.</param>
     /// <param name="yes">True to restore; false to print the plan only.</param>
     /// <returns>The lines to print.</returns>
-    /// <exception cref="DmcException">No such campaign; the backup is missing, damaged or another campaign's; or the restore failed, in which case the campaign is as it was.</exception>
+    /// <exception cref="DmcException">No such campaign; the campaign is closed (spec 010: refused, plan or not, before anything is read); the backup is missing, damaged or another campaign's; or the restore failed, in which case the campaign is as it was.</exception>
     public static IReadOnlyList<string> Run(string root, string name, string? from, bool yes)
     {
         string adventures = Path.Combine(root, "adventures");
@@ -44,6 +44,7 @@ internal static class CampaignRestorer
             lines.Add(recovered);
 
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, name));
+        ClosedCampaign.Refuse(root, campaign);
         string backup = BackupFolder.Resolve(campaign, name, from);
         string file = Path.GetFileName(backup);
         var summary = BackupFolder.Open(backup, name);

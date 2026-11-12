@@ -74,7 +74,7 @@ What `dmc campaign close` computes before writing (`CampaignCloser`):
 
 Refusals, checked in this order, each one line: no such campaign; already closed; unfinished migration; behind;
 ahead; a record or migration that cannot be read; a file already by the closing backup's name in `backups/` or
-`exports/`.
+`exports/`; a campaign an export would refuse (a link, or a path that could not be imported).
 
 ## Closing records, in the campaign's markdown
 

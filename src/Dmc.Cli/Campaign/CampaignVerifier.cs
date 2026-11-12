@@ -22,7 +22,9 @@ internal sealed record VerifyOutcome(IReadOnlyList<string> Lines, string? Failur
 /// campaign or accounted for (reworded with an anchor that is there, or dropped under a class a pending migration
 /// declares); no file was skipped; and every check the pending migrations name passes. On a pass it records the kit's
 /// standard in <c>.standard</c>, writes the verified record beside the backup and removes every <c>.migrating</c> mark of
-/// the campaign. The campaign files are compared without the top-level <c>backups/</c> folder and <c>.standard</c>.
+/// the campaign. The campaign files are compared without the top-level <c>backups/</c> folder and <c>.standard</c>. A closed
+/// campaign (spec 010 research R7) takes <see cref="VerifyClosed"/> instead: a byte check against its closing backup that
+/// writes nothing.
 /// </summary>
 internal static partial class CampaignVerifier
 {
@@ -53,11 +55,13 @@ internal static partial class CampaignVerifier
     /// <param name="name">The campaign's folder name.</param>
     /// <param name="options">What was asked.</param>
     /// <returns>The lines to print and, for a failed verification, the reason.</returns>
-    /// <exception cref="DmcException">Verification cannot run: no such campaign, the campaign is ahead of the kit, the backup is missing, damaged or another campaign's, no migration is pending, the accounting file has a bad line, or two different units share an id.</exception>
+    /// <exception cref="DmcException">Verification cannot run: no such campaign, the campaign is ahead of the kit, the backup is missing, damaged or another campaign's, no migration is pending, the accounting file has a bad line, or two different units share an id; for a closed campaign, see <see cref="VerifyClosed"/>.</exception>
     public static VerifyOutcome Run(string root, string name, VerifyOptions options)
     {
         string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, name));
+        if (ClosedCampaign.IsClosed(campaign))
+            return VerifyClosed(campaign, name, options);
         var set = MigrationSet.Read(root);
         int current = StandardRecord.Read(campaign, name);
         if (current > set.Kit)
@@ -155,6 +159,53 @@ internal static partial class CampaignVerifier
         lines.Add(string.Create(CultureInfo.InvariantCulture,
             $"verified {name}: {units.Count} units, {matched} matched, {reworded} accounted, {dropped} dropped; standard {set.Kit}"));
         return new VerifyOutcome(lines, null);
+    }
+
+    /// <summary>
+    /// Verifies a closed campaign (spec 010 research R7; contracts/campaign-close.md § verify): opens the closing backup the
+    /// mark names, or <c>--backup</c>, checks it whole, and compares every file of the campaign but <c>backups/</c>, the mark
+    /// and <c>.standard</c> included, with it by path and SHA-256. Writes nothing, pass or fail.
+    /// </summary>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="name">The campaign's name.</param>
+    /// <param name="options">What was asked: <c>--backup</c> and <c>--all</c>; <c>--list</c> and <c>--accounting</c> are refused.</param>
+    /// <returns>The <c>changed:</c>, <c>added:</c> and <c>missing:</c> lines and, when any, the failure; else the one <c>verified</c> line.</returns>
+    /// <exception cref="DmcException"><c>--list</c> or <c>--accounting</c> was given; the mark cannot be read and no <c>--backup</c> names the backup; or the backup is missing or damaged.</exception>
+    static VerifyOutcome VerifyClosed(string campaign, string name, VerifyOptions options)
+    {
+        if (options.List || options.Accounting is not null)
+            throw new DmcException($"{name} is closed: --list and --accounting are for migrations");
+        string given = options.Backup ?? ClosedCampaign.Read(campaign)?.Backup
+            ?? throw new DmcException($"adventures/{name}/{ClosedCampaign.FileName} is unreadable: name the closing backup with --backup");
+        string backup = BackupFolder.Resolve(campaign, name, given);
+        string backupName = Path.GetFileName(backup);
+        // Opened without the name check: an imported copy of a closed campaign (import --as) is checked against the
+        // backup it came from, which names the campaign it was taken of. The byte comparison below is the check.
+        var held = ExportSummary.Open(backup).ReadCampaign();
+
+        var now = CampaignFiles.Read(campaign);
+        string standard = Path.Combine(campaign, StandardRecord.FileName);
+        if (File.Exists(standard))
+            now[StandardRecord.FileName] = File.ReadAllBytes(standard);
+
+        var problems = new List<string>();
+        foreach (string path in held.Keys.Union(now.Keys).Order(StringComparer.Ordinal))
+        {
+            if (!now.TryGetValue(path, out var bytes))
+                problems.Add("missing: " + path);
+            else if (!held.TryGetValue(path, out var old))
+                problems.Add("added: " + path);
+            else if (CampaignFiles.Hash(bytes) != CampaignFiles.Hash(old))
+                problems.Add("changed: " + path);
+        }
+        if (problems.Count == 0)
+            return new VerifyOutcome([string.Create(CultureInfo.InvariantCulture, $"verified {name}: closed, {now.Count} files match {backupName}")], null);
+
+        var lines = new List<string>(options.All ? problems : problems.Take(Cap));
+        if (!options.All && problems.Count > Cap)
+            lines.Add(string.Create(CultureInfo.InvariantCulture, $"{problems.Count - Cap} more"));
+        string differ = problems.Count == 1 ? "differs" : "differ";
+        return new VerifyOutcome(lines, $"{Count(problems.Count, "file")} {differ} from {backupName}");
     }
 
     /// <summary>Opens a backup, checks it whole and returns its campaign files and the standard it records.</summary>

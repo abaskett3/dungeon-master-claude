@@ -4,10 +4,10 @@ using Dmc.Campaign;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE</c>: moves a whole campaign in and out
+/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close NAME-or-FILE</c>: moves a whole campaign in and out
 /// of one file. <c>export</c> writes a campaign folder (and the general player options) to a ZIP with a manifest of sizes
 /// and checksums; <c>import</c> checks such a file completely, then creates the campaign all or nothing under a name that
-/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back.
+/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
@@ -20,7 +20,7 @@ public sealed class CampaignCommand : ICommand
     public string Name => "campaign";
 
     /// <inheritdoc />
-    public string Summary => "export or import a whole campaign as one file, and bring its files up to date: dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE";
+    public string Summary => "export or import a whole campaign as one file, bring its files up to date, or close it for good: dmc campaign export|import|show|standard|backups|backup|verify|restore|close NAME-or-FILE";
 
     /// <summary>The text <c>--help</c> prints: usage, what each verb does and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
@@ -33,10 +33,11 @@ usage: dmc campaign export NAME [--out PATH] [--force]
        dmc campaign backup NAME [--prune oldest|old]
        dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
        dmc campaign restore NAME [--from FILE] [--yes]
+       dmc campaign close NAME [--yes]
 
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
 Brings a campaign's files up to the kit's standard with DMC, safely: a backup first, a check that nothing was lost, and
-a way back.
+a way back. Closes a finished campaign for good.
 
   export    writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
             adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
@@ -44,14 +45,18 @@ a way back.
   import    checks the whole file, then creates adventures/<name> from it, all or nothing. It never changes an existing
             campaign, never replaces an existing adventures/player-options.md and never changes the active campaign.
   show      prints what a file holds (name, date, files, module) and writes nothing.
-  standard  says whether the campaign's files are current, behind the kit's standard (and which migrations are
-            pending), ahead of it, or in the middle of an unfinished migration. Changes nothing, except --init.
+  standard  says whether the campaign is closed, or whether its files are current, behind the kit's standard (and
+            which migrations are pending), ahead of it, or in the middle of an unfinished migration. Changes nothing,
+            except --init.
   backups   lists the campaign's backups, oldest first, and ends with the question to ask the player when it is time
             to remove old ones.
   backup    writes a checked backup to adventures/NAME/backups/ and, when a migration is pending, marks it as under way.
   verify    checks that every line of the backup is in the migrated campaign or accounted for, and that each pending
             migration's checks pass; then records the new standard. Changes nothing when it fails.
   restore   puts the campaign back as a backup holds it, keeping backups/. Without --yes, prints the plan only.
+  close     closes a current campaign for good: marks it closed, writes a checked closing backup that is never pruned
+            to adventures/NAME/backups/ and a copy of it to exports/. Nothing changes a closed campaign again; a
+            sequel continues its story. Without --yes, prints the plan only.
 
   NAME          a folder under adventures/ (standard: default the active campaign)
   FILE          an export file; its name does not matter, the campaign name is read from inside it
@@ -67,7 +72,7 @@ a way back.
   --list        verify: print what is still to account for, and write nothing
   --all         verify: print every unaccounted line, not the first 40
   --from        restore: the backup to restore (default: the one of the unfinished migration, else the latest)
-  --yes         restore: restore; without it nothing changes
+  --yes         restore, close: do it; without it nothing changes
 
 An export holds the whole campaign, spoilers included (story/dm-notes.md): do not open it before you have played the story.
 A published module is not exported; ingest it again from your own copy.
@@ -100,6 +105,8 @@ A published module is not exported; ingest it again from your own copy.
                 return RunVerify(verify, io);
             case RestoreRequest restore:
                 return RunRestore(restore, io);
+            case CloseRequest close:
+                return RunClose(close, io);
             default:
                 throw new InvalidOperationException("unknown campaign request");
         }
@@ -146,7 +153,7 @@ A published module is not exported; ingest it again from your own copy.
         return 0;
     }
 
-    /// <summary>The extra line an import prints when the new campaign is not on the kit's standard (research R12); null when it is current.</summary>
+    /// <summary>The extra line an import prints when the new campaign is not on the kit's standard (research R12), or is closed (spec 010 FR-018); null when it is current.</summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="name">The imported campaign.</param>
     internal static string? ImportStandardLine(string root, string name)
@@ -162,6 +169,7 @@ A published module is not exported; ingest it again from your own copy.
         }
         return status.State switch
         {
+            StandardState.Closed => ClosedCampaign.Refusal(name),
             StandardState.Behind => string.Create(CultureInfo.InvariantCulture,
                 $"{name} is behind (standard {status.Campaign}, kit {status.Kit}): ask DMC to bring it up to date"),
             StandardState.Ahead => string.Create(CultureInfo.InvariantCulture,
@@ -184,6 +192,7 @@ A published module is not exported; ingest it again from your own copy.
         string campaign = Path.Combine(adventures, name);
         if (request.Init)
         {
+            ClosedCampaign.Refuse(root, campaign);
             if (File.Exists(Path.Combine(campaign, StandardRecord.FileName)))
                 throw new DmcException($"{name} already has a standard: only dmc campaign verify changes it");
             int kit = MigrationSet.Read(root).Kit;
@@ -209,9 +218,12 @@ A published module is not exported; ingest it again from your own copy.
             io.Out.WriteLine(line);
     }
 
-    /// <summary>Lists a campaign's backups and, when it is due, the removal question.</summary>
+    /// <summary>
+    /// Lists a campaign's backups and, when it is due, the removal question. For a closed campaign the list ends with its
+    /// closing backup instead (spec 010), and no question is asked: nothing may be removed from a closed campaign.
+    /// </summary>
     /// <param name="request">The parsed <c>backups</c> request.</param>
-    /// <param name="io">Standard output gets the count, the file names and the question.</param>
+    /// <param name="io">Standard output gets the count, the file names and the question or the closing backup.</param>
     static int RunBackups(BackupsRequest request, Io io)
     {
         string root = DmcFolder.Require();
@@ -222,6 +234,12 @@ A published module is not exported; ingest it again from your own copy.
         io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{backups.Count} backups"));
         foreach (var backup in backups)
             io.Out.WriteLine(backup.FileName);
+        if (ClosedCampaign.IsClosed(campaign))
+        {
+            string? closing = ClosedCampaign.Read(campaign)?.Backup ?? BackupFolder.Closing(campaign, request.Name).FirstOrDefault();
+            io.Out.WriteLine(closing is null ? "closed: no closing backup in backups/" : $"closed: {BackupFolder.FolderName}/{closing}");
+            return 0;
+        }
         if (BackupFolder.AskLine(backups, BackupFolder.Marked(campaign, request.Name) is not null) is { } ask)
             io.Out.WriteLine(ask);
         return 0;
@@ -266,6 +284,20 @@ A published module is not exported; ingest it again from your own copy.
     {
         foreach (string line in CampaignRestorer.Run(DmcFolder.Require(), request.Name, request.From, request.Yes))
             io.Out.WriteLine(line);
+        return 0;
+    }
+
+    /// <summary>Plans or makes a close, after putting back an interrupted restore, and prints the contract's one line.</summary>
+    /// <param name="request">The parsed <c>close</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    static int RunClose(CloseRequest request, Io io)
+    {
+        string root = DmcFolder.Require();
+        Recover(root, request.Name, io);
+        var plan = request.Yes ? CampaignCloser.Close(root, request.Name) : CampaignCloser.Plan(root, request.Name);
+        string verb = request.Yes ? "closed" : "would close";
+        io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{verb} {plan.Name}: {plan.Files} files to {BackupFolder.FolderName}/{plan.Backup} and exports/{plan.Backup}"));
         return 0;
     }
 

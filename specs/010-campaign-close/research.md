@@ -132,7 +132,8 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
 ## R8. Every `dmc` writer refuses a closed campaign in one place
 
 - **Decision**: a new `ClosedCampaign` class in `src/Dmc.Cli/Campaign/` holds the mark's name, its reading and writing,
-  and one guard, `ClosedCampaign.Refuse(root, path, command)`, which finds whether a path lies under
+  and one guard, `ClosedCampaign.Refuse(root, path)` (with `RefuseAt(path)` for `map`, `pdf` and `digest`, which finds
+  the DMC folder from the path itself), which finds whether a path lies under
   `adventures/<campaign>/` of a campaign with a mark and throws
   `<name> is closed: start a sequel to continue its story` (the `dmc <command>:` prefix comes from `CommandLine`, as
   for every failure). Called by: `campaign backup`, `restore` (plan and `--yes`), `standard --init`, `map` (the map file's
@@ -199,6 +200,8 @@ Each decision below rests on the code as it is on `origin/main` at `4e974ba` and
   while migrating; the close skill's body only while closing. Target (SC-006): under 100 tokens in all for an ordinary session,
   and 0 for an ordinary full save. The description keeps FR-001's two moments short (about: suggest only when the main
   story ends or the last open thread closes), because it is the largest of the three.
+- **Measured** (T039): the description with its name 141 bytes, the resume clause 165, the dm-rules clause 77: 383
+  bytes, about 96 tokens. A first wording measured 121 and was cut.
 
 ## R12. Tests and what CI cannot run
 

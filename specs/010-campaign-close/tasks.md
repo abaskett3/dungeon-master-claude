@@ -47,7 +47,7 @@ reads them.
 
 ## Phase 1: Setup
 
-- [ ] T001 Build and test the branch as it stands (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, then
+- [X] T001 Build and test the branch as it stands (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, then
       `dotnet test`) and note any test that already fails, so later failures are this change's own
 
 ---
@@ -56,32 +56,32 @@ reads them.
 
 **Purpose**: the mark, its reading, the refusal and the closed status, which every story uses.
 
-- [ ] T002 [P] Write `tests/Dmc.Tests/Campaign/ClosedCampaignTests.cs`: `Write` then `Read` round-trips the time and
+- [X] T002 [P] Write `tests/Dmc.Tests/Campaign/ClosedCampaignTests.cs`: `Write` then `Read` round-trips the time and
       file name; the file is one line ending `\n`, UTF-8 without BOM; `IsClosed` is true for any `.closed`, including
       an empty or garbled one, and false without; `Read` of a garbled mark returns null; `Refuse` throws the refusal
       for a path inside a closed campaign's folder (the folder itself, a file, a nested folder) and does nothing for a
       path in an open campaign, in `adventures/` itself, in `adventures/.transcript-review`, or outside `adventures/`;
       case is ignored in the path comparison on Windows only, as `CampaignExporter.IsInside` does
-- [ ] T003 [P] Extend `tests/Dmc.Tests/Campaign/StandardTests.cs`: a closed campaign prints `closed: <time>` from
+- [X] T003 [P] Extend `tests/Dmc.Tests/Campaign/StandardTests.cs`: a closed campaign prints `closed: <time>` from
       `dmc campaign standard <c>` and with no name when it is active, ahead of `unfinished`, `behind` and `ahead` (one
       case each, with a `.migrating` mark, a low `.standard`, a high `.standard`); a closed campaign with a garbled
       mark still prints `closed: (mark unreadable)`; `standard <c> --init` on a closed campaign with
       no `.standard` prints the refusal and writes no `.standard`; `dmc refresh`'s behind line (`Refresher.BehindLine`)
       does not count a closed campaign that is behind
-- [ ] T004 Create `src/Dmc.Cli/Campaign/ClosedCampaign.cs`: `FileName = ".closed"`; `Mark` record (ClosedAt, Backup);
+- [X] T004 Create `src/Dmc.Cli/Campaign/ClosedCampaign.cs`: `FileName = ".closed"`; `Mark` record (ClosedAt, Backup);
       `IsClosed(campaignFolder)`; `Read(campaignFolder)` returning `Mark?`; `Write(campaignFolder, DateTime utc,
       string backupFileName)` through `.closed.partial-<8 hex>` renamed into place (as `StandardRecord.Write`);
       `Remove(campaignFolder)` for the close's rollback only; `Refuse(string root, string path)` that maps a full path
       to `adventures/<campaign>/` and throws `DmcException` with the refusal when that campaign is closed; and the
       message itself as one `const`/method (research R1, R8)
-- [ ] T005 Edit `src/Dmc.Cli/Campaign/StandardRecord.cs`: add `StandardState.Closed` (XML comment), `StandardStatus`
+- [X] T005 Edit `src/Dmc.Cli/Campaign/StandardRecord.cs`: add `StandardState.Closed` (XML comment), `StandardStatus`
       gains the closed time for `Line` (`closed: <time>`, or `closed: (mark unreadable)` when `Read` returns null), and `Status` checks
       `ClosedCampaign.IsClosed` before `BackupFolder.Marked` (research R6); update the class and enum comments
-- [ ] T006 Edit `src/Dmc.Cli/Commands/CampaignCommand.cs` `RunStandard`: call `ClosedCampaign.Refuse` before the
+- [X] T006 Edit `src/Dmc.Cli/Commands/CampaignCommand.cs` `RunStandard`: call `ClosedCampaign.Refuse` before the
       `--init` branch writes; `ImportStandardLine` returns `<name> is closed: start a sequel to continue its story` for
       `StandardState.Closed`; check `src/Dmc.Cli/Kit/Refresher.cs` `BehindLine` still counts only `Behind` and
       `Unfinished` and say so in its comment
-- [ ] T007 [P] Edit `kit/settings.json`: add `"Edit(/adventures/*/.closed)"` to `permissions.deny` beside the other
+- [X] T007 [P] Edit `kit/settings.json`: add `"Edit(/adventures/*/.closed)"` to `permissions.deny` beside the other
       `Edit(...)` denies (research R2); extend the settings test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` to require
       that entry
 
@@ -100,7 +100,7 @@ leaves no mark and nothing from the run.
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Write `tests/Dmc.Tests/Campaign/CampaignCloseTests.cs` (black-box): the plan line
+- [X] T008 [P] [US1] Write `tests/Dmc.Tests/Campaign/CampaignCloseTests.cs` (in-process through `MigrationRoot`, as the other migration-verb tests; the published binary is covered by `CampaignBlackBoxTests`): the plan line
       `would close <c>: <N> files to backups/<file> and exports/<file>` with nothing written (checksums of the
       campaign and a listing of `exports/` unchanged); `--yes` prints `closed <c>: <N> files to backups/<file> and
       exports/<file>`, `<N>` equal to the exporter's count; `.closed` names that backup and the manifest's `exportedAt`
@@ -112,25 +112,25 @@ leaves no mark and nothing from the run.
       already closed: start a sequel to continue its story`), unfinished migration, behind, ahead; an interrupted restore is put back first and its line
       printed; closing a sequel leaves its predecessor (a closed campaign named in the sequel's Predecessor line) and the
       sequel's Predecessor line byte-identical
-- [ ] T009 [P] [US1] Write `tests/Dmc.Tests/Campaign/CloseFailureTests.cs` (in-process, through `CampaignCloser`'s
+- [X] T009 [P] [US1] Write `tests/Dmc.Tests/Campaign/CloseFailureTests.cs` (in-process, through `CampaignCloser`'s
       internal fault seam): a failure injected at each step, `mark`, `backup`, `check backup`, `copy`, `check copy`,
       throws `could not close <c>: <step>: <reason>; it is still open`, leaves no `.closed`, no `_closed_` file in
       `backups/` or `exports/`, no `.partial-` file, and every campaign file byte-identical (SC-004)
-- [ ] T010 [P] [US1] Extend `tests/Dmc.Tests/Campaign/CampaignCommandContract.cs` with the `close` usage mistakes
+- [X] T010 [P] [US1] Extend `tests/Dmc.Tests/Campaign/CampaignCommandContract.cs` with the `close` usage mistakes
       (missing NAME, unknown option, `--yes` given a value) as exit 2, one line, and `close` in the help text
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Edit `src/Dmc.Cli/Campaign/BackupFolder.cs`: `ClosedName(campaign, moment)` giving
+- [X] T011 [US1] Edit `src/Dmc.Cli/Campaign/BackupFolder.cs`: `ClosedName(campaign, moment)` giving
       `<campaign>_closed_<yyyyMMddHHmmss>.zip` in local time, never suffixed, and `ParseClosed(campaign, fileName)` (a
       `[GeneratedRegex]` `^_closed_(\d{14})\.zip$` after the name) and `Closing(campaignFolder, campaign)` listing them;
       leave `Parse`, so `List`, `AskLine`, `PruneSelection`, `Resolve` and `Marked` never see a closing backup (research
       R4)
-- [ ] T012 [US1] Edit `src/Dmc.Cli/Campaign/CampaignExporter.cs`: `ClosingBackup(root, name, string fileName,
+- [X] T012 [US1] Edit `src/Dmc.Cli/Campaign/CampaignExporter.cs`: `ClosingBackup(root, name, string fileName,
       DateTime now)` beside `Backup`, writing exactly `backups/<fileName>`, never read from `--out`, and failing rather
       than replacing an existing file (the final `File.Move` without overwrite); update the comments that say `Backup`
       is the only export written inside `adventures/`
-- [ ] T013 [US1] Create `src/Dmc.Cli/Campaign/CampaignCloser.cs`: `Plan(root, name, DateTime? now)` returning (Name,
+- [X] T013 [US1] Create `src/Dmc.Cli/Campaign/CampaignCloser.cs`: `Plan(root, name, DateTime? now)` returning (Name,
       Files, Backup file name) after the refusals in data-model.md's order, the last being a file already by that name
       in `backups/` or `exports/` (`<name> cannot be closed: <folder>/<file> already exists`); `Close(root, name,
       DateTime? now)` running the plan with the same moment, then doing, in order, write `.closed` naming the planned
@@ -139,12 +139,12 @@ leaves no mark and nothing from the run.
       overwrite, check the copy whole and its SHA-256 equal; on any exception from a step, remove the copy, the backup and then the mark (each by
       `CampaignBackup.Remove`), and throw `could not close <name>: <step>: <reason>; it is still open`; an `internal`
       fault seam (`Action<string>? BeforeStep`) for T009 only (research R3)
-- [ ] T014 [US1] Edit `src/Dmc.Cli/Campaign/CampaignArguments.cs`: `CloseRequest(Name, Yes)` parsed like
+- [X] T014 [US1] Edit `src/Dmc.Cli/Campaign/CampaignArguments.cs`: `CloseRequest(Name, Yes)` parsed like
       `RestoreRequest` (`close NAME [--yes]`), with argparse's messages, and add `close` to `CampaignArguments.Commands`,
       which `ToolkitTests` uses to fail any `dmc campaign <verb>` a prompt names that is not real
-- [ ] T015 [US1] Edit `src/Dmc.Cli/Commands/CampaignCommand.cs`: `RunClose` (run `Recover` first, then plan or close,
+- [X] T015 [US1] Edit `src/Dmc.Cli/Commands/CampaignCommand.cs`: `RunClose` (run `Recover` first, then plan or close,
       and print the one line), the `close` row in `Help` and `Summary`, and the class comment's verb list
-- [ ] T016 [US1] Create `kit/skills/dmc-close-campaign/SKILL.md` (front matter `name: dmc-close-campaign`; a
+- [X] T016 [US1] Create `kit/skills/dmc-close-campaign/SKILL.md` (front matter `name: dmc-close-campaign`; a
       description that says to use it only when the player asks to close a campaign or agrees to DMC's suggestion, and
       that DMC may suggest closing at two moments only, when the main story has ended and again when the last open
       thread in `dm-notes.md` is closed, and never closes on its own (FR-001)): § 0 not mid-roll or with a question pending; § 1 run `dmc campaign close <campaign>`
@@ -159,7 +159,7 @@ leaves no mark and nothing from the run.
       `canon.md`); § 4 run `dmc campaign close <campaign> --yes`, and on a failure say which step and that the campaign
       is still open and the close can be run again (a rerun still runs § 1 and § 2, then skips § 3 when `summary.md` already has § How it ended and every secret has an outcome, so the records are not written twice); § 5 tell the player out of character that it is closed, where the
       two copies are, and that `dmc-new-campaign` can start a sequel with its Predecessor line
-- [ ] T017 [US1] Add `dmc-close-campaign` to the kit skill list in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` (the list
+- [X] T017 [US1] Add `dmc-close-campaign` to the kit skill list in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` (the list
       at the `CollectionAssert` over `SkillNames()`), and run the toolkit tests so the prompt checks prove every
       command and skill the new skill names is real (FR-021): `EveryDmcCommandInThePromptsIsARealSubcommand...` checks
       each `dmc campaign` verb against `CampaignArguments.Commands`, and `EverySkillAKitPromptNamesExists` each skill
@@ -178,7 +178,7 @@ run on it (SC-001).
 
 ### Tests for User Story 2
 
-- [ ] T018 [P] [US2] Write `tests/Dmc.Tests/Campaign/ClosedCampaignFreezeTests.cs` (black-box): close a test campaign
+- [X] T018 [P] [US2] Write `tests/Dmc.Tests/Campaign/ClosedCampaignFreezeTests.cs` (in-process, every command through the real command table): close a test campaign
       with maps and a session log; record the SHA-256 of every file under `adventures/<c>/`; run `campaign backup`,
       `backup --prune old`, `restore`, `restore --yes`, `standard --init`, `verify`, `verify --list`, `map` on one of
       its map files, `map --measure` on it, `redraw` with it active (stdin `{}`), set up before the close so its
@@ -187,7 +187,7 @@ run on it (SC-001).
       `dmc context-check` (stdin `{}`); then compare: 0 files changed and no file added.
       The writers print the refusal with their own prefix and exit 1; `redraw` prints nothing and exits 0; the readers
       exit 0
-- [ ] T019 [P] [US2] Write `tests/Dmc.Tests/Campaign/CampaignVerifyClosedTests.cs`: an unchanged closed campaign gives
+- [X] T019 [P] [US2] Write `tests/Dmc.Tests/Campaign/CampaignVerifyClosedTests.cs`: an unchanged closed campaign gives
       `verified <c>: closed, <N> files match <backup>`, exit 0, and writes no `.standard`, no `.verified.tsv`, nothing;
       a changed, an added and a removed file give `changed:`, `added:` and `missing:` lines and
       `verification failed: 3 files differ from <backup>`, exit 1; 45 changed files print 40 lines and `5 more`, all
@@ -195,37 +195,37 @@ run on it (SC-001).
       migrations`); a garbled mark without `--backup` is refused with the unreadable line, and works with `--backup`; a mark naming a
       backup not in `backups/` gives the existing `no backup <file>: dmc campaign backups <c> lists them` line (wider
       verification is issue #189)
-- [ ] T020 [P] [US2] Extend `tests/Dmc.Tests/Campaign/BackupTests.cs` and `CampaignShowTests.cs`: `campaign backups`
+- [X] T020 [P] [US2] Extend `tests/Dmc.Tests/Campaign/BackupTests.cs` and `CampaignShowTests.cs`: `campaign backups`
       on a closed campaign lists the counted backups, then `closed: backups/<closing backup>`, and never an `ask:` line
       even with four counted backups; `campaign show` of a closing backup prints `closed: <time>`
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Edit `src/Dmc.Cli/Campaign/CampaignBackup.cs` `Take` and `src/Dmc.Cli/Campaign/CampaignRestorer.cs`
+- [X] T021 [US2] Edit `src/Dmc.Cli/Campaign/CampaignBackup.cs` `Take` and `src/Dmc.Cli/Campaign/CampaignRestorer.cs`
       `Run` (plan and `--yes`): call `ClosedCampaign.Refuse` on the campaign folder before anything is read or written
-- [ ] T022 [US2] Edit `src/Dmc.Cli/Commands/CampaignCommand.cs` `RunBackups`: after the list, print
+- [X] T022 [US2] Edit `src/Dmc.Cli/Commands/CampaignCommand.cs` `RunBackups`: after the list, print
       `closed: backups/<file>` for a closed campaign and skip the `ask:` line
-- [ ] T023 [US2] Edit `src/Dmc.Cli/Campaign/CampaignVerifier.cs`: at the top of `Run`, a closed campaign takes a new
+- [X] T023 [US2] Edit `src/Dmc.Cli/Campaign/CampaignVerifier.cs`: at the top of `Run`, a closed campaign takes a new
       `VerifyClosed` path: refuse `--list` and `--accounting`; resolve the backup from the mark or `--backup`; open it
       with `BackupFolder.Open` and check it whole; compare every campaign file (as `CampaignFiles.Read` gives them, plus
       `.closed` and `.standard`) with the manifest by path and SHA-256; the lines and failure of
       contracts/campaign-close.md § verify, capped at 40 without `--all`; write nothing (research R7)
-- [ ] T024 [US2] Edit `src/Dmc.Cli/Campaign/ExportSummary.cs` `ShowLines`: when the archive holds a campaign `.closed`
+- [X] T024 [US2] Edit `src/Dmc.Cli/Campaign/ExportSummary.cs` `ShowLines`: when the archive holds a campaign `.closed`
       entry, add `closed: <time>` from it
-- [ ] T025 [P] [US2] Edit `src/Dmc.Cli/Commands/MapCommand.cs`: before drawing, `ClosedCampaign.Refuse(root, <the map
+- [X] T025 [P] [US2] Edit `src/Dmc.Cli/Commands/MapCommand.cs`: before drawing, `ClosedCampaign.Refuse(root, <the map
       file's full path>)` when a DMC folder is found; `--measure` is not guarded (it writes nothing)
-- [ ] T026 [P] [US2] Edit `src/Dmc.Cli/Commands/PdfCommand.cs` and `src/Dmc.Cli/Commands/DigestCommand.cs`: guard the
+- [X] T026 [P] [US2] Edit `src/Dmc.Cli/Commands/PdfCommand.cs` and `src/Dmc.Cli/Commands/DigestCommand.cs`: guard the
       `--out` folder (and the default output path) with `ClosedCampaign.Refuse` when a DMC folder is found
-- [ ] T027 [P] [US2] Edit `src/Dmc.Cli/Maps/MapRedraw.cs` `Pending`: return null when the active campaign is closed,
+- [X] T027 [P] [US2] Edit `src/Dmc.Cli/Maps/MapRedraw.cs` `Pending`: return null when the active campaign is closed,
       and say so in its comment and in `src/Dmc.Cli/Commands/RedrawCommand.cs`'s remarks
-- [ ] T028 [US2] Edit `kit/skills/dmc-resume-campaign/SKILL.md` § 1: on `closed`, say out of character that the
+- [X] T028 [US2] Edit `kit/skills/dmc-resume-campaign/SKILL.md` § 1: on `closed`, say out of character that the
       campaign is closed, read nothing for play, start no session log, change none of its files, offer to start a
       sequel from it with `dmc-new-campaign`, and stop. If `dmc campaign standard` fails or prints nothing, Glob for
       `adventures/<campaign>/.closed` before going on; if it exists, the campaign is closed, as above (FR-010: play
       never depends on `dmc` to start, so the freeze must not either)
-- [ ] T029 [P] [US2] Edit `kit/skills/dmc-migrate-campaign/SKILL.md` § 1: add `closed: ...`: say it is closed and is
+- [X] T029 [P] [US2] Edit `kit/skills/dmc-migrate-campaign/SKILL.md` § 1: add `closed: ...`: say it is closed and is
       never migrated, and go on to the next campaign
-- [ ] T030 [P] [US2] Edit `kit/dm-rules.md`, the Accuracy paragraph that names a sequel's earlier campaign (line 78,
+- [X] T030 [P] [US2] Edit `kit/dm-rules.md`, the Accuracy paragraph that names a sequel's earlier campaign (line 78,
       "Look before you bring something back"): one clause, a campaign whose folder holds `.closed` is closed, never
       change its files, and say why when asked (FR-017)
 
@@ -240,15 +240,16 @@ run on it (SC-001).
 **Independent Test**: 10 rounds of backup and prune leave the closing backup; with the campaign folder deleted, the
 copy in `exports/` shows, imports and is closed.
 
-- [ ] T031 [P] [US3] Write `tests/Dmc.Tests/Campaign/ClosingBackupTests.cs`: put a file named like a closing backup
+- [X] T031 [P] [US3] Write `tests/Dmc.Tests/Campaign/ClosingBackupTests.cs`: put a file named like a closing backup
       (`<c>_closed_<stamp>.zip`, a real closing backup copied in) into an open campaign's `backups/` and run 10 rounds
       of `backup` then `backup --prune old`: it is still there, byte-identical, and `backups` never counts it (SC-002);
       close a campaign, delete its folder, then `show` the copy in `exports/` (files, module named, no module files in
       the archive, `closed:` line) and `import` it `--as <c>-copy`: the copy has `.closed` and `standard` prints
       `closed:`, the import's last line is `<c>-copy is closed: start a sequel to continue its story`, and
       `verify <c>-copy --backup <the copy in exports/>` passes (FR-012, FR-018)
-- [ ] T032 [US3] Fix whatever T031 finds; no new code is expected, since the name keeps the closing backup out of
-      every count (research R4)
+- [X] T032 [US3] Fix whatever T031 finds; no new code is expected, since the name keeps the closing backup out of
+      every count (research R4). Found: `verify --backup` on an import made `--as` another name was refused by the
+      backup's campaign-name check; a closed campaign's verify now opens the backup without it (the byte check decides)
 
 **Checkpoint**: all tests pass.
 
@@ -256,28 +257,28 @@ copy in `exports/` shows, imports and is closed.
 
 ## Phase 6: Polish and cross-cutting
 
-- [ ] T033 [P] Edit `.docs/dmc-reference.md` § campaign (the `close` verb, the `closed` line of `standard`, the
+- [X] T033 [P] Edit `.docs/dmc-reference.md` § campaign (the `close` verb, the `closed` line of `standard`, the
       refusal, `verify` on a closed campaign, `backups`' closed line, the closing backup's name), § map, § redraw,
       § pdf and § digest (the refusal or no-op)
-- [ ] T034 [P] Edit `.docs/campaign-files.md`: `.closed` and the closing backup in § Layout; § Closing a campaign
+- [X] T034 [P] Edit `.docs/campaign-files.md`: `.closed` and the closing backup in § Layout; § Closing a campaign
       (what closing writes, where the ending record, the secrets account and the loose ends live, and that a closed
       campaign never changes); § Bringing a campaign up to date says a closed campaign is never migrated
-- [ ] T035 [P] Edit `.docs/user-guide.md`: a § Closing a campaign under § Your files (asking DMC, that it is
+- [X] T035 [P] Edit `.docs/user-guide.md`: a § Closing a campaign under § Your files (asking DMC, that it is
       permanent, where the two copies are, keeping a further copy elsewhere, starting a sequel), and a line in
       § Resuming
-- [ ] T036 [P] Edit `.docs/architecture.md` (§ A full save: the closing save; § Inside `dmc`: `ClosedCampaign` and
+- [X] T036 [P] Edit `.docs/architecture.md` (§ A full save: the closing save; § Inside `dmc`: `ClosedCampaign` and
       `CampaignCloser`) and `README.md`'s skill list
-- [ ] T037 [P] Edit `.docs/decisions.md`: a new entry "A closed campaign is closed for good (issue #180)" with the
+- [X] T037 [P] Edit `.docs/decisions.md`: a new entry "A closed campaign is closed for good (issue #180)" with the
       user's decisions (closed forever, sequels only; a full save and a backup; a new skill; nothing reopens; the
       records in the files that hold their kind; secrets gathered back), research R1 to R10's choices, the rejected
       PreToolUse guard (R2), and why there is no migration
-- [ ] T038 [P] Edit `.docs/roadmap.md`: the campaign-close status, and that issue #179 Phase B can start
-- [ ] T039 Measure the added context (research R11): bytes ÷ 4 of the new skill's description, the resume clause and
-      the dm-rules clause for every play session, and 0 for an ordinary full save; record the numbers for the PR; fail the task if the session total is 100 or more (SC-006)
-- [ ] T040 Run quickstart.md §§ 1 to 5 and the live run § 6 in a scratch DMC folder on a copy of a finished test
+- [X] T038 [P] Edit `.docs/roadmap.md`: the campaign-close status, and that issue #179 Phase B can start
+- [X] T039 Measure the added context (research R11): bytes ÷ 4 of the new skill's description, the resume clause and
+      the dm-rules clause for every play session, and 0 for an ordinary full save; record the numbers for the PR; fail the task if the session total is 100 or more (SC-006). Measured: 383 bytes, about 96 tokens (research R11)
+- [X] T040 Run quickstart.md §§ 1 to 5 and the live run § 6 in a scratch DMC folder on a copy of a finished test
       campaign, including the checksum comparison around the three resumes, the resume with `dmc` off the PATH, and
-      the two suggestion moments; record what DMC said and wrote, for the PR
-- [ ] T041 Check every new and changed member has an XML doc comment, private ones included, and every
+      the two suggestion moments; record what DMC said and wrote, for the PR. §§ 1 to 5 done with the published binary on 2026-11-11 (all as the contract says); § 6, the live run with the model, skipped at the user's word
+- [X] T041 Check every new and changed member has an XML doc comment, private ones included, and every
       `specs/010-campaign-close/` document still matches what shipped
 - [ ] T042 Open the PR with the full description (what, why, sources, tests, documents changed, the measured cost,
       "no migration" and why, `Part of #180` since the "After merging" steps finish the issue), check it with

@@ -21,6 +21,7 @@ Take the campaign the player named, or every folder in `adventures/` whose name 
 for all. For each, run `dmc campaign standard <campaign>`:
 
 - `current`: say it is up to date, and go to the next campaign.
+- `closed: ...`: say it is closed and is never migrated, and go to the next campaign.
 - `ahead: ...`: say this `dmc` is older than the one that wrote the files and the player should update it (in a
   terminal, outside play); do not migrate.
 - `unfinished: <backup file>`: an earlier migration stopped part way. Say so, take no new backup, and go straight to

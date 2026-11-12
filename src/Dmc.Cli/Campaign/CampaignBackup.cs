@@ -21,11 +21,12 @@ internal static class CampaignBackup
     /// <param name="prune">What older backups the player agreed to remove.</param>
     /// <param name="now">The moment of the backup; the clock when null.</param>
     /// <returns>What was written and removed.</returns>
-    /// <exception cref="DmcException">There is no such campaign, a migration is unfinished, or the backup could not be written or checked. Nothing is removed and no file is left under the backup's name.</exception>
+    /// <exception cref="DmcException">There is no such campaign, it is closed (spec 010), a migration is unfinished, or the backup could not be written or checked. Nothing is removed and no file is left under the backup's name.</exception>
     public static BackupResult Take(string root, string name, PruneMode prune, DateTime? now = null)
     {
         string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, name));
+        ClosedCampaign.Refuse(root, campaign);
         if (BackupFolder.Marked(campaign, name) is { } marked)
             throw new DmcException($"{name} has an unfinished migration from {marked}: finish it or restore it");
 

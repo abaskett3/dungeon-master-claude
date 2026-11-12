@@ -79,6 +79,9 @@ creatures. The format of the file is in .claude/skills/dmc-draw-map/map-format.m
             return 0;
         }
 
+        // Drawing writes beside the map file: never into a closed campaign (spec 010). --measure above writes nothing.
+        Campaign.ClosedCampaign.RefuseAt(mapPath);
+
         // The drawing also records which file the page shows (maps/live-source.txt), for dmc redraw.
         var (model, page, png) = MapRedraw.Draw(mapPath, parsed.Png);
         io.Out.WriteLine($"Drew \"{model.Title}\": {model.Cols} x {model.Rows} cells, {model.Tokens.Count} creatures.");

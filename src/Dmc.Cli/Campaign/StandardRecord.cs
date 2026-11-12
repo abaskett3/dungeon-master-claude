@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Dmc.Campaign;
 
-/// <summary>Where a campaign stands against the kit (data-model.md § Standard).</summary>
+/// <summary>Where a campaign stands against the kit (data-model.md § Standard), or that it is closed for good (spec 010).</summary>
 internal enum StandardState
 {
     /// <summary>The campaign's standard equals the kit's.</summary>
@@ -17,23 +17,28 @@ internal enum StandardState
 
     /// <summary>A backup of the campaign has a <c>.migrating</c> mark: a migration was started and not finished or restored.</summary>
     Unfinished,
+
+    /// <summary>The campaign holds a <c>.closed</c> mark (<see cref="ClosedCampaign"/>): it is closed for good and never compared with the kit. Decided ahead of every other state.</summary>
+    Closed,
 }
 
 /// <summary>A campaign's standard, the kit's, and what that makes the campaign.</summary>
-/// <param name="State">Current, behind, ahead or unfinished.</param>
-/// <param name="Campaign">The campaign's standard (1 when it has no record).</param>
-/// <param name="Kit">The kit's standard: the highest migration in <c>migrations/</c>, 1 with none.</param>
+/// <param name="State">Current, behind, ahead, unfinished or closed.</param>
+/// <param name="Campaign">The campaign's standard (1 when it has no record); 0 when closed, which reads no record.</param>
+/// <param name="Kit">The kit's standard: the highest migration in <c>migrations/</c>, 1 with none; 0 when closed, which reads no kit.</param>
 /// <param name="Pending">The migrations above the campaign's standard, oldest first; empty unless behind.</param>
 /// <param name="Marked">The backup file name with the <c>.migrating</c> mark; null unless unfinished.</param>
-internal sealed record StandardStatus(StandardState State, int Campaign, int Kit, IReadOnlyList<MigrationFile> Pending, string? Marked)
+/// <param name="Closed">The line for a closed campaign (<see cref="ClosedCampaign.Line"/>); null unless closed.</param>
+internal sealed record StandardStatus(StandardState State, int Campaign, int Kit, IReadOnlyList<MigrationFile> Pending, string? Marked, string? Closed = null)
 {
     /// <summary>
     /// The one line <c>dmc campaign standard</c> prints for this status (contracts/campaign-commands.md): <c>current</c>,
-    /// <c>behind: standard C, kit K: 002-slug.md, ...</c>, <c>ahead: standard C, kit K: update dmc</c> or
-    /// <c>unfinished: &lt;backup file&gt;</c>.
+    /// <c>behind: standard C, kit K: 002-slug.md, ...</c>, <c>ahead: standard C, kit K: update dmc</c>,
+    /// <c>unfinished: &lt;backup file&gt;</c>, or <c>closed: &lt;time&gt;</c> (spec 010 contracts/campaign-close.md).
     /// </summary>
     public string Line => State switch
     {
+        StandardState.Closed => Closed!,
         StandardState.Current => "current",
         StandardState.Behind => string.Create(CultureInfo.InvariantCulture,
             $"behind: standard {Campaign}, kit {Kit}: {string.Join(", ", Pending.Select(m => m.FileName))}"),
@@ -100,13 +105,19 @@ internal static class StandardRecord
         File.Move(partial, path, overwrite: true);
     }
 
-    /// <summary>Where a campaign stands: unfinished when one of its backups is marked, else by comparing its standard with the kit's.</summary>
+    /// <summary>
+    /// Where a campaign stands: closed when it holds a <c>.closed</c> mark, checked first and with nothing else read (research
+    /// R6 of spec 010), so a closed campaign is never behind, unfinished or unreadable; else unfinished when one of its backups
+    /// is marked; else by comparing its standard with the kit's.
+    /// </summary>
     /// <param name="root">The DMC folder: its <c>migrations/</c> gives the kit's standard.</param>
     /// <param name="name">The campaign's folder name in <c>adventures/</c>.</param>
-    /// <exception cref="DmcException">The record or a migration file cannot be read.</exception>
+    /// <exception cref="DmcException">The record or a migration file cannot be read (never for a closed campaign).</exception>
     public static StandardStatus Status(string root, string name)
     {
         string campaign = Path.Combine(root, "adventures", name);
+        if (ClosedCampaign.IsClosed(campaign))
+            return new StandardStatus(StandardState.Closed, 0, 0, [], null, ClosedCampaign.Line(ClosedCampaign.Read(campaign)));
         var set = MigrationSet.Read(root);
         if (BackupFolder.Marked(campaign, name) is { } marked)
             return new StandardStatus(StandardState.Unfinished, Read(campaign, name), set.Kit, [], marked);

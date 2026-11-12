@@ -68,6 +68,22 @@ public sealed class BackupTests
     }
 
     [TestMethod]
+    [DataRow(0)]
+    [DataRow(4)]
+    public void BackupsOfAClosedCampaignEndsWithTheClosingBackupAndNeverAsks(int count)
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        var names = Earlier(root, count);
+        Assert.AreEqual(0, MigrationRoot.Run("close", MigrationRoot.Name, "--yes").ExitCode);
+        string closing = ClosedCampaign.Read(root.Campaign())!.Backup;
+        var result = MigrationRoot.Run("backups", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        string[] expected = [$"{count} backups", .. names, $"closed: backups/{closing}"];
+        CollectionAssert.AreEqual(expected, result.StdoutLines);
+    }
+
+    [TestMethod]
     public void OtherFilesInBackupsAreNeverCountedOrRemoved()
     {
         using var root = new MigrationRoot();

@@ -22,6 +22,7 @@ dmc <command>: <name> is closed: start a sequel to continue its story
 | Ahead | `dmc campaign: <name> is ahead (standard C, kit K): update dmc` | 1 | nothing |
 | A file by the closing backup's name exists | `dmc campaign: <name> cannot be closed: backups/<file> already exists` (or `exports/<file>`) | 1 | nothing |
 | A step of `--yes` fails | `dmc campaign: could not close <name>: <step>: <reason>; it is still open` | 1 | nothing left from this run |
+| A step fails and a removal fails too | `dmc campaign: could not close <name>: <step>: <reason>; could not remove <files>: delete them by hand` | 1 | the files it names |
 
 `<step>` is one of `mark`, `backup`, `check backup`, `copy`, `check copy`. Before anything else the verb puts back an
 interrupted restore and prints that line, as every migration verb does.
@@ -32,7 +33,7 @@ interrupted restore and prints that line, as every migration verb does.
 |---|---|
 | `dmc campaign standard [NAME]` | `closed: <closed at>` (`closed: (mark unreadable)` for a garbled mark), exit 0, ahead of every other status |
 | `dmc campaign standard NAME --init` | the refusal |
-| `dmc campaign backups NAME` | `0 backups` or the counted list as today, then `closed: backups/<closing backup>`; never an `ask:` line |
+| `dmc campaign backups NAME` | `0 backups` or the counted list as today, then `closed: backups/<closing backup>` (from the mark, else the one closing backup found; `closed: no closing backup in backups/` when there is none); never an `ask:` line |
 | `dmc campaign backup NAME [--prune ...]` | the refusal |
 | `dmc campaign restore NAME [--from F] [--yes]` | the refusal, with or without `--yes` |
 | `dmc campaign verify NAME [--backup F] [--all]` | byte check against the closing backup (below); writes nothing |
@@ -67,14 +68,16 @@ names, else `--backup F`; a mark that cannot be read and no `--backup` gives
 `dmc campaign: adventures/<name>/.closed is unreadable: name the closing backup with --backup`. A mark naming a backup
 that is not in `backups/` (an imported copy: exports leave `backups/` out) gives today's
 `dmc campaign: no backup <file>: dmc campaign backups <name> lists them`, and `--backup <the file in exports/>`
-checks it. Finding that file without being told, and checking against any other export, is issue #189.
+checks it. The backup's manifest need not name the same campaign, so an import made `--as` another name checks against
+the file it came from; the byte comparison decides. Finding that file without being told, and checking against any other
+export, is issue #189.
 
 ## The kit (prompts)
 
 | File | Contract |
 |---|---|
-| `kit/skills/dmc-close-campaign/SKILL.md` | New. `name: dmc-close-campaign`. Description says to use it only when the player asks to close a campaign or agrees to DMC's suggestion, and that DMC may suggest closing at two moments only: when the main story has ended, and again when the last open thread in `dm-notes.md` is closed (FR-001). Steps as research R9. Names only real commands: `dmc campaign close`, `dmc campaign close --yes`, `dmc size <campaign> --check`; and real skills: `dmc-campaign-full-save`, `dmc-migrate-campaign`, `dmc-new-campaign` |
+| `kit/skills/dmc-close-campaign/SKILL.md` | New. `name: dmc-close-campaign`. Description, as shipped: "Close a finished campaign for good, on the player's word. Suggest it only when the main story or its last open thread ends." (FR-001; kept short for SC-006). Steps as research R9. Names only real commands: `dmc campaign close`, `dmc campaign close --yes`, `dmc size <campaign> --check`; and real skills: `dmc-campaign-full-save`, `dmc-migrate-campaign`, `dmc-new-campaign` |
 | `kit/skills/dmc-resume-campaign/SKILL.md` § 1 | On `closed`, or, when `dmc campaign standard` fails, on a `.closed` file found with Glob: say it is closed, read nothing for play, start no session log, change no file of it, offer a sequel with `dmc-new-campaign`; stop |
 | `kit/skills/dmc-migrate-campaign/SKILL.md` § 1 | `closed: ...`: say it is closed and never migrated; go on to the next campaign |
-| `kit/dm-rules.md`, Accuracy | One clause: a campaign whose folder holds `.closed` is closed; never change its files |
+| `kit/dm-rules.md`, Accuracy | One clause: "Never change a campaign whose folder holds `.closed`: it is closed for good." |
 | `kit/settings.json` | Deny `Edit(/adventures/*/.closed)` |

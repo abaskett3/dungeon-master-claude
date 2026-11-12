@@ -64,6 +64,46 @@ internal static partial class BackupFolder
     public static string Stem(string campaign, DateTime moment) =>
         campaign + "_backup_" + moment.ToLocalTime().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
 
+    /// <summary>A closing backup's name, after the campaign's name: <c>_closed_</c>, 14 digits, <c>.zip</c>, never a suffix (spec 010 research R4).</summary>
+    [GeneratedRegex(@"^_closed_(\d{14})\.zip$", RegexOptions.CultureInvariant)]
+    private static partial Regex ClosedTail { get; }
+
+    /// <summary>
+    /// The file name of the closing backup taken at a moment: <c>&lt;campaign&gt;_closed_&lt;yyyyMMddHHmmss&gt;.zip</c>, local time,
+    /// never suffixed (spec 010 research R4). <see cref="Parse"/> does not match it, so a closing backup is never listed,
+    /// counted, offered for removal, pruned, resolved as the latest, or taken for a marked migration.
+    /// </summary>
+    /// <param name="campaign">The campaign's name.</param>
+    /// <param name="moment">The moment of the close.</param>
+    public static string ClosedName(string campaign, DateTime moment) =>
+        campaign + "_closed_" + moment.ToLocalTime().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) + ".zip";
+
+    /// <summary>Reads a file name as a closing backup of a campaign.</summary>
+    /// <param name="campaign">The campaign's name.</param>
+    /// <param name="fileName">A file name.</param>
+    /// <returns>The 14-digit local time in the name, or null when it is not a closing backup of this campaign.</returns>
+    public static string? ParseClosed(string campaign, string fileName)
+    {
+        if (!fileName.StartsWith(campaign, StringComparison.Ordinal))
+            return null;
+        var match = ClosedTail.Match(fileName[campaign.Length..]);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>The closing backups in a campaign's <c>backups/</c>, by file name in ordinal order; one for a closed campaign, none for an open one.</summary>
+    /// <param name="campaignFolder">The campaign folder.</param>
+    /// <param name="campaign">The campaign's name.</param>
+    public static IReadOnlyList<string> Closing(string campaignFolder, string campaign)
+    {
+        string folder = Of(campaignFolder);
+        if (!Directory.Exists(folder))
+            return [];
+        return [.. new DirectoryInfo(folder).EnumerateFiles()
+            .Select(f => f.Name)
+            .Where(n => ParseClosed(campaign, n) is not null)
+            .Order(StringComparer.Ordinal)];
+    }
+
     /// <summary>Reads a file name as a counted backup of a campaign.</summary>
     /// <param name="campaign">The campaign's name.</param>
     /// <param name="fileName">A file name in <c>backups/</c>.</param>

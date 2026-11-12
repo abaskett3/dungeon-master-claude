@@ -81,6 +81,9 @@ public static class PdfExtractor
         string output = string.IsNullOrEmpty(request.Out)
             ? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(request.Pdf)) ?? "", "extracted")
             : request.Out;
+        // Every command but info writes the output folder: never into a closed campaign (spec 010).
+        if (request.Command != "info")
+            Campaign.ClosedCampaign.RefuseAt(output);
 
         using var document = PdfFile.Open(request.Pdf, libsslAvailable);
         List<int> pages = PageRanges.Parse(request.Pages, document.NumberOfPages);

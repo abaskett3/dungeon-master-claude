@@ -172,6 +172,8 @@ dmc map: no such file: <folder>/maps/missing.json
 
 Argument mistakes exit 2: `dmc map: the following arguments are required: map`, `dmc map: argument --measure: expected 2 arguments`, `dmc map: unrecognized arguments: --bogus`.
 
+A map file inside a closed campaign (spec 010) is not drawn: `dmc map: NAME is closed: start a sequel to continue its story`, exit 1. `--measure`, which writes nothing, still works.
+
 ## redraw
 
 ```
@@ -181,7 +183,7 @@ dmc redraw < hook-input.json
 Added in release 0.1.3. The play settings' `Stop` hook runs this when DMC has finished a reply. Claude Code passes a JSON object on stdin; `dmc` reads `stop_hook_active` from it (see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks), "Stop"). Run by hand at a terminal it does not wait for input, and acts as if `stop_hook_active` were false. It then:
 
 1. finds the active campaign (`adventures/.active-campaign`) and its `maps/` folder, in the DMC folder;
-2. does nothing, silently, if there is no active campaign, or no `live-data.js` yet and no `live.json` (DMC has not shown a map). With no page yet but a `live.json`, it draws that;
+2. does nothing, silently, if there is no active campaign, if it is closed (spec 010: nothing is drawn into a closed campaign, whatever changed), or no `live-data.js` yet and no `live.json` (DMC has not shown a map). With no page yet but a `live.json`, it draws that;
 3. picks what to draw. A fight always uses `maps/live.json`, so if that is newer than `live-data.js` it is drawn, whatever the page showed before. Otherwise, if the record `maps/live-source.txt` (written by `dmc map`) names another file, such as a place DMC drew by hand for the player, that file is drawn again if it, or the base place the record gives, is newer than `live-data.js`. With no record (a page drawn by an older `dmc`) only `live.json` is checked, and a change to its base place alone is not noticed;
 4. draws it exactly as `dmc map` does, which also rewrites the record, and refreshes `live.png` too if one already sits beside `live.html`. When it draws `live.json` and the page did not show it (no page yet, or the record names another file, as after a place map), it also opens `live.html` in the browser, as `dmc map --open` does (from release 0.1.4). It opens the page on that switch only, not on every redraw, so a page already showing the scene gets no second tab. It prints nothing even when it draws. If nothing is newer it does nothing, silently.
 
@@ -261,6 +263,7 @@ A PDF with only an owner password (print or copy restrictions) is read. A page t
 | `dmc pdf: <out>/text is a file, so page-001.txt cannot be written into it. Move it away, then run this again. Nothing was written.` (or `... is a folder, so the file of that name cannot be written there ...`) | 1 |
 | `dmc pdf: argument command: invalid choice: 'bogus' (choose from info, text, render, all)` | 2 |
 | `dmc pdf: the following arguments are required: pdf` | 2 |
+| `dmc pdf: NAME is closed: start a sequel to continue its story` (`text`, `render` or `all` with an output folder inside a closed campaign, spec 010; nothing is read or written) | 1 |
 
 ## digest
 
@@ -295,7 +298,7 @@ id        start (UTC)       end (UTC)             KB  msgs peak ctx  campaign   
 | `DIR/<id>-turns.txt` | One line per player message: time, context size, the message, then the size and tool calls of the reply. Lines marked `!` may show friction. |
 | `DIR/<id>-transcript.md` | The whole session in order, with tool calls and results cut to a line each. |
 
-Times are UTC; "ctx" is the number of tokens sent to the model on that call. Errors include `dmc digest: No session logs found at <folder>. Pass --logs DIR.` and `dmc digest: No matching sessions with player messages.` (exit 1), and `dmc digest: argument command: invalid choice: 'digest' (choose from list, show)` (exit 2). A log `dmc` cannot read is reported with its file name, exit 1: `dmc digest: <file>.jsonl: not valid UTF-8`, or `dmc digest: <file>.jsonl line N: <what is wrong>` for the first record of the wrong shape. That includes an assistant record with a token count (`input_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` or `output_tokens`) of `NaN` or `Infinity` (`a token count that is not a finite number`), an `output_tokens` that is not a number (`"output_tokens" is not a number`), or input and cache counts whose sum overflows. Every log the request loads is read before anything is printed or written, so one bad log stops `list` and `show` alike, with no heading, rows or files from the sessions before it. The session ids rule logs out by file name before they are read, but `--campaign` and `--after` are applied only after a log has been read, so a bad log is refused even if those would have left it out. (Before 0.1.3 a non-finite count ended in `(LogShapeException)`, after `show` had written the earlier sessions' files.) The subcommand `show` was called `digest` in 0.1.0.
+Times are UTC; "ctx" is the number of tokens sent to the model on that call. Errors include `dmc digest: No session logs found at <folder>. Pass --logs DIR.` `dmc digest: No matching sessions with player messages.` and, for `show --out` into a closed campaign (spec 010), `dmc digest: NAME is closed: start a sequel to continue its story`, checked before any log is read (exit 1), and `dmc digest: argument command: invalid choice: 'digest' (choose from list, show)` (exit 2). A log `dmc` cannot read is reported with its file name, exit 1: `dmc digest: <file>.jsonl: not valid UTF-8`, or `dmc digest: <file>.jsonl line N: <what is wrong>` for the first record of the wrong shape. That includes an assistant record with a token count (`input_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens` or `output_tokens`) of `NaN` or `Infinity` (`a token count that is not a finite number`), an `output_tokens` that is not a number (`"output_tokens" is not a number`), or input and cache counts whose sum overflows. Every log the request loads is read before anything is printed or written, so one bad log stops `list` and `show` alike, with no heading, rows or files from the sessions before it. The session ids rule logs out by file name before they are read, but `--campaign` and `--after` are applied only after a log has been read, so a bad log is refused even if those would have left it out. (Before 0.1.3 a non-finite count ended in `(LogShapeException)`, after `show` had written the earlier sessions' files.) The subcommand `show` was called `digest` in 0.1.0.
 
 ## campaign
 
@@ -310,9 +313,10 @@ dmc campaign backups NAME
 dmc campaign backup NAME [--prune oldest|old]
 dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
 dmc campaign restore NAME [--from FILE] [--yes]
+dmc campaign close NAME [--yes]
 ```
 
-Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The other five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below.
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign).
 
 | Argument | Meaning |
 |---|---|
@@ -341,11 +345,11 @@ general player options: kept your existing adventures/player-options.md
 to play it, start a session and ask DMC to resume silver-egg-copy
 ```
 
-`export` prints one line (`and the general player options` is left out when there is no general file). `import` prints up to four lines: the result; one for the general player options (`written to adventures/player-options.md` or `kept your existing adventures/player-options.md`, absent when the export holds none); one when the module is not in `modules/` (`module <folder> is not in modules/: ingest it from your own copy before play`, or `this is a module campaign, but its module-progress.md names no module folder`); how to play it; and, when the campaign is not on the kit's standard, `<name> is behind (standard C, kit K): ask DMC to bring it up to date` or `<name> is ahead (standard C, kit K): update dmc`. The imported files are unchanged either way. `show` prints two or three: name, time (UTC), `dmc` version and format; file count, size and whether the general player options are included; and, for a module campaign, `module: <folder> (in modules/)`, `(not in modules/)` or `module: unknown (module-progress.md names no module folder)`. The size is in bytes below 1 KB, KB (1024 bytes) below 1 MB, else MB, with one decimal and a point.
+`export` prints one line (`and the general player options` is left out when there is no general file). `import` prints up to four lines: the result; one for the general player options (`written to adventures/player-options.md` or `kept your existing adventures/player-options.md`, absent when the export holds none); one when the module is not in `modules/` (`module <folder> is not in modules/: ingest it from your own copy before play`, or `this is a module campaign, but its module-progress.md names no module folder`); how to play it; and, when the campaign is not on the kit's standard, `<name> is behind (standard C, kit K): ask DMC to bring it up to date` or `<name> is ahead (standard C, kit K): update dmc`, or, for a closed campaign's export, `<name> is closed: start a sequel to continue its story`. The imported files are unchanged either way. `show` prints two or three: name, time (UTC), `dmc` version and format; file count, size and whether the general player options are included; and, for a module campaign, `module: <folder> (in modules/)`, `(not in modules/)` or `module: unknown (module-progress.md names no module folder)`; and, for an export that holds a closed mark, `closed: <time>` (or `closed: (mark unreadable)`). The size is in bytes below 1 KB, KB (1024 bytes) below 1 MB, else MB, with one decimal and a point.
 
 | Message (after `dmc campaign: `) | Exit |
 |---|---|
-| `give export, import, show, standard, backups, backup, verify or restore (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
+| `give export, import, show, standard, backups, backup, verify, restore or close (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
 | `the following arguments are required: name` (or `file`), `unrecognized arguments: ...`, `argument --out: expected one argument` | 2 |
 | `--as must be lowercase letters, digits and hyphens, starting with a letter or digit` | 2 |
 | `no campaign "<name>" in adventures/ (there are: a, b)` (`(there are none)` when empty; folders starting with `.` are not campaigns) | 1 |
@@ -380,6 +384,7 @@ must be exact. The format of a migration file is `specs/005-campaign-migrations/
 
 | Output | Meaning |
 |---|---|
+| `closed: <time>` | the campaign is closed (it holds `.closed`; `closed: (mark unreadable)` when the mark cannot be read): checked first, before anything else is read (spec 010) |
 | `current` | the campaign's standard equals the kit's |
 | `behind: standard C, kit K: 002-slug.md, 003-slug.md` | the pending migrations, oldest first |
 | `ahead: standard C, kit K: update dmc` | the campaign was written by a newer `dmc` |
@@ -466,6 +471,7 @@ campaign and removes every `.migrating` mark; it prints `restored NAME from <fil
 rename into place puts the campaign back (`could not restore NAME: <reason>; the campaign is as it was`). A run that
 finds the campaign renamed aside by an interrupted restore puts it back first and says
 `recovered NAME from an interrupted restore`. With `--yes` the backup is read once, checked as it is extracted.
+A closed campaign is refused, with or without `--yes` (below).
 
 **Recovery.** `standard`, `backups`, `backup`, `verify` and `restore` each first put back what an interrupted restore
 left, and print `recovered NAME from an interrupted restore` before their own output, followed by `; <folder> ...` for
@@ -475,7 +481,59 @@ was done: its marks are removed and the aside deleted. An aside, a campaign fold
 something made a new campaign folder meanwhile: nothing is touched, and the command fails with `an interrupted restore
 left NAME as adventures/<aside>, and adventures/NAME exists too: keep the one to play, delete the other, and run the
 command again`. A staging's `backups/` goes back into the campaign's (entry by entry when the campaign has a
-`backups/` again, never replacing a file), and the staging is deleted only when it holds none of them.
+`backups/` again, never replacing a file), and the staging is deleted only when it holds none of them. `close` runs the
+same recovery first.
+
+### Closing a campaign
+
+Added in spec 010 (issue #180). A finished campaign is closed for good: nothing changes it again and nothing reopens
+it; a sequel (`dmc-new-campaign`, with a Predecessor line) continues its story. DMC runs `close` under the
+`dmc-close-campaign` skill, after the closing save and only on the player's yes.
+
+**The mark** is `adventures/NAME/.closed`: one line, `<yyyy-MM-ddTHH:mm:ssZ> <closing backup file name>` (UTC), then a
+newline. Only `close --yes` writes it, and its presence is the state: a campaign with the file is closed whatever it
+holds. It travels with every export and backup. The kit's settings deny DMC's edits to it
+(`Edit(/adventures/*/.closed)`), and every shell delete is already denied.
+
+**close** without `--yes` checks everything and prints `would close NAME: <n> files to backups/<file> and exports/<file>`,
+writing nothing. With `--yes` it writes the mark, then the **closing backup**
+`adventures/NAME/backups/NAME_closed_<yyyyMMddHHmmss>.zip` (local time, an ordinary export holding the mark, checked
+whole), then a byte copy of it under the same name in `exports/` of the DMC folder (checked whole, its SHA-256 equal),
+and prints `closed NAME: <n> files to backups/<file> and exports/<file>`. The three share one moment: the mark's time,
+the manifest's `exportedAt` and the name. The name is fixed once and never suffixed. The closing backup's name does not
+match the counted backups' pattern, so `backups`, `--prune`, `verify` and `restore` never count, offer, prune or pick it.
+
+| Message (after `dmc campaign: `) | Exit |
+|---|---|
+| `NAME is already closed: start a sequel to continue its story` | 1 |
+| `NAME has an unfinished migration from <file>: finish it or restore it before closing` | 1 |
+| `NAME is behind (standard C, kit K): bring it up to date before closing` | 1 |
+| `NAME is ahead (standard C, kit K): update dmc` | 1 |
+| `NAME cannot be closed: backups/<file> already exists` (or `exports/<file>`: a file already by the closing backup's name, which is left as it is) | 1 |
+| `could not close NAME: <step>: <reason>; it is still open` (`<step>` is `mark`, `backup`, `check backup`, `copy` or `check copy`; what the run wrote is removed, the copy, then the backup, then the mark) | 1 |
+| `could not close NAME: <step>: <reason>; could not remove <files>: delete them by hand` (a removal failed too) | 1 |
+
+**A closed campaign.** Every command that would write under its folder refuses with one line,
+`dmc <command>: NAME is closed: start a sequel to continue its story`, and changes nothing: `backup` (with or without
+`--prune`), `restore` (plan or `--yes`), `standard --init`, `map` on a file in it, `pdf` with an output folder in it
+(`--out`, or the default `extracted/` beside a PDF in it), and `digest show --out` into it. `redraw` with it active
+does nothing and prints nothing. `standard` prints `closed: <time>`; `backups` lists the counted backups as usual and
+ends with `closed: backups/<file>`, never an `ask:` line; `dmc update` and `dmc refresh` never count it as behind.
+`export`, `show`, `lookup`, `recall`, `size` and `map --measure` work as for any campaign and write nothing in it.
+
+**verify** on a closed campaign does not check a migration. It compares every file of the campaign but `backups/`
+(`.closed` and `.standard` included) with the closing backup the mark names, or `--backup FILE`, by path and SHA-256,
+and writes nothing, pass or fail. It prints `verified NAME: closed, <n> files match <file>`, or up to 40 of
+`changed: <path>`, `added: <path>` and `missing: <path>` (then `<n> more`; every one with `--all`) and fails with
+`verification failed: <n> files differ from <file>`. `--list` and `--accounting` are refused
+(`NAME is closed: --list and --accounting are for migrations`); a mark that cannot be read needs `--backup`
+(`adventures/NAME/.closed is unreadable: name the closing backup with --backup`); a mark naming a file not in `backups/`
+(an import, whose `backups/` the export left out) gives `no backup <file>: dmc campaign backups NAME lists them`, and
+`--backup <the copy in exports/>` checks it. The backup is not required to be of the same name, so an import made
+`--as` another name checks against the file it came from. Checking against any other export is issue #189.
+
+**import** of a closing backup works as for any export: the new campaign holds the mark, so it is closed too, and the
+last line says so.
 ## size
 
 Added in release 0.3.1.

@@ -141,7 +141,8 @@ public static class Refresher
     /// The line <c>dmc refresh</c> and <c>dmc update</c> print after a refresh that updated files of a DMC folder when any of its campaigns is not
     /// current against the freshly written <c>migrations/</c>: behind, unfinished, or with a record that cannot be read
     /// (contracts/campaign-commands.md, spec 005 FR-012). A campaign ahead of the kit is not counted: a newer <c>dmc</c> will
-    /// come with the update.
+    /// come with the update. Nor is a closed campaign (spec 010): <see cref="Campaign.StandardRecord.Status"/> reports it
+    /// closed ahead of everything else and without reading its record, and only behind and unfinished are counted here.
     /// </summary>
     /// <param name="prefix">The command, for example <c>dmc refresh</c>.</param>
     /// <param name="folder">The DMC folder.</param>

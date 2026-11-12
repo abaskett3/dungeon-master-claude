@@ -38,14 +38,15 @@ public static class MapRedraw
     /// not shown a map and there is no <see cref="LiveFile"/>), or nothing newer than the picture. Checked in order:
     /// <see cref="LiveFile"/>; then the file the record names, and its base place. "Newer" is a strictly later
     /// modification time than <c>live-data.js</c>, so a file edited in the same clock tick as the drawing is not seen;
-    /// the next edit is. With nothing changed this costs the reads of two tiny files and a few <c>stat</c> calls.
+    /// the next edit is. With nothing changed this costs the reads of two tiny files and a few <c>stat</c> calls. A closed
+    /// active campaign (spec 010) has nothing to draw, whatever changed: nothing is ever written into it.
     /// </summary>
     /// <param name="root">The DMC folder, the folder that holds <c>adventures/</c>.</param>
     /// <returns>The full path of the map file, or null.</returns>
     public static string? Pending(string root)
     {
         string? campaign = PlainName(ReadLines(Path.Combine(root, "adventures", ".active-campaign")).FirstOrDefault());
-        if (campaign is null)
+        if (campaign is null || Campaign.ClosedCampaign.IsClosed(Path.Combine(root, "adventures", campaign)))
             return null;
         string maps = Path.Combine(root, "adventures", campaign, "maps");
         string data = Path.Combine(maps, "live-data.js");

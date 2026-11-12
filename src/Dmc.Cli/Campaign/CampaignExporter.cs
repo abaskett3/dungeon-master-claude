@@ -17,8 +17,9 @@ internal sealed record ExportResult(string Archive, int Files, bool GeneralOptio
 /// to a ZIP with a <c>manifest.json</c> of every file's size and SHA-256 (research R2, R3). Every file is read once, into memory,
 /// and the same bytes give the checksum and go into the archive, so a file that changes during the export cannot make the
 /// two disagree. The archive is written under a <c>.partial-</c> name and renamed when complete, so a file under the final
-/// name is always whole (R7). Nothing under <c>adventures/</c> is ever changed. The library takes the DMC folder as a
-/// parameter, so a test can aim it at a temporary folder.
+/// name is always whole (R7). Nothing under <c>adventures/</c> is ever changed, except that a backup and a closing backup
+/// are written to the campaign's own <c>backups/</c>. The library takes the DMC folder as a parameter, so a test can aim it
+/// at a temporary folder.
 /// </summary>
 internal static class CampaignExporter
 {
@@ -35,7 +36,7 @@ internal static class CampaignExporter
 
     /// <summary>Where the archive goes: the folder, and either the exact file or the stem of the default name.</summary>
     /// <param name="Folder">The folder the file is written in.</param>
-    /// <param name="File">The file named by <c>--out</c>, or null to use the default name in <paramref name="Folder"/>.</param>
+    /// <param name="File">The file named by <c>--out</c>, or the closing backup's fixed name, or null to use the default name in <paramref name="Folder"/>.</param>
     /// <param name="Stem">The default name without <c>.zip</c> or <c>-N</c>.</param>
     sealed record Destination(string Folder, string? File, string Stem);
 
@@ -46,13 +47,13 @@ internal static class CampaignExporter
     /// <returns>The file written and what it holds.</returns>
     /// <exception cref="DmcException">The campaign or the destination cannot be used, the campaign holds a link or a path that could not be imported, or the file could not be written. Nothing is left under the final name.</exception>
     public static ExportResult Export(string root, ExportRequest request, DateTime? now = null) =>
-        Export(root, request, now, toBackups: false);
+        Export(root, request, now, toBackups: false, fileName: null);
 
     /// <summary>
     /// Writes a backup of a campaign: an export to the campaign's own <c>backups/</c> folder, named
     /// <c>&lt;campaign&gt;_backup_&lt;yyyyMMddHHmmss&gt;.zip</c> (local time), with <c>-2</c>, <c>-3</c> ... on a clash (research
-    /// R8). This is the only way an export is written inside <c>adventures/</c>: the destination is fixed here, never
-    /// taken from <c>--out</c> (FR-005e). An existing file is never replaced.
+    /// R8). With <see cref="ClosingBackup"/>, this is the only way an export is written inside <c>adventures/</c>: the
+    /// destination is fixed here, never taken from <c>--out</c> (FR-005e). An existing file is never replaced.
     /// </summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="name">The campaign's folder name.</param>
@@ -60,14 +61,51 @@ internal static class CampaignExporter
     /// <returns>The file written and what it holds.</returns>
     /// <exception cref="DmcException">The campaign cannot be read or the file could not be written. Nothing is left under the final name.</exception>
     public static ExportResult Backup(string root, string name, DateTime? now = null) =>
-        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true);
+        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true, fileName: null);
+
+    /// <summary>
+    /// Writes a campaign's closing backup (spec 010 research R4): an export to the campaign's own <c>backups/</c> folder under
+    /// exactly the file name the close fixed, <c>&lt;campaign&gt;_closed_&lt;yyyyMMddHHmmss&gt;.zip</c>. The destination is fixed
+    /// here, never taken from <c>--out</c>, and a file already by that name is never replaced: the export fails instead.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="name">The campaign's folder name.</param>
+    /// <param name="fileName">The closing backup's file name, from <see cref="BackupFolder.ClosedName"/>.</param>
+    /// <param name="now">The moment of the close: the manifest's <c>exportedAt</c>.</param>
+    /// <returns>The file written and what it holds.</returns>
+    /// <exception cref="DmcException">The campaign cannot be read, a file by that name exists, or the file could not be written. Nothing is left under the name.</exception>
+    public static ExportResult ClosingBackup(string root, string name, string fileName, DateTime now) =>
+        Export(root, new ExportRequest(name, null, Force: false), now, toBackups: true, fileName);
+
+    /// <summary>Counts the files an export of a campaign would hold now, reading and checking them as an export does but writing nothing.</summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="name">The campaign's folder name.</param>
+    /// <exception cref="DmcException">There is no such campaign, it is a link, it holds a link or a path that could not be exported, or it cannot be read.</exception>
+    public static int Count(string root, string name)
+    {
+        string adventures = Path.Combine(root, "adventures");
+        string campaign = Path.Combine(adventures, FindCampaign(adventures, name));
+        if (new DirectoryInfo(campaign).LinkTarget is not null)
+            throw new DmcException($"{name} is a link: exports hold only the campaign's own files");
+        try
+        {
+            var files = new List<Item>();
+            Walk(campaign, "", files, []);
+            return files.Count;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            throw new DmcException($"could not read {name}: {e.Message.TrimEnd('.', '\r', '\n', ' ')}");
+        }
+    }
 
     /// <summary>Exports a campaign to the destination <see cref="Plan"/> chooses, or to its <c>backups/</c> folder.</summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="request">What was asked.</param>
     /// <param name="now">The moment of the export; the clock when null.</param>
     /// <param name="toBackups">True for a backup: the destination is the campaign's <c>backups/</c> folder and <c>--out</c> is not read.</param>
-    static ExportResult Export(string root, ExportRequest request, DateTime? now, bool toBackups)
+    /// <param name="fileName">For a closing backup, its exact file name in <c>backups/</c>, never replaced; null for an ordinary backup's free name or an export.</param>
+    static ExportResult Export(string root, ExportRequest request, DateTime? now, bool toBackups, string? fileName)
     {
         DateTime moment = (now ?? DateTime.UtcNow).ToUniversalTime();
         string adventures = Path.Combine(root, "adventures");
@@ -80,7 +118,9 @@ internal static class CampaignExporter
         {
             // Inside the try: a --out the system cannot make sense of (a ":" in a name on Windows, a NUL) throws ArgumentException or NotSupportedException.
             var destination = toBackups
-                ? new Destination(BackupFolder.Of(campaign), null, BackupFolder.Stem(request.Name, moment))
+                ? new Destination(BackupFolder.Of(campaign),
+                    fileName is null ? null : Path.Combine(BackupFolder.Of(campaign), fileName),
+                    BackupFolder.Stem(request.Name, moment))
                 : Plan(root, adventures, request, moment);
             var files = new List<Item>();
             var folders = new List<string>();
@@ -153,10 +193,10 @@ internal static class CampaignExporter
         return new Destination(Path.GetDirectoryName(output)!, output, stem);
     }
 
-    /// <summary>True when a path is the folder or anything under it, compared the way this system compares paths.</summary>
+    /// <summary>True when a path is the folder or anything under it, compared the way this system compares paths (case ignored except on Linux). <see cref="ClosedCampaign.Refuse"/> uses it too.</summary>
     /// <param name="path">A full path.</param>
     /// <param name="folder">The folder, which need not be a full path.</param>
-    static bool IsInside(string path, string folder)
+    internal static bool IsInside(string path, string folder)
     {
         var comparison = OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
         string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
@@ -282,6 +322,7 @@ internal static class CampaignExporter
                 foreach (string folder in folders)
                     zip.CreateEntry(ExportSummary.CampaignPrefix + folder + "/").LastWriteTime = stamp;
             }
+            // Never over an existing file, unless --out named it and --force was given; a closing backup never has --force.
             File.Move(partial, target, overwrite: destination.File is not null && request.Force);
         }
         catch

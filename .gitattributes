@@ -12,3 +12,6 @@ kit/** text eol=lf
 
 # The golden fixtures of the campaign migrations are compared as text: keep them LF on every checkout
 tests/Dmc.Tests/Fixtures/migrations/** text eol=lf
+
+# The sequel import's fixture campaign and digest are hashed and compared line for line: keep them LF on every checkout
+tests/Dmc.Tests/Fixtures/sequel/** text eol=lf

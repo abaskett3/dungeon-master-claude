@@ -2,7 +2,10 @@ using Dmc.Campaign;
 
 namespace Dmc.Tests.Campaign;
 
-/// <summary>The accounting file DMC writes during a migration (data-model.md § Accounting file), as unit tests of its reader.</summary>
+/// <summary>
+/// The accounting files DMC writes, a migration's (spec 005 data-model.md § Accounting file) and a digest's (spec 011
+/// research R9), as unit tests of their one reader.
+/// </summary>
 [TestClass]
 public sealed class AccountingFileTests
 {
@@ -55,4 +58,27 @@ public sealed class AccountingFileTests
     [TestMethod]
     public void TheLineNumberCountsCommentsAndBlankLines() =>
         StringAssert.StartsWith(ErrorOf("# a\n\n# b\nbad line\n"), "acc.tsv line 4:");
+
+    /// <summary>A digest's accounting takes <c>merged</c> with an anchor of 8 characters or more, and drops as a migration's does.</summary>
+    [TestMethod]
+    public void ADigestsAccountingTakesMerged()
+    {
+        var file = AccountingFile.Parse("0123456789ab\tmerged\tKibil fell through\nabcdef012345\tdropped:structure\ta heading\n", "acc.tsv", AccountingFile.Merged);
+        Assert.AreEqual(Disposition.Reworded, file.Entries["0123456789ab"].Disposition, "merged is the digest's word for a unit kept in changed form");
+        Assert.AreEqual("Kibil fell through", file.Entries["0123456789ab"].Detail);
+        Assert.AreEqual("structure", file.Entries["abcdef012345"].Class);
+    }
+
+    /// <summary>A digest's accounting refuses <c>reworded</c>, a short anchor and a skipped file, each naming its line and the word it takes.</summary>
+    [TestMethod]
+    [DataRow("0123456789ab\treworded\tlong enough anchor", "acc.tsv line 1: reworded is not a disposition: use merged or dropped:<class>")]
+    [DataRow("# digest\n0123456789ab\tmerged\tshort", "acc.tsv line 2: a merged unit needs an anchor of at least 8 characters")]
+    [DataRow("skipped\tstory/x.md\twhy", "acc.tsv line 1: skipped is not an id of 12 hex digits (take it from dmc campaign verify --list)")]
+    public void ADigestsAccountingRefusesAMigrationsWords(string line, string message) =>
+        Assert.AreEqual(message, Assert.ThrowsExactly<DmcException>(() => AccountingFile.Parse(line, "acc.tsv", AccountingFile.Merged)).Message);
+
+    /// <summary>A migration's accounting refuses <c>merged</c>, naming the word it takes.</summary>
+    [TestMethod]
+    public void AMigrationsAccountingRefusesMerged() =>
+        Assert.AreEqual("acc.tsv line 1: merged is not a disposition: use reworded or dropped:<class>", ErrorOf("0123456789ab\tmerged\tlong enough anchor"));
 }

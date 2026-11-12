@@ -192,6 +192,9 @@ public sealed class RefreshCommandTests
         byte[]? savedRecord = File.Exists(record) ? File.ReadAllBytes(record) : null;
         try
         {
+            // refresh --all refreshes every folder the record lists: set a developer's own folders aside, so it reaches only this one.
+            if (savedRecord is not null)
+                File.Delete(record);
             DmcFolders.MakeCurrentDmcFolder(folder);
             foreach (string file in new[]
                      {

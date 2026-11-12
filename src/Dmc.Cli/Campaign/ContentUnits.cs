@@ -50,15 +50,21 @@ internal static partial class ContentUnits
 
     /// <summary>The units of a file's text, in order, duplicates kept.</summary>
     /// <param name="text">The file's text, with any line endings.</param>
-    public static List<string> Split(string text)
+    public static List<string> Split(string text) => [.. Lines(text).Select(u => u.Unit)];
+
+    /// <summary>The units of a file's text with the line each comes from, in order, duplicates kept.</summary>
+    /// <param name="text">The file's text, with any line endings.</param>
+    /// <returns>Each unit and its 1-based line number in <paramref name="text"/>.</returns>
+    public static List<(int Line, string Unit)> Lines(string text)
     {
         // A comment becomes its line breaks, so the lines around it stay lines; an unclosed "<!--" is left as content.
         string stripped = Comment.Replace(text, m => new string('\n', m.Value.Count(c => c == '\n')));
-        var units = new List<string>();
-        foreach (string raw in stripped.Split('\n'))
+        var units = new List<(int, string)>();
+        string[] lines = stripped.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
         {
-            if (Normalise(raw) is { } unit)
-                units.Add(unit);
+            if (Normalise(lines[i]) is { } unit)
+                units.Add((i + 1, unit));
         }
         return units;
     }

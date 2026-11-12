@@ -35,7 +35,7 @@ internal static partial class CampaignVerifier
     const int Excerpt = 60;
 
     /// <summary>The shortest unit that counts as matched when it is contained in a longer line.</summary>
-    const int ContainedFloor = 20;
+    internal const int ContainedFloor = 20;
 
     /// <summary>The extensions of the files whose lines are content units; any other file is one unit, its path.</summary>
     static readonly string[] TextExtensions = [".md", ".txt"];
@@ -77,7 +77,7 @@ internal static partial class CampaignVerifier
 
         string accountingPath = options.Accounting ?? BackupFolder.Companion(backup, BackupFolder.AccountingSuffix);
         string label = options.Accounting ?? $"{BackupFolder.FolderName}/{backupName}{BackupFolder.AccountingSuffix}";
-        var accounting = AccountingFile.Read(accountingPath, label);
+        var accounting = AccountingFile.Read(accountingPath, label, AccountingFile.Reworded);
         var currentFiles = CampaignFiles.Read(campaign);
         var newText = currentFiles.ToDictionary(f => f.Key, f => Text(f.Value), StringComparer.Ordinal);
         var drops = MigrationSet.Drops(pending);
@@ -182,11 +182,33 @@ internal static partial class CampaignVerifier
         // Opened without the name check: an imported copy of a closed campaign (import --as) is checked against the
         // backup it came from, which names the campaign it was taken of. The byte comparison below is the check.
         var held = ExportSummary.Open(backup).ReadCampaign();
+        var problems = ClosedDifferences(campaign, held, out int files);
+        if (problems.Count == 0)
+            return new VerifyOutcome([string.Create(CultureInfo.InvariantCulture, $"verified {name}: closed, {files} files match {backupName}")], null);
 
+        var lines = new List<string>(options.All ? problems : problems.Take(Cap));
+        if (!options.All && problems.Count > Cap)
+            lines.Add(string.Create(CultureInfo.InvariantCulture, $"{problems.Count - Cap} more"));
+        string differ = problems.Count == 1 ? "differs" : "differ";
+        return new VerifyOutcome(lines, $"{Count(problems.Count, "file")} {differ} from {backupName}");
+    }
+
+    /// <summary>
+    /// The byte check of a closed campaign against its closing backup: every file of the campaign but <c>backups/</c>, the mark
+    /// and <c>.standard</c> included, compared by path and SHA-256. <c>dmc campaign verify</c> and <c>dmc campaign sequel</c> both
+    /// use it, so they cannot disagree about whether a closed campaign changed.
+    /// </summary>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="held">Every file the closing backup holds for the campaign, by path.</param>
+    /// <param name="files">How many files the campaign has now.</param>
+    /// <returns>The <c>missing:</c>, <c>added:</c> and <c>changed:</c> lines, by path; empty when the campaign matches.</returns>
+    internal static List<string> ClosedDifferences(string campaign, IReadOnlyDictionary<string, byte[]> held, out int files)
+    {
         var now = CampaignFiles.Read(campaign);
         string standard = Path.Combine(campaign, StandardRecord.FileName);
         if (File.Exists(standard))
             now[StandardRecord.FileName] = File.ReadAllBytes(standard);
+        files = now.Count;
 
         var problems = new List<string>();
         foreach (string path in held.Keys.Union(now.Keys).Order(StringComparer.Ordinal))
@@ -198,14 +220,7 @@ internal static partial class CampaignVerifier
             else if (CampaignFiles.Hash(bytes) != CampaignFiles.Hash(old))
                 problems.Add("changed: " + path);
         }
-        if (problems.Count == 0)
-            return new VerifyOutcome([string.Create(CultureInfo.InvariantCulture, $"verified {name}: closed, {now.Count} files match {backupName}")], null);
-
-        var lines = new List<string>(options.All ? problems : problems.Take(Cap));
-        if (!options.All && problems.Count > Cap)
-            lines.Add(string.Create(CultureInfo.InvariantCulture, $"{problems.Count - Cap} more"));
-        string differ = problems.Count == 1 ? "differs" : "differ";
-        return new VerifyOutcome(lines, $"{Count(problems.Count, "file")} {differ} from {backupName}");
+        return problems;
     }
 
     /// <summary>Opens a backup, checks it whole and returns its campaign files and the standard it records.</summary>
@@ -262,7 +277,7 @@ internal static partial class CampaignVerifier
     /// <param name="anchor">The anchor.</param>
     /// <param name="texts">The migrated campaign's files as text, decoded once for the whole run.</param>
     /// <param name="units">The migrated campaign's units.</param>
-    static bool AnchorFound(string anchor, IEnumerable<string> texts, HashSet<string> units)
+    internal static bool AnchorFound(string anchor, IEnumerable<string> texts, HashSet<string> units)
     {
         string collapsed = Whitespace.Replace(anchor, " ").Trim();
         return units.Any(u => u.Contains(collapsed, StringComparison.Ordinal))

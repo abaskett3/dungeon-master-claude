@@ -420,7 +420,7 @@ on a file left with the old line.
         changed, migration 005 and why it is needed, the measured cost, and `Part of #179` on its own line;
       - set `shipped: PR #<n>` in `kit/migrations/005-continuity-links.md` and push;
       - check the description with `gh pr view <n> --json body`.
-- [ ] T048 Finish PR 1:
+- [X] T048 Finish PR 1:
       - run the built-in code review once on PR 1, and check each finding yourself;
       - show the fixes to the user, and commit them only on their approval;
       - check that the documents are current;
@@ -438,12 +438,12 @@ to FR-016, FR-008a, FR-021 to FR-024).
 sequel's always-read sections, the companion's sheet states her history's version, `sequel --check` passes, and the
 sample test passes.
 
-- [ ] T049 [US1] After PR 1 merges: delete its branch, fetch `origin`, and create `011-sequel-import` from
+- [X] T049 [US1] After PR 1 merges: delete its branch, fetch `origin`, and create `011-sequel-import` from
       `origin/main`
 
 ### Tests
 
-- [ ] T050 [P] [US1] Create the fixture `tests/Dmc.Tests/Fixtures/sequel/`:
+- [X] T050 [P] [US1] Create the fixture `tests/Dmc.Tests/Fixtures/sequel/`:
       - `campaign/`: a small campaign at the kit's standard (5) that `dmc campaign close --yes` accepts. It holds:
         - a carried companion whose species default ("immune to cold") her history contradicts, with the reason,
           spread over `story/canon-archive.md`, her sheet's history and one session log;
@@ -461,11 +461,11 @@ sample test passes.
 
       Add a helper to `tests/Dmc.Tests/Campaign/CampaignFixtures.cs` that copies the campaign into a temporary DMC
       folder, closes it with the built `dmc`, and creates a sequel whose Continues names it.
-- [ ] T051 [P] [US1] In `tests/Dmc.Tests/Campaign/AccountingFileTests.cs`:
+- [X] T051 [P] [US1] In `tests/Dmc.Tests/Campaign/AccountingFileTests.cs`:
       - a digest's accounting accepts `merged` lines whose anchor has 8 characters or more, and rejects `reworded`;
       - a migration's accounting rejects `merged`;
       - each error names its line, and the existing tests still pass.
-- [ ] T052 [P] [US1] Write `tests/Dmc.Tests/Campaign/SequelDigestTests.cs` (library, needs T050).
+- [X] T052 [P] [US1] Write `tests/Dmc.Tests/Campaign/SequelDigestTests.cs` (library, needs T050).
 
       **Start:**
       - `digests/<closed>/index.md` holds data-model.md's six lines: `- **Format**: 1`, `- **Campaign**:`,
@@ -495,7 +495,7 @@ sample test passes.
       - an index line missing, or a checksum that differs: `index: <line>`;
       - a file over 20,000 estimated tokens: `too large: digests/<closed>/<file> <N>k tokens (split it by subject)`;
       - one heading in both `people-1.md` and `people-2.md`: `heading twice: digests/<closed>/people: <heading>`.
-- [ ] T053 [P] [US1] Write `tests/Dmc.Tests/Campaign/SampleDrawTests.cs`:
+- [X] T053 [P] [US1] Write `tests/Dmc.Tests/Campaign/SampleDrawTests.cs`:
       - the same backup and round give the same 25 items, and round 2 gives a different draw;
       - the 20 facts are split between copied lines and session-only lines in proportion, rounded, with at least one
         of each when both exist;
@@ -506,7 +506,7 @@ sample test passes.
       - with fewer lines or people than asked, all of them are drawn;
       - `the digest has no fact lines` and `the closing backup has no characters` exit 1;
       - the seed prints as 16 hex digits, `+`, then the round.
-- [ ] T054 [P] [US1] Write `tests/Dmc.Tests/Campaign/SequelCommandContract.cs` (black-box), to
+- [X] T054 [P] [US1] Write `tests/Dmc.Tests/Campaign/SequelCommandContract.cs` (black-box), to
       contracts/campaign-sequel.md:
       - every form;
       - the six refusals of § Refusals, word for word, each exit 1; usage mistakes exit 2;
@@ -516,7 +516,7 @@ sample test passes.
       - only `--start` writes, and only under `adventures/NAME/digests/`.
 
       Add `["sequel", "--help"]` to the help data rows in `CampaignCommandContract.cs`.
-- [ ] T055 [P] [US1] Add tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`:
+- [X] T055 [P] [US1] Add tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`:
       - `kit/skills/dmc-new-campaign/SKILL.md` has `## 1c. A sequel` after its `## 1b.` section, and names
         `dmc campaign sequel` with `--start`, `--list`, `--check` and `--sample`, plus `import/progress.md` and
         `digests/`;
@@ -528,11 +528,11 @@ sample test passes.
 
 ### Implementation
 
-- [ ] T056 [P] [US1] In `src/Dmc.Cli/Campaign/AccountingFile.cs`, let the parser take the keyword it accepts for a
+- [X] T056 [P] [US1] In `src/Dmc.Cli/Campaign/AccountingFile.cs`, let the parser take the keyword it accepts for a
       unit kept in changed form: `reworded` for migrations (the default), `merged` for a digest, both with the
       existing anchor rule (`MinAnchor`). The error for a wrong keyword names the accepted one ("use merged or
       dropped:<class>"). Update `CampaignVerifier`'s call, and the XML comments (makes T051 pass)
-- [ ] T057 [US1] Create `src/Dmc.Cli/Campaign/SequelDigest.cs`, with the refusals and the start (R8, R10;
+- [X] T057 [US1] Create `src/Dmc.Cli/Campaign/SequelDigest.cs`, with the refusals and the start (R8, R10;
       contracts/campaign-sequel.md):
       - the six refusals, in the contract's order:
         - NAME closed (`ClosedCampaign.Refusal`);
@@ -544,12 +544,12 @@ sample test passes.
           and reuse it, rather than copy it);
       - `Start` writes the index, the spine from the backup's session logs, and the chain copies, prints the parts
         plan, and on a rerun keeps the Carried line.
-- [ ] T058 [US1] In `SequelDigest.cs`, add the accounted units and `--list` (R9):
+- [X] T058 [US1] In `SequelDigest.cs`, add the accounted units and `--list` (R9):
       - read the FR-021 sources from the closing backup with `CampaignVerifier.OpenBackup`;
       - turn them into units with `ContentUnits.Split`, `Normalise` and `Id`, within the sections T052 names;
       - each unit's status is copied, merged, dropped or unaccounted;
       - `--list` prints `unaccounted: <id> <path>:<line> | <text>` lines, 40 at most without `--all`.
-- [ ] T059 [US1] In `SequelDigest.cs`, add `--check` (R10):
+- [X] T059 [US1] In `SequelDigest.cs`, add `--check` (R10):
       - the accounting is complete;
       - the declared classes are `superseded`, `not-canon`, `structure`, `bookkeeping` and `stat-block`;
       - each chain copy is byte-identical to the closing backup's;
@@ -559,7 +559,7 @@ sample test passes.
 
       On a pass, print `checked digests/<closed>/: N units (C copied, M merged, D dropped), F files, largest Xk
       tokens`, using `Measurement.FormatTokens`. Together with T057 and T058, this makes T052 pass.
-- [ ] T060 [US1] Create `src/Dmc.Cli/Campaign/SampleDraw.cs` (R11; needs T058, whose accounted units tell a copied
+- [X] T060 [US1] Create `src/Dmc.Cli/Campaign/SampleDraw.cs` (R11; needs T058, whose accounted units tell a copied
       line from a session-only one), which makes T053 pass:
       - seed with the first 8 bytes of the closing backup's SHA-256 plus the round;
       - draw with a small PRNG written out in the class (SplitMix64), not `System.Random`, so the draw never changes
@@ -568,16 +568,16 @@ sample test passes.
         from the closing backup's sheets and `minor-npcs.md` (R11);
       - a fact line is a copy when it matches an accounted unit, and session-only when it does not;
       - print the `--sample` lines of the contract.
-- [ ] T061 [P] [US1] Add `SequelRequest` to `src/Dmc.Cli/Campaign/CampaignArguments.cs`, and `sequel` to
+- [X] T061 [P] [US1] Add `SequelRequest` to `src/Dmc.Cli/Campaign/CampaignArguments.cs`, and `sequel` to
       `CampaignArguments.Commands`:
       - exactly one of `--start`, `--list`, `--check` and `--sample`;
       - `--all` only with `--list`;
       - `--round N`, with N of 1 or more, only with `--sample`.
-- [ ] T062 [US1] Implement `sequel` in `src/Dmc.Cli/Commands/CampaignCommand.cs` (needs T056 to T061):
+- [X] T062 [US1] Implement `sequel` in `src/Dmc.Cli/Commands/CampaignCommand.cs` (needs T056 to T061):
       - run the four forms, so that T054 passes;
       - add the four forms to the usage block, one paragraph to the help, and `sequel` to the `Summary` line and the
         class's XML comment.
-- [ ] T063 [US1] Write `## 1c. A sequel` in `kit/skills/dmc-new-campaign/SKILL.md`, after § 1b, as
+- [X] T063 [US1] Write `## 1c. A sequel` in `kit/skills/dmc-new-campaign/SKILL.md`, after § 1b, as
       contracts/prompts.md's PR 2 row says (R15):
       - confirm the closed campaign with `dmc campaign standard`;
       - ask which characters carry over;
@@ -607,13 +607,13 @@ sample test passes.
       - for parts and subagents, point to § 1b rather than repeat it.
 
       Add "or to continue a closed campaign as a sequel" to the description.
-- [ ] T064 [P] [US1] Add one clause to § New character of `kit/skills/dmc-character-sheet-update/SKILL.md` (FR-008,
+- [X] T064 [P] [US1] Add one clause to § New character of `kit/skills/dmc-character-sheet-update/SKILL.md` (FR-008,
       FR-008a), the rule's only home in the kit:
       - a character from a linked campaign, carried over at a sequel's import or returning later, is first looked up
         with `dmc lookup` or `dmc recall`, in the digest or in that campaign;
       - the sheet is built from their history, with species or class defaults only where it says nothing;
       - their voice, the names they use and their appearance go on the sheet itself.
-- [ ] T065 [US1] Run the Campaign and Toolkit tests, then the full suite; fix until green
+- [X] T065 [US1] Run the Campaign and Toolkit tests, then the full suite; fix until green
 
 **Checkpoint**: A sequel can be imported and proved. Commit.
 

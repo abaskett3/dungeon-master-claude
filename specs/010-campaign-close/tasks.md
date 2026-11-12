@@ -280,7 +280,7 @@ copy in `exports/` shows, imports and is closed.
       the two suggestion moments; record what DMC said and wrote, for the PR. §§ 1 to 5 done with the published binary on 2026-11-11 (all as the contract says); § 6, the live run with the model, skipped at the user's word
 - [X] T041 Check every new and changed member has an XML doc comment, private ones included, and every
       `specs/010-campaign-close/` document still matches what shipped
-- [ ] T042 Open the PR with the full description (what, why, sources, tests, documents changed, the measured cost,
+- [X] T042 Open the PR with the full description (what, why, sources, tests, documents changed, the measured cost,
       "no migration" and why, `Part of #180` since the "After merging" steps finish the issue), check it with
       `gh pr view <n> --json body`, run the code review once, and wait for CI
 
@@ -310,3 +310,7 @@ copy in `exports/` shows, imports and is closed.
 - **First release**: add US2 (both P1). This is the smallest PR that keeps the spec's promise.
 - **Then** US3's tests, which prove what the design already gives, and the polish. One PR for all of it, as the plan
   says; the stories are checkpoints, not separate PRs.
+
+## Phase 7: Convergence
+
+- [X] T043 Mark the roadmap row for issue #180 in `.docs/roadmap.md` "Done (PR #190), for the next release", and state the close's order there and in `.docs/user-guide.md` § Closing a campaign as the closing backup, its copy, then the mark last, per FR-021 (partial)

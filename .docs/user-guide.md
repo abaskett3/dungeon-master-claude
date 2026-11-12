@@ -330,9 +330,9 @@ when the main story ends, and once more when the last open thread is resolved; i
    to its story is a sequel. Anything but a clear yes closes nothing.
 3. **A last full save** that keeps everything a sequel will need: how the story ended and where everyone is, what
    became of every secret (revealed, never revealed or abandoned), and every loose end written down as a fact.
-4. **`dmc` closes it**: it marks the campaign closed and writes a checked closing backup in
-   `adventures/<campaign>/backups/` (never removed when old backups are cleared) and a copy of it in `exports/`. If any
-   step fails, nothing is left from it and the campaign is still open; ask again.
+4. **`dmc` closes it**: it writes a checked closing backup in `adventures/<campaign>/backups/` (never removed when
+   old backups are cleared) and a copy of it in `exports/`, then marks the campaign closed last. If any step fails or
+   is cut short, the campaign is still open; ask again.
 
 Keep a further copy of the file in `exports/` somewhere outside the DMC folder. A closed campaign still opens for
 reading (`dmc recall`, `dmc lookup`, `dmc campaign show` and `export`), but nothing changes it; `dmc campaign verify

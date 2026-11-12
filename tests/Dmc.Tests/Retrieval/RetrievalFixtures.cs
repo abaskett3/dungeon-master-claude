@@ -5,10 +5,11 @@ namespace Dmc.Tests.Retrieval;
 
 /// <summary>
 /// Fixture DMC folders for the <c>dmc lookup</c> and <c>dmc recall</c> tests: a sequel campaign (<see cref="Sequel"/>)
-/// whose Predecessor line names an earlier one (<see cref="Predecessor"/>), which was played on a module
-/// (<see cref="Module"/>), plus a markdown and a PDF-style rules reference. Every name and fact is invented: real
-/// campaigns are git-ignored and never quoted in tests. Only <c>System.IO</c> is used, so a fixture does not depend on
-/// the code under test.
+/// whose Continues line names an earlier one (<see cref="Predecessor"/>), which was played on a module
+/// (<see cref="Module"/>), plus a markdown and a PDF-style rules reference; and, apart from it, a linked set of five
+/// campaigns with digests (<see cref="NewLinkedSet"/>, spec 011). Every name and fact is invented: real campaigns are
+/// git-ignored and never quoted in tests. Only <c>System.IO</c> is used, so a fixture does not depend on the code under
+/// test.
 /// </summary>
 public static class RetrievalFixtures
 {
@@ -38,7 +39,7 @@ public static class RetrievalFixtures
         Write(root, "adventures/player-options.md", "# Player options\n\n- **Dice**: the player rolls for their character\n");
 
         Write(root, $"adventures/{Sequel}/player-options.md",
-            "# Campaign options\n\n- **Edition**: 2024\n- **Predecessor**: `" + Predecessor + "` <!-- a sequel -->\n");
+            "# Campaign options\n\n## Rules\n\n- **Edition**: 2024\n\n" + Continuity("`" + Predecessor + "` <!-- a sequel -->"));
         Write(root, $"adventures/{Sequel}/game-state.md",
             "# Game state\n\n## Scene\n\n- **Location**: the north bank of the Fen, beside the ferry hut\n");
         Write(root, $"adventures/{Sequel}/story/canon.md",
@@ -63,7 +64,7 @@ public static class RetrievalFixtures
         Write(root, $"adventures/{Sequel}/character-sheets/npc-hedda.md",
             "# Hedda\n\n## Playing them\n\n- **Voice**: blunt, short sentences, laughs at her own jokes\n");
 
-        Write(root, $"adventures/{Predecessor}/player-options.md", "# Campaign options\n\n- **Predecessor**: none\n");
+        Write(root, $"adventures/{Predecessor}/player-options.md", "# Campaign options\n\n" + Continuity());
         Write(root, $"adventures/{Predecessor}/module-progress.md",
             "# Module progress\n\n- **Module**: *Fen Crossing*\n- **Module folder**: `modules/" + Module + "/`\n");
         Write(root, $"adventures/{Predecessor}/story/canon-archive.md",
@@ -81,6 +82,99 @@ public static class RetrievalFixtures
             "# Monsters\n\n## GOBLIN BOSS (PDF 12)\n\n*Small Humanoid (Goblinoid), Neutral Evil*\n\n- **AC** 17\n- **HP** 21 (6d6)\n\n" +
             "## GIANT EEL (PDF 13)\n\n*Large Beast, Unaligned*\n\n- **AC** 13\n- **HP** 52 (7d10 + 14)\n");
         Write(root, $"modules/{Module}/source/extracted/all-text.txt", "Oswin ferry cart 3 sp 1 gp NOISE from the source text\n");
+    }
+
+    /// <summary>A Continuity section with these three values (spec 011 data-model.md § Continuity section).</summary>
+    /// <param name="continues">The Continues value.</param>
+    /// <param name="side">The Side campaign of value.</param>
+    /// <param name="shares">The Shares a world with value.</param>
+    public static string Continuity(string continues = "none", string side = "none", string shares = "none") =>
+        $"## Continuity\n\n- **Continues**: {continues}\n- **Side campaign of**: {side}\n- **Shares a world with**: {shares}\n";
+
+    /// <summary>The first campaign of the linked set's chain, closed.</summary>
+    public const string First = "tale-one";
+
+    /// <summary>The middle of the chain: closed, it continues <see cref="First"/> and holds its digest.</summary>
+    public const string Middle = "tale-two";
+
+    /// <summary>The last of the chain, active: it continues <see cref="Middle"/> and holds both digests.</summary>
+    public const string Last = "tale-three";
+
+    /// <summary>A side campaign of <see cref="Last"/>.</summary>
+    public const string SideTale = "side-tale";
+
+    /// <summary>A campaign that shares a world with <see cref="Last"/>.</summary>
+    public const string FarTale = "far-tale";
+
+    /// <summary>A line only <see cref="First"/> holds, in its canon and (word for word) in both copies of its digest.</summary>
+    public const string FirstLine = "- The miller Tobin sank the abbey bell in the millpond to hide it from the raiders (s4.2).";
+
+    /// <summary>A line <see cref="Middle"/>'s canon holds, copied word for word into its digest.</summary>
+    public const string MiddleLine = "- Sister Wren keeps the ferry tolls in an iron box under the chapel altar (s20.1).";
+
+    /// <summary>
+    /// A new temporary DMC folder holding only the linked set, apart from <see cref="NewChain"/>'s so the chain tests keep
+    /// their campaign list: <see cref="First"/> ← <see cref="Middle"/> ← <see cref="Last"/> (both closed before it), with
+    /// <see cref="SideTale"/> a side campaign of <see cref="Last"/> and <see cref="FarTale"/> in the same world.
+    /// </summary>
+    /// <returns>The DMC folder; the test deletes it with <see cref="DmcFolders.Delete"/>.</returns>
+    public static string NewLinkedSet()
+    {
+        string root = DmcFolders.MakeDmcFolder(DmcFolders.NewTemp());
+        BuildLinkedSet(root);
+        return root;
+    }
+
+    /// <summary>Writes the linked set into an existing DMC folder and makes <see cref="Last"/> active.</summary>
+    /// <param name="root">The DMC folder.</param>
+    public static void BuildLinkedSet(string root)
+    {
+        Write(root, "adventures/.active-campaign", Last + "\n");
+        Write(root, $"adventures/{First}/player-options.md", "# Campaign options\n\n" + Continuity());
+        Write(root, $"adventures/{Middle}/player-options.md", "# Campaign options\n\n" + Continuity(First));
+        Write(root, $"adventures/{Last}/player-options.md", "# Campaign options\n\n" + Continuity(Middle));
+        Write(root, $"adventures/{SideTale}/player-options.md", "# Campaign options\n\n" + Continuity(side: Last));
+        Write(root, $"adventures/{FarTale}/player-options.md", "# Campaign options\n\n" + Continuity(shares: Last));
+        // The closed mark as dmc campaign close writes it: one line, the time and the closing backup.
+        Write(root, $"adventures/{First}/.closed", $"2026-10-01T09:00:00Z {First}_closed_20261001090000.zip\n");
+        Write(root, $"adventures/{Middle}/.closed", $"2026-11-01T09:00:00Z {Middle}_closed_20261101090000.zip\n");
+
+        Write(root, $"adventures/{First}/story/canon.md", "# Canon\n\n## Places\n\n" + FirstLine + "\n");
+        Write(root, $"adventures/{Middle}/story/canon.md", "# Canon\n\n## Places\n\n" + MiddleLine + "\n" +
+            "- The east gate of Harrowby is barred at sunset by the watch (s20.4).\n");
+        Write(root, $"adventures/{Last}/story/canon.md", "# Canon\n\n## Places\n\n" +
+            "- The east gate of Harrowby is barred at sunset by the reeve (s40.1).\n" +
+            "- The reeve of Harrowby wears a copper chain of office and never smiles (s41.2).\n");
+        Write(root, $"adventures/{SideTale}/story/canon.md", "# Canon\n\n- The Thornwick bridge burned on the night of the eclipse (s3.1).\n");
+        Write(root, $"adventures/{FarTale}/story/canon.md", "# Canon\n\n- Copper prices in the valley doubled after the Greywater mine flooded (s7.1).\n");
+
+        // The middle campaign's copy of the first's digest, and the last campaign's two digests (FR-013's shape).
+        foreach (string holder in new[] { Middle, Last })
+            Digest(root, holder, First, places: FirstLine + "\n", people: "## Tobin\n\n- Tobin is the miller of Abbeyford and the bell-ringer's brother (s3.1).\n",
+                world: "## Rulings\n\n- A bell can be heard across the whole valley on a still night (s4.1).\n", secrets: "");
+        Digest(root, Last, Middle, places: MiddleLine + "\n",
+            people: "## Sister Wren\n\n- Sister Wren is the abbey's last nun and keeps all its keys (s19.2).\n",
+            world: "## Rulings\n\n- The east gate of Harrowby is barred at sunset by the abbot (s20.4).\n",
+            secrets: "## The abbot\n\n- The abbot sold the chapel relic to the smugglers to pay his gambling debts (s22.3), never revealed.\n");
+    }
+
+    /// <summary>Writes one digest in FR-013's shape: an index, the subject files, a spine and the secrets.</summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="holder">The campaign that holds it.</param>
+    /// <param name="digested">The campaign it digests.</param>
+    /// <param name="places">The places file's subject lines.</param>
+    /// <param name="people">The people file's body.</param>
+    /// <param name="world">The world file's body.</param>
+    /// <param name="secrets">The secrets file's body.</param>
+    static void Digest(string root, string holder, string digested, string places, string people, string world, string secrets)
+    {
+        string folder = $"adventures/{holder}/digests/{digested}";
+        Write(root, $"{folder}/index.md", $"# Digest of {digested}\n\n- **Format**: 1\n- **Campaign**: {digested}\n- **Chain**: none\n- **Carried**: none\n");
+        Write(root, $"{folder}/places.md", "# Places\n\n## Harrowby valley\n\n" + places);
+        Write(root, $"{folder}/people.md", "# People\n\n" + people);
+        Write(root, $"{folder}/world.md", "# The world\n\n" + world);
+        Write(root, $"{folder}/spine.md", "# Spine\n\n## Session 1 (session-001.md)\n\n- s1.1 The road in (the valley road, morning)\n");
+        Write(root, $"{folder}/secrets.md", "# Secrets\n\n" + secrets);
     }
 
     /// <summary>Adds files that match every fixture query but must never be searched: under <c>import/</c>, <c>exports/</c>, <c>backups/</c>, a dot folder and a module's <c>source/</c>.</summary>

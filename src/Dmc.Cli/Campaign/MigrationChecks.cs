@@ -39,7 +39,11 @@ internal static partial class MigrationChecks
         ["no-dead-opposition-rows"] = NoDeadOppositionRows,
         ["fights-have-timeline"] = FightsHaveTimeline,
         ["one-last-played-line"] = OneLastPlayedLine,
+        ["continuity-section"] = ContinuitySection,
     };
+
+    /// <summary>The campaign's own player options, which hold the Continuity section (spec 011).</summary>
+    const string PlayerOptions = "player-options.md";
 
     /// <summary>The names of every check, in the order they are registered.</summary>
     public static IReadOnlyCollection<string> Names => Registry.Keys;
@@ -216,5 +220,31 @@ internal static partial class MigrationChecks
         int count = lines.Count(l => LastPlayed.IsMatch(l));
         if (count > 1)
             yield return $"{DmNotes} has {count} Last played lines, where one belongs";
+    }
+
+    /// <summary>
+    /// <c>continuity-section</c> (migration 005, spec 011 R14): the campaign's <c>player-options.md</c> has no Predecessor
+    /// line left, and has a <c>## Continuity</c> section holding its three lines (each <c>none</c> or names). A campaign
+    /// with no player options is not checked.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> ContinuitySection(CheckInput input)
+    {
+        if (!input.New.TryGetValue(PlayerOptions, out string? text))
+            yield break;
+        // The lines as dmc reads them when it follows links, so the check and the links never disagree.
+        var links = CampaignLinks.Parse(text);
+        if (links.Predecessor is not null)
+            yield return $"{PlayerOptions} still has a Predecessor line: the Continuity section replaces it";
+        if (links.Section is not { } section)
+        {
+            yield return $"{PlayerOptions} has no ## Continuity section";
+            yield break;
+        }
+        foreach (string name in CampaignLinks.SectionLines)
+        {
+            if (!section.Any(l => l.Name == name))
+                yield return $"{PlayerOptions}'s Continuity section has no {name} line";
+        }
     }
 }

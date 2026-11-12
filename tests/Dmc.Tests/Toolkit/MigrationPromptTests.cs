@@ -20,6 +20,31 @@ public sealed partial class ToolkitTests
         return at;
     }
 
+    /// <summary>
+    /// Migration 005 asks about an open predecessor before its backup (spec 011 FR-028a): with the standard check, the close
+    /// skill, the player's stop line word for word, and the active campaign left alone (the close names its campaign). The
+    /// migrate skill follows any migration's section before it backs up.
+    /// </summary>
+    [TestMethod]
+    public void MigrationFiveAsksAboutAnOpenPredecessorBeforeTheBackup()
+    {
+        string text = Read("kit/migrations/005-continuity-links.md");
+        int start = At(text, "## Before the backup", "migration 005"), end = At(text, "## Steps", "migration 005");
+        string section = text[start..end];
+        StringAssert.Contains(section, "dmc campaign standard");
+        StringAssert.Contains(section, "dmc-close-campaign");
+        StringAssert.Contains(section.Replace("\n", " "),
+            "Migration stopped until the previous campaign is closed. You can close it by running: /dmc-close-campaign <predecessor>");
+        Assert.DoesNotContain(".active-campaign", section, "the close is pointed at the predecessor by name, never by switching the active campaign");
+        // The live run asked "are you sure you want to keep it open?", where yes means stop: the question says what yes means.
+        StringAssert.Contains(section.Replace("\n", " ").Replace("    ", " "), "whether they are sure they want to go on without closing it. On yes, go on");
+
+        string migrate = Read(MigrateSkill);
+        int ask = At(migrate, "## 2. Ask", MigrateSkill), backUp = At(migrate, "## 3. Back up", MigrateSkill);
+        StringAssert.Contains(migrate[ask..backUp], "## Before the backup");
+        StringAssert.Contains(migrate[ask..backUp].Replace("\n", " "), "come back here and go on to step 3");
+    }
+
     [TestMethod]
     public void TheMigrateSkillRunsTheDmcStepsInOrder()
     {

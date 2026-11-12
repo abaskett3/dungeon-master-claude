@@ -47,6 +47,18 @@ public sealed class SizeLibraryTests
 
     // ---------- the estimate and the sections ----------
 
+    /// <summary>A sequel's digests are searched, never read at resume, so they add nothing to the resume total (spec 011 SC-001, FR-020a).</summary>
+    [TestMethod]
+    public void ADigestFolderAddsNothingToTheResumeTotal()
+    {
+        long before = Measure().Total;
+        string[] paths = Paths();
+        foreach (string file in new[] { "index.md", "people.md", "places.md", "world.md", "spine.md", "secrets.md" })
+            Write(_root, $"digests/old-tale/{file}", "# Digest\n\n## Subject\n\n" + Filler(20_000));
+        Assert.AreEqual(before, Measure().Total);
+        CollectionAssert.AreEqual(paths, Paths());
+    }
+
     [TestMethod]
     public void TokensAreBytesDividedByFourRoundedDown()
     {

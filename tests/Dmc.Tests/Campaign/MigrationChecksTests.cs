@@ -126,6 +126,9 @@ public sealed class MigrationChecksTests
     public void OneLastPlayedLineOrNonePasses(string text) =>
         Assert.IsEmpty(Run("one-last-played-line", now: new() { ["story/dm-notes.md"] = text }));
 
+    /// <summary>
+    /// A log of Last played lines, or a Mix tracker section left over, fails <c>one-last-played-line</c>.
+    /// </summary>
     [TestMethod]
     public void ALogOfSessionsFails()
     {
@@ -134,6 +137,77 @@ public sealed class MigrationChecksTests
         CollectionAssert.AreEqual(new[] { "one-last-played-line: story/dm-notes.md still has a Mix tracker section: one Last played line replaces it" },
             Run("one-last-played-line", now: new() { ["story/dm-notes.md"] = "## Mix tracker\n\n| s | fight |\n" }));
     }
+
+    // ---------- continuity-section (spec 011, migration 005) ----------
+
+    /// <summary>A campaign's player options with a Rules section and then <paramref name="body"/>.</summary>
+    /// <param name="body">The text after the Rules section.</param>
+    static Dictionary<string, string> Options(string body) =>
+        new() { ["player-options.md"] = "# Player options (this campaign)\n\n## Rules\n\n- **Edition**: 5e 2014\n- **House rules**: none\n\n" + body };
+
+    /// <summary>
+    /// A Continuity section with its three lines passes <c>continuity-section</c>, whether they say none, one name or
+    /// several, with or without a comment.
+    /// </summary>
+    [TestMethod]
+    [DataRow("old-tale", "none", "none")]
+    [DataRow("none", "none", "none")]
+    [DataRow("none <!-- a sequel -->", "main-tale", "far-tale, near-tale")]
+    public void AContinuitySectionWithItsThreeLinesPasses(string continues, string side, string shares) =>
+        Assert.IsEmpty(Run("continuity-section", now: Options(
+            $"## Continuity\n\n- **Continues**: {continues}\n- **Side campaign of**: {side}\n- **Shares a world with**: {shares}\n\n## Difficulty\n\n- **Lethality**: balanced\n")));
+
+    /// <summary>A Predecessor line left beside the Continuity section fails.</summary>
+    [TestMethod]
+    public void ALeftoverPredecessorLineFails()
+    {
+        CollectionAssert.AreEqual(new[] { "continuity-section: player-options.md still has a Predecessor line: the Continuity section replaces it" },
+            Run("continuity-section", now: Options("- **Predecessor**: old-tale\n\n## Continuity\n\n- **Continues**: old-tale\n- **Side campaign of**: none\n- **Shares a world with**: none\n")));
+    }
+
+    /// <summary>A file with no Continuity section fails, and its Predecessor line fails too.</summary>
+    [TestMethod]
+    public void AFileWithNoContinuitySectionFails()
+    {
+        CollectionAssert.AreEqual(new[]
+        {
+            "continuity-section: player-options.md still has a Predecessor line: the Continuity section replaces it",
+            "continuity-section: player-options.md has no ## Continuity section",
+        }, Run("continuity-section", now: Options("- **Predecessor**: none\n")));
+    }
+
+    /// <summary>
+    /// A section missing a line fails once per missing line; a line under a later heading is not in the section.
+    /// </summary>
+    [TestMethod]
+    public void AContinuitySectionMissingALineFails()
+    {
+        CollectionAssert.AreEqual(new[]
+        {
+            "continuity-section: player-options.md's Continuity section has no Side campaign of line",
+            "continuity-section: player-options.md's Continuity section has no Shares a world with line",
+        }, Run("continuity-section", now: Options("## Continuity\n\n- **Continues**: old-tale\n\n## Difficulty\n\n- **Shares a world with**: far-tale\n")));
+    }
+
+    /// <summary>A campaign with no <c>player-options.md</c> is not checked.</summary>
+    [TestMethod]
+    public void ACampaignWithNoPlayerOptionsIsNotChecked() =>
+        Assert.IsEmpty(Run("continuity-section", now: new() { ["story/canon.md"] = "# Canon\n" }));
+
+    /// <summary>
+    /// The check reads the lines as <c>dmc</c> does when it follows links: a line name in another case passes, and a
+    /// Predecessor line inside a comment over several lines is not a leftover.
+    /// </summary>
+    [TestMethod]
+    public void TheCheckReadsTheLinesAsTheLinksAreRead() =>
+        Assert.IsEmpty(Run("continuity-section", now: Options(
+            "<!--\n- **Predecessor**: old-tale\n-->\n\n## Continuity\n\n- **continues**: old-tale\n- **Side Campaign Of**: none\n- **Shares a world with**: none\n")));
+
+    /// <summary>A Continuity section inside a comment is no section.</summary>
+    [TestMethod]
+    public void AContinuitySectionInsideACommentFails() =>
+        CollectionAssert.AreEqual(new[] { "continuity-section: player-options.md has no ## Continuity section" },
+            Run("continuity-section", now: Options("<!--\n## Continuity\n\n- **Continues**: none\n- **Side campaign of**: none\n- **Shares a world with**: none\n-->\n")));
 
     [TestMethod]
     public void AnUnknownCheckIsAnError() =>

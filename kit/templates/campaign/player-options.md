@@ -10,7 +10,12 @@ Settings for this campaign only. The player's general preferences (dice, how to 
 - **HP on level-up**: fixed average <!-- or: rolled -->
 - **Encumbrance, rations, ammunition**: track ammunition only <!-- or: ignore all / track everything -->
 - **House rules**: none
-- **Predecessor**: none <!-- a sequel: the earlier campaign's folder in adventures/, searched when a subject from it returns -->
+
+## Continuity
+
+- **Continues**: none <!-- a sequel: the closed campaign's folder in adventures/ -->
+- **Side campaign of**: none <!-- a campaign played alongside a main one, in its world: that campaign's folder -->
+- **Shares a world with**: none <!-- other campaigns in the same world, folders separated by commas -->
 
 ## Difficulty
 

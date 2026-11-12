@@ -6,7 +6,7 @@ namespace Dmc.Commands;
 /// <c>dmc size [NAME] [--check] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
 /// with what to trim. It lists the files <c>dmc-resume-campaign</c> step 2 reads, by that step's rules, and the part of
 /// each; the full report adds the total, the largest sections and the flags, and <c>--check</c>, the form DMC runs in
-/// play, prints only the flags, or nothing when all is well.
+/// play, prints only the flags and any problem with the campaign's link lines (spec 011), or nothing when all is well.
 /// </summary>
 /// <remarks>
 /// It never writes, moves or deletes a file. A measured campaign exits 0 whatever the flags, because DMC acts on what it
@@ -32,7 +32,9 @@ its size in estimated tokens (bytes / 4), with the total, the largest sections a
 Read tool's cap, over its budget, canon over its limit, leftovers the full save should clear). It changes nothing.
 
   NAME      a campaign folder in adventures/ (default: the active campaign)
-  --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play)
+  --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):
+            the flags, then any problem with the links of this campaign or an open linked one (a "notice:"
+            line each, at most three)
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 
@@ -53,8 +55,23 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
         string campaign = SizeReport.Target(folder, request.Name);
         var result = SizeReport.Measure(folder, campaign);
         var lines = request.Check ? Flags.CheckLines(result.Flags, campaign) : SizeReport.FullReport(result);
+        if (request.Check)
+            lines.AddRange(LinkLines(folder, campaign));
         foreach (string line in lines)
             io.Out.WriteLine(line);
         return 0;
     }
+
+    /// <summary>
+    /// The link notices <c>--check</c> prints after the flags (spec 011 contracts/campaign-links.md): resume and the full
+    /// save already run it, so play learns of a broken link with no command of its own. Only the lines of campaigns that
+    /// are not closed are named, since a closed campaign's file can no longer be changed. Each line, the
+    /// <c>(+N more)</c> line included, ends with the flags' "not the full save's to trim" mark, so the full save leaves
+    /// it; a campaign with no problem gets none.
+    /// </summary>
+    /// <param name="folder">The DMC folder.</param>
+    /// <param name="campaign">The campaign measured.</param>
+    static List<string> LinkLines(string folder, string campaign) =>
+        Dmc.Campaign.CampaignLinks.NoticeLines(
+            [.. Dmc.Campaign.CampaignLinks.Build(folder, campaign).Notices.Where(n => !n.InClosed)], "notice: ", " " + Flags.NotTheSaves);
 }

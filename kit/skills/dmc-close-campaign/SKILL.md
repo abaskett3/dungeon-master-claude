@@ -8,7 +8,8 @@ description: Close a finished campaign for good, on the player's word. Suggest i
 Closing ends a campaign for good: a last full save that keeps every fact where a sequel will find it, then `dmc` marks
 the campaign closed and writes a checked closing backup that is never pruned, with a copy in `exports/`. Nothing changes
 a closed campaign again, and nothing reopens it; a sequel continues its story. The campaign is the active one unless the
-player named another.
+player, or the skill that called this one, named another: then close that one, and `adventures/.active-campaign` stays
+as it is.
 
 ## 0. Not now
 
@@ -57,4 +58,6 @@ else, say it in a line and stop. Running it again means steps 1 and 2 again, the
 
 Tell the player, out of character, that the campaign is closed, and where its two copies are (the two paths the
 `closed` line names); suggest keeping a further copy somewhere else. Say that `dmc-new-campaign` can start a sequel,
-whose Predecessor line names this campaign so its facts are found when they return.
+whose Continues line names this campaign, so its facts are found when they return. When another skill called this one,
+say instead, in one line, that the campaign is closed and where its two copies are, and go back to that skill where it
+called this one.

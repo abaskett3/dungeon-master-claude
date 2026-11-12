@@ -51,6 +51,7 @@ adventures/
       live-source.txt        what the page was last drawn from (the map file and its base place), written by dmc map; dmc redraw reads it
     module-progress.md       only for a published module (spoilers)
     import/                  only for a campaign imported from elsewhere: the export, kept as the record
+    digests/<campaign>/      only in a sequel: a closed campaign's facts by subject (spoilers); searched, never read at resume
 ```
 
 `adventures/` is the player's, and `dmc` never writes it (a DMC folder is not a git checkout). A new campaign is a copy of `templates/campaign/` (generated from `kit/templates/campaign/`); the archives, `import/` and the map outputs are created when first needed.
@@ -60,7 +61,7 @@ adventures/
 | File | Holds | Written | Template | Read at resume |
 |---|---|---|---|---|
 | `adventures/player-options.md` | Dice (who rolls, how rolls are asked for and shown, secret rolls), how to talk with DMC, narration style, maps; Image styles (optional: the saved looks for image prompts and the last one used, written by `dmc-generate-image-prompt` when the player saves, changes or uses a saved style) | When the player asks for a change, and by `dmc-generate-image-prompt` | `templates/player-options.md` | Yes |
-| `player-options.md` | Edition, starting level, leveling, HP on level-up, what is tracked, house rules, the predecessor campaign of a sequel, lethality, combat difficulty, puzzle hints, tone, overrides of the general file | When the player asks for a change | `templates/campaign/player-options.md` | Yes |
+| `player-options.md` | Edition, starting level, leveling, HP on level-up, what is tracked, house rules, the campaign's links to other campaigns (§ Continuity, see [Linked campaigns](#linked-campaigns)), lethality, combat difficulty, puzzle hints, tone, overrides of the general file | When the player asks for a change | `templates/campaign/player-options.md` | Yes |
 | `game-state.md` | Campaign, session number, last full save (date, session and the last scene saved); the scene (location, date and time, conditions, who is present, what is happening, what the player was about to do); party status per PC and companion, plus a "With the party, not companions" block for rescued NPCs, prisoners and guests (HP, hit dice, slots, resources, conditions, concentration, exhaustion, death saves, inspiration, gold, consumables); the combat tracker; plan and standing orders for where the party is now (orders not in play go to canon); quests; clocks; pending | Whenever any of it changes, before the next beat is narrated; in a fight, the tracker block once per reply, in one edit | `templates/campaign/game-state.md` | Yes, first after the options |
 | `character-sheets/pc-<name>.md` | Abilities, combat numbers and attacks, features, spellcasting, inventory, story, relationships, notes | On level-up, new items, relationships or goals | `templates/pc-sheet.md` | Yes, every PC |
 | `character-sheets/npc-<name>.md` | How to play them (voice note, the names they use for people and places), what they know, secrets, relationships, history with the PC, stat block with every attack's reach or range | When an NPC is introduced, recurs or changes | `templates/npc-sheet.md`; the `character-sheet-update` skill gives a companion the full `templates/pc-sheet.md` | Companions, and NPCs in the current scene |
@@ -141,8 +142,42 @@ last, so a failure, or the close being stopped part-way, leaves the campaign ope
 | `backups/<campaign>_closed_<stamp>.zip` | The closing backup: an export of the campaign with its mark, checked whole. Its name is outside the counted backups' pattern, so no prune ever removes it. `verify` compares the campaign with it, byte for byte, and writes nothing. |
 | `exports/<campaign>_closed_<stamp>.zip` | A byte copy of the closing backup in the DMC folder, checked by SHA-256, so the campaign survives losing its folder. Keep a further copy somewhere else. |
 
-A sequel is a new campaign whose `player-options.md` Predecessor line names the closed one; `dmc recall` searches the
+A sequel is a new campaign whose `player-options.md` Continues line names the closed one; `dmc recall` searches the
 closed campaign's files with the sequel's, and nothing writes to them.
+
+## Linked campaigns
+
+A campaign's `player-options.md` holds its links to other campaigns in a `## Continuity` section, after `## Rules`
+(migration 005 moved the older single Predecessor line there):
+
+| Line | Value |
+|---|---|
+| **Continues** | `none`, or the folder of the closed campaign this sequel carries on. `dmc-new-campaign` writes only a closed one. |
+| **Side campaign of** | `none`, or the folder of the main campaign this one is played alongside, in its world. |
+| **Shares a world with** | `none`, or the folders of other campaigns in the same world, separated by commas. |
+
+`dmc` follows links both ways: a campaign is linked to every campaign it names and to every campaign that names it,
+and its **linked set** is every campaign reachable through links from it, each once, with its distance in steps and
+how it was reached: `continues` (an earlier campaign of the chain), `sequel` (a later one), `side` (one Side campaign
+of step) or `world` (anything else). A closed campaign that still has a Predecessor line keeps its link: `dmc` reads
+the line as Continues wherever a file has no Continuity section. A line inside an HTML comment is not read. `dmc
+campaign links NAME` lists the set; the resume hears of a link that cannot be followed (a missing folder, a value that
+is not a folder name, a link to itself, a second name for a one-name line) through the `dmc size --check` it already
+runs, for the lines of campaigns that are not closed: a closed campaign's file can no longer be changed.
+
+`dmc recall` searches the whole linked set and each campaign's module once, and labels a hit from another campaign
+with its link; a fact from a `side` or `world` campaign is a fact of the world, not something this campaign's
+characters know unless its own files say they learned it, and a fact from a `sequel` (recalled in an earlier campaign
+kept open) has not happened yet.
+
+A sequel may hold, at its top level, `digests/<campaign>/`: a closed campaign's facts copied word for word and
+reorganised by subject, with its scene spine and its secrets (the sequel import that writes it is planned; until
+then one is written by hand in that shape). `dmc recall` and `dmc lookup` search a digest like the campaign's own
+files, except its `index.md`, which holds no facts; the resume never reads one, so `dmc size` leaves it out of the
+resume total; and a digest's secrets and its `## Module` section (a copy of `module-progress.md`) are marked DM-only in
+recall. A campaign whose digest a campaign nearer the start holds (a `digests/<campaign>/` folder with a `.md` file in
+it) is the last resort: its own folder is still searched, but the digest's line ranks first, and recall prints a line
+the two share once.
 ## Which file wins
 
 Each kind of fact has one home, so that two files cannot disagree about it:
@@ -158,7 +193,7 @@ Each kind of fact has one home, so that two files cannot disagree about it:
 When sources still disagree, this order decides, from `CLAUDE.md`:
 
 1. **Player options:** the campaign's file, then the general file, then the defaults in `CLAUDE.md`.
-2. **Facts:** the campaign files, then the module as written (where play has not diverged from it), then the 5e rules in the campaign's edition, then new invention, which must not contradict the others.
+2. **Facts:** the campaign files, then the module as written (where play has not diverged from it), then the 5e rules in the campaign's edition, then new invention, which must not contradict the others. Among the campaigns of a linked set, a campaign's own canon wins over a digest of an earlier one, a digest over that campaign's own folder, and every campaign over a module as printed; recall ranks them so.
 3. **Files against memory:** the files win over DMC's recollection, over the player's recollection, and over a compacted summary of the conversation.
 4. **Files against each other:** when `dmc-resume-campaign` or the full save's consistency check finds two files that disagree, DMC tells the player what disagrees, proposes the most likely truth, and fixes the files only once the player confirms. It never picks one silently.
 

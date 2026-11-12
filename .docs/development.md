@@ -227,7 +227,11 @@ field that an older file can simply lack, say). The format of a migration file i
 2. **Write it for a campaign you have never seen**, with the five headings in order: What changes, Steps, Judgments,
    Declared drops, Done when. Every step checks whether it is needed, so a campaign already in the new shape is left
    alone. Write before delete. Change only files the front matter's `touches` lists, and name in `drops` every class
-   of content a step may remove.
+   of content a step may remove. When the player must be asked something that may stop the migration, put it in an
+   optional `## Before the backup` section between What changes and Steps (spec 011, migration 005's close question):
+   `dmc-migrate-campaign` follows it after the player's yes and before the backup, so a stop changes nothing and the
+   campaign stays playable, where a stop in Steps would leave it `unfinished`. Work it hands to another skill on
+   another campaign (closing one, say) is that skill's, not a change the migration makes, so it stays out of `touches`.
 3. **Name a shape check.** `checks` names at least one check in `src/Dmc.Cli/Campaign/MigrationChecks.cs` that fails
    on a file left in the old shape. A new check is a small function there, with a test in
    `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`.

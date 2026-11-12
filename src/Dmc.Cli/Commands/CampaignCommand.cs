@@ -4,10 +4,10 @@ using Dmc.Campaign;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close NAME-or-FILE</c>: moves a whole campaign in and out
+/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links NAME-or-FILE</c>: moves a whole campaign in and out
 /// of one file. <c>export</c> writes a campaign folder (and the general player options) to a ZIP with a manifest of sizes
 /// and checksums; <c>import</c> checks such a file completely, then creates the campaign all or nothing under a name that
-/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign.
+/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign. <c>links</c> lists the campaigns linked to one, through the Continuity sections of their <c>player-options.md</c> (spec 011), with their modules and any problem with a link line; it writes nothing.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
@@ -20,7 +20,7 @@ public sealed class CampaignCommand : ICommand
     public string Name => "campaign";
 
     /// <inheritdoc />
-    public string Summary => "export or import a whole campaign as one file, bring its files up to date, or close it for good: dmc campaign export|import|show|standard|backups|backup|verify|restore|close NAME-or-FILE";
+    public string Summary => "export or import a whole campaign as one file, bring its files up to date, close it for good, or list its links: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links NAME-or-FILE";
 
     /// <summary>The text <c>--help</c> prints: usage, what each verb does and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
@@ -34,10 +34,11 @@ usage: dmc campaign export NAME [--out PATH] [--force]
        dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
        dmc campaign restore NAME [--from FILE] [--yes]
        dmc campaign close NAME [--yes]
+       dmc campaign links [NAME]
 
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
 Brings a campaign's files up to the kit's standard with DMC, safely: a backup first, a check that nothing was lost, and
-a way back. Closes a finished campaign for good.
+a way back. Closes a finished campaign for good. Lists the campaigns linked to one.
 
   export    writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
             adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
@@ -57,8 +58,13 @@ a way back. Closes a finished campaign for good.
   close     closes a current campaign for good: marks it closed, writes a checked closing backup that is never pruned
             to adventures/NAME/backups/ and a copy of it to exports/. Nothing changes a closed campaign again; a
             sequel continues its story. Without --yes, prints the plan only.
+  links     lists the campaigns linked to this one through the Continuity sections of their player-options.md (the
+            links it names and those that name it, followed on), nearest first: name, link (continues, sequel, side or
+            world), steps away, and open, closed or missing, with "digest" when a nearer campaign holds its digest;
+            then the modules they reach, then any problem with a link line. "no links" for a campaign alone. Writes
+            nothing.
 
-  NAME          a folder under adventures/ (standard: default the active campaign)
+  NAME          a folder under adventures/ (standard, links: default the active campaign)
   FILE          an export file; its name does not matter, the campaign name is read from inside it
   --out         export: an existing folder (the default file name is used inside it), or a file path ending in .zip
                 (default: exports/ in the DMC folder, made when needed; never inside adventures/)
@@ -107,6 +113,8 @@ A published module is not exported; ingest it again from your own copy.
                 return RunRestore(restore, io);
             case CloseRequest close:
                 return RunClose(close, io);
+            case LinksRequest links:
+                return RunLinks(links, io);
             default:
                 throw new InvalidOperationException("unknown campaign request");
         }
@@ -302,6 +310,21 @@ A published module is not exported; ingest it again from your own copy.
         string verb = request.Yes ? "closed" : "would close";
         io.Out.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"{verb} {plan.Name}: {plan.Files} files to {BackupFolder.FolderName}/{plan.Backup} and exports/{plan.Backup}"));
+        return 0;
+    }
+
+    /// <summary>Lists a campaign's linked set (contracts/campaign-links.md). Writes nothing.</summary>
+    /// <param name="request">The parsed <c>links</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    static int RunLinks(LinksRequest request, Io io)
+    {
+        string root = DmcFolder.Require();
+        string adventures = Path.Combine(root, "adventures");
+        string named = request.Name ?? Dmc.Size.SizeReport.ActiveName(adventures)
+            ?? throw new DmcException("no active campaign: name one (dmc campaign links NAME)");
+        string name = CampaignExporter.FindCampaign(adventures, named);
+        foreach (string line in CampaignLinks.ListLines(CampaignLinks.Build(root, name)))
+            io.Out.WriteLine(line);
         return 0;
     }
 

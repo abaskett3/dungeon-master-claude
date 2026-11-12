@@ -224,6 +224,9 @@ public sealed class LookupLibraryTests
         StringAssert.StartsWith(Lookup.Run(_root, $"adventures/{Sequel}", "prices")[0], $"adventures/{Sequel}/story/canon.md:");
     }
 
+    /// <summary>
+    /// An unknown source, a staging folder, a missing file and a missing rules reference each fail with their one line.
+    /// </summary>
     [TestMethod]
     public void UnknownSourcesStagingFoldersAndMissingFilesFail()
     {
@@ -232,5 +235,65 @@ public sealed class LookupLibraryTests
         Assert.AreEqual(".staging is not a source (a folder starting with a dot is a staging folder)", Failure(".staging", "prices"));
         Assert.AreEqual($"no story/nothing.md in {Sequel}", Failure($"{Sequel}/story/nothing.md", "prices"));
         Assert.AreEqual("rules: no rules reference in rules/ (set one up with /dmc-setup-rules)", Failure("rules", "grappled"));
+    }
+
+    /// <summary>
+    /// A digest's subject is looked up by its heading like any heading of the campaign that holds it (FR-019).
+    /// </summary>
+    [TestMethod]
+    public void ADigestsSubjectIsLookedUpLikeAnyHeadingOfTheCampaign()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            var lines = Lookup.Run(root, Last, "sister wren");
+            Assert.AreEqual($"adventures/{Last}/digests/{Middle}/people.md:3-5", lines[0]);
+            Assert.AreEqual("## Sister Wren", lines[1]);
+            StringAssert.Contains(string.Join('\n', lines), "keeps all its keys");
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    /// <summary>
+    /// A digest's subject and a sheet's section with the same heading both match, so both are listed.
+    /// </summary>
+    [TestMethod]
+    public void ADigestsSubjectAndASheetOfTheSameHeadingAreListed()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            Write(root, $"adventures/{Last}/character-sheets/npc-wren.md", "# Wren\n\n## Sister Wren\n\n- **Voice**: soft, never finishes a sentence\n");
+            var lines = Lookup.Run(root, Last, "sister wren");
+            CollectionAssert.AreEquivalent(new[]
+            {
+                $"adventures/{Last}/character-sheets/npc-wren.md:3: ## Sister Wren",
+                $"adventures/{Last}/digests/{Middle}/people.md:3: ## Sister Wren",
+            }, lines.ToArray());
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
+
+    /// <summary>One digest file can be named as the source, and only its headings are searched.</summary>
+    [TestMethod]
+    public void OneDigestFileCanBeNamedAsTheSource()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            var lines = Lookup.Run(root, $"{Last}/digests/{First}/people.md", "tobin");
+            Assert.AreEqual($"adventures/{Last}/digests/{First}/people.md:3-5", lines[0]);
+            Assert.ThrowsExactly<DmcException>(() => Lookup.Run(root, $"{Last}/digests/{First}/people.md", "sister wren"));
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
     }
 }

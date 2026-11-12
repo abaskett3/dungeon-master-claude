@@ -7,7 +7,7 @@ description: Write the complete current state of the campaign to disk and verify
 
 The test for this save: a new DMC with none of this conversation, reading only the files, could continue the game and the player would notice no difference.
 
-The campaign folder is `adventures/<name>/`, where `<name>` is in `adventures/.active-campaign`.
+The campaign folder is `adventures/<name>/`, where `<name>` is in `adventures/.active-campaign`, or is the campaign the skill that called this one names.
 
 ## 1. Game state
 

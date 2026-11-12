@@ -97,11 +97,16 @@ public abstract class CampaignCommandContract
         Assert.AreEqual($"dmc campaign: {text} is not a dmc campaign export", result.Stderr.TrimEnd());
     }
 
+    /// <summary>
+    /// The help of <c>dmc campaign</c> and of every verb, <c>links</c> included, names every verb's usage and the
+    /// options, with LF line ends.
+    /// </summary>
     [TestMethod]
     public void HelpListsEveryVerbAndTheOptions()
     {
         foreach (string[] args in new[] { new[] { "--help" }, ["export", "--help"], ["import", "--help"], ["show", "--help"], ["-h"],
-                     ["standard", "--help"], ["backups", "--help"], ["backup", "--help"], ["verify", "--help"], ["restore", "--help"], ["close", "--help"] })
+                     ["standard", "--help"], ["backups", "--help"], ["backup", "--help"], ["verify", "--help"], ["restore", "--help"], ["close", "--help"],
+                     ["links", "--help"] })
         {
             var result = Campaign(args);
             Assert.AreEqual(0, result.ExitCode, string.Join(' ', args) + ": " + result.Stderr);
@@ -109,12 +114,16 @@ public abstract class CampaignCommandContract
             foreach (string word in new[] { "dmc campaign export NAME [--out PATH] [--force]", "dmc campaign import FILE [--as NAME]", "dmc campaign show FILE", "--out", "--force", "--as",
                          "dmc campaign standard [NAME] [--init]", "dmc campaign backups NAME", "dmc campaign backup NAME [--prune oldest|old]",
                          "dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]", "dmc campaign restore NAME [--from FILE] [--yes]",
-                         "dmc campaign close NAME [--yes]" })
+                         "dmc campaign close NAME [--yes]", "dmc campaign links [NAME]" })
                 StringAssert.Contains(result.Stdout, word, $"dmc campaign {string.Join(' ', args)}");
         }
     }
 
-[TestMethod]
+    /// <summary>
+    /// A usage mistake with a verb added after export, import and show, or an unknown verb (whose message lists
+    /// <c>links</c>), is one line on stderr and exit 2, and changes nothing.
+    /// </summary>
+    [TestMethod]
     [DataRow("standard --frob", "unrecognized arguments: --frob")]
     [DataRow("backups", "the following arguments are required: name")]
     [DataRow("backup", "the following arguments are required: name")]
@@ -133,7 +142,7 @@ public abstract class CampaignCommandContract
     [DataRow("close rorn --yes=1", "argument --yes: ignored explicit argument '1'")]
     [DataRow("close rorn --prune old", "unrecognized arguments: --prune old")]
     [DataRow("close rorn other", "unrecognized arguments: other")]
-    [DataRow("migrate rorn", "give export, import, show, standard, backups, backup, verify, restore or close (try dmc campaign --help)")]
+    [DataRow("migrate rorn", "give export, import, show, standard, backups, backup, verify, restore, close or links (try dmc campaign --help)")]
     public void AMistakeWithTheNewVerbsIsOneLineAndExitTwo(string line, string message)
     {
         string[] before = Snapshot(_folder);

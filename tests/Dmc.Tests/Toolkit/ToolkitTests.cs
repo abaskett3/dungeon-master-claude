@@ -1084,6 +1084,72 @@ public sealed partial class ToolkitTests
         }
     }
 
+    /// <summary>
+    /// A new campaign's links live in a Continuity section right after Rules, three lines of <c>none</c>, and the old
+    /// Predecessor line is gone (spec 011 FR-001; data-model.md § Continuity section).
+    /// </summary>
+    [TestMethod]
+    public void TheCampaignOptionsTemplateHasTheContinuitySectionAndNoPredecessorLine()
+    {
+        string text = Read("kit/templates/campaign/player-options.md");
+        Assert.DoesNotContain("**Predecessor**", text);
+        var lines = text.Split('\n').ToList();
+        int rules = lines.IndexOf("## Rules");
+        Assert.IsGreaterThanOrEqualTo(0, rules, "the template has no ## Rules section");
+        int next = lines.FindIndex(rules + 1, l => l.StartsWith("## ", StringComparison.Ordinal));
+        Assert.AreEqual("## Continuity", lines[next], "the section after ## Rules is not ## Continuity");
+        int end = lines.FindIndex(next + 1, l => l.StartsWith("## ", StringComparison.Ordinal));
+        var body = lines.GetRange(next + 1, (end < 0 ? lines.Count : end) - next - 1).Where(l => l.Length > 0).ToArray();
+        CollectionAssert.AreEqual(new[]
+        {
+            "- **Continues**: none <!-- a sequel: the closed campaign's folder in adventures/ -->",
+            "- **Side campaign of**: none <!-- a campaign played alongside a main one, in its world: that campaign's folder -->",
+            "- **Shares a world with**: none <!-- other campaigns in the same world, folders separated by commas -->",
+        }, body);
+    }
+
+    /// <summary>
+    /// The full save works on the active campaign or on the one the skill that called it names, so closing a predecessor
+    /// from a sequel's migration never switches the active campaign (spec 011 R13).
+    /// </summary>
+    [TestMethod]
+    public void TheFullSaveTakesTheCampaignItsCallerNames()
+    {
+        string line = Read("kit/skills/dmc-campaign-full-save/SKILL.md").Split('\n').Single(l => l.StartsWith("The campaign folder is", StringComparison.Ordinal));
+        StringAssert.Contains(line, "adventures/.active-campaign");
+        StringAssert.Contains(line, "the skill that called this one names");
+    }
+
+    /// <summary>
+    /// The close skill closes the campaign the skill that called it names, not the active one, leaves the active campaign
+    /// as it is, and hands back to its caller; the migrate skill then goes on to its backup. Migration 005 closes a
+    /// sequel's predecessor this way (spec 011 R13; both found in quickstart step 6's live run).
+    /// </summary>
+    [TestMethod]
+    public void TheCloseSkillClosesTheCampaignItsCallerNames()
+    {
+        string text = Read("kit/skills/dmc-close-campaign/SKILL.md").Replace("\r\n", "\n").Replace('\n', ' ');
+        StringAssert.Contains(text, "unless the player, or the skill that called this one, named another");
+        StringAssert.Contains(text, "`adventures/.active-campaign` stays as it is");
+        StringAssert.Contains(text, "go back to that skill where it called this one");
+        string migrate = Read("kit/skills/dmc-migrate-campaign/SKILL.md").Replace("\r\n", "\n").Replace('\n', ' ');
+        StringAssert.Contains(migrate, "come back here and go on to step 3 for this campaign without asking again");
+    }
+
+    /// <summary>
+    /// The play rules' line on recall says what each of the four labels a hit can carry means, in that one line
+    /// (spec 011 FR-020): who knows a <c>(continues)</c> fact, that a <c>(sequel)</c> fact has not happened yet, and that
+    /// a <c>(side)</c> or <c>(world)</c> fact is the world's.
+    /// </summary>
+    [TestMethod]
+    public void ThePlayRulesSayWhatEachRecallLabelMeansInOneLine()
+    {
+        string line = Read("kit/dm-rules.md").Split('\n').Single(l => l.Contains("dmc recall <campaign> <words>", StringComparison.Ordinal));
+        StringAssert.Contains(line, "A `(continues)` hit is known to those who were there");
+        StringAssert.Contains(line, "a `(sequel)` hit has not happened yet");
+        StringAssert.Contains(line, "a `(side)` or `(world)` hit is a fact of the world");
+    }
+
     [TestMethod]
     public void ANewCampaignGetsEveryFileTheRulesDescribeAndNoPromptIsEmpty()
     {

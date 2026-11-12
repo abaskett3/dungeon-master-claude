@@ -105,14 +105,54 @@ public abstract class RecallCommandContract
         Assert.AreEqual("dmc recall: the following arguments are required: WORDS\n", result.Stderr);
     }
 
+    /// <summary>
+    /// <c>--folder</c> names the DMC folder when no project folder is set, and the output's line ends are LF.
+    /// </summary>
     [TestMethod]
     public void TheFolderOptionIsUsedInsteadOfTheProjectFolder()
     {
         Environment.SetEnvironmentVariable("CLAUDE_PROJECT_DIR", null);
         var result = Recall("--folder", _root, Sequel, "giant", "eel");
         Assert.AreEqual(0, result.ExitCode, result.Stderr);
-        StringAssert.StartsWith(result.Stdout, $"{Predecessor} story/canon-archive.md:3 s12.3 | ");
+        StringAssert.StartsWith(result.Stdout, $"{Predecessor} (continues) story/canon-archive.md:3 s12.3 | ");
         Assert.DoesNotContain("\r", result.Stdout);
+    }
+
+    /// <summary>
+    /// Over a linked set, a side campaign's hit and a digest's hit carry their link, and many matches across the set
+    /// still keep to the 6,000-byte cap.
+    /// </summary>
+    [TestMethod]
+    public void HitsFromOtherCampaignsAndDigestsCarryTheirLinkAndTheOutputKeepsItsCap()
+    {
+        string root = NewLinkedSet();
+        try
+        {
+            var side = Recall("--folder", root, Last, "Thornwick", "bridge", "burned", "eclipse");
+            Assert.AreEqual(0, side.ExitCode, side.Stderr);
+            StringAssert.StartsWith(side.Stdout, $"{SideTale} (side) story/canon.md:3 s3.1 | - The Thornwick bridge burned");
+
+            var digest = Recall("--folder", root, Last, "miller", "Tobin", "millpond");
+            Assert.AreEqual(0, digest.ExitCode, digest.Stderr);
+            StringAssert.StartsWith(digest.Stdout, $"{Last} digests/{First}/places.md:5 (continues) s4.2 | {FirstLine}\n");
+
+            // Many matching lines across every campaign of the set: the output still keeps to its cap.
+            foreach (string campaign in new[] { First, Middle, Last, SideTale, FarTale })
+            {
+                var log = new System.Text.StringBuilder("# Session 50\n\n### Scene 1: Barnacles\n\n");
+                for (int i = 0; i < 60; i++)
+                    log.Append($"Line {i} of {campaign}: the barnacles on the raft were scraped off again, a long and tedious morning's job.\n");
+                Write(root, $"adventures/{campaign}/story/sessions/session-050.md", log.ToString());
+            }
+            var many = Recall("--folder", root, Last, "barnacles");
+            Assert.AreEqual(0, many.ExitCode, many.Stderr);
+            Assert.IsLessThanOrEqualTo(Dmc.Retrieval.Recall.CapBytes, System.Text.Encoding.UTF8.GetByteCount(many.Stdout));
+            StringAssert.Matches(many.StdoutLines[^1], new System.Text.RegularExpressions.Regex(@"^\(\d+ more lines matched\)$"));
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
     }
 
     [TestMethod]

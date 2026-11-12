@@ -22,6 +22,10 @@ public sealed class RecallTimingTests
         "cellar", "key", "letter", "seal", "captain", "guard", "watch", "bell", "tower", "chapel", "priest", "oath", "debt",
     ];
 
+    /// <summary>
+    /// A recall over a linked set of about 3 MB (a chain of three, a side and a same-world campaign, a digest and a
+    /// large module) takes under a second on CI, the best of three runs (spec 011 SC-006; 3 seconds on other machines).
+    /// </summary>
     [TestMethod]
     public void ARecallOverAFewMegabytesTakesUnderASecond()
     {

@@ -224,6 +224,9 @@ public sealed class LookupLibraryTests
         StringAssert.StartsWith(Lookup.Run(_root, $"adventures/{Sequel}", "prices")[0], $"adventures/{Sequel}/story/canon.md:");
     }
 
+    /// <summary>
+    /// An unknown source, a staging folder, a missing file and a missing rules reference each fail with their one line.
+    /// </summary>
     [TestMethod]
     public void UnknownSourcesStagingFoldersAndMissingFilesFail()
     {
@@ -234,6 +237,9 @@ public sealed class LookupLibraryTests
         Assert.AreEqual("rules: no rules reference in rules/ (set one up with /dmc-setup-rules)", Failure("rules", "grappled"));
     }
 
+    /// <summary>
+    /// A digest's subject is looked up by its heading like any heading of the campaign that holds it (FR-019).
+    /// </summary>
     [TestMethod]
     public void ADigestsSubjectIsLookedUpLikeAnyHeadingOfTheCampaign()
     {
@@ -251,6 +257,9 @@ public sealed class LookupLibraryTests
         }
     }
 
+    /// <summary>
+    /// A digest's subject and a sheet's section with the same heading both match, so both are listed.
+    /// </summary>
     [TestMethod]
     public void ADigestsSubjectAndASheetOfTheSameHeadingAreListed()
     {
@@ -271,6 +280,7 @@ public sealed class LookupLibraryTests
         }
     }
 
+    /// <summary>One digest file can be named as the source, and only its headings are searched.</summary>
     [TestMethod]
     public void OneDigestFileCanBeNamedAsTheSource()
     {

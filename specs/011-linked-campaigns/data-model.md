@@ -30,10 +30,11 @@ Read as R3 says. A campaign with no Continuity section is read through its `- **
 | Label | `continues`, `sequel`, `side` or `world` (R2). |
 | State | `open` or `closed` (`ClosedCampaign.IsClosed`). |
 | Folder present | False for a link to a missing folder. |
-| Digest held | The campaign in the set nearer to the start that holds `digests/<this>/`, if any (R4's last-resort rule). |
+| Digest held | The campaign in the set nearer to the start that holds `digests/<this>/` with a `.md` file in it, if any (R4's last-resort rule). |
 
 Validation (notices, FR-004): a missing folder with no digest held, a value that is not a plain name, a link to
-itself, a second value on a single-valued line.
+itself, a second name for a single-valued line (on it or on a second line of that name). A notice remembers whether
+its line is in a closed campaign's file, which `dmc size --check` leaves out.
 
 ## Digest (`adventures/<sequel>/digests/<closed>/`)
 
@@ -42,7 +43,7 @@ itself, a second value on a single-valued line.
 | `index.md` | Format, Campaign, Closing backup (file name and SHA-256), Chain (the campaigns before it, nearest first), Carried (names), Files; no facts | `sequel --start`; Carried by DMC |
 | `people.md` (or `people-1.md`, `people-2.md`, ...) | `## <Name>` per person, then their lines, a living character's stat block included | DMC (the import's subagents) |
 | `places.md`, `factions.md`, `items.md` | The same, per place, faction or item | DMC |
-| `world.md` | `## Rulings`, `## Prices, debts and promises`, `## Lore`, `## How it ended`, `## Module` (the deviations and module NPC statuses from `module-progress.md`), and any other subject that is the world's | DMC |
+| `world.md` | `## Rulings`, `## Prices, debts and promises`, `## Lore`, `## How it ended`, `## Module` (the deviations and module NPC statuses from `module-progress.md`, DM-only in recall as their source is), and any other subject that is the world's | DMC |
 | `spine.md` | Per log, `## <the log's # title> (session-NNN.md)` (`## Session N (session-NNN.md)` if it has none), then `- sN.M <the heading's text after "Scene M: ">` per `### Scene M:` heading, word for word, nothing parsed; a log with no scene headings has its session line only | `sequel --start`, exactly |
 | `secrets.md` | `## <Secret's subject>`, its lines, each ending with its outcome (`revealed sN`, `never revealed`, `abandoned`); each sheet's `## Secrets` lines, word for word, under the character's name | DMC |
 | `accounting.tsv` | `<id>\tmerged\t<anchor>` or `<id>\tdropped:<class>\t<reason>` | DMC, from `sequel --list` |

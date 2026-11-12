@@ -33,7 +33,8 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
 
   NAME      a campaign folder in adventures/ (default: the active campaign)
   --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):
-            the flags, then any problem with the campaign's links (a "notice:" line each, at most three)
+            the flags, then any problem with the links of this campaign or an open linked one (a "notice:"
+            line each, at most three)
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 
@@ -63,11 +64,14 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
 
     /// <summary>
     /// The link notices <c>--check</c> prints after the flags (spec 011 contracts/campaign-links.md): resume and the full
-    /// save already run it, so play learns of a broken link with no command of its own. Each ends with the flags' "not
-    /// the full save's to trim" mark, so the full save leaves it; a campaign with no problem gets none.
+    /// save already run it, so play learns of a broken link with no command of its own. Only the lines of campaigns that
+    /// are not closed are named, since a closed campaign's file can no longer be changed. Each line, the
+    /// <c>(+N more)</c> line included, ends with the flags' "not the full save's to trim" mark, so the full save leaves
+    /// it; a campaign with no problem gets none.
     /// </summary>
     /// <param name="folder">The DMC folder.</param>
     /// <param name="campaign">The campaign measured.</param>
     static List<string> LinkLines(string folder, string campaign) =>
-        Dmc.Campaign.CampaignLinks.NoticeLines(Dmc.Campaign.CampaignLinks.Build(folder, campaign).Notices, "notice: ", " " + Flags.NotTheSaves);
+        Dmc.Campaign.CampaignLinks.NoticeLines(
+            [.. Dmc.Campaign.CampaignLinks.Build(folder, campaign).Notices.Where(n => !n.InClosed)], "notice: ", " " + Flags.NotTheSaves);
 }

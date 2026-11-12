@@ -45,9 +45,6 @@ internal static partial class MigrationChecks
     /// <summary>The campaign's own player options, which hold the Continuity section (spec 011).</summary>
     const string PlayerOptions = "player-options.md";
 
-    /// <summary>The Continuity section's three lines, by name (spec 011 FR-001).</summary>
-    static readonly string[] ContinuityLines = ["Continues", "Side campaign of", "Shares a world with"];
-
     /// <summary>The names of every check, in the order they are registered.</summary>
     public static IReadOnlyCollection<string> Names => Registry.Keys;
 
@@ -235,24 +232,19 @@ internal static partial class MigrationChecks
     {
         if (!input.New.TryGetValue(PlayerOptions, out string? text))
             yield break;
-        string[] lines = Lines(text);
-        if (lines.Any(l => PredecessorLine.IsMatch(l)))
+        // The lines as dmc reads them when it follows links, so the check and the links never disagree.
+        var links = CampaignLinks.Parse(text);
+        if (links.Predecessor is not null)
             yield return $"{PlayerOptions} still has a Predecessor line: the Continuity section replaces it";
-        int start = Array.FindIndex(lines, l => l.TrimEnd() == "## Continuity");
-        if (start < 0)
+        if (links.Section is not { } section)
         {
             yield return $"{PlayerOptions} has no ## Continuity section";
             yield break;
         }
-        var section = lines.Skip(start + 1).TakeWhile(l => !l.StartsWith('#')).ToList();
-        foreach (string name in ContinuityLines)
+        foreach (string name in CampaignLinks.SectionLines)
         {
-            if (!section.Any(l => l.TrimStart().StartsWith($"- **{name}**:", StringComparison.Ordinal)))
+            if (!section.Any(l => l.Name == name))
                 yield return $"{PlayerOptions}'s Continuity section has no {name} line";
         }
     }
-
-    /// <summary>The old Predecessor line of a campaign's player options, as recall read it before spec 011.</summary>
-    [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*Predecessor\*\*:", RegexOptions.CultureInvariant)]
-    private static partial Regex PredecessorLine { get; }
 }

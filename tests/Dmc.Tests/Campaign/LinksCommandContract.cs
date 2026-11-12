@@ -57,6 +57,10 @@ public abstract class LinksCommandContract
     /// <summary>Takes the snapshot the cleanup compares against.</summary>
     void Arranged() => _before = DmcFolders.SnapshotAll(_root);
 
+    /// <summary>
+    /// <c>dmc campaign links NAME</c> lists the set nearest first, then by name, then the modules, then the notices,
+    /// and writes nothing.
+    /// </summary>
     [TestMethod]
     public void TheSetIsListedNearestFirstThenTheModulesThenTheNotices()
     {
@@ -77,6 +81,7 @@ public abstract class LinksCommandContract
             "notice: rorn: Shares a world with old-west is not in adventures/\n", result.Stdout);
     }
 
+    /// <summary>A campaign with no links prints <c>no links</c>.</summary>
     [TestMethod]
     public void ACampaignAloneSaysNoLinks()
     {
@@ -87,6 +92,7 @@ public abstract class LinksCommandContract
         Assert.AreEqual("no links\n", result.Stdout);
     }
 
+    /// <summary>With no NAME, the active campaign's set is listed.</summary>
     [TestMethod]
     public void TheActiveCampaignIsTheDefault()
     {
@@ -99,6 +105,7 @@ public abstract class LinksCommandContract
         Assert.AreEqual("egg continues 1 open\n", result.Stdout);
     }
 
+    /// <summary>A closed campaign's set can be listed: reading it changes nothing.</summary>
     [TestMethod]
     public void AClosedCampaignCanBeListed()
     {
@@ -111,6 +118,26 @@ public abstract class LinksCommandContract
         Assert.AreEqual("rorn sequel 1 open\n", result.Stdout);
     }
 
+    /// <summary>
+    /// A broken link in a closed campaign's file is still listed here, though <c>dmc size --check</c> leaves it out at
+    /// resume.
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignsBrokenLinkIsStillListed()
+    {
+        MakeCampaign("rorn", continues: "egg");
+        MakeCampaign("egg", continues: "gone");
+        ClosedCampaign.Write(Path.Combine(_root, "adventures", "egg"), new DateTime(2026, 11, 11, 9, 0, 0, DateTimeKind.Utc), "egg_closed_20261111090000.zip");
+        Arranged();
+        var result = Campaign("links", "rorn");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[]
+        {
+            "egg continues 1 closed", "gone continues 2 missing", "notice: egg: Continues gone is not in adventures/",
+        }, result.StdoutLines);
+    }
+
+    /// <summary>Past three notices, the rest are one <c>(+N more)</c> line.</summary>
     [TestMethod]
     public void MoreThanThreeNoticesAreCut()
     {
@@ -126,6 +153,7 @@ public abstract class LinksCommandContract
         }, result.StdoutLines);
     }
 
+    /// <summary>An unknown campaign is one line naming the campaigns there are, and exit 1.</summary>
     [TestMethod]
     public void AnUnknownCampaignIsOneLineAndExitOne()
     {
@@ -137,6 +165,7 @@ public abstract class LinksCommandContract
         Assert.AreEqual("dmc campaign: no campaign \"nowhere\" in adventures/ (there are: rorn)", result.Stderr.TrimEnd());
     }
 
+    /// <summary>No NAME and no active campaign is one line saying how to name one, and exit 1.</summary>
     [TestMethod]
     public void NoActiveCampaignIsOneLineAndExitOne()
     {
@@ -147,6 +176,10 @@ public abstract class LinksCommandContract
         Assert.AreEqual("dmc campaign: no active campaign: name one (dmc campaign links NAME)", result.Stderr.TrimEnd());
     }
 
+    /// <summary>
+    /// A usage mistake (an extra argument, the <c>--check</c> the verb does not have, a value on <c>--help</c>) is one
+    /// line and exit 2.
+    /// </summary>
     [TestMethod]
     [DataRow("links rorn other", "unrecognized arguments: other")]
     [DataRow("links rorn --check", "unrecognized arguments: --check")]
@@ -161,6 +194,7 @@ public abstract class LinksCommandContract
         Assert.AreEqual($"dmc campaign: {message}", result.Stderr.TrimEnd());
     }
 
+    /// <summary><c>dmc campaign links --help</c> shows the verb's usage.</summary>
     [TestMethod]
     public void HelpNamesTheVerb()
     {

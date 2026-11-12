@@ -1120,6 +1120,20 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(line, "the skill that called this one names");
     }
 
+    /// <summary>
+    /// The play rules' line on recall says what each of the four labels a hit can carry means, in that one line
+    /// (spec 011 FR-020): who knows a <c>(continues)</c> fact, that a <c>(sequel)</c> fact has not happened yet, and that
+    /// a <c>(side)</c> or <c>(world)</c> fact is the world's.
+    /// </summary>
+    [TestMethod]
+    public void ThePlayRulesSayWhatEachRecallLabelMeansInOneLine()
+    {
+        string line = Read("kit/dm-rules.md").Split('\n').Single(l => l.Contains("dmc recall <campaign> <words>", StringComparison.Ordinal));
+        StringAssert.Contains(line, "A `(continues)` hit is known to those who were there");
+        StringAssert.Contains(line, "a `(sequel)` hit has not happened yet");
+        StringAssert.Contains(line, "a `(side)` or `(world)` hit is a fact of the world");
+    }
+
     [TestMethod]
     public void ANewCampaignGetsEveryFileTheRulesDescribeAndNoPromptIsEmpty()
     {

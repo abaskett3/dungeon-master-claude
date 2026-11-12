@@ -97,6 +97,10 @@ public abstract class CampaignCommandContract
         Assert.AreEqual($"dmc campaign: {text} is not a dmc campaign export", result.Stderr.TrimEnd());
     }
 
+    /// <summary>
+    /// The help of <c>dmc campaign</c> and of every verb, <c>links</c> included, names every verb's usage and the
+    /// options, with LF line ends.
+    /// </summary>
     [TestMethod]
     public void HelpListsEveryVerbAndTheOptions()
     {
@@ -115,7 +119,11 @@ public abstract class CampaignCommandContract
         }
     }
 
-[TestMethod]
+    /// <summary>
+    /// A usage mistake with a verb added after export, import and show, or an unknown verb (whose message lists
+    /// <c>links</c>), is one line on stderr and exit 2, and changes nothing.
+    /// </summary>
+    [TestMethod]
     [DataRow("standard --frob", "unrecognized arguments: --frob")]
     [DataRow("backups", "the following arguments are required: name")]
     [DataRow("backup", "the following arguments are required: name")]

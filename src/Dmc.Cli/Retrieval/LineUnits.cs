@@ -20,7 +20,8 @@ internal static partial class LineUnits
 
     /// <summary>
     /// The units of one file. Every line is DM-only in a module, the DM notes, module progress and a digest's secrets
-    /// (<c>digests/&lt;campaign&gt;/secrets*.md</c>, spec 011 FR-012), and under a Secrets heading of an NPC sheet.
+    /// (<c>digests/&lt;campaign&gt;/secrets*.md</c>, spec 011 FR-012); under a Secrets heading of an NPC sheet; and
+    /// under a digest's <c>## Module</c> heading, which copies module progress.
     /// </summary>
     /// <param name="file">The file's place, path and weight.</param>
     /// <param name="markdown">The file, read.</param>
@@ -57,7 +58,8 @@ internal static partial class LineUnits
                 continue;
 
             string? cited = session is not null ? scene : Citation().Match(text) is { Success: true } c ? c.Value : null;
-            bool secret = npcSheet && open.Any(h => h is not null && h.Contains("secret", StringComparison.OrdinalIgnoreCase));
+            bool secret = (npcSheet && open.Any(h => h is not null && h.Contains("secret", StringComparison.OrdinalIgnoreCase)))
+                || (file.Tier == Tier.Digest && open[2] is { } section && section.Equals("Module", StringComparison.OrdinalIgnoreCase));
             units.Add(new LineUnit(file, i + 1, text, Words.Stems(text), cited, dmFile || secret));
         }
         return units;

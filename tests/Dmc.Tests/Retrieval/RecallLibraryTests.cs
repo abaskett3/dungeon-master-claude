@@ -33,6 +33,7 @@ public sealed class RecallLibraryTests
     /// <param name="text">What to look for.</param>
     static int IndexOf(List<string> lines, string text) => lines.FindIndex(l => l.Contains(text, StringComparison.Ordinal));
 
+    /// <summary>A line only the predecessor holds is found, and its hit is labelled <c>(continues)</c>.</summary>
     [TestMethod]
     public void ALineOnlyThePredecessorHoldsIsFoundAndLabelledWithIt()
     {
@@ -86,6 +87,7 @@ public sealed class RecallLibraryTests
         StringAssert.StartsWith(lines[0], $"{Sequel} story/canon.md:3 s5.2 | ");
     }
 
+    /// <summary>Of two lines that match alike, canon's comes before the session log's.</summary>
     [TestMethod]
     public void OfTwoLinesThatMatchAlikeCanonComesBeforeTheSessionLog()
     {
@@ -106,6 +108,9 @@ public sealed class RecallLibraryTests
         Assert.AreEqual(0, IndexOf(lines, "session-032.md:5 s32.2"));
     }
 
+    /// <summary>
+    /// A line that matches alike ranks below the campaign's own in the predecessor, and lowest in a module.
+    /// </summary>
     [TestMethod]
     public void ALikeLineRanksBelowInThePredecessorAndLowestInTheModule()
     {
@@ -193,6 +198,7 @@ public sealed class RecallLibraryTests
         Assert.IsTrue(lines.Skip(1).Any(l => l.Contains("story/canon.md")));
     }
 
+    /// <summary>A missing campaign on the Continues line is a notice that says it was not searched.</summary>
     [TestMethod]
     public void AMissingCampaignOnTheContinuesLineIsANotice()
     {
@@ -201,14 +207,43 @@ public sealed class RecallLibraryTests
         Assert.AreEqual($"{Sequel}: Continues gone-road is not in adventures/, not searched", lines[0]);
     }
 
+    /// <summary>
+    /// The same line in two places is one line: the nearer, better-weighted copy is printed, and the other is neither
+    /// printed nor counted among the lines matched (spec 011 R5).
+    /// </summary>
     [TestMethod]
-    public void TheSameLineInTwoPlacesIsPrintedOnceAndTheOtherCounted()
+    public void TheSameLineInTwoPlacesIsPrintedOnceAndTheOtherIsNotCounted()
     {
         const string line = "- The ford stones are slick with moss after the spring rain (s30.3).";
         Write(_root, $"adventures/{Sequel}/story/summary.md", "# Summary\n\n" + line + "\n");
         Write(_root, $"adventures/{Predecessor}/story/summary.md", "# Summary\n\n" + line + "\n");
         var lines = Run("slick stones moss spring rain");
-        CollectionAssert.AreEqual(new[] { $"{Sequel} story/summary.md:3 s30.3 | " + line, "(1 more lines matched)" }, lines);
+        CollectionAssert.AreEqual(new[] { $"{Sequel} story/summary.md:3 s30.3 | " + line }, lines);
+    }
+
+    /// <summary>
+    /// Copies of a line become one unit before ranking: the best-weighted copy, then the ranking's tie order, DM-only
+    /// when any copy is; a list marker does not make two lines different.
+    /// </summary>
+    [TestMethod]
+    public void CopiesOfALineAreMergedIntoTheBestWeightedOneDmOnlyWhenAnyIs()
+    {
+        var here = new Place("last", "x", false, 0);
+        var there = new Place("first", "y", false, 2, "continues");
+        static LineUnit Unit(Place place, string file, Tier tier, double weight, string text, bool dmOnly) =>
+            new(new ScopeFile(place, file, tier, weight), 3, text, Words.Stems(text), null, dmOnly);
+        var merged = Recall.Merge(
+        [
+            Unit(there, "story/canon.md", Tier.Canon, 1.00, "- The mill burned on the night of the eclipse (s5.3).", false),
+            Unit(there, "story/dm-notes.md", Tier.Story, 0.90, "The mill burned on the night of the eclipse (s5.3).", true),
+            Unit(here, "digests/first/places.md", Tier.Digest, 1.08, "- The mill burned on the night of the eclipse (s5.3).", false),
+            Unit(here, "story/canon.md", Tier.Canon, 1.30, "- The reeve never smiles at anyone in Harrowby (s2.1).", false),
+        ]);
+        Assert.HasCount(2, merged);
+        Assert.AreEqual("digests/first/places.md", merged[0].File.Relative);
+        Assert.IsTrue(merged[0].DmOnly, "a copy keeps any copy's DM mark");
+        Assert.AreEqual("story/canon.md", merged[1].File.Relative);
+        Assert.IsFalse(merged[1].DmOnly);
     }
 
     [TestMethod]
@@ -259,6 +294,7 @@ public sealed class RecallLibraryTests
         CollectionAssert.AreEqual(Run("Oswin ferry raft cart crossing"), Run("Oswin ferry raft cart crossing"));
     }
 
+    /// <summary>Each file's tier follows from its path, a digest's files included.</summary>
     [TestMethod]
     public void TiersFollowTheFilesPaths()
     {
@@ -309,6 +345,10 @@ public sealed class RecallLinkedSetTests
     /// <param name="lines">The output.</param>
     static string Show(List<string> lines) => string.Join('\n', lines);
 
+    /// <summary>
+    /// A fact only the first campaign of the chain holds comes first from the digest the last one holds, labelled
+    /// <c>(continues)</c>, and is printed once.
+    /// </summary>
     [TestMethod]
     public void AFactOnlyTheFirstCampaignHoldsComesFromTheDigestLabelledContinues()
     {
@@ -317,15 +357,59 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(1, lines.Count(l => l.Contains("millpond")), Show(lines));
     }
 
+    /// <summary>
+    /// A line in the middle campaign's canon and in its digest is printed once, from the digest, and the source is not
+    /// counted among the lines matched.
+    /// </summary>
     [TestMethod]
     public void ALineInTheMiddleCanonAndItsDigestIsPrintedOnceFromTheDigest()
     {
         var lines = Run("Sister Wren ferry tolls iron box chapel altar");
         Assert.AreEqual($"{Last} digests/{Middle}/places.md:5 (continues) s20.1 | {MiddleLine}", lines[0]);
         Assert.AreEqual(1, lines.Count(l => l.Contains("iron box")), Show(lines));
-        StringAssert.Matches(lines[^1], new System.Text.RegularExpressions.Regex(@"^\(\d+ more lines matched\)$"));
+        Assert.IsFalse(lines.Any(l => l.EndsWith(" more lines matched)", StringComparison.Ordinal)), "the source is not counted either: " + Show(lines));
     }
 
+    /// <summary>
+    /// A digest's <c>## Module</c> section copies the DM-only module progress, so its lines are DM-only too, and the one
+    /// line printed for the copy and its source keeps the mark.
+    /// </summary>
+    [TestMethod]
+    public void ADigestsModuleSectionIsDmOnly()
+    {
+        const string line = "- The drowned crypt flooded early, so the cultists moved to the old mill (s21.2).";
+        Write(_root, $"adventures/{Last}/digests/{Middle}/world.md", "# The world\n\n## Module\n\n" + line + "\n");
+        Write(_root, $"adventures/{Middle}/module-progress.md", "# Module progress\n\n## Deviations\n\n" + line + "\n");
+        var lines = Run("drowned crypt flooded cultists mill");
+        Assert.AreEqual($"{Last} digests/{Middle}/world.md:5 (continues) s21.2 DM | {line}", lines[0], Show(lines));
+        Assert.AreEqual(1, lines.Count(l => l.Contains("cultists")), Show(lines));
+    }
+
+    /// <summary>A DM-only line copied word for word into a digest's open file is printed once, from the digest, still DM-only.</summary>
+    [TestMethod]
+    public void ACopyOfADmOnlyLineIsPrintedDmOnly()
+    {
+        const string line = "- The ferryman Oskar is paid by the smugglers to look away at night (s21.4).";
+        Write(_root, $"adventures/{Last}/digests/{Middle}/people.md", "# People\n\n## Oskar\n\n" + line + "\n");
+        Write(_root, $"adventures/{Middle}/story/dm-notes.md", "# DM notes\n\n## Secrets\n\n" + line + "\n");
+        var lines = Run("ferryman Oskar paid smugglers look away");
+        Assert.AreEqual($"{Last} digests/{Middle}/people.md:5 (continues) s21.4 DM | {line}", lines[0], Show(lines));
+        Assert.AreEqual(1, lines.Count(l => l.Contains("Oskar")), Show(lines));
+    }
+
+    /// <summary>A digest's <c>index.md</c> holds no facts and is not searched, though its Carried line is long enough to rank.</summary>
+    [TestMethod]
+    public void ADigestsIndexIsNotSearched()
+    {
+        Write(_root, $"adventures/{Last}/digests/{Middle}/index.md",
+            $"# Digest of {Middle}\n\n- **Format**: 1\n- **Carried**: Bartholomew Quillfeather the cartographer\n");
+        CollectionAssert.AreEqual(new[] { "nothing matched: Bartholomew Quillfeather cartographer" }, Run("Bartholomew Quillfeather cartographer"));
+    }
+
+    /// <summary>
+    /// The campaign's own canon (1.30) ranks above a digest's line (1.14), which ranks above the digested campaign's
+    /// own canon (1.05).
+    /// </summary>
     [TestMethod]
     public void OwnCanonRanksAboveTheDigestWhichRanksAboveTheDigestedCampaignsCanon()
     {
@@ -335,6 +419,10 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(2, IndexOf(lines, $"{Middle} (continues) story/canon.md:6 s20.4 | "), Show(lines));
     }
 
+    /// <summary>
+    /// Hits from a side campaign and a same-world campaign carry <c>(side)</c> and <c>(world)</c>; the campaign's own
+    /// carry none.
+    /// </summary>
     [TestMethod]
     public void SideAndSameWorldHitsAreLabelledAndTheCampaignsOwnAreNot()
     {
@@ -343,6 +431,7 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(0, IndexOf(Run("reeve copper chain office smiles"), $"{Last} story/canon.md:6 s41.2 | "));
     }
 
+    /// <summary>Every line of a digest's secrets is DM-only (FR-012).</summary>
     [TestMethod]
     public void EveryLineOfADigestsSecretsIsDmOnly()
     {
@@ -350,6 +439,10 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(0, IndexOf(lines, $"{Last} digests/{Middle}/secrets.md:5 (continues) s22.3 DM | "), Show(lines));
     }
 
+    /// <summary>
+    /// A missing folder whose digest is held is searched through the digest, with no notice; with the digest gone too,
+    /// it is a notice.
+    /// </summary>
     [TestMethod]
     public void AMissingFolderWhoseDigestIsHeldIsSearchedThroughTheDigestWithNoNotice()
     {
@@ -363,6 +456,7 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual($"{Last}: Continues {Middle} is not in adventures/, not searched", Run("Sister Wren ferry tolls iron box")[0]);
     }
 
+    /// <summary>A closed campaign that still has only a Predecessor line is still followed (FR-005).</summary>
     [TestMethod]
     public void AClosedCampaignWithOnlyAPredecessorLineIsStillFollowed()
     {
@@ -373,6 +467,9 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(0, IndexOf(lines, $"{First} (continues) story/sessions/session-005.md:5 s5.1 | "), Show(lines));
     }
 
+    /// <summary>
+    /// Recalling in the first campaign of the chain labels the later campaigns' hits <c>(sequel)</c>.
+    /// </summary>
     [TestMethod]
     public void RecallingInTheClosedFirstCampaignLabelsTheLaterOnesSequel()
     {
@@ -393,6 +490,7 @@ public sealed class RecallLinkedSetTests
             Write(_root, $"adventures/{campaign}/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/moors/`\n");
     }
 
+    /// <summary>A module only the side campaign names is searched; its hits carry no label and are DM-only.</summary>
     [TestMethod]
     public void AModuleReachedOnlyThroughTheSideCampaignIsSearchedAndItsHitsCarryNoLabel()
     {
@@ -401,6 +499,7 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(0, IndexOf(lines, "modules/moors chapters/01-crossroads.md:3 DM | The standing stones"), Show(lines));
     }
 
+    /// <summary>A module two campaigns of the set name is searched once.</summary>
     [TestMethod]
     public void AModuleTwoCampaignsOfTheSetNameIsSearchedOnce()
     {
@@ -409,6 +508,9 @@ public sealed class RecallLinkedSetTests
         Assert.AreEqual(1, lines.Count(l => l.Contains("01-crossroads.md:3")), Show(lines));
     }
 
+    /// <summary>
+    /// A linked campaign's canon ranks above the module as printed: canon wins where play diverged (US5 scenario 2).
+    /// </summary>
     [TestMethod]
     public void ALinkedCampaignsCanonRanksAboveTheModuleAsPrinted()
     {

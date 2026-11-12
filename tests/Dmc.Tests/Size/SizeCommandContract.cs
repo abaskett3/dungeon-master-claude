@@ -78,6 +78,10 @@ public abstract class SizeCommandContract
         Assert.AreEqual("", result.Stdout + result.Stderr);
     }
 
+    /// <summary>
+    /// <c>--check</c> prints the link notices after the flags, each, and the <c>(+N more)</c> line, ending <c>(not the
+    /// full save's to trim)</c>.
+    /// </summary>
     [TestMethod]
     public void TheCheckFormPrintsTheLinkNoticesAfterTheFlagsMarkedAsNotTheFullSaves()
     {
@@ -96,10 +100,34 @@ public abstract class SizeCommandContract
             $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
             $"notice: {Name}: Side campaign of lost is not in adventures/ (not the full save's to trim)",
             $"notice: {Name}: Shares a world with far is not in adventures/ (not the full save's to trim)",
-            "(+1 more)",
+            "(+1 more) (not the full save's to trim)",
         }, result.StdoutLines);
     }
 
+    /// <summary>
+    /// A broken link in a closed campaign's file, which can no longer be changed, is not named at resume; the open
+    /// campaign's own broken link still is.
+    /// </summary>
+    [TestMethod]
+    public void TheCheckFormLeavesOutTheNoticesOfAClosedCampaignsLines()
+    {
+        Arrange(() =>
+        {
+            Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: old\n- **Side campaign of**: none\n" +
+                "- **Shares a world with**: lost\n");
+            string old = NewCampaign(_root, "old");
+            WriteAt(old, "player-options.md", "# Player options\n\n- **Predecessor**: gone\n");
+            Dmc.Campaign.ClosedCampaign.Write(old, new DateTime(2026, 11, 11, 9, 0, 0, DateTimeKind.Utc), "old_closed_20261111090000.zip");
+        });
+        var result = Size("--check", Name);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        CollectionAssert.AreEqual(new[]
+        {
+            $"notice: {Name}: Shares a world with lost is not in adventures/ (not the full save's to trim)",
+        }, result.StdoutLines);
+    }
+
+    /// <summary><c>--check</c> of a campaign whose links are all good prints nothing (SC-007).</summary>
     [TestMethod]
     public void TheCheckFormOfACampaignWithLinksAndNoProblemPrintsNothing()
     {

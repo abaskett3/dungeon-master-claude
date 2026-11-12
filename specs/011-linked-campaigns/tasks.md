@@ -395,7 +395,7 @@ on a file left with the old line.
 - [X] T043 [P] Edit `.docs/roadmap.md`: the status of issue #179 Phase B, PR 1 (links and recall)
 - [X] T044 Check that every new and changed member has an XML doc comment, private ones included, and that
       `specs/011-linked-campaigns/` still matches what PR 1 ships
-- [X] T045 Measure the standing cost again as in T003, and record PR 1's share of FR-031's 150 tokens. Measured: +149 bytes, about 37 tokens (dm-rules +174, resume -82, full save +57, descriptions 0), and no command call added
+- [X] T045 Measure the standing cost again as in T003, and record PR 1's share of FR-031's 150 tokens. Measured: +149 bytes, about 37 tokens (dm-rules +174, resume -82, full save +57, descriptions 0), and no command call added. After the code review's `(sequel)` clause (T048): +188 bytes, about 47 tokens (dm-rules +213)
 - [ ] T046 Run quickstart.md § PR 1 in a scratch DMC folder outside any checkout:
       - steps 1 to 5 with the release build;
       - step 6, migration 005's four paths, in a live `dmc play` with the player (or as the player decides);

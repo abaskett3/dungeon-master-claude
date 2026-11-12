@@ -4,8 +4,8 @@ namespace Dmc.Retrieval;
 
 /// <summary>
 /// <c>dmc recall</c>'s work (research R1, R4, R5, R11; contracts/dmc-recall.md; spec 011 R4 to R6): index every line unit
-/// of the scope in memory, rank the units by BM25 times their file's weight, and return the best as hit lines within the
-/// output cap, each line once, labelled with how its campaign is linked. Reads only; stores nothing.
+/// of the scope in memory, each line once, rank the units by BM25 times their file's weight, and return the best as hit
+/// lines within the output cap, labelled with how its campaign is linked. Reads only; stores nothing.
 /// </summary>
 internal static class Recall
 {
@@ -57,7 +57,7 @@ internal static class Recall
         if (notices.Count > RecallScope.NoticesShown)
             output.Add($"(+{notices.Count - RecallScope.NoticesShown} more skipped)");
 
-        var ranked = Rank(units, wanted);
+        var ranked = Rank(Merge(units), wanted);
         if (ranked.Count == 0)
         {
             output.Add($"nothing matched: {query}");
@@ -66,26 +66,69 @@ internal static class Recall
 
         int used = output.Sum(Bytes);
         int shown = 0;
-        // A line printed once (spec 011 R5): a digest copies its campaign's lines word for word and ranks above them, so
-        // the copy is printed and the source counted among the rest, by the migrations' meaning of "the same line".
-        var printed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var unit in ranked)
         {
-            string same = Campaign.ContentUnits.Normalise(unit.Text) ?? unit.Text;
-            if (printed.Contains(same))
-                continue;
             string line = Hit(unit, wanted);
             bool more = shown + 1 < ranked.Count;
             if (used + Bytes(line) + (more ? ClosingLineRoom : 0) > CapBytes)
                 break;
             output.Add(line);
-            printed.Add(same);
             used += Bytes(line);
             shown++;
         }
         if (shown < ranked.Count)
             output.Add($"({ranked.Count - shown} more lines matched)");
         return output;
+    }
+
+    /// <summary>
+    /// Each line once (spec 011 R5): of the units whose normalised text (<see cref="Campaign.ContentUnits.Normalise"/>,
+    /// the migrations' meaning of "the same line") is the same, only the one <see cref="Rank"/> would put first is kept,
+    /// DM-only when any of them is. A digest copies its campaign's lines word for word, so without this every copy would
+    /// be printed and would count against its own words' rarity. Before ranking, so the copies are not in the count.
+    /// </summary>
+    /// <param name="units">Every unit of the scope, in scope order.</param>
+    /// <returns>One unit per line text, in the order each text first appears.</returns>
+    public static List<LineUnit> Merge(IReadOnlyList<LineUnit> units)
+    {
+        var at = new Dictionary<string, int>(StringComparer.Ordinal);
+        var merged = new List<LineUnit>(units.Count);
+        foreach (var unit in units)
+        {
+            string same = Campaign.ContentUnits.Normalise(unit.Text) ?? unit.Text;
+            if (!at.TryGetValue(same, out int index))
+            {
+                at[same] = merged.Count;
+                merged.Add(unit);
+                continue;
+            }
+            var kept = merged[index];
+            bool dmOnly = kept.DmOnly || unit.DmOnly;
+            merged[index] = (Before(unit, kept) ? unit : kept) with { DmOnly = dmOnly };
+        }
+        return merged;
+    }
+
+    /// <summary>
+    /// True when <paramref name="a"/> ranks before <paramref name="b"/>, two units of the same text: the higher file
+    /// weight, then <see cref="Rank"/>'s tie order (tier, distance, place, file, line).
+    /// </summary>
+    /// <param name="a">One unit.</param>
+    /// <param name="b">The other.</param>
+    static bool Before(LineUnit a, LineUnit b)
+    {
+        int order = b.File.Weight.CompareTo(a.File.Weight);
+        if (order == 0)
+            order = a.File.Tier.CompareTo(b.File.Tier);
+        if (order == 0)
+            order = a.File.Place.Distance.CompareTo(b.File.Place.Distance);
+        if (order == 0)
+            order = string.CompareOrdinal(a.File.Place.Label, b.File.Place.Label);
+        if (order == 0)
+            order = string.CompareOrdinal(a.File.Relative, b.File.Relative);
+        if (order == 0)
+            order = a.Line.CompareTo(b.Line);
+        return order < 0;
     }
 
     /// <summary>

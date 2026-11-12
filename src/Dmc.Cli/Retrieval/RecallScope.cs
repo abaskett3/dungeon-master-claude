@@ -45,8 +45,9 @@ internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double
 
 /// <summary>
 /// What recall searches (research R1, R6, R11; spec 011 R4): the campaign; every campaign of its linked set
-/// (<see cref="CampaignLinks"/>) whose folder is there; the digests any of them hold; and each module any of them
-/// names, once. Builds the list of files with their weights, and the notices for what could not be searched.
+/// (<see cref="CampaignLinks"/>) whose folder is there; the digests any of them hold, except each digest's
+/// <c>index.md</c>; and each module any of them names, once. Builds the list of files with their weights, and the
+/// notices for what could not be searched.
 /// </summary>
 internal static class RecallScope
 {
@@ -117,14 +118,18 @@ internal static class RecallScope
             foreach (string relative in SourceFiles.Campaign(place.Folder))
             {
                 var tier = TierOf(relative);
-                if (tier != Tier.Digest)
+                int distance = place.Distance;
+                string? digestLink = null;
+                if (tier == Tier.Digest)
                 {
-                    files.Add(new ScopeFile(place, relative, tier, WeightOf(tier) * Math.Pow(StepFactor, place.Distance) * factor));
-                    continue;
+                    string[] parts = relative.Split('/');
+                    // A digest's index.md holds its format, backup, chain and file list: no fact to recall.
+                    if (parts.Length == 3 && parts[2].Equals("index.md", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    distance = set.DigestDistance(parts[1], place.Distance);
+                    digestLink = set.DigestLabel(parts[1], place.Link);
                 }
-                string digested = relative.Split('/')[1];
-                int distance = set.DigestDistance(digested, place.Distance);
-                files.Add(new ScopeFile(place, relative, tier, ArchiveWeight * Math.Pow(StepFactor, distance) * factor, set.DigestLabel(digested, place.Link)));
+                files.Add(new ScopeFile(place, relative, tier, WeightOf(tier) * Math.Pow(StepFactor, distance) * factor, digestLink));
             }
         }
         return files;

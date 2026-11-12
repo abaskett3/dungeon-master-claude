@@ -13,9 +13,9 @@ What each PR changes in `kit/`, as obligations; the wording is the implementer's
 | `kit/skills/dmc-migrate-campaign/SKILL.md` | § 2: after the yes, follow each pending migration's `## Before the backup` before § 3; a stop there changes nothing. |
 | `kit/skills/dmc-new-campaign/SKILL.md` | § 2: the Predecessor bullet becomes the Continuity bullet; Continues only to a campaign `dmc campaign standard` reports `closed` (else offer `dmc-close-campaign`); then `dmc campaign links <folder>`, relaying its `notice:` lines. |
 | `kit/skills/dmc-resume-campaign/SKILL.md` | § 2 item 1: the Predecessor sentence goes. § 2, where `dmc size <campaign> --check` already runs: a `notice:` line is told to the player in one sentence. No command call is added. The resume still reads no other campaign. |
-| `src/Dmc.Cli/Commands/SizeCommand.cs` | `--check` prints the linked set's notices after its flags, each ending `(not the full save's to trim)`, so the full save's rule for its lines is unchanged (contracts/campaign-links.md). |
+| `src/Dmc.Cli/Commands/SizeCommand.cs` | `--check` prints the linked set's notices after its flags (only the lines of campaigns that are not closed), each ending `(not the full save's to trim)`, the `(+N more)` line too, so the full save's rule for its lines is unchanged (contracts/campaign-links.md). |
 | `kit/skills/dmc-close-campaign/SKILL.md` | § 5: "whose Predecessor line names this campaign" becomes "whose Continues line names it". |
-| `kit/dm-rules.md` | Accuracy item 1: "the earlier campaigns its Predecessor line ... names" becomes the linked campaigns and digests; one clause that a `(side)` or `(world)` hit is a fact of the world, not known to this campaign's characters unless its files say so, and a `(continues)` hit is known to those who were there. At most one line more (FR-020). |
+| `kit/dm-rules.md` | Accuracy item 1: "the earlier campaigns its Predecessor line ... names" becomes the linked campaigns and digests; one clause that a `(side)` or `(world)` hit is a fact of the world, not known to this campaign's characters unless its files say so, a `(continues)` hit is known to those who were there, and a `(sequel)` hit has not happened yet. At most one line more (FR-020). |
 | `src/Dmc.Cli/Campaign/MigrationChecks.cs` | `continuity-section`. |
 
 ## PR 2: the sequel import

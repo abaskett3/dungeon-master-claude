@@ -66,8 +66,10 @@ code and the prompts. The spec's own clarifications are not repeated here.
   - the same line in The Silver Egg's own canon: 1.30 × 0.95 × 0.85 = 1.05;
   - a Rorn's Landing canon line: 1.30; its session log line: 1.00.
 
-  `digests/*/secrets.md` lines are DM-only (`LineUnits`' DM-file test gains the path). `digests/*/index.md` is
-  searched like any file; its lines are mostly shorter than recall's 25-character floor.
+  `digests/*/secrets.md` lines are DM-only (`LineUnits`' DM-file test gains the path), and so are the lines under a
+  digest's `## Module` heading, which copies the DM-only `module-progress.md`. `digests/*/index.md` is not searched:
+  it holds no facts, and its Carried line would rank at the archive's weight. A campaign holds a digest once
+  `digests/<name>/` has a `.md` file in it; an empty folder stands in for nothing.
 - **Rationale:** FR-017 needs a digest line to beat the same or a weaker line from the digested campaign's folder at
   equal relevance, while the sequel's own canon still wins over both. The factor keeps the folder searchable as the
   last resort (the issue's step 5) rather than dropping it. Using the archive's weight places the digest where its
@@ -78,12 +80,18 @@ code and the prompts. The spec's own clarifications are not repeated here.
 
 ## R5. Duplicate lines
 
-- **Decision:** When printing, a hit whose normalised text (`ContentUnits.Normalise`, the migrations' rule) equals that
-  of a hit already printed is skipped and counted in the closing `(N more lines matched)` line.
+- **Decision:** Before ranking, the line units whose normalised text (`ContentUnits.Normalise`, the migrations' rule)
+  is the same become one: the copy with the highest weight (then the ranking's tie order), DM-only when any copy is.
+  The others are not ranked, printed or counted in the closing `(N more lines matched)` line.
 - **Rationale:** The digest copies lines word for word, so without this a recall prints the digest's line and the
   source's line one after the other and halves the useful hits within the 6,000-byte cap. Because the digest ranks
-  above its source (R4), the copy kept is the digest's. Reusing the migrations' normalisation keeps one definition of
-  "the same line" (constitution III).
+  above its source (R4), the copy kept is the digest's. Merging before ranking, not when printing, keeps the copies
+  from counting against their own words' rarity: a fact held by its campaign and by two later digests would otherwise
+  rank about 10% lower than a line found once. A copy keeps any copy's DM mark, so a DM-only line is never printed
+  as safe through its copy. Reusing the migrations' normalisation keeps one definition of "the same line"
+  (constitution III).
+- **Alternatives considered:** Skipping a duplicate when printing (the first version: the copies still lowered their
+  words' weight and filled the closing count).
 
 ## R6. The hit line's label
 

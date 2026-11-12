@@ -6,8 +6,8 @@ here is unchanged (the 6,000-byte cap, the trim, the notices' cap, the exit code
 ## Scope
 
 The campaign; every campaign of its linked set ([campaign-links.md](campaign-links.md)); every `digests/<name>/` in any
-of them; every module any of them names, once, at the smallest distance. Excluded as today: `import/`, `exports/`,
-`backups/`, dot folders, a module's `source/`.
+of them, except its `index.md` (no facts); every module any of them names, once, at the smallest distance. Excluded as
+today: `import/`, `exports/`, `backups/`, dot folders, a module's `source/`.
 
 ## Weights
 
@@ -23,11 +23,14 @@ line.
 
 ## DM-only
 
-As today, plus every line of `digests/*/secrets.md`.
+As today, plus every line of `digests/*/secrets*.md` and every line under a digest's `## Module` heading (it copies
+`module-progress.md`).
 
 ## Duplicates
 
-A hit whose normalised text equals a hit already printed is not printed and counts toward `(N more lines matched)`.
+Lines whose normalised text is the same are one line, merged before ranking: the copy with the highest weight (then
+the tie order above) is ranked and printed, `DM` when any copy is DM-only. The other copies are not ranked, printed or
+counted in `(N more lines matched)`.
 
 ## Hit line
 

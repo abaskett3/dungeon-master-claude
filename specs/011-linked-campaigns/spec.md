@@ -360,11 +360,12 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   campaign in question, each visited once, with its distance in steps and the link by which it was first reached.
 - **FR-004**: `dmc` MUST report, in one line each and only when there is something to report, a link naming a missing
   folder (unless the campaign holds its digest), a link that is not a plain folder name, a campaign linked to itself,
-  and a second value on a single-valued line. A campaign with no problem and no news prints nothing. A Continues link
-  to a campaign that is not closed is reported only where a link is being written (`dmc-new-campaign` and the
-  migration, FR-028); once the player has kept it (FR-028), resume and recall say nothing about it, and recall follows
-  it like any other link. In play these lines come from `dmc size <campaign> --check`, which resume already runs
-  (FR-031).
+  and a second name for a single-valued line (on that line or on a second line of the same name). A campaign with no
+  problem and no news prints nothing. A Continues link to a campaign that is not closed is reported only where a link
+  is being written (`dmc-new-campaign` and the migration, FR-028); once the player has kept it (FR-028), resume and
+  recall say nothing about it, and recall follows it like any other link. In play these lines come from
+  `dmc size <campaign> --check`, which resume already runs (FR-031); it names only the lines of campaigns that are not
+  closed, since a closed campaign's file can no longer be changed (recall and `dmc campaign links` still name them).
 - **FR-005**: A closed campaign whose files still have the Predecessor line MUST keep its link: `dmc` reads that line as
   Continues wherever it finds no Continuity section.
 
@@ -427,13 +428,15 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   each, each module once. It MUST rank a digest's line above an equally matching line from the digested campaign's own
   folder, and every campaign's line above an equally matching module line, as today.
 - **FR-018**: Each hit MUST name the campaign or module it comes from; a hit from any campaign but the one recalled in,
-  or from a digest, MUST also say how it is linked: `continues`, `sequel`, `side` or `world` (research R2), a digest's hit carrying its digested campaign's. A line whose text is
-  identical to a higher-ranked hit MUST be left out, so a digest's copy and its source are not both printed.
+  or from a digest, MUST also say how it is linked: `continues`, `sequel`, `side` or `world` (research R2), a digest's
+  hit carrying its digested campaign's. Lines whose text is identical MUST count as one line, ranked and printed once,
+  so a digest's copy and its source are not both printed; that line is DM-only when any copy is.
 - **FR-019**: `dmc lookup` MUST be able to print one subject's section of a digest by its heading.
 - **FR-020**: The play rules MUST say, in the lines that already say where facts come from, that a fact from a side
   campaign or a same-world campaign is a fact of the world, not something this campaign's characters know unless this
-  campaign's files say they learned it; and that a fact from a continued campaign is known to the characters who were
-  there. `kit/dm-rules.md` MUST grow by no more than one line.
+  campaign's files say they learned it; that a fact from a continued campaign is known to the characters who were
+  there; and that a fact from a sequel (recalled in an earlier campaign the player kept open) has not happened yet.
+  `kit/dm-rules.md` MUST grow by no more than one line.
 - **FR-020a**: Resume MUST read no file of another campaign and no digest file, except the legacy files `dmc` names
   (FR-026). `dmc size` MUST leave the digest out of the resume total. Each digest file MUST be checked against the
   near-cap margin (FR-013) when the digest is written, by the digest's own check, since a digest never changes afterwards.

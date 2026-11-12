@@ -105,6 +105,9 @@ public abstract class RecallCommandContract
         Assert.AreEqual("dmc recall: the following arguments are required: WORDS\n", result.Stderr);
     }
 
+    /// <summary>
+    /// <c>--folder</c> names the DMC folder when no project folder is set, and the output's line ends are LF.
+    /// </summary>
     [TestMethod]
     public void TheFolderOptionIsUsedInsteadOfTheProjectFolder()
     {
@@ -115,6 +118,10 @@ public abstract class RecallCommandContract
         Assert.DoesNotContain("\r", result.Stdout);
     }
 
+    /// <summary>
+    /// Over a linked set, a side campaign's hit and a digest's hit carry their link, and many matches across the set
+    /// still keep to the 6,000-byte cap.
+    /// </summary>
     [TestMethod]
     public void HitsFromOtherCampaignsAndDigestsCarryTheirLinkAndTheOutputKeepsItsCap()
     {

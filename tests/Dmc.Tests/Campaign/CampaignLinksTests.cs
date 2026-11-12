@@ -61,6 +61,9 @@ public sealed class CampaignLinksTests
     /// <param name="set">The set.</param>
     static string[] Notices(LinkedSet set) => [.. set.Notices.Select(n => n.Text)];
 
+    /// <summary>
+    /// A campaign that names no other and that no other names has an empty set: no members, no modules, no notices.
+    /// </summary>
     [TestMethod]
     public void ACampaignAloneHasNoMembersNoModulesAndNoNotices()
     {
@@ -72,6 +75,10 @@ public sealed class CampaignLinksTests
         Assert.IsEmpty(set.Notices);
     }
 
+    /// <summary>
+    /// Each of the three lines is read, its values cleaned of comments, backticks, a leading <c>adventures/</c> and
+    /// slashes, and matched to folders ignoring case.
+    /// </summary>
     [TestMethod]
     public void TheThreeLinesAreReadWithCommentsBackticksFoldersAndSlashesRemoved()
     {
@@ -84,6 +91,9 @@ public sealed class CampaignLinksTests
         Assert.IsEmpty(Build("c").Notices);
     }
 
+    /// <summary>
+    /// A file with no Continuity section is read through its old Predecessor line, as Continues (FR-005).
+    /// </summary>
     [TestMethod]
     public void APredecessorLineIsReadAsContinuesWhenThereIsNoContinuitySection()
     {
@@ -92,6 +102,7 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "b continues 1 open" }, Members(Build("c")));
     }
 
+    /// <summary>When a file has both, the Continuity section is read and a leftover Predecessor line is not.</summary>
     [TestMethod]
     public void TheContinuitySectionWinsOverALeftoverPredecessorLine()
     {
@@ -101,6 +112,10 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "b continues 1 open" }, Members(Build("c")));
     }
 
+    /// <summary>
+    /// Links are followed both ways: the set is the same campaigns from wherever it is built, each with its label from
+    /// there.
+    /// </summary>
     [TestMethod]
     public void LinksAreFollowedBothWays()
     {
@@ -113,6 +128,10 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "c side 1 open", "b world 2 open", "e world 2 open" }, Members(Build("d")));
     }
 
+    /// <summary>
+    /// Distances and labels are those of the first path found, breadth first: steps back are <c>continues</c>, steps
+    /// forward <c>sequel</c>, one side step <c>side</c>, anything else <c>world</c>.
+    /// </summary>
     [TestMethod]
     public void DistancesAndLabelsFollowTheFirstPathFound()
     {
@@ -125,6 +144,7 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "b sequel 1 open", "c sequel 2 open", "d world 3 open", "x world 4 open" }, Members(Build("a")));
     }
 
+    /// <summary>A ring of links ends: each campaign is visited once.</summary>
     [TestMethod]
     public void ARingOfLinksVisitsEachCampaignOnce()
     {
@@ -134,6 +154,7 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "y world 1 open", "z world 1 open" }, Members(Build("x")));
     }
 
+    /// <summary>A member is closed when its own folder holds the closed mark.</summary>
     [TestMethod]
     public void TheStateComesFromEachCampaignsClosedMark()
     {
@@ -143,6 +164,9 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "b continues 1 closed" }, Members(Build("c")));
     }
 
+    /// <summary>
+    /// A linked folder that is missing is a member, <c>missing</c>, and one notice that marks it not searched.
+    /// </summary>
     [TestMethod]
     public void AMissingFolderIsAMemberAndOneNotice()
     {
@@ -154,6 +178,7 @@ public sealed class CampaignLinksTests
         Assert.IsTrue(set.Notices[0].NotSearched);
     }
 
+    /// <summary>A missing folder whose digest the start holds gives no notice: the digest stands in for it.</summary>
     [TestMethod]
     public void AMissingFolderWhoseDigestIsHeldGivesNoNotice()
     {
@@ -164,6 +189,10 @@ public sealed class CampaignLinksTests
         Assert.AreEqual("c", set.Members.Single().DigestHolder);
     }
 
+    /// <summary>
+    /// A digest's holder is the campaign nearest the start, the start included, that holds it, and must be nearer the
+    /// start than the campaign it digests.
+    /// </summary>
     [TestMethod]
     public void TheDigestHolderIsTheNearestCampaignBeforeIt()
     {
@@ -185,6 +214,9 @@ public sealed class CampaignLinksTests
         Assert.IsNull(fromB.Members.Single(m => m.Name == "c").DigestHolder);
     }
 
+    /// <summary>
+    /// A value with a separator, a drive or a leading dot is a notice that marks it not searched, and is not followed.
+    /// </summary>
     [TestMethod]
     public void AValueThatIsNotAFolderNameIsANoticeAndIsNotFollowed()
     {
@@ -202,6 +234,7 @@ public sealed class CampaignLinksTests
         Assert.IsTrue(set.Notices.All(n => n.NotSearched));
     }
 
+    /// <summary>A link to the campaign itself, in any case, is a notice and adds no member.</summary>
     [TestMethod]
     public void ASelfLinkIsANotice()
     {
@@ -212,6 +245,9 @@ public sealed class CampaignLinksTests
         Assert.IsFalse(set.Notices[0].NotSearched);
     }
 
+    /// <summary>
+    /// A second name on Continues or Side campaign of is a notice, and only the first name is followed.
+    /// </summary>
     [TestMethod]
     public void ASecondValueOnASingleValuedLineIsANoticeAndOnlyTheFirstIsFollowed()
     {
@@ -229,6 +265,9 @@ public sealed class CampaignLinksTests
         }, Notices(set));
     }
 
+    /// <summary>
+    /// A Continues link to an open campaign is no notice (FR-004): the skills that write a link check it.
+    /// </summary>
     [TestMethod]
     public void AContinuesLinkToAnOpenCampaignGivesNoNotice()
     {
@@ -237,6 +276,7 @@ public sealed class CampaignLinksTests
         Assert.IsEmpty(Build("c").Notices);
     }
 
+    /// <summary>The notices cover the lines of every campaign in the set, and of no campaign outside it.</summary>
     [TestMethod]
     public void NoticesAreForEveryCampaignInTheSetAndNoOther()
     {
@@ -246,6 +286,10 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "b: Continues gone is not in adventures/" }, Notices(Build("c")));
     }
 
+    /// <summary>
+    /// Each module the set's campaigns name is reached once, at the distance of the nearest campaign that names it,
+    /// whether its folder is there or not.
+    /// </summary>
     [TestMethod]
     public void EachModuleIsReachedOnceAtTheSmallestDistance()
     {
@@ -262,6 +306,10 @@ public sealed class CampaignLinksTests
             set.Modules.Select(m => $"{m.Name} {m.Distance} {m.Via} {m.Present}").ToArray());
     }
 
+    /// <summary>
+    /// The listing <c>dmc campaign links</c> prints: each member with its label, distance, state and digest mark, each
+    /// module whose folder exists, then the notices.
+    /// </summary>
     [TestMethod]
     public void TheListingNamesEachMemberEachModuleAndTheNotices()
     {
@@ -282,6 +330,7 @@ public sealed class CampaignLinksTests
         }, CampaignLinks.ListLines(Build("c")).ToArray());
     }
 
+    /// <summary>A campaign with no links is listed as <c>no links</c>.</summary>
     [TestMethod]
     public void ACampaignAloneIsListedAsNoLinks()
     {
@@ -289,6 +338,7 @@ public sealed class CampaignLinksTests
         CollectionAssert.AreEqual(new[] { "no links" }, CampaignLinks.ListLines(Build("c")).ToArray());
     }
 
+    /// <summary>More than three notices are cut to three and a <c>(+N more)</c> line.</summary>
     [TestMethod]
     public void MoreThanThreeNoticesAreCut()
     {
@@ -301,5 +351,61 @@ public sealed class CampaignLinksTests
             "notice: c: Shares a world with x3 is not in adventures/",
             "(+2 more)",
         }, lines.ToArray());
+    }
+
+    /// <summary>The suffix ends the <c>(+N more)</c> line too, so the full save leaves it as it leaves the notices.</summary>
+    [TestMethod]
+    public void TheSuffixEndsTheMoreLineToo()
+    {
+        Campaign("c", Continuity("x1", "x2", "x3, x4"));
+        var lines = CampaignLinks.NoticeLines(Build("c").Notices, "notice: ", " (mark)");
+        Assert.AreEqual("(+1 more) (mark)", lines[^1]);
+    }
+
+    /// <summary>A second Continues line is a notice, as a second name on one line is; only the first is followed.</summary>
+    [TestMethod]
+    public void ASecondLineOfASingleValuedNameIsANoticeAndOnlyTheFirstIsFollowed()
+    {
+        Campaign("c", Continuity("b") + "- **Continues**: a\n- **Continues**: B\n");
+        Campaign("a");
+        Campaign("b");
+        var set = Build("c");
+        CollectionAssert.AreEqual(new[] { "b continues 1 open" }, Members(set));
+        CollectionAssert.AreEqual(new[] { "c: Continues has more than one name; only b is followed" }, Notices(set));
+    }
+
+    /// <summary>A line inside an HTML comment over several lines is not read, nor is a Continuity heading inside one.</summary>
+    [TestMethod]
+    public void LinesInsideACommentOverSeveralLinesAreNotRead()
+    {
+        Campaign("c", "## Continuity\n\n- **Continues**: none\n- **Side campaign of**: none\n<!--\n- **Shares a world with**: old-west\n-->\n- **Shares a world with**: none\n");
+        Campaign("d", "<!--\n## Continuity\n\n- **Continues**: c\n-->\n- **Predecessor**: b\n");
+        Campaign("b");
+        Assert.IsEmpty(Build("c").Members);
+        Assert.IsEmpty(Build("c").Notices);
+        CollectionAssert.AreEqual(new[] { "b continues 1 open" }, Members(Build("d")));
+    }
+
+    /// <summary>An empty <c>digests/&lt;name&gt;/</c> folder holds no digest: the missing campaign is still a notice.</summary>
+    [TestMethod]
+    public void AnEmptyDigestFolderHoldsNoDigest()
+    {
+        Campaign("c", Continuity("gone"));
+        Directory.CreateDirectory(Path.Combine(_root, "adventures", "c", "digests", "gone"));
+        var set = Build("c");
+        Assert.IsNull(set.Members.Single().DigestHolder);
+        CollectionAssert.AreEqual(new[] { "c: Continues gone is not in adventures/" }, Notices(set));
+    }
+
+    /// <summary>A notice remembers whether its line is in a closed campaign's file, the start's included.</summary>
+    [TestMethod]
+    public void ANoticeKnowsWhetherItsLineIsInAClosedCampaign()
+    {
+        Campaign("c", Continuity("b", shares: "lost"));
+        Campaign("b", Continuity("gone"));
+        Close("b");
+        var notices = Build("c").Notices;
+        CollectionAssert.AreEqual(new[] { "c: Shares a world with lost is not in adventures/", "b: Continues gone is not in adventures/" }, notices.Select(n => n.Text).ToArray());
+        CollectionAssert.AreEqual(new[] { false, true }, notices.Select(n => n.InClosed).ToArray());
     }
 }

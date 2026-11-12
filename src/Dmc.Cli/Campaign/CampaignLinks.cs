@@ -40,7 +40,22 @@ internal sealed record LinkedModule(string Name, string Folder, int Distance, bo
 /// <summary>A problem with a link line, in one line (spec 011 FR-004).</summary>
 /// <param name="Text">The notice, <c>&lt;campaign&gt;: &lt;line&gt; ...</c>.</param>
 /// <param name="NotSearched">True when the notice means a campaign was not searched (a missing folder, a value that is not a folder name), so recall adds <c>, not searched</c>.</param>
-internal sealed record LinkNotice(string Text, bool NotSearched);
+/// <param name="InClosed">True when the line is in a closed campaign's file, which can no longer be changed, so the resume's <c>dmc size --check</c> leaves it out (recall and <c>dmc campaign links</c> still print it).</param>
+internal sealed record LinkNotice(string Text, bool NotSearched, bool InClosed = false);
+
+/// <summary>One link line as written in a campaign's <c>player-options.md</c>.</summary>
+/// <param name="Name">The line's name as the template spells it: Continues, Side campaign of, Shares a world with or Predecessor.</param>
+/// <param name="Value">The text after its colon, as written.</param>
+internal sealed record LinkLine(string Name, string Value);
+
+/// <summary>
+/// The link lines of a campaign's <c>player-options.md</c>, read the one way both <see cref="CampaignLinks"/> and the
+/// migration check <c>continuity-section</c> read them: outside fenced code blocks and HTML comments, a comment over
+/// several lines included.
+/// </summary>
+/// <param name="Section">The Continuity section's lines, in file order; null when the file has no such section.</param>
+/// <param name="Predecessor">The old Predecessor line, anywhere in the file; null when there is none.</param>
+internal sealed record LinkLines(IReadOnlyList<LinkLine>? Section, LinkLine? Predecessor);
 
 /// <summary>
 /// Every campaign reachable from one through links, both ways, each once (spec 011 FR-003): with the modules they reach
@@ -101,6 +116,18 @@ internal static partial class CampaignLinks
 
     /// <summary>The most notices printed before <c>(+N more)</c>.</summary>
     public const int NoticesShown = 3;
+
+    /// <summary>The Continuity line that names the closed campaign a sequel carries on.</summary>
+    public const string ContinuesLine = "Continues";
+
+    /// <summary>The Continuity line that names the main campaign a side campaign is played alongside.</summary>
+    public const string SideLine = "Side campaign of";
+
+    /// <summary>The Continuity line that names other campaigns of the same world.</summary>
+    public const string WorldLine = "Shares a world with";
+
+    /// <summary>The Continuity section's three lines, in the template's order.</summary>
+    public static readonly string[] SectionLines = [ContinuesLine, SideLine, WorldLine];
 
     /// <summary>The line name the old single link has in notices.</summary>
     const string PredecessorLineName = "Predecessor";
@@ -167,7 +194,7 @@ internal static partial class CampaignLinks
         // Who holds whose digest: the start, then the present members, nearest first.
         var holders = new List<(string Name, string Folder, int Distance)> { (campaign, startFolder, 0) };
         holders.AddRange(sorted.Where(actual.ContainsKey).Select(n => (n, Path.Combine(adventures, n), reached[n].Distance)));
-        bool Holds(string folder, string digested) => Directory.Exists(Path.Combine(folder, "digests", digested));
+        bool Holds(string folder, string digested) => HoldsDigest(Path.Combine(folder, "digests", digested));
 
         var members = new List<LinkedCampaign>();
         foreach (string name in sorted)
@@ -180,14 +207,15 @@ internal static partial class CampaignLinks
         }
 
         var notices = new List<LinkNotice>();
-        foreach (var (name, _, _) in holders)
+        foreach (var (name, folder, _) in holders)
         {
+            bool closed = ClosedCampaign.IsClosed(folder);
             foreach (var entry in entries.GetValueOrDefault(name) ?? [])
             {
                 if (entry.Problem is not null)
-                    notices.Add(entry.Problem);
+                    notices.Add(entry.Problem with { InClosed = closed });
                 else if (!actual.ContainsKey(entry.Name!) && !holders.Any(h => Holds(h.Folder, entry.Name!)))
-                    notices.Add(new LinkNotice($"{name}: {entry.Line} {entry.Name} is not in adventures/", NotSearched: true));
+                    notices.Add(new LinkNotice($"{name}: {entry.Line} {entry.Name} is not in adventures/", NotSearched: true, closed));
             }
         }
 
@@ -251,22 +279,57 @@ internal static partial class CampaignLinks
         return lines;
     }
 
-    /// <summary>The notices as lines, at most <see cref="NoticesShown"/>, then <c>(+N more)</c>.</summary>
+    /// <summary>
+    /// The notices as lines, at most <see cref="NoticesShown"/>, then <c>(+N more)</c>; the suffix ends that line too,
+    /// so the full save leaves it as it leaves the notices (<c>dmc size --check</c>).
+    /// </summary>
     /// <param name="notices">The notices.</param>
     /// <param name="prefix">Written before each notice.</param>
-    /// <param name="suffix">Written after each notice.</param>
+    /// <param name="suffix">Written after each notice and after the <c>(+N more)</c> line.</param>
     public static List<string> NoticeLines(IReadOnlyList<LinkNotice> notices, string prefix, string suffix)
     {
         var lines = notices.Take(NoticesShown).Select(n => prefix + n.Text + suffix).ToList();
         if (notices.Count > NoticesShown)
-            lines.Add($"(+{notices.Count - NoticesShown} more)");
+            lines.Add($"(+{notices.Count - NoticesShown} more){suffix}");
         return lines;
+    }
+
+    /// <summary>
+    /// The link lines of a <c>player-options.md</c>: the first Continuity section's lines, and the first Predecessor
+    /// line, outside fenced code blocks and HTML comments (a comment over several lines included).
+    /// </summary>
+    /// <param name="text">The file's text.</param>
+    public static LinkLines Parse(string text)
+    {
+        string[] lines = text.Replace("\r\n", "\n").Split('\n');
+        var (fenced, visible) = Retrieval.MarkdownHeadings.Scan(lines);
+        List<LinkLine>? section = null;
+        LinkLine? predecessor = null;
+        bool inSection = false;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (fenced[i])
+                continue;
+            if (Retrieval.MarkdownHeadings.Parse(visible[i]) is { } heading)
+            {
+                inSection = section is null && heading.Level == 2 && heading.Text.Equals("Continuity", StringComparison.OrdinalIgnoreCase);
+                if (inSection)
+                    section = [];
+                continue;
+            }
+            if (inSection && ContinuityLine().Match(visible[i]) is { Success: true } line)
+                section!.Add(new LinkLine(SectionLines.First(n => n.Equals(line.Groups[1].Value, StringComparison.OrdinalIgnoreCase)), line.Groups[2].Value));
+            else if (predecessor is null && PredecessorLine().Match(visible[i]) is { Success: true } old)
+                predecessor = new LinkLine(PredecessorLineName, old.Groups[1].Value);
+        }
+        return new LinkLines(section, predecessor);
     }
 
     /// <summary>
     /// A campaign's link lines, in file order: its Continuity section's three lines, or its Predecessor line as Continues
     /// when it has no such section (FR-005). Each value is cleaned as a folder name; a value that is not one, a link to
-    /// the campaign itself and a second value on a single-valued line become problems.
+    /// the campaign itself and a second name for a single-valued line (on that line or on a second such line) become
+    /// problems.
     /// </summary>
     /// <param name="folder">The campaign's folder.</param>
     /// <param name="campaign">Its folder name.</param>
@@ -275,34 +338,22 @@ internal static partial class CampaignLinks
         var entries = new List<Entry>();
         if (ReadText(Path.Combine(folder, "player-options.md")) is not { } text)
             return entries;
-        string[] lines = text.Replace("\r\n", "\n").Split('\n');
-        int section = Array.FindIndex(lines, l => ContinuityHeading().IsMatch(l));
-        if (section >= 0)
+        var parsed = Parse(text);
+        if (parsed.Section is { } section)
         {
-            for (int i = section + 1; i < lines.Length && !lines[i].StartsWith('#'); i++)
+            foreach (var line in section)
             {
-                var match = ContinuityLine().Match(lines[i]);
-                if (!match.Success)
-                    continue;
-                string line = match.Groups[1].Value;
-                (string name, LinkStep step, bool many) = line.ToLowerInvariant() switch
+                (LinkStep step, bool many) = line.Name switch
                 {
-                    "continues" => ("Continues", LinkStep.Earlier, false),
-                    "side campaign of" => ("Side campaign of", LinkStep.Side, false),
-                    _ => ("Shares a world with", LinkStep.World, true),
+                    ContinuesLine => (LinkStep.Earlier, false),
+                    SideLine => (LinkStep.Side, false),
+                    _ => (LinkStep.World, true),
                 };
-                Values(entries, campaign, name, step, many, match.Groups[2].Value);
-            }
-            return entries;
-        }
-        foreach (string line in lines)
-        {
-            if (PredecessorLine().Match(line) is { Success: true } match)
-            {
-                Values(entries, campaign, PredecessorLineName, LinkStep.Earlier, many: false, match.Groups[1].Value);
-                break;
+                Values(entries, campaign, line.Name, step, many, line.Value);
             }
         }
+        else if (parsed.Predecessor is { } predecessor)
+            Values(entries, campaign, predecessor.Name, LinkStep.Earlier, many: false, predecessor.Value);
         return entries;
     }
 
@@ -319,10 +370,18 @@ internal static partial class CampaignLinks
             .Select(Clean)
             .Where(n => n.Length > 0 && !n.Equals("none", StringComparison.OrdinalIgnoreCase))
             .ToList();
-        if (!many && names.Count > 1)
+        if (!many)
         {
-            entries.Add(new Entry(line, step, null, new LinkNotice($"{campaign}: {line} has more than one name; only {names[0]} is followed", NotSearched: false)));
-            names = names.GetRange(0, 1);
+            // One name across every line of this name: the first is followed; the same name again says nothing new.
+            string? followed = entries.FirstOrDefault(e => e.Line == line && e.Name is not null)?.Name;
+            if (followed is not null)
+                names.RemoveAll(n => n.Equals(followed, StringComparison.OrdinalIgnoreCase));
+            int room = followed is null ? 1 : 0;
+            if (names.Count > room)
+            {
+                entries.Add(new Entry(line, step, null, new LinkNotice($"{campaign}: {line} has more than one name; only {followed ?? names[0]} is followed", NotSearched: false)));
+                names = names.GetRange(0, room);
+            }
         }
         foreach (string name in names)
         {
@@ -349,6 +408,23 @@ internal static partial class CampaignLinks
     /// <param name="name">The name.</param>
     static bool IsPlainName(string name) => name.IndexOfAny(['/', '\\', ':']) < 0 && !name.StartsWith('.');
 
+    /// <summary>
+    /// True when a digest folder holds a digest: it exists and has at least one <c>.md</c> file, so an empty folder
+    /// stands in for nothing. A folder that cannot be listed holds none.
+    /// </summary>
+    /// <param name="folder">The digest's folder, <c>&lt;campaign&gt;/digests/&lt;name&gt;</c>.</param>
+    static bool HoldsDigest(string folder)
+    {
+        try
+        {
+            return Directory.Exists(folder) && Directory.EnumerateFiles(folder, "*.md").Any();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>A file's text, or null when it is missing or cannot be read (recall names an unreadable file when it reads it).</summary>
     /// <param name="path">The file.</param>
     static string? ReadText(string path)
@@ -364,10 +440,6 @@ internal static partial class CampaignLinks
             return null;
         }
     }
-
-    /// <summary>The Continuity section's heading.</summary>
-    [GeneratedRegex(@"^##[ \t]+Continuity[ \t]*$")]
-    private static partial Regex ContinuityHeading();
 
     /// <summary>One of the Continuity section's three lines; group 1 is its name, group 2 its value.</summary>
     [GeneratedRegex(@"^[ \t]*-[ \t]*\*\*(Continues|Side campaign of|Shares a world with)\*\*:[ \t]*(.*?)[ \t]*$", RegexOptions.IgnoreCase)]

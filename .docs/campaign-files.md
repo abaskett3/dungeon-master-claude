@@ -160,20 +160,24 @@ A campaign's `player-options.md` holds its links to other campaigns in a `## Con
 and its **linked set** is every campaign reachable through links from it, each once, with its distance in steps and
 how it was reached: `continues` (an earlier campaign of the chain), `sequel` (a later one), `side` (one Side campaign
 of step) or `world` (anything else). A closed campaign that still has a Predecessor line keeps its link: `dmc` reads
-the line as Continues wherever a file has no Continuity section. `dmc campaign links NAME` lists the set; the resume
-hears of a link that cannot be followed (a missing folder, a value that is not a folder name, a link to itself, a
-second name on a one-name line) through the `dmc size --check` it already runs.
+the line as Continues wherever a file has no Continuity section. A line inside an HTML comment is not read. `dmc
+campaign links NAME` lists the set; the resume hears of a link that cannot be followed (a missing folder, a value that
+is not a folder name, a link to itself, a second name for a one-name line) through the `dmc size --check` it already
+runs, for the lines of campaigns that are not closed: a closed campaign's file can no longer be changed.
 
 `dmc recall` searches the whole linked set and each campaign's module once, and labels a hit from another campaign
 with its link; a fact from a `side` or `world` campaign is a fact of the world, not something this campaign's
-characters know unless its own files say they learned it.
+characters know unless its own files say they learned it, and a fact from a `sequel` (recalled in an earlier campaign
+kept open) has not happened yet.
 
 A sequel may hold, at its top level, `digests/<campaign>/`: a closed campaign's facts copied word for word and
 reorganised by subject, with its scene spine and its secrets (the sequel import that writes it is planned; until
 then one is written by hand in that shape). `dmc recall` and `dmc lookup` search a digest like the campaign's own
-files; the resume never reads one, so `dmc size` leaves it out of the resume total; and a digest's secrets are marked
-DM-only in recall. A campaign whose digest a campaign nearer the start holds is the last resort: its own folder is
-still searched, but the digest's line ranks first.
+files, except its `index.md`, which holds no facts; the resume never reads one, so `dmc size` leaves it out of the
+resume total; and a digest's secrets and its `## Module` section (a copy of `module-progress.md`) are marked DM-only in
+recall. A campaign whose digest a campaign nearer the start holds (a `digests/<campaign>/` folder with a `.md` file in
+it) is the last resort: its own folder is still searched, but the digest's line ranks first, and recall prints a line
+the two share once.
 ## Which file wins
 
 Each kind of fact has one home, so that two files cannot disagree about it:

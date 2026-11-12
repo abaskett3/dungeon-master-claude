@@ -621,22 +621,23 @@ sample test passes.
 
 ## Phase 8: PR 2 polish: documents, cost, the live run, the PR
 
-- [ ] T066 [P] Edit `.docs/campaign-files.md`:
+- [X] T066 [P] Edit `.docs/campaign-files.md`:
       - the digest's files and rules;
       - that a digest never changes after its check;
       - that a format change ships a migration that rebuilds digests from the closing backup.
-- [ ] T067 [P] Edit `.docs/dmc-reference.md`: a `dmc campaign sequel` section, from contracts/campaign-sequel.md
-- [ ] T068 [P] Edit `.docs/user-guide.md`: starting a sequel, and what the player sees (the question about who carries
+- [X] T067 [P] Edit `.docs/dmc-reference.md`: a `dmc campaign sequel` section, from contracts/campaign-sequel.md
+- [X] T068 [P] Edit `.docs/user-guide.md`: starting a sequel, and what the player sees (the question about who carries
       over, the import part by part, no scene until the sample passes)
-- [ ] T069 [P] Edit `.docs/architecture.md`: the import, the subagents' part and `dmc`'s exact parts
-- [ ] T070 [P] Add to `.docs/decisions.md`, each with its reason:
+- [X] T069 [P] Edit `.docs/architecture.md`: the import, the subagents' part and `dmc`'s exact parts
+- [X] T070 [P] Add to `.docs/decisions.md`, each with its reason:
       - the accounting is checked against the closing backup (R9);
       - the `merged` keyword (R9);
       - the sample's seed and size (R11);
       - the verb's name, `sequel`, which avoids `dmc digest` (R8).
-- [ ] T071 [P] Edit `.docs/roadmap.md`: the status of Phase B, PR 2
-- [ ] T072 Measure the standing cost as in T003, and record PR 2's share. Only `dmc-new-campaign`'s description
-      should grow
+- [X] T071 [P] Edit `.docs/roadmap.md`: the status of Phase B, PR 2
+- [X] T072 Measure the standing cost as in T003, and record PR 2's share. Only `dmc-new-campaign`'s description
+      should grow. Measured: +45 bytes, about 11 tokens, all of it that description; the three always-read files are
+      unchanged. With PR 1's 188 bytes, 233 bytes, about 58 tokens of FR-031's 150
 - [ ] T073 Run quickstart.md § PR 2, steps 1 to 7, on the fixture campaign in a scratch DMC folder: a live import with
       the player (or as the player decides), `--check`, `--sample` twice and with `--round 2`, a chain, and the
       resume's transcript check (SC-001); record the results for the PR

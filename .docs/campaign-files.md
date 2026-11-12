@@ -50,7 +50,7 @@ adventures/
       live.html, live-data.js, live.png   written by dmc map
       live-source.txt        what the page was last drawn from (the map file and its base place), written by dmc map; dmc redraw reads it
     module-progress.md       only for a published module (spoilers)
-    import/                  only for a campaign imported from elsewhere: the export, kept as the record
+    import/                  only for a campaign imported from elsewhere (the export, kept as the record) or a sequel: progress.md, where an import stands
     digests/<campaign>/      only in a sequel: a closed campaign's facts by subject (spoilers); searched, never read at resume
 ```
 
@@ -142,8 +142,9 @@ last, so a failure, or the close being stopped part-way, leaves the campaign ope
 | `backups/<campaign>_closed_<stamp>.zip` | The closing backup: an export of the campaign with its mark, checked whole. Its name is outside the counted backups' pattern, so no prune ever removes it. `verify` compares the campaign with it, byte for byte, and writes nothing. |
 | `exports/<campaign>_closed_<stamp>.zip` | A byte copy of the closing backup in the DMC folder, checked by SHA-256, so the campaign survives losing its folder. Keep a further copy somewhere else. |
 
-A sequel is a new campaign whose `player-options.md` Continues line names the closed one; `dmc recall` searches the
-closed campaign's files with the sequel's, and nothing writes to them.
+A sequel is a new campaign whose `player-options.md` Continues line names the closed one. It starts by importing the
+closed campaign into a brief, folded into its own files, and a digest ([A digest](#a-digest)); `dmc recall` searches
+the digest first and the closed campaign's own files last, and nothing writes to them.
 
 ## Linked campaigns
 
@@ -170,14 +171,42 @@ with its link; a fact from a `side` or `world` campaign is a fact of the world, 
 characters know unless its own files say they learned it, and a fact from a `sequel` (recalled in an earlier campaign
 kept open) has not happened yet.
 
-A sequel may hold, at its top level, `digests/<campaign>/`: a closed campaign's facts copied word for word and
-reorganised by subject, with its scene spine and its secrets (the sequel import that writes it is planned; until
-then one is written by hand in that shape). `dmc recall` and `dmc lookup` search a digest like the campaign's own
+A sequel holds, at its top level, `digests/<campaign>/`: a closed campaign's facts copied word for word and
+reorganised by subject, with its scene spine and its secrets (see [A digest](#a-digest) below). `dmc recall` and `dmc lookup` search a digest like the campaign's own
 files, except its `index.md`, which holds no facts; the resume never reads one, so `dmc size` leaves it out of the
 resume total; and a digest's secrets and its `## Module` section (a copy of `module-progress.md`) are marked DM-only in
 recall. A campaign whose digest a campaign nearer the start holds (a `digests/<campaign>/` folder with a `.md` file in
 it) is the last resort: its own folder is still searched, but the digest's line ranks first, and recall prints a line
 the two share once.
+
+### A digest
+
+`dmc-new-campaign` § 1c writes a sequel's digest when it starts the sequel, with subagents, part by part, and
+`dmc campaign sequel` does the exact parts ([dmc-reference.md](dmc-reference.md#a-sequels-import)). Everything is
+written in the sequel; nothing is ever written to the closed campaign. In `digests/<closed>/`:
+
+| File | Holds | Written by |
+|---|---|---|
+| `index.md` | Format, Campaign, Closing backup (its file name and SHA-256), Chain (the digests copied with it, nearest first), Carried (the characters the sequel carried over), Files. No facts. | `sequel --start`; Carried by DMC |
+| `people.md`, `places.md`, `factions.md`, `items.md` | One `## ` heading per subject, then its lines. A living character's stat block goes under their heading. A kind near 20k tokens goes on in `people-2.md` and so on, each part holding whole subjects. | DMC |
+| `world.md` | `## Rulings`, `## Prices, debts and promises`, `## Lore`, `## How it ended`, `## Module` (the deviations and module NPCs' statuses of `module-progress.md`, DM-only in recall) and any other subject of the world. | DMC |
+| `spine.md` | Per session log, `## <its # title> (session-NNN.md)`, then `- sN.M <the text after "Scene M: ">` for each scene heading, word for word; a log with no scene headings has its line alone. | `sequel --start` |
+| `secrets.md` | The closed campaign's secrets, one `## ` heading per subject, each line ending with its outcome (`revealed sN`, `never revealed`, `abandoned`); a sheet's own `## Secrets` lines under the character's name. DM-only in recall. | DMC |
+| `accounting.tsv` | One line per line of the closed campaign not copied word for word: `<id>`, a tab, `merged`, a tab and words of the line it went into; or `<id>`, a tab, `dropped:<class>`, a tab and the reason. The classes are `superseded`, `not-canon`, `structure`, `bookkeeping` and `stat-block`. | DMC |
+
+Every line copied keeps its `sN` or `sN.M`, and a fact that lived only in a session log is added under its subject
+with its `sN.M`. Plans the story overtook, scene and combat state, a dead character's stat block and the module's own
+text are left out. The lines that must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
+`module-progress.md` and every file in `character-sheets/`, with § Secrets of `story/dm-notes.md` and § How it ended of
+`story/summary.md`, all read from the closing backup; `sequel --check` proves each one is copied, merged or dropped
+with a reason, that the copied digests match the closing backup's byte for byte, that no file is over 20k tokens and
+that no subject has two headings. A sample of 20 facts and 5 people, answered by a fresh subagent from the digest
+alone, then has to pass with no miss.
+
+A digest never changes once its check and its sample pass, and a later sequel copies it byte for byte. A change to
+the digest's format that older digests cannot meet ships as a migration that rebuilds them from the closing backup
+`index.md` names.
+
 ## Which file wins
 
 Each kind of fact has one home, so that two files cannot disagree about it:

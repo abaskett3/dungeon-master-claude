@@ -36,6 +36,21 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section, "only after the sample passes");
     }
 
+    /// <summary>
+    /// What the live run of T073 found: the Carried line and a person's heading take the closed campaign's sheet titles, the
+    /// names the sample matches (DMC wrote "Sela" for "Sela Frostborn"); and the accounting and the sample's comparison read
+    /// lines, never a whole file of the closed campaign or the digest (DMC read five whole files into the conversation).
+    /// </summary>
+    [TestMethod]
+    public void TheSequelSectionNamesSheetTitlesAndReadsOnlyLines()
+    {
+        string section = SequelSection();
+        StringAssert.Contains(section, "Carried line as the closed campaign's sheets title them");
+        StringAssert.Contains(section, "a person's heading being the title of their sheet");
+        StringAssert.Contains(section, "never read a whole file of the closed campaign or of the digest into this conversation");
+        StringAssert.Contains(section, "dmc recall <folder> <words>");
+    }
+
     /// <summary>The skill's description says it starts a sequel, so the player's words find it.</summary>
     [TestMethod]
     public void TheNewCampaignSkillSaysItStartsASequel()

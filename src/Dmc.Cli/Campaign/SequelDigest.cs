@@ -515,7 +515,7 @@ internal static partial class SequelDigest
         $"- **Campaign**: {source.Name}\n" +
         $"- **Closing backup**: {source.BackupFile} sha256:{source.Sha256}\n" +
         $"- **Chain**: {(chain.Count == 0 ? "none" : string.Join(", ", chain))} <!-- the digests copied with it, nearest first -->\n" +
-        (carried ?? "- **Carried**: none <!-- the characters this sequel carried over, as their headings in people.md give them -->") + "\n" +
+        (carried ?? "- **Carried**: none <!-- the characters this sequel carried over, as the closed campaign's sheets title them -->") + "\n" +
         $"- **Files**: {FilesValue}\n";
 
     /// <summary>The <c>- **Name**: value</c> lines of an index, the first of each name: the value without comments, and the raw line.</summary>

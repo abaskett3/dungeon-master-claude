@@ -57,7 +57,7 @@ public sealed class SequelDigestTests
         Assert.AreEqual(
             $"# Digest of {ClosedName}\n\n- **Format**: 1\n- **Campaign**: {ClosedName}\n- **Closing backup**: {file} sha256:{sha}\n" +
             "- **Chain**: none <!-- the digests copied with it, nearest first -->\n" +
-            "- **Carried**: none <!-- the characters this sequel carried over, as their headings in people.md give them -->\n" +
+            "- **Carried**: none <!-- the characters this sequel carried over, as the closed campaign's sheets title them -->\n" +
             "- **Files**: people.md, places.md, factions.md, items.md, world.md, spine.md, secrets.md, accounting.tsv\n",
             Digest(root, "index.md"));
     }
@@ -333,7 +333,7 @@ public sealed class SequelDigestTests
         WriteSequel(root, digest: true);
         var (file, sha) = ClosingBackup(root);
         string index = Digest(root, "index.md");
-        WriteDigest(root, "index.md", index.Replace($"sha256:{sha}", "sha256:" + new string('0', 64)).Replace("- **Carried**: none <!-- the characters this sequel carried over, as their headings in people.md give them -->\n", ""));
+        WriteDigest(root, "index.md", index.Replace($"sha256:{sha}", "sha256:" + new string('0', 64)).Replace("- **Carried**: none <!-- the characters this sequel carried over, as the closed campaign's sheets title them -->\n", ""));
         var result = Sequel("--check");
         Assert.AreEqual(1, result.ExitCode, result.ToString());
         CollectionAssert.AreEqual(new[] { "index: no Carried line", $"index: Closing backup's checksum differs from backups/{file}" }, result.StdoutLines);

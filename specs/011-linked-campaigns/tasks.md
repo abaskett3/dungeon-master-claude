@@ -638,9 +638,14 @@ sample test passes.
 - [X] T072 Measure the standing cost as in T003, and record PR 2's share. Only `dmc-new-campaign`'s description
       should grow. Measured: +45 bytes, about 11 tokens, all of it that description; the three always-read files are
       unchanged. With PR 1's 188 bytes, 233 bytes, about 58 tokens of FR-031's 150
-- [ ] T073 Run quickstart.md § PR 2, steps 1 to 7, on the fixture campaign in a scratch DMC folder: a live import with
+- [X] T073 Run quickstart.md § PR 2, steps 1 to 7, on the fixture campaign in a scratch DMC folder: a live import with
       the player (or as the player decides), `--check`, `--sample` twice and with `--round 2`, a chain, and the
-      resume's transcript check (SC-001); record the results for the PR
+      resume's transcript check (SC-001); record the results for the PR. Run after PR #196 opened, headless in
+      `D:\Claude\test-campaign` (Sonnet, high effort): all seven steps pass (grey-tarn closed, ember-gate imported, 123
+      units checked, the sample passed in round 2 after one miss was fixed; the chain to third-bell copied grey-tarn's
+      digest byte for byte; the resume read no digest and no closed campaign; `dmc size` 8.2k either way). Two § 1c
+      fixes: Carried names and people headings take the sheets' titles, which the sample matches; the accounting and
+      the comparison read only the lines they need, never a whole file
 - [ ] T074 Check the XML doc comments and that the spec folder still matches what ships. Then open PR 2:
       - commit, push, and open the PR with the full description: the sources (FR-006 to FR-016, FR-008a, FR-021 to
         FR-024) and `Part of #179` on its own line;

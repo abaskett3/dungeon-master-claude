@@ -54,16 +54,17 @@ public sealed partial class ToolkitTests
     /// <summary>
     /// What the convergence of spec 011's PR 2 found missing (T095 to T098): the brief's lines keep their session and name
     /// their campaign (FR-007); the leave-out list is whole (FR-014); the fallback without subagents is named (FR-006); and
-    /// a sheet states the history's version, with its reason, where a default disagrees (FR-008).
+    /// a sheet states the history's version, with its reason, where a default disagrees (FR-008). The code review of PR #197 widened the first to every part of the brief, completed the list with FR-014's folders, and gave the sample its fallback without subagents too.
     /// </summary>
     [TestMethod]
     public void TheImportSaysWhatTheSpecAsks()
     {
         string section = SequelSection();
-        StringAssert.Contains(section, "Each line of the brief keeps its `sN` or `sN.M` and names the campaign it came from");
-        StringAssert.Contains(section, "dice bookkeeping in the logs, maps, module text, or whatever the closing save named as not canon");
-        StringAssert.Contains(section, "without subagents, do one part per session as § 1b says, with `import/progress.md`");
-        StringAssert.Contains(Read(SheetSkill), "where the two disagree, the sheet states the history's version, with its reason when the history gives one");
+        StringAssert.Contains(section, "Every line of the brief, whichever part writes it, keeps its `sN` or `sN.M` and names the campaign it came from");
+        StringAssert.Contains(section, "dice bookkeeping in the logs, maps, `import/`, `exports/`, `backups/`, module text, or whatever the closing save named as not canon");
+        StringAssert.Contains(section, "Without subagents, do one part per session yourself, as § 1b says");
+        StringAssert.Contains(section, "Without subagents, answer them yourself in a new session (after `/clear`), reading only the digest");
+        StringAssert.Contains(Read(SheetSkill), "Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason");
     }
 
     /// <summary>The skill's description says it starts a sequel, so the player's words find it.</summary>

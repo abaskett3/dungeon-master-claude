@@ -196,8 +196,9 @@ written in the sequel; nothing is ever written to the closed campaign. In `diges
 
 Every line copied keeps its `sN` or `sN.M`, and a fact that lived only in a session log is added under its subject
 with its `sN.M`. Plans the story overtook, scene and combat state, a dead character's stat block, dice bookkeeping in
-the logs, maps, the module's own text and whatever the closing save named as not canon are left out. The brief's lines
-keep their `sN.M` and name the campaign they came from. The lines that must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
+the logs, maps, `import/`, `exports/`, `backups/`, the module's own text and whatever the closing save named as not
+canon are left out. Every line of the brief keeps its `sN` or `sN.M` and names the campaign it came from. Without
+subagents, the import does one part per session, and the sample is answered in a session that reads only the digest. The lines that must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
 `module-progress.md` and every file in `character-sheets/`, with § Secrets of `story/dm-notes.md` and § How it ended of
 `story/summary.md`, all read from the closing backup; `sequel --check` proves each one is copied, merged or dropped
 with a reason, that the copied digests match the closing backup's byte for byte, that no file is over 20k tokens and

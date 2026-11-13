@@ -51,6 +51,36 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section, "dmc recall <folder> <words>");
     }
 
+    /// <summary>
+    /// What the convergence of spec 011's PR 2 found missing (T095 to T098): the brief's lines keep their session and name
+    /// their campaign (FR-007); the leave-out list is whole (FR-014); the fallback without subagents is named (FR-006); and
+    /// a sheet states the history's version, with its reason, where a default disagrees (FR-008). The code review of PR #197 widened the first to every part of the brief, completed the list with FR-014's folders, and gave the sample its fallback without subagents too.
+    /// </summary>
+    [TestMethod]
+    public void TheImportSaysWhatTheSpecAsks()
+    {
+        string section = SequelSection();
+        StringAssert.Contains(section, "Every line of the brief, whichever part writes it, keeps its `sN` or `sN.M` and names the campaign it came from");
+        StringAssert.Contains(section, "dice bookkeeping in the logs, maps, `import/`, `exports/`, `backups/`, module text, or whatever the closing save named as not canon");
+        StringAssert.Contains(section, "Without subagents, do one part per session yourself, as § 1b says");
+        StringAssert.Contains(section, "Without subagents, answer them yourself in a new session (after `/clear`), reading only the digest");
+        StringAssert.Contains(Read(SheetSkill), "Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason");
+    }
+
+    /// <summary>
+    /// What the rehearsal on The Silver Egg found: each part's subagent re-read the whole growing digest (slower each part),
+    /// and judged a 36k-token <c>people.md</c> "about 20k". A subagent looks up only the subjects it adds to, and moves whole
+    /// subjects to the next part on each <c>too large:</c> line of <c>--check</c> before it ends.
+    /// </summary>
+    [TestMethod]
+    public void EachPartLooksUpItsSubjectsAndKeepsTheFilesUnderTheCap()
+    {
+        string section = SequelSection();
+        StringAssert.Contains(section, "finds that subject with `dmc lookup <folder> <heading>` or a search of the digest and reads only that section, never a whole digest file");
+        StringAssert.Contains(section, "for each `too large:` line, moves whole subjects from that file into the kind's next part");
+        Assert.DoesNotContain("what earlier parts wrote before adding to it", section, "a part never reads the whole digest");
+    }
+
     /// <summary>The skill's description says it starts a sequel, so the player's words find it.</summary>
     [TestMethod]
     public void TheNewCampaignSkillSaysItStartsASequel()

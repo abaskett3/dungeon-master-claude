@@ -305,6 +305,61 @@ internal static class CampaignFixtures
         target.Write(bytes);
     }
 
+    /// <summary>The closed campaign of the sequel fixture (spec 011, T050).</summary>
+    public const string ClosedName = "grey-tarn";
+
+    /// <summary>The sequel the fixture creates, whose Continues line names <see cref="ClosedName"/>.</summary>
+    public const string SequelName = "ember-gate";
+
+    /// <summary>The sequel fixture: <c>campaign/</c>, the closed campaign's files, and <c>digest/</c>, its correct digest without the index and spine <c>--start</c> writes.</summary>
+    public static string SequelFixture { get; } = Path.Combine(Dmc.Tests.Support.TestEnv.Root, "tests", "Dmc.Tests", "Fixtures", "sequel");
+
+    /// <summary>The sequel's <c>player-options.md</c>: the template's shape, Continues naming the closed campaign.</summary>
+    public const string SequelOptions = "# Player options (this campaign)\n\n## Rules\n\n- **Edition**: 5e 2014\n\n## Continuity\n\n" +
+        "- **Continues**: " + ClosedName + " <!-- a sequel: the closed campaign's folder in adventures/ -->\n" +
+        "- **Side campaign of**: none\n- **Shares a world with**: none\n";
+
+    /// <summary>
+    /// Sets up the sequel fixture in a temporary DMC folder: the kit's migrations, so its standard is the kit's; the fixture
+    /// campaign at that standard, closed with the built <c>dmc campaign close --yes</c>; and a sequel whose Continues line names
+    /// it. With <paramref name="digest"/>, also runs <c>sequel --start</c> and copies the fixture's digest into the sequel.
+    /// </summary>
+    /// <param name="root">The temporary DMC folder.</param>
+    /// <param name="digest">Also start the digest and copy the fixture's digest files in.</param>
+    /// <param name="beforeClose">Changes the closed campaign's folder after it is copied and before it is closed, or null.</param>
+    public static void WriteSequel(MigrationRoot root, bool digest = false, Action<string>? beforeClose = null)
+    {
+        string migrations = Path.Combine(root.Folder, "migrations");
+        Directory.CreateDirectory(migrations);
+        foreach (string file in Directory.EnumerateFiles(Path.Combine(Dmc.Tests.Support.TestEnv.Root, "kit", "migrations"), "*.md"))
+            File.Copy(file, Path.Combine(migrations, Path.GetFileName(file)));
+        string campaign = root.Campaign(ClosedName);
+        CopyTree(Path.Combine(SequelFixture, "campaign"), campaign);
+        root.SetStandard(Dmc.Campaign.MigrationSet.Read(root.Folder).Kit.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n", ClosedName);
+        beforeClose?.Invoke(campaign);
+        var closed = MigrationRoot.Run("close", ClosedName, "--yes");
+        Assert.AreEqual(0, closed.ExitCode, closed.ToString());
+        root.Write("player-options.md", SequelOptions, SequelName);
+        if (!digest)
+            return;
+        var started = MigrationRoot.Run("sequel", SequelName, "--start");
+        Assert.AreEqual(0, started.ExitCode, started.ToString());
+        CopyTree(Path.Combine(SequelFixture, "digest"), DigestFolder(root));
+    }
+
+    /// <summary>The digest's folder in the fixture's sequel.</summary>
+    /// <param name="root">The temporary DMC folder.</param>
+    public static string DigestFolder(MigrationRoot root) => Path.Combine(root.Campaign(SequelName), "digests", ClosedName);
+
+    /// <summary>Copies every file under a folder to another, making folders as needed.</summary>
+    /// <param name="from">The source folder.</param>
+    /// <param name="to">The target folder.</param>
+    public static void CopyTree(string from, string to)
+    {
+        foreach (var (path, bytes) in ReadFiles(from))
+            Write(to, path, bytes);
+    }
+
     /// <summary>Writes the archive of a campaign folder as it should be, with a correct manifest. For the exporter-independent tests of import.</summary>
     /// <param name="zipPath">Where to write it.</param>
     /// <param name="campaign">The campaign folder.</param>

@@ -70,11 +70,29 @@ Type `/dmc-new-campaign`. DMC then:
 
 1. asks for a title (or offers a few) and creates the campaign folder under `adventures/`;
 2. asks whether this is an original adventure or a published module (see [Published modules](#published-modules));
-3. runs a short session zero: how you like dice handled, what you enjoy, narration length, the rules edition (2014 by default, or 2024), starting level, tone and lethality, and, for a sequel, which earlier campaign it continues (DMC then checks that campaign's files for facts from it);
+3. runs a short session zero: how you like dice handled, what you enjoy, narration length, the rules edition (2014 by default, or 2024), starting level, tone and lethality, and which other campaigns it is linked to (see [Starting a sequel](#starting-a-sequel) for a campaign that continues a closed one);
 4. builds your character with you, following the edition's rules. You make every choice; DMC explains options and does the arithmetic;
 5. writes its own notes for the world behind the curtain, and opens the first scene.
 
 To carry on a campaign you played somewhere else, say so and give DMC the chat export or transcript. It imports it into a new campaign folder in pieces, without reading the whole export into the conversation, and asks you about anything the export contradicts.
+
+### Starting a sequel
+
+To go on with the characters of a campaign you have closed, type `/dmc-new-campaign` and say it continues that
+campaign. Before the first scene, DMC:
+
+1. checks the earlier campaign is closed (and offers to close it if not), and asks which characters carry over;
+2. imports it part by part, each part read by a helper with a fresh context so the conversation stays small. Into the
+   new campaign's own files go what play needs at once: open threads, house rules and your standing requests, rulings,
+   prices, debts and promises, and a sheet for each character who carries over, built from their own history (an
+   elf who lost her resistance to charms keeps it lost). Everything else goes into a digest in the new campaign's
+   `digests/` folder, which DMC searches when a subject comes back but never reads at the start of a session;
+3. checks that no line of the earlier campaign was lost (`dmc` compares the digest with the closing backup), and tests
+   it: a helper that has seen only the digest answers questions about 20 facts and 5 people, and DMC compares the
+   answers with the earlier campaign's files. A miss is fixed and tested again with a new draw.
+
+Only then does the first scene open. The import can take a while on a long campaign; if it is interrupted, ask DMC to
+continue it, and it picks up where it stopped (`import/progress.md`). The earlier campaign is never changed.
 
 ### Resuming
 
@@ -345,9 +363,8 @@ when the main story ends, and once more when the last open thread is resolved; i
 
 Keep a further copy of the file in `exports/` somewhere outside the DMC folder. A closed campaign still opens for
 reading (`dmc recall`, `dmc lookup`, `dmc campaign show` and `export`), but nothing changes it; `dmc campaign verify
-<campaign>` says whether any file differs from its closing backup. To go on with its characters, start a new campaign
-with `/dmc-new-campaign` and name the closed one as the one it continues: DMC searches the closed campaign's facts when
-they come up, and never writes to it.
+<campaign>` says whether any file differs from its closing backup. To go on with its characters, start a sequel (see
+[Starting a sequel](#starting-a-sequel)): DMC imports the closed campaign into the new one, and never writes to it.
 
 ### Linked campaigns
 

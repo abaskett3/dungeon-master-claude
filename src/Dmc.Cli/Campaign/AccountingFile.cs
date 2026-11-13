@@ -6,7 +6,7 @@ namespace Dmc.Campaign;
 /// <summary>How a unit that is not found in the migrated campaign is accounted for.</summary>
 internal enum Disposition
 {
-    /// <summary>The unit was reworded: its anchor must occur in the migrated campaign.</summary>
+    /// <summary>The unit was kept in changed form (<c>reworded</c> in a migration, <c>merged</c> in a digest): its anchor must occur in the result.</summary>
     Reworded,
 
     /// <summary>The unit was dropped under a class the pending migrations declare.</summary>
@@ -16,9 +16,9 @@ internal enum Disposition
 /// <summary>One accounted unit.</summary>
 /// <param name="Line">Its line number in the accounting file.</param>
 /// <param name="Id">The unit's 12-digit id, lower case.</param>
-/// <param name="Disposition">Reworded or dropped.</param>
-/// <param name="Class">The drop class; null for a rewording.</param>
-/// <param name="Detail">The anchor of a rewording, or the reason for a drop.</param>
+/// <param name="Disposition">Kept in changed form (reworded or merged), or dropped.</param>
+/// <param name="Class">The drop class; null for a unit kept in changed form.</param>
+/// <param name="Detail">The anchor of a unit kept in changed form, or the reason for a drop.</param>
 internal sealed record AccountingEntry(int Line, string Id, Disposition Disposition, string? Class, string Detail);
 
 /// <summary>A file DMC left unmigrated (FR-010).</summary>
@@ -28,9 +28,11 @@ internal sealed record AccountingEntry(int Line, string Id, Disposition Disposit
 internal sealed record SkippedFile(int Line, string File, string Reason);
 
 /// <summary>
-/// The accounting file <c>&lt;backup file&gt;.accounting.tsv</c> (data-model.md § Accounting file) that DMC writes during a
-/// migration: <c>&lt;id&gt;\t&lt;disposition&gt;\t&lt;detail&gt;</c> per unit, <c>skipped\t&lt;file&gt;\t&lt;reason&gt;</c> per file
-/// left alone, lines starting <c>#</c> and blank lines ignored.
+/// An accounting file DMC writes: a migration's <c>&lt;backup file&gt;.accounting.tsv</c> (spec 005 data-model.md § Accounting
+/// file), or a digest's <c>digests/&lt;campaign&gt;/accounting.tsv</c> (spec 011 research R9).
+/// <c>&lt;id&gt;\t&lt;disposition&gt;\t&lt;detail&gt;</c> per unit; for a migration also <c>skipped\t&lt;file&gt;\t&lt;reason&gt;</c> per
+/// file left alone; lines starting <c>#</c> and blank lines ignored. A unit kept in changed form is <c>reworded</c> in a
+/// migration's file and <c>merged</c> in a digest's, with the same anchor rule.
 /// </summary>
 /// <param name="Entries">The accounted units, the first line for each id.</param>
 /// <param name="Skipped">The files left unmigrated.</param>
@@ -42,6 +44,12 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
     /// <summary>The disposition of a file line.</summary>
     const string SkippedWord = "skipped";
 
+    /// <summary>The keyword of a unit kept in changed form in a migration's accounting file.</summary>
+    public const string Reworded = "reworded";
+
+    /// <summary>The keyword of a unit kept in changed form in a digest's accounting file: merged into another line.</summary>
+    public const string Merged = "merged";
+
     /// <summary>The disposition prefix of a drop.</summary>
     const string DroppedPrefix = "dropped:";
 
@@ -51,20 +59,22 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
     /// <summary>Reads an accounting file; a missing file is <see cref="Empty"/>.</summary>
     /// <param name="path">The file.</param>
     /// <param name="label">How the messages name it.</param>
+    /// <param name="kept">The keyword for a unit kept in changed form: <see cref="Reworded"/> (a migration's) or <see cref="Merged"/> (a digest's).</param>
     /// <exception cref="DmcException">A line is malformed; the message names its number.</exception>
-    public static AccountingFile Read(string path, string label) =>
-        File.Exists(path) ? Parse(File.ReadAllText(path, Encoding.UTF8), label) : Empty;
+    public static AccountingFile Read(string path, string label, string kept = Reworded) =>
+        File.Exists(path) ? Parse(File.ReadAllText(path, Encoding.UTF8), label, kept) : Empty;
 
     /// <summary>Reads the text of an accounting file.</summary>
     /// <param name="text">The text.</param>
     /// <param name="label">How the messages name the file.</param>
+    /// <param name="kept">The keyword for a unit kept in changed form: <see cref="Reworded"/> (a migration's, the default) or <see cref="Merged"/> (a digest's).</param>
     /// <exception cref="DmcException">
     /// A line has fewer than three tab-separated fields; an id that is not 12 hex digits; a disposition other than
-    /// <c>reworded</c> or <c>dropped:&lt;class&gt;</c>; a class that is not lowercase words joined by hyphens; an anchor
-    /// shorter than 8 characters; an empty reason; or a skipped path that is not a campaign path (absolute, with <c>..</c>,
-    /// or under <c>backups/</c>).
+    /// <paramref name="kept"/> or <c>dropped:&lt;class&gt;</c>; a class that is not lowercase words joined by hyphens; an anchor
+    /// shorter than 8 characters; an empty reason; or, in a migration's file, a skipped path that is not a campaign path
+    /// (absolute, with <c>..</c>, or under <c>backups/</c>). A digest's file has no skipped lines.
     /// </exception>
-    public static AccountingFile Parse(string text, string label)
+    public static AccountingFile Parse(string text, string label, string kept = Reworded)
     {
         var entries = new Dictionary<string, AccountingEntry>(StringComparer.Ordinal);
         var skipped = new List<SkippedFile>();
@@ -82,6 +92,8 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
                 throw Error(label, number, "expected three fields separated by tabs: id, disposition, detail");
             string first = fields[0].Trim(), second = fields[1].Trim(), detail = fields[2].Trim();
 
+            if (first == SkippedWord && kept != Reworded)
+                throw Error(label, number, "a digest's accounting has no skipped lines: account each line, or copy it");
             if (first == SkippedWord)
             {
                 string file = second.Replace('\\', '/');
@@ -99,10 +111,10 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
             if (id.Length != ContentUnits.IdLength || !id.All(c => c is (>= '0' and <= '9') or (>= 'a' and <= 'f')))
                 throw Error(label, number, $"{first} is not an id of {ContentUnits.IdLength} hex digits (take it from dmc campaign verify --list)");
             AccountingEntry entry;
-            if (second == "reworded")
+            if (second == kept)
             {
                 if (detail.Length < MinAnchor)
-                    throw Error(label, number, string.Create(CultureInfo.InvariantCulture, $"a reworded unit needs an anchor of at least {MinAnchor} characters"));
+                    throw Error(label, number, string.Create(CultureInfo.InvariantCulture, $"a {kept} unit needs an anchor of at least {MinAnchor} characters"));
                 entry = new AccountingEntry(number, id, Disposition.Reworded, null, detail);
             }
             else if (second.StartsWith(DroppedPrefix, StringComparison.Ordinal))
@@ -116,7 +128,7 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
             }
             else
             {
-                throw Error(label, number, $"{second} is not a disposition: use reworded or dropped:<class>");
+                throw Error(label, number, $"{second} is not a disposition: use {kept} or dropped:<class>");
             }
             entries.TryAdd(id, entry);
         }

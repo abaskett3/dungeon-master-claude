@@ -57,7 +57,7 @@ its line is in a closed campaign's file, which `dmc size --check` leaves out.
 - **Campaign**: the-silver-egg
 - **Closing backup**: the-silver-egg_closed_20261112093000.zip sha256:3f5a...
 - **Chain**: none <!-- the digests copied with it, nearest first -->
-- **Carried**: Kibil Rornson <!-- the characters this sequel carried over, as their headings in people.md give them -->
+- **Carried**: Kibil Rornson <!-- the characters this sequel carried over, as the closed campaign's sheets title them -->
 - **Files**: people.md, places.md, factions.md, items.md, world.md, spine.md, secrets.md, accounting.tsv
 ```
 

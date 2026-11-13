@@ -28,6 +28,8 @@ A sheet must let a DM who has never met the character play them correctly: the n
 
 Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md` for the character's first appearance.
 
+A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history, and use species or class defaults only where it says nothing. Their voice, the names they use and their appearance go on the sheet itself.
+
 ## Check
 
 Before finishing, verify the derived numbers once more, and confirm the name is spelled the same as everywhere else in the campaign.

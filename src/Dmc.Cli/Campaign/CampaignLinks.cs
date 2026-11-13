@@ -333,11 +333,25 @@ internal static partial class CampaignLinks
     /// </summary>
     /// <param name="folder">The campaign's folder.</param>
     /// <param name="campaign">Its folder name.</param>
-    static List<Entry> Read(string folder, string campaign)
+    static List<Entry> Read(string folder, string campaign) =>
+        ReadText(Path.Combine(folder, "player-options.md")) is { } text ? Entries(text, campaign) : [];
+
+    /// <summary>
+    /// The campaign a <c>player-options.md</c> continues: the one name its Continues line follows (or its Predecessor line,
+    /// in a file with no Continuity section), as the linked set reads it.
+    /// </summary>
+    /// <param name="text">The file's text.</param>
+    /// <param name="campaign">The campaign whose file it is, so a link to itself is not followed.</param>
+    /// <returns>The folder name, or null when the line says <c>none</c>, is missing or names nothing that could be followed.</returns>
+    public static string? ContinuesOf(string text, string campaign) =>
+        Entries(text, campaign).FirstOrDefault(e => e.Step == LinkStep.Earlier && e.Name is not null)?.Name;
+
+    /// <summary>The link lines of a <c>player-options.md</c>'s text as entries; see <see cref="Read"/>.</summary>
+    /// <param name="text">The file's text.</param>
+    /// <param name="campaign">Its campaign's folder name.</param>
+    static List<Entry> Entries(string text, string campaign)
     {
         var entries = new List<Entry>();
-        if (ReadText(Path.Combine(folder, "player-options.md")) is not { } text)
-            return entries;
         var parsed = Parse(text);
         if (parsed.Section is { } section)
         {

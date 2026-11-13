@@ -4,10 +4,10 @@ using Dmc.Campaign;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links NAME-or-FILE</c>: moves a whole campaign in and out
+/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE</c>: moves a whole campaign in and out
 /// of one file. <c>export</c> writes a campaign folder (and the general player options) to a ZIP with a manifest of sizes
 /// and checksums; <c>import</c> checks such a file completely, then creates the campaign all or nothing under a name that
-/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign. <c>links</c> lists the campaigns linked to one, through the Continuity sections of their <c>player-options.md</c> (spec 011), with their modules and any problem with a link line; it writes nothing.
+/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign. <c>links</c> lists the campaigns linked to one, through the Continuity sections of their <c>player-options.md</c> (spec 011), with their modules and any problem with a link line; it writes nothing. <c>sequel</c> is the exact parts of a sequel's import of the closed campaign it continues (spec 011): the digest's start, its accounting, its check and the sample draw.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
@@ -20,7 +20,7 @@ public sealed class CampaignCommand : ICommand
     public string Name => "campaign";
 
     /// <inheritdoc />
-    public string Summary => "export or import a whole campaign as one file, bring its files up to date, close it for good, or list its links: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links NAME-or-FILE";
+    public string Summary => "export or import a whole campaign as one file, bring its files up to date, close it for good, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE";
 
     /// <summary>The text <c>--help</c> prints: usage, what each verb does and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
@@ -35,10 +35,15 @@ usage: dmc campaign export NAME [--out PATH] [--force]
        dmc campaign restore NAME [--from FILE] [--yes]
        dmc campaign close NAME [--yes]
        dmc campaign links [NAME]
+       dmc campaign sequel NAME --start
+       dmc campaign sequel NAME --list [--all]
+       dmc campaign sequel NAME --check
+       dmc campaign sequel NAME --sample [--round N]
 
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
 Brings a campaign's files up to the kit's standard with DMC, safely: a backup first, a check that nothing was lost, and
-a way back. Closes a finished campaign for good. Lists the campaigns linked to one.
+a way back. Closes a finished campaign for good. Lists the campaigns linked to one. Proves a sequel's import of the
+closed campaign it continues.
 
   export    writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
             adventures/ is changed. The file name is NAME-YYYYMMDDHHmm.zip (local time) in exports/ in the DMC folder.
@@ -63,6 +68,12 @@ a way back. Closes a finished campaign for good. Lists the campaigns linked to o
             world), steps away, and open, closed or missing, with "digest" when a nearer campaign holds its digest;
             then the modules they reach, then any problem with a link line. "no links" for a campaign alone. Writes
             nothing.
+  sequel    the exact parts of importing the closed campaign NAME's Continues line names into NAME, checked against its
+            closing backup. --start writes adventures/NAME/digests/<closed>/ with its index and scene spine, copies the
+            digests the closed campaign holds, and prints the parts to give DMC's subagents. --list prints the lines of
+            the closed campaign not yet in the digest or its accounting.tsv. --check proves the digest: every line
+            accounted, the copies unchanged, each file under the read limit, each subject heading once. --sample draws
+            the facts and people of the sample test. Only --start writes, and never to the closed campaign.
 
   NAME          a folder under adventures/ (standard, links: default the active campaign)
   FILE          an export file; its name does not matter, the campaign name is read from inside it
@@ -75,8 +86,11 @@ a way back. Closes a finished campaign for good. Lists the campaigns linked to o
                 only on the player's yes to the question backups asks
   --backup      verify: the backup to compare with (default: the one of the unfinished migration, else the latest)
   --accounting  verify: the accounting file (default: backups/<backup file>.accounting.tsv)
-  --list        verify: print what is still to account for, and write nothing
-  --all         verify: print every unaccounted line, not the first 40
+  --list        verify, sequel: print what is still to account for, and write nothing
+  --all         verify, sequel --list: print every unaccounted line, not the first 40
+  --start, --check, --sample
+                sequel: start the digest, check it, or draw the sample test
+  --round       sequel --sample: the round to draw, 1 or more (default 1); a new round is a new draw
   --from        restore: the backup to restore (default: the one of the unfinished migration, else the latest)
   --yes         restore, close: do it; without it nothing changes
 
@@ -115,6 +129,8 @@ A published module is not exported; ingest it again from your own copy.
                 return RunClose(close, io);
             case LinksRequest links:
                 return RunLinks(links, io);
+            case SequelRequest sequel:
+                return RunSequel(sequel, io);
             default:
                 throw new InvalidOperationException("unknown campaign request");
         }
@@ -326,6 +342,35 @@ A published module is not exported; ingest it again from your own copy.
         foreach (string line in CampaignLinks.ListLines(CampaignLinks.Build(root, name)))
             io.Out.WriteLine(line);
         return 0;
+    }
+
+    /// <summary>Runs one form of <c>sequel</c> (contracts/campaign-sequel.md) and prints its lines.</summary>
+    /// <param name="request">The parsed <c>sequel</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    /// <exception cref="DmcException">A refusal; or <c>--check</c> failed, after its lines are printed.</exception>
+    static int RunSequel(SequelRequest request, Io io)
+    {
+        string root = DmcFolder.Require();
+        List<string> lines;
+        string? failure = null;
+        switch (request.Form)
+        {
+            case SequelForm.Start:
+                lines = SequelDigest.Start(root, request.Name);
+                break;
+            case SequelForm.List:
+                lines = SequelDigest.List(root, request.Name, request.All);
+                break;
+            case SequelForm.Check:
+                (lines, failure) = SequelDigest.Check(root, request.Name);
+                break;
+            default:
+                lines = SampleDraw.Run(root, request.Name, request.Round);
+                break;
+        }
+        foreach (string line in lines)
+            io.Out.WriteLine(line);
+        return failure is null ? 0 : throw new DmcException("check failed: " + failure);
     }
 
     /// <summary>Prints what a file holds.</summary>

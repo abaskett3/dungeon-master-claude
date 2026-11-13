@@ -1,6 +1,6 @@
 ---
 name: dmc-new-campaign
-description: Create a new solo D&D campaign folder from the templates and run session zero (player preferences, character creation, opening premise). Use when the player wants to start a new adventure, to carry on a campaign played elsewhere (a chat export or transcript), or when no campaign exists yet.
+description: Create a new solo D&D campaign folder from the templates and run session zero (player preferences, character creation, opening premise). Use when the player wants to start a new adventure, to carry on a campaign played elsewhere (a chat export or transcript) or to continue a closed campaign as a sequel, or when no campaign exists yet.
 ---
 
 # New campaign
@@ -36,6 +36,26 @@ Never read the export into this conversation. Whatever is read stays in context 
 3. If subagents are not available, do one part per session instead: write the files, record where you stopped in `import/progress.md`, and ask the player to type `/clear` and then ask you to continue the import.
 
 When every part is done, read the campaign files as `dmc-resume-campaign` does, run the consistency check from `dmc-campaign-full-save` (step 7), and settle the known inconsistencies with the player. Then go through steps 2 to 4 below only for what the export did not cover, such as the player options.
+
+## 1c. A sequel
+
+If the player wants to continue a closed campaign, import it before the first scene. Nothing is ever written to the closed campaign: everything goes into the new one, and `dmc` does the exact parts.
+
+1. Check that `dmc campaign standard <closed>` says `closed`; if not, offer to close it first with `dmc-close-campaign`. Write it on this campaign's Continues line (step 2's Continuity), and ask which characters carry over.
+2. Run `dmc campaign sequel <folder> --start`. It writes `digests/<closed>/` with its index and scene spine, copies the digests the closed campaign holds, and prints the parts. Write the carried characters' names on the index's Carried line as the closed campaign's sheets title them.
+3. For each part in order, start a subagent as § 1b does, one after another. Tell each one its part's files and line ranges, and to read the closed campaign only through them, and what earlier parts wrote before adding to it. Part 1 writes the brief into this campaign's own files: open and deferred threads into the Arc plan of `story/dm-notes.md`, house rules and standing requests into `player-options.md`, and the DM notes' secrets into the digest's `secrets.md` (and into this campaign's DM notes where they can still come up). Every other part writes the digest, in `digests/<closed>/` only:
+   - one `## ` heading per subject in `people.md`, `places.md`, `factions.md`, `items.md` and `world.md` (`## Rulings`, `## Prices, debts and promises`, `## Lore`, `## How it ended`, `## Module`), a person's heading being the title of their sheet; a kind near 20k tokens goes on in `people-2.md`, a part holding whole subjects;
+   - each line copied word for word under one subject, keeping its `sN` or `sN.M`; a fact that lives only in a session log added under its subject with its `sN.M`;
+   - secrets in `secrets.md`, each with its outcome (`revealed sN`, `never revealed`, `abandoned`), a sheet's own `## Secrets` lines under the character's name;
+   - a living character's stat block under their heading; a dead one's left out;
+   - nothing of plans the story overtook, scene or combat state, or module text; `module-progress.md`'s deviations and module NPCs' statuses go to `world.md` § Module.
+
+   The part that holds canon also copies its Rulings and its Prices, debts and promises into this campaign's `story/canon.md`; the part that holds the summary writes this campaign's premise and earlier arcs into its `story/summary.md`; the part that holds a carried character's sheet writes their sheet here by following `dmc-character-sheet-update`.
+4. Run `dmc campaign sequel <folder> --list`, and account each line it prints in `digests/<closed>/accounting.tsv`: `<id>`, a tab, `merged`, a tab and words of the digest line it went into; or `<id>`, a tab, `dropped:<class>`, a tab and the reason, the class one of `superseded` (name the line that replaced it), `not-canon`, `structure`, `bookkeeping` or `stat-block` (name the sheet). A line lost by mistake is copied, not dropped. Then run `--check` and fix what it names until it passes.
+5. Run `--sample`. Give one fresh subagent only the digest folder's path and the items, and ask it for each fact's who, what, when, where, why and how, and for each person who they are, what happened to them and where they stand. Compare its answers yourself with the closed campaign's files. Here and in step 4, never read a whole file of the closed campaign or of the digest into this conversation: find the lines with `dmc recall <folder> <words>` or a search, and read only those lines. A miss is a question the closed campaign answers that the answer gets wrong or leaves out: fix the digest, run `--check` again and draw again with `--round <next>`. The sample passes with no miss.
+6. Keep `import/progress.md` up to date as you go (the last part done, the check, the round), so an interrupted import carries on where it stopped.
+
+Then go through steps 2 to 4 below only for what the brief does not cover. Open the first scene only after the sample passes.
 
 ## 2. Session zero
 

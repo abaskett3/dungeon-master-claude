@@ -42,14 +42,16 @@ part 4: story/sessions/session-001.md to session-009.md
 
 Run again on an existing `digests/<OTHER>/`, it rewrites `index.md`'s generated lines (keeping Carried), `spine.md`
 and the chain copies, and prints the plan again. It refuses if NAME already holds a different campaign's digest under
-the same folder name.
+the same folder name: `digests/OTHER/ holds a digest of X: it cannot be started over for OTHER`. The plan prints a file
+split at its headings as `path a-b`, and a run of sheets or session logs as `folder/ (N files)` when it is the whole
+folder, else `folder/first to last`.
 
 ## `--list`
 
 Each unaccounted unit, at most 40 lines without `--all`, then `(+N more: --all)`:
 
 ```
-unaccounted: 7c1e09a2 story/canon-archive.md:212 | Kibil fell through the ice at Grey Tarn and nearly drowned (s9.3).
+unaccounted: 7c1e09a2b4f6 story/canon-archive.md:212 | Kibil fell through the ice at Grey Tarn and nearly drowned (s9.3).
 ```
 
 Prints `nothing unaccounted` when done.
@@ -59,17 +61,18 @@ Prints `nothing unaccounted` when done.
 Passes with one line, exit 0:
 
 ```
-checked digests/the-silver-egg/: 2,841 units (2,610 copied, 148 merged, 83 dropped), 7 files, largest 18.2k tokens
+checked digests/the-silver-egg/: 2,841 units (2,610 copied, 148 merged, 83 dropped), 9 files, largest 18.2k tokens
 ```
 
-Fails with one line per problem (at most 40, then a count), exit 1:
+Fails with one line per problem (at most 40, then `(+N more)`), exit 1, with `check failed: N problems` on standard
+error:
 
 | Line | Problem |
 |---|---|
 | `unaccounted: N units (dmc campaign sequel NAME --list)` | R9 |
 | `accounting: <id>: <reason>` | An unknown id, a class not declared, an anchor not found in the digest |
 | `copy differs: digests/<X>/<file>` | A chain copy is not byte-identical to OTHER's |
-| `index: <line>` | A required index line missing, or its checksum differs from the closing backup |
+| `index: <line>` | A required index line missing, a Chain line that is not the chain copied, or its checksum differs from the closing backup |
 | `too large: digests/<OTHER>/<file> <N>k tokens (split it by subject)` | Over 20k estimated tokens |
 | `heading twice: digests/<OTHER>/<kind>: <heading>` | A subject heading appears twice across a kind's parts |
 

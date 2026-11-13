@@ -20,7 +20,7 @@ usage: dmc <command> [args]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
   digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
-  campaign      export or import a whole campaign as one file, and bring its files up to date: dmc campaign export|import|show|standard|backups|backup|verify|restore NAME-or-FILE
+  campaign      export or import a whole campaign as one file, bring its files up to date, close it for good, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE
   play          start a play session in your DMC folder: claude --model sonnet --effort high [args]
   install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
   folder        print the DMC folder this command would use
@@ -315,9 +315,13 @@ dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
 dmc campaign restore NAME [--from FILE] [--yes]
 dmc campaign close NAME [--yes]
 dmc campaign links [NAME]
+dmc campaign sequel NAME --start
+dmc campaign sequel NAME --list [--all]
+dmc campaign sequel NAME --check
+dmc campaign sequel NAME --sample [--round N]
 ```
 
-Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign). `links` lists the campaigns linked to one; see [Linked campaigns](#linked-campaigns).
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign). `links` lists the campaigns linked to one; see [Linked campaigns](#linked-campaigns). `sequel` is the exact parts of a sequel's import of the closed campaign it continues; see [A sequel's import](#a-sequels-import).
 
 | Argument | Meaning |
 |---|---|
@@ -577,6 +581,91 @@ campaigns that are not closed, since a closed campaign's file can no longer be c
 
 A failure is one line and exit 1 (`no active campaign: name one (dmc campaign links NAME)`, `no campaign "NAME" in
 adventures/ (there are: …)`); a usage mistake exits 2.
+
+### A sequel's import
+
+Added in spec 011 (issue #179, Phase B, PR 2). `sequel` works on a digest of the closed campaign that NAME's Continues
+line names, in `adventures/NAME/digests/<closed>/` ([campaign-files.md](campaign-files.md#a-digest) has its shape).
+`dmc-new-campaign` § 1c runs it; the judgments (which subject a line goes under, what is merged or dropped) are DMC's.
+Only `--start` writes, and only under `adventures/NAME/digests/`; nothing is ever written to the closed campaign. Every
+form takes exactly one of `--start`, `--list`, `--check` and `--sample`; `--all` goes only with `--list`, and
+`--round N` (1 or more, default 1) only with `--sample`.
+
+Every form first checks, and refuses with one line and exit 1, in this order:
+
+| Message | When |
+|---|---|
+| `NAME is closed: start a sequel to continue its story` | NAME is closed |
+| `NAME continues nothing: its Continues line is none` | NAME's Continues line names nothing (or, in a file with no Continuity section, its Predecessor line) |
+| `NAME continues OTHER, which is not closed: close it first with dmc-close-campaign` | The campaign it names is open |
+| `OTHER's closing backup is missing: backups/<file> (it cannot be digested without it)` | The closing backup the mark names is not in OTHER's `backups/` |
+| `OTHER's closing backup fails its check: <reason>` | The backup fails the checks an import makes, or is another campaign's |
+| `OTHER has changed since it closed: run dmc campaign verify OTHER` | A file of OTHER differs from its closing backup (`verify`'s check) |
+
+**`--start`** creates `digests/<OTHER>/` with `index.md` and `spine.md`, copies each `digests/<X>/` the closing backup
+holds into NAME's `digests/<X>/` byte for byte, and prints the parts to give DMC's subagents. Part 1 is always
+`player-options.md` and `story/dm-notes.md`, whole: the files only the brief needs. The other parts hold the
+accounted files and then the session logs, filled to about 100 KB each; a file is split only at its `## ` headings
+(printed `path a-b` with its line range) and a session log never. A file OTHER does not have is left out. Run again,
+it rewrites the index (keeping its Carried line), the spine and the copies, and never touches DMC's own files; it
+refuses when the index names another campaign (`digests/<OTHER>/ holds a digest of X: it cannot be started over for OTHER`).
+
+```
+$ dmc campaign sequel rorns-landing --start
+started digests/the-silver-egg/ (spine: 46 sessions, 169 scenes; chain: none)
+part 1: player-options.md, story/dm-notes.md (the brief)
+part 2: story/canon.md, story/canon-archive.md 1-310
+part 3: story/canon-archive.md 311-702, character-sheets/ (19 files)
+part 4: story/sessions/session-001.md to session-009.md
+```
+
+**The accounted lines** are read from the closing backup, never the live folder: every line of `story/canon.md`,
+`story/canon-archive.md`, `module-progress.md` and every file in `character-sheets/`, the lines under § Secrets of
+`story/dm-notes.md` and § How it ended of `story/summary.md`. A line is normalised and given an id as
+[Migrations](#migrations) do. It is copied when its text is a line of a digest file (not the index or the spine), or
+is inside a longer one at 20 characters or more; else it needs a line in `digests/<OTHER>/accounting.tsv`:
+`<id>\tmerged\t<anchor>` (the anchor, 8 characters or more, must be in the digest) or
+`<id>\tdropped:<class>\t<reason>`, the class one of `superseded`, `not-canon`, `structure`, `bookkeeping` and
+`stat-block`.
+
+**`--list`** prints each line still unaccounted, at most 40 without `--all`, then `(+N more: --all)`; or
+`nothing unaccounted`:
+
+```
+unaccounted: 7c1e09a2b4f6 story/canon-archive.md:212 | Kibil fell through the ice at Grey Tarn and nearly drowned (s9.3).
+```
+
+**`--check`** passes with one line, exit 0, or prints one line per problem (at most 40, then `(+N more)`) and exits 1
+with `check failed: N problems`:
+
+```
+checked digests/the-silver-egg/: 2,841 units (2,610 copied, 148 merged, 83 dropped), 9 files, largest 18.2k tokens
+```
+
+| Line | Problem |
+|---|---|
+| `unaccounted: N units (dmc campaign sequel NAME --list)` | Lines neither copied nor accounted |
+| `accounting: <id>: <reason>` | An id that is no accounted line's, a class that is not one of the five, an anchor not in the digest |
+| `copy differs: digests/<X>/<file>` | A copied digest missing a file, or with a file changed or added |
+| `index: <what>` | The index missing, a required line missing, another campaign named, a Chain line that is not the chain copied, or a checksum that is not the closing backup's |
+| `too large: digests/<OTHER>/<file> <N>k tokens (split it by subject)` | A file over 20,000 estimated tokens |
+| `heading twice: digests/<OTHER>/<kind>: <heading>` | A subject heading twice across `people*`, `places*`, `factions*`, `items*` or `world*` |
+
+**`--sample`** draws the sample test: 20 fact lines of the digest's subject files (`people*`, `places*`, `factions*`,
+`items*`, `world*`; not headings or comments), split between copied lines and session-only lines in proportion,
+rounded, at least one of each when both exist; and 5 people from the closing backup (each sheet's `# ` title but
+`*-history.md`, and each row of `minor-npcs.md`'s table), at least one of them on the index's Carried line when it
+names anyone. The seed is the first 8 bytes of the closing backup's SHA-256 plus the round, and the draw uses
+SplitMix64, so the same backup and round always draw the same items; a new round is a new draw. It exits 1 with
+`the digest has no fact lines` or `the closing backup has no characters`.
+
+```
+sample round 1 of digests/the-silver-egg/ (seed 3f5a09c2d1e4b7a8+1): 17 copied facts, 3 session-only facts, 5 people
+fact 1: places.md:44 | The tollhouse at Mardle Ford charges a copper per wheel (s4).
+person 1: character-sheets/npc-kibil-rornson.md | Kibil Rornson (carried)
+person 2: character-sheets/minor-npcs.md:9 | Old Hesketh
+```
+
 ## size
 
 Added in release 0.3.1.

@@ -569,3 +569,35 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** The user's answers in spec 011's clarifications. Asked before the backup, a stop changes nothing: the campaign stays `behind` and playable, and the migration is offered again at the next resume; asked in Steps, a stop would leave it `unfinished`, which blocks play. A section in the migration keeps this migration's question in its own file, and the skill's change is one generic sentence. Naming the campaign, rather than switching `.active-campaign` and back, means an interruption mid-close leaves the sequel active.
 - **Rejected:** The check written into the migrate skill by name (one migration's logic in a generic skill for ever); writing the link without asking (two open campaigns telling one story that can disagree).
 - **Source:** Issue #179; `specs/011-linked-campaigns/` (spec FR-028a, research R13).
+
+## A sequel's import is proved against the closing backup (issue #179, Phase B)
+
+- **Date:** 2026-11-12
+- **Decision:** `dmc campaign sequel --list` and `--check` read the closed campaign's lines from its closing backup, the ZIP its `.closed` mark names, never from the live folder; every form also refuses a closed campaign that differs from that backup. The lines that count are every line of canon, the canon archive, `module-progress.md` and every file in `character-sheets/`, with § Secrets of the DM notes and § How it ended of the summary.
+- **Reason:** The closing backup is the record that a closed campaign cannot change; checking it means a hand edit to the closed folder after closing can never pass as accounted. Every line of every sheet counts, so a returning character's appearance, voice and names, and a sheet's own secrets, are proved too, not only their history. DM plans and game state are left out: the brief carries what still matters of them, and accounting each would cost thousands of lines for nothing a sequel asks.
+- **Rejected:** Accounting every line of every file; accounting only a sheet's history (the first plan).
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (spec FR-021 to FR-023, research R9).
+
+## A digest's accounting says `merged` (issue #179, Phase B)
+
+- **Date:** 2026-11-12
+- **Decision:** A digest's `accounting.tsv` has the shape of a migration's accounting file and the same reader, `AccountingFile`, which now takes the word for a line kept in changed form: `reworded` in a migration's file, `merged` in a digest's, each refusing the other, with the same 8-character anchor rule. A digest's file has no `skipped` lines, and its drop classes are fixed: `superseded`, `not-canon`, `structure`, `bookkeeping` and `stat-block`.
+- **Reason:** A digest merges lines that say the same thing into one under a subject; it does not reword them. One parser keeps the two files from drifting apart, and the word tells a reader which kind of file they are in.
+- **Rejected:** A second parser for digests; `reworded` in both.
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (research R9).
+
+## The sample test draws 20 facts and 5 people from a seed in the closing backup (issue #179, Phase B)
+
+- **Date:** 2026-11-12
+- **Decision:** `dmc campaign sequel --sample [--round N]` seeds SplitMix64, written out in `dmc`, with the first 8 bytes of the closing backup's SHA-256 plus the round. It draws 20 fact lines from the digest's subject files, split between copied lines and session-only lines in proportion with at least one of each, and 5 people from the closing backup's sheets and minor NPCs, at least one carried. One fresh subagent answers from the digest alone, DMC compares with the closed campaign, and the sample passes with no miss; a redraw after a fix is the next round.
+- **Reason:** The same backup and round always draw the same items, on any machine and runtime (`System.Random` may change), so a pass can be checked again. Facts come from the digest so session-only facts are tested, which the sources do not hold; people come from the closed campaign so a person the digest lost can be drawn. The accounting, not the sample, proves no line was lost; 25 items is enough to catch a digest that scattered or garbled its subjects at a cost a long import can bear.
+- **Rejected:** A random seed recorded in a file (not reproducible from the backup alone); facts drawn from the sources or the session logs; people drawn from the digest's headings.
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (spec FR-024, research R11).
+
+## The import's verb is `dmc campaign sequel` (issue #179, Phase B)
+
+- **Date:** 2026-11-12
+- **Decision:** The exact parts of a sequel's import are one campaign verb, `dmc campaign sequel NAME`, with four forms: `--start`, `--list [--all]`, `--check` and `--sample [--round N]`. NAME is the sequel, whose Continues line names the closed campaign.
+- **Reason:** `dmc digest` already exists and digests Claude Code transcripts. The campaign verbs are where DMC and players already look, and one verb keeps `campaign --help` short. The sequel is the argument because every write is in it; the closed campaign is never written.
+- **Rejected:** A top-level `dmc sequel`; four verbs (`sequel-start` and the rest).
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (research R8).

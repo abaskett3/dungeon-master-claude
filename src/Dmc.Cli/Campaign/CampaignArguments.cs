@@ -52,6 +52,29 @@ internal sealed record CloseRequest(string Name, bool Yes) : CampaignRequest;
 /// <param name="Name">A folder under <c>adventures/</c>; null for the active campaign.</param>
 internal sealed record LinksRequest(string? Name) : CampaignRequest;
 
+/// <summary>Which form of <c>dmc campaign sequel</c> was asked for.</summary>
+internal enum SequelForm
+{
+    /// <summary><c>--start</c>: write the digest's index, spine and chain copies, and print the parts plan.</summary>
+    Start,
+
+    /// <summary><c>--list</c>: print the unaccounted units.</summary>
+    List,
+
+    /// <summary><c>--check</c>: the whole proof.</summary>
+    Check,
+
+    /// <summary><c>--sample</c>: the sample draw.</summary>
+    Sample,
+}
+
+/// <summary><c>dmc campaign sequel NAME --start|--list [--all]|--check|--sample [--round N]</c> (spec 011 contracts/campaign-sequel.md).</summary>
+/// <param name="Name">The sequel: a folder under <c>adventures/</c> whose Continues line names a closed campaign.</param>
+/// <param name="Form">Which form.</param>
+/// <param name="All"><c>--list</c>: print every unaccounted unit, not the first 40.</param>
+/// <param name="Round"><c>--sample</c>: the round, 1 or more; 1 by default.</param>
+internal sealed record SequelRequest(string Name, SequelForm Form, bool All, int Round) : CampaignRequest;
+
 /// <summary>
 /// Reads the command line of <c>dmc campaign</c> the way <c>dmc digest</c> and <c>dmc pdf</c> do (see <see cref="Argparse"/>): an
 /// option may be shortened to a unique prefix, <c>--option=value</c> is understood, and a mistake is one line and exit code
@@ -61,19 +84,22 @@ internal static class CampaignArguments
 {
     /// <summary>The verbs. This is the only place they are spelled out in the program.</summary>
     public const string Export = "export", Import = "import", Show = "show", Standard = "standard", Backups = "backups",
-        Backup = "backup", Verify = "verify", Restore = "restore", Close = "close", Links = "links";
+        Backup = "backup", Verify = "verify", Restore = "restore", Close = "close", Links = "links", Sequel = "sequel";
 
     /// <summary>The verbs, in the order the usage lists them; <c>ToolkitTests</c> checks the prompts against this list.</summary>
-    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Restore, Close, Links];
+    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Restore, Close, Links, Sequel];
 
     /// <summary>The message for a missing or unknown verb (exit code 2).</summary>
-    const string NeedVerb = "give export, import, show, standard, backups, backup, verify, restore, close or links (try dmc campaign --help)";
+    const string NeedVerb = "give export, import, show, standard, backups, backup, verify, restore, close, links or sequel (try dmc campaign --help)";
+
+    /// <summary>The message for a <c>sequel</c> without exactly one form (exit code 2).</summary>
+    internal const string NeedForm = "give one of --start, --list, --check or --sample";
 
     /// <summary>The message for an <c>--as</c> that is not a valid campaign name (exit code 2); <see cref="CampaignImporter"/> says the same when it is called with one.</summary>
     internal const string AsMessage = "--as must be lowercase letters, digits and hyphens, starting with a letter or digit";
 
     /// <summary>The options that take no value.</summary>
-    static readonly string[] Flags = ["--force", "--init", "--list", "--all", "--yes"];
+    static readonly string[] Flags = ["--force", "--init", "--list", "--all", "--yes", "--start", "--check", "--sample"];
 
     /// <summary>The options each verb accepts.</summary>
     static string[] OptionsOf(string verb) => verb switch
@@ -85,6 +111,7 @@ internal static class CampaignArguments
         Verify => ["--help", "--backup", "--accounting", "--list", "--all"],
         Restore => ["--help", "--from", "--yes"],
         Close => ["--help", "--yes"],
+        Sequel => ["--help", "--start", "--list", "--all", "--check", "--sample", "--round"],
         _ => ["--help"],
     };
 
@@ -171,6 +198,8 @@ internal static class CampaignArguments
                 $"argument --prune: invalid choice: {Maps.Py.Repr(pruneValue)} (choose from 'oldest', 'old')");
 
         string Value(string option) => values.GetValueOrDefault(option)!;
+        if (verb == Sequel)
+            return SequelOf(target!, flags, Value("--round"));
         return verb switch
         {
             Export => new ExportRequest(target!, Value("--out"), flags.Contains("--force")),
@@ -184,6 +213,36 @@ internal static class CampaignArguments
             Links => new LinksRequest(target),
             _ => new CloseRequest(target!, flags.Contains("--yes")),
         };
+    }
+
+    /// <summary>
+    /// The <c>sequel</c> request: exactly one of <c>--start</c>, <c>--list</c>, <c>--check</c> and <c>--sample</c>; <c>--all</c> only
+    /// with <c>--list</c>; <c>--round N</c>, N of 1 or more, only with <c>--sample</c>.
+    /// </summary>
+    /// <param name="name">The sequel's name.</param>
+    /// <param name="flags">The flags given.</param>
+    /// <param name="round">The value of <c>--round</c>, or null.</param>
+    /// <exception cref="DmcException">A usage mistake, exit code 2.</exception>
+    static SequelRequest SequelOf(string name, HashSet<string> flags, string? round)
+    {
+        var forms = new (string Flag, SequelForm Form)[]
+        {
+            ("--start", SequelForm.Start), ("--list", SequelForm.List), ("--check", SequelForm.Check), ("--sample", SequelForm.Sample),
+        }.Where(f => flags.Contains(f.Flag)).ToList();
+        if (forms.Count != 1)
+            throw Argparse.Usage(NeedForm);
+        var form = forms[0].Form;
+        if (flags.Contains("--all") && form != SequelForm.List)
+            throw Argparse.Usage("argument --all: only with --list");
+        int number = 1;
+        if (round is not null)
+        {
+            if (form != SequelForm.Sample)
+                throw Argparse.Usage("argument --round: only with --sample");
+            if (!int.TryParse(round, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out number) || number < 1)
+                throw Argparse.Usage($"argument --round: must be a whole number of 1 or more, not {Maps.Py.Repr(round)}");
+        }
+        return new SequelRequest(name, form, flags.Contains("--all"), number);
     }
 
     /// <summary>What <c>--help</c> does: null, which means "print the help text". A value written after "=" is an error, as in argparse.</summary>

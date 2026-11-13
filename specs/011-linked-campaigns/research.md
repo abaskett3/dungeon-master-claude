@@ -196,19 +196,28 @@ code and the prompts. The spec's own clarifications are not repeated here.
   save records the session of each legacy it folds, on one `game-state.md` line only a linked campaign has:
   `- **Legacies folded**: side-quest s14, old-west s3`.
   `dmc size NAME --check` prints, for each campaign Y in the set with a `legacy.md` whose Written session is later
-  than the one NAME's Legacies folded line records for Y, or with none recorded, `legacy: <Y> legacy.md (written
-  session N) (not the full save's to trim)`; an unreadable Written line prints it too, as `written unknown` (a false
-  alarm costs a read; a missed one costs a contradiction). It prints `legacy due: open linked campaigns <names>:
-  rewrite legacy.md` when the set holds an open campaign and NAME's own `legacy.md` is missing or its Written session
-  is earlier than NAME's Current session; the full save then writes the file before its own
-  size check, and resume ignores the line as one for the full save (contracts/campaign-links.md). Budget: 3,000 estimated tokens, a new `Budgets` entry
-  and a `dmc size` flag for the file.
+  than the one NAME's Legacies folded line records for Y, or with none recorded, `legacy: read adventures/<campaign>/legacy.md (written session N; record <campaign> sN) (not the full save's to trim)`; an unreadable Written line prints it too, as `written unknown` (a false
+  alarm costs a read; a missed one costs a contradiction). It prints `legacy due: at the full save, update this campaign's legacy.md for open linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` (or `keep every line the budget allows`) whenever the set holds an open campaign other than NAME, so
+  every full save brings the file up to date, two in one session included (a test on the Written session would miss
+  the second, since resume can reuse a session log with no scenes and Current session need not move); the full save
+  acts on it once, before its own size check, and leaves it after; resume ignores it as one for the full save
+  (contracts/campaign-links.md).
+  The file is a running list, one line per change with its `sN.M`, oldest first. The save adds its changes and drops
+  only the lines from the session named and earlier: the lowest session that the open campaigns in the set other
+  than NAME record for NAME on their Legacies folded lines, or `keep every line the budget allows` while any of them records none.
+  Closed campaigns are left out, since they never fold again. Over budget, the oldest lines go until it fits.
+  Budget: 3,000 estimated tokens, a new `Budgets` entry and a `dmc size` flag for the file.
 - **Rationale:** FR-025, FR-026, SC-007, SC-008. Session numbers are the one order DMC always writes; every campaign
   in the maintainer's folder has them (Current session lines, `session N` in each Last full save line, numbered and
   titled logs), and the two things compared are new, so no older file lacks them. Recording what was folded, rather
-  than when this campaign last saved, also names a legacy written while this campaign's session runs, and names again
-  one whose session ended before its fold. The file is outside `story/` so the resume's reads, which name files,
-  never pick it up by accident.
+  than when this campaign last saved, names exactly the legacies not yet taken in. Two campaigns played at once, in
+  two terminals, are out of scope (spec Clarifications, 2026-11-13). The file is outside `story/` so the resume's reads, which name files,
+  never pick it up by accident. A running list rather than a rewrite, because a rewrite loses the first of two full
+  saves made before a reader resumes; and `dmc` names what to keep, because the writer cannot see what each reader
+  folded (each records it only in its own `game-state.md`) and `CampaignLinks` already reads every campaign in the
+  set. Past the budget, a reader left unplayed for long misses the oldest lines in the legacy; the writer's canon still
+  holds them and recall reaches it, which costs nothing in play, where holding every line would let the file grow
+  without bound.
 - **Alternatives considered:** File modification times (exports, imports and copies change them); comparing the
   legacy's date and time with the reader's last full save or session start (DMC writes dates without times: Rorn's
   Landing's Last full save line is `2026-11-11, session 47, through scene 2`, and session logs record only the date
@@ -266,8 +275,9 @@ code and the prompts. The spec's own clarifications are not repeated here.
 
 - **Decision:** Measured per PR as bytes ÷ 4 of what an ordinary session loads: `kit/dm-rules.md` (one line rewritten
   in place, at most one line added), the resume skill (the Predecessor sentence deleted; one clause on `notice:` lines
-  in the size check it already runs; PR 3 adds one for `legacy:` lines), the full save (PR 3: one clause, about 50
-  tokens), skill descriptions (none added: `dmc-new-campaign`'s description gains a few words for sequels). Expected
+  in the size check it already runs; PR 3 adds one for `legacy:` lines), the full save (PR 3: one clause, about 50 to
+  90 tokens since it also keeps lines and folds `legacy:` lines; measured at T090, and if it runs over, its detail
+  moves to the template's comment, read only when the file is written), skill descriptions (none added: `dmc-new-campaign`'s description gains a few words for sequels). Expected
   total under 120 tokens. No command call is added (R1), and `dmc size NAME --check` prints no link line for a
   campaign with no links and no news.
 - **Rationale:** Constitution II; spec SC-007.

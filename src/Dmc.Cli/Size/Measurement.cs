@@ -62,8 +62,9 @@ internal enum EntryState
 /// <param name="Lines">The lines read (empty when the file is not measured).</param>
 /// <param name="Note">What the report says about the part (for example <c>to its history</c>, <c>whole (fewer than 3 scenes)</c>), or null.</param>
 /// <param name="FileLines">Every line of the file, for a check that looks past the part read (canon's sections when it is read in sections); the same as <paramref name="Lines"/> otherwise.</param>
+/// <param name="InTotal">False for a file measured and flagged that the resume does not read (a campaign's own <c>legacy.md</c>, which other campaigns read), so the total leaves it out.</param>
 internal sealed record Part(string Path, PartKind Kind, EntryState State, BudgetKind Budget, IReadOnlyList<Line> Lines,
-    string? Note, IReadOnlyList<Line> FileLines)
+    string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true)
 {
     /// <summary>The bytes of the part read.</summary>
     public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes);

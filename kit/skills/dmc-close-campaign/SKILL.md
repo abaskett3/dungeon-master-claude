@@ -42,7 +42,8 @@ Follow `dmc-campaign-full-save`, steps 1 to 8, with these differences and no oth
   short paragraph; the in-world date; one line per PC and companion with their final level, condition and where they
   are; one line per recurring NPC with where they are; and, only if there is any, what in the campaign folder is not
   canon (a test fight, an import), named so a sequel leaves it out.
-- **Step 7, sizes.** Leave every `dmc size` line and trim nothing: a closed campaign is never resumed into play, so
+- **Step 7, sizes.** Act on the `legacy:` and `legacy due:` lines as that step says, so linked campaigns learn how
+  this one ended. Leave every other `dmc size` line and trim nothing else: a closed campaign is never resumed into play, so
   every file stays whole.
 - **Step 8, stamp.** Set the "Last full save" line only: no Planned break line and no report; § 5 reports.
 

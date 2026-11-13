@@ -132,6 +132,19 @@ The issue left these open for the specs. Each is settled here with its reason; `
   legacy it folded in (FR-026). Dates and times cannot order them, since DMC writes dates without times; every campaign
   in the maintainer's folder has session numbers.
 
+### Session 2026-11-13 (`/speckit-analyze`, before PR 3)
+
+- Q: How far back does a legacy file reach? → A: It is a running list, one line per change with its `sN.M`. At each
+  full save the writer adds that save's changes and drops only the lines every open campaign in its linked set has
+  folded in: `dmc` names the lowest session any open reader has folded, and the writer drops that session's lines and
+  earlier ones; `dmc` says `keep every line the budget allows` while any of them has folded nothing. Closed campaigns never fold again,
+  so they do not hold lines back. Past its budget the oldest lines go anyway; the writer's canon still holds them for recall (FR-025). Rewriting the file whole would lose the first of
+  two saves made before a reader resumes, and the writer cannot see what each reader folded, since each records it
+  only in its own `game-state.md`.
+- Q: Must legacies stay right when two linked campaigns are played at the same time, in two terminals? → A: No; that
+  is not a use case (the user, 2026-11-13). One campaign is played at a time, so a legacy's session number always
+  orders it, and the stamp needs no scene.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A sequel starts from a closed campaign and loses nothing (Priority: P1)
@@ -227,9 +240,9 @@ into canon at its next full save; resume again and check that nothing is named.
 
 **Acceptance Scenarios**:
 
-1. **Given** a campaign linked to at least one open campaign, **When** it is full-saved, **Then** its legacy file is
-   rewritten with what changed in the shared world, within its budget, stamped with the session that wrote it and the
-   date.
+1. **Given** a campaign linked to at least one open campaign, **When** it is full-saved, **Then** its legacy file gains
+   what this save changed in the shared world, keeps every earlier change a linked open campaign has not yet folded in,
+   stays within its budget, and is stamped with the session that wrote it and the date.
 2. **Given** campaign X and a linked open campaign Y whose legacy X has not folded in, **When** X is resumed,
    **Then** one line names Y and its legacy file, and DMC reads that file and no other file of Y.
 3. **Given** X's next full save after reading Y's legacy, **When** it completes, **Then** the world changes it named are
@@ -335,12 +348,15 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   closing save settled, and the accounting drops the other reading as superseded, with the line it was superseded by.
 - **A test fight or other non-canon file** the closing save named in § How it ended: left out, accounted as dropped
   under its declared class.
-- **A legacy written while this campaign's session is running** (two sessions at once): named at this campaign's next
-  resume, since what counts is which of the other campaign's sessions this campaign has folded in, not when it saved.
+- **Two linked campaigns played at the same time** (two terminals): out of scope. The player plays one campaign at a
+  time, and each resume starts a new session, so session numbers order every legacy.
 - **A side campaign closed while the main campaign is in play**: its last legacy, written at the closing save, stays
   and is read once at the main campaign's next resume; recall still reaches its folder.
-- **The legacy file of a campaign grows over its budget**: `dmc size` flags it as any budgeted file; the full save
-  trims it to the changes the linked campaigns have not yet folded in.
+- **Two full saves of a campaign before a linked campaign resumes**: the legacy keeps both saves' changes, since the
+  writer drops only lines older than every open reader's last fold (FR-025).
+- **The legacy file of a campaign grows over its budget** (a linked campaign left unplayed for long): `dmc size` flags
+  it as any budgeted file, and the full save drops its oldest lines until it fits. A reader that had not folded them
+  misses them in the legacy; the writer's canon still holds them, and recall reaches it.
 - **Recall in a campaign with a very large linked set**: the output cap still holds; the time stays within SC-006.
 
 ## Requirements *(mandatory)*
@@ -467,17 +483,21 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
 
 **Legacy files**
 
-- **FR-025**: A campaign with at least one open campaign in its linked set MUST rewrite its legacy file at each full
-  save, the closing save included: what changed in the shared world that the linked campaigns would need, in the
-  world's terms, stamped with the session that wrote it (and the date, for people), within a budget of about 3k tokens
-  that `dmc size` checks. A campaign whose linked set holds no open campaign writes none.
+- **FR-025**: A campaign with at least one open campaign in its linked set MUST bring its legacy file up to date at
+  each full save, the closing save included: what changed in the shared world that the linked campaigns would need,
+  in the world's terms, one line per change with its `sN.M`, stamped with the session that wrote it (and the date, for
+  people), within a budget of about 3k tokens that `dmc size` checks. The file is a running list: the save adds its
+  own changes and drops the lines `dmc` names (`drop the lines from session N and earlier`), N being the lowest
+  session of this campaign's legacy that the open campaigns in the linked set have folded in (FR-026), so a line every
+  open reader has folded is dropped and no other is; while any of them has folded none, `dmc` says `keep every line the budget allows`. Over budget, the oldest lines go until it fits. A campaign whose linked set holds
+  no open campaign writes none.
 - **FR-026**: At resume, `dmc` MUST name, one line each, every open or closed campaign in the linked set whose legacy
   was written in a later session of that campaign than the one this campaign last folded in, or that this campaign has
   never folded in, and nothing when there is none. DMC reads each named legacy file, and at the next full save folds
   what changed into canon (marked as world knowledge unless the characters saw it) and records, in `game-state.md`,
   the session of each legacy it folded. Session numbers decide, not dates or times, which DMC does not write reliably
   (Rorn's Landing's last full save line is `2026-11-11, session 47, through scene 2`), so two campaigns played the
-  same day, or one saved while the other's session is running, are still told apart.
+  same day are still told apart.
 
 **Modules in a chain**
 
@@ -541,8 +561,9 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
 - **Accounting**: one line per line of the accounted sources that is not copied word for word: merged with an anchor,
   or dropped with a class and a reason.
 - **Sample test**: a reproducible draw of facts and people, each answered from the digest alone on six questions.
-- **Legacy file**: what changed in the shared world, written by a linked campaign still in play at each full save,
-  stamped, read once by each linked campaign that has not yet folded it in.
+- **Legacy file**: a running list of what changed in the shared world, brought up to date by a linked campaign still
+  in play at each full save, stamped, read once by each linked campaign that has not yet folded it in, and trimmed
+  only of lines every open linked campaign has folded.
 - **Closing backup**: the checked export spec 010 writes when a campaign closes, kept for good; the reference the
   accounting is checked against.
 
@@ -569,8 +590,7 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
 - **SC-007**: A campaign with no links pays nothing in play: no legacy file, no line at resume, no notice in recall,
   and its standing cost rises by no more than FR-031's 150 tokens of kit text.
 - **SC-008**: A linked open campaign with a legacy this campaign has not folded in is named at resume in exactly one
-  line, and is not named again after this campaign's next full save; a legacy written while this campaign's session is
-  running is named at the next resume.
+  line, and is not named again after this campaign's next full save.
 - **SC-009**: Every digest file is under the near-cap margin of 20,000 estimated tokens, and every subject in it has
   exactly one heading.
 

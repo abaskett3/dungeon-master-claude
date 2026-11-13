@@ -52,6 +52,7 @@ adventures/
     module-progress.md       only for a published module (spoilers)
     import/                  only for a campaign imported from elsewhere (the export, kept as the record) or a sequel: progress.md, where an import stands
     digests/<campaign>/      only in a sequel: a closed campaign's facts by subject (spoilers); searched, never read at resume
+    legacy.md                only when linked to an open campaign: what changed in the shared world, for the linked campaigns
 ```
 
 `adventures/` is the player's, and `dmc` never writes it (a DMC folder is not a git checkout). A new campaign is a copy of `templates/campaign/` (generated from `kit/templates/campaign/`); the archives, `import/` and the map outputs are created when first needed.
@@ -62,7 +63,7 @@ adventures/
 |---|---|---|---|---|
 | `adventures/player-options.md` | Dice (who rolls, how rolls are asked for and shown, secret rolls), how to talk with DMC, narration style, maps; Image styles (optional: the saved looks for image prompts and the last one used, written by `dmc-generate-image-prompt` when the player saves, changes or uses a saved style) | When the player asks for a change, and by `dmc-generate-image-prompt` | `templates/player-options.md` | Yes |
 | `player-options.md` | Edition, starting level, leveling, HP on level-up, what is tracked, house rules, the campaign's links to other campaigns (§ Continuity, see [Linked campaigns](#linked-campaigns)), lethality, combat difficulty, puzzle hints, tone, overrides of the general file | When the player asks for a change | `templates/campaign/player-options.md` | Yes |
-| `game-state.md` | Campaign, session number, last full save (date, session and the last scene saved); the scene (location, date and time, conditions, who is present, what is happening, what the player was about to do); party status per PC and companion, plus a "With the party, not companions" block for rescued NPCs, prisoners and guests (HP, hit dice, slots, resources, conditions, concentration, exhaustion, death saves, inspiration, gold, consumables); the combat tracker; plan and standing orders for where the party is now (orders not in play go to canon); quests; clocks; pending | Whenever any of it changes, before the next beat is narrated; in a fight, the tracker block once per reply, in one edit | `templates/campaign/game-state.md` | Yes, first after the options |
+| `game-state.md` | Campaign, session number, last full save (date, session and the last scene saved); the scene (location, date and time, conditions, who is present, what is happening, what the player was about to do); party status per PC and companion, plus a "With the party, not companions" block for rescued NPCs, prisoners and guests (HP, hit dice, slots, resources, conditions, concentration, exhaustion, death saves, inspiration, gold, consumables); the combat tracker; plan and standing orders for where the party is now (orders not in play go to canon); quests; clocks; pending; in a linked campaign only, the Legacies folded line (see [Legacy files](#legacy-files)) | Whenever any of it changes, before the next beat is narrated; in a fight, the tracker block once per reply, in one edit | `templates/campaign/game-state.md` | Yes, first after the options |
 | `character-sheets/pc-<name>.md` | Abilities, combat numbers and attacks, features, spellcasting, inventory, story, relationships, notes | On level-up, new items, relationships or goals | `templates/pc-sheet.md` | Yes, every PC |
 | `character-sheets/npc-<name>.md` | How to play them (voice note, the names they use for people and places), what they know, secrets, relationships, history with the PC, stat block with every attack's reach or range | When an NPC is introduced, recurs or changes | `templates/npc-sheet.md`; the `character-sheet-update` skill gives a companion the full `templates/pc-sheet.md` | Companions, and NPCs in the current scene |
 | `character-sheets/minor-npcs.md` | One line each: name, role, place, a trait, attitude to the PC | When a named bit part appears | `templates/campaign/character-sheets/minor-npcs.md` | No |
@@ -75,6 +76,7 @@ adventures/
 | `story/sessions/session-NNN.md` | Each scene of a session (title, location, in-world time, beats) and a closing section. Every resume starts a new session, so one log is one sitting; scenes number from 1 in each, cited `sN.M` | At the end of every scene | `templates/session-log.md` | The last three scenes of the most recent one, or all of it after an unsaved session |
 | `maps/*.json` | See [The map files](#the-map-files) | When a reusable map is drawn; `live.json` whenever anyone moves | none | The map of the current location |
 | `module-progress.md` | Current position and the digest section to read next, chapter status, areas, encounters with the scaling used, module NPCs, treasure and clues, scripted events, deviations from the module | Whenever the party's position or the module's state changes | `templates/module-progress.md` | Yes, if present |
+| `legacy.md` | Only in a campaign linked to an open campaign: what changed in the shared world, one line per change with its `sN.M`, oldest first; see [Legacy files](#legacy-files) | At every full save, the closing save included | `templates/legacy.md` | Not by its own resume; once by each linked campaign's resume while it is news |
 
 ### How big the files may be
 
@@ -91,8 +93,9 @@ Every file the resume reads that the full save trims has a size budget, in estim
 | any other sheet, down to its history | 4,000 |
 | `story/canon.md`: read whole below | 19,000 |
 | `story/canon.md`: a full save archives down to | 16,000 |
+| `legacy.md` | 3,000 |
 
-The player options, the session log and the module files have no budget: the full save does not trim them. Any file the resume reads is flagged when it reaches 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call. `dmc size` also flags what the templates say should not stay in a file read whole: more than one Last played line or a per-session Mix tracker, Opposition rows with none left alive, DONE or RESOLVED lines outside the Arc plan, a Prices, debts and promises section over 3,000, and lines over 400 characters.
+`legacy.md` is measured and flagged like the files above, but its own resume never reads it, so it is outside the resume total. The player options, the session log and the module files have no budget: the full save does not trim them. Any file the resume reads is flagged when it reaches 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call. `dmc size` also flags what the templates say should not stay in a file read whole: more than one Last played line or a per-session Mix tracker, Opposition rows with none left alive, DONE or RESOLVED lines outside the Arc plan, a Prices, debts and promises section over 3,000, and lines over 400 characters.
 
 Spoilers: the player can read and edit any file, but `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md`, NPC sheets (their secrets) and anything under `modules/` give away what is ahead.
 
@@ -178,6 +181,41 @@ resume total; and a digest's secrets and its `## Module` section (a copy of `mod
 recall. A campaign whose digest a campaign nearer the start holds (a `digests/<campaign>/` folder with a `.md` file in
 it) is the last resort: its own folder is still searched, but the digest's line ranks first, and recall prints a line
 the two share once.
+
+### Legacy files
+
+Two campaigns still in play in one world (a main campaign and a side campaign, say) pass what changed in the world to
+each other through `legacy.md`, at the top of each one's folder. A campaign alone, or one whose only link is Continues
+to a closed campaign, has none and pays nothing for it.
+
+```markdown
+# Legacy of side-quest
+
+- **Written**: session 14, 2026-11-20
+
+## What changed in the world
+
+- The ford bridge on the east road is burned down (s13.2).
+- The baron of Hollin is dead (s14.1).
+```
+
+- **Who writes it.** At every full save, the closing save included, `dmc size --check` prints `legacy due: at the full save, update this campaign's legacy.md for open
+  linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` while the
+  campaign's linked set holds an open campaign; N is the lowest session of this campaign's legacy that every open
+  linked campaign has folded, so the lines dropped are ones they all have, and the line says `keep every line the budget allows` while
+  any has folded none. The save adds its changes at the end, stamps the Written line and drops what it is told. Past its
+  budget the oldest lines go; the writer's canon still holds them, and recall reaches it.
+- **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written
+  session N; record <campaign> sN)` for each linked campaign whose legacy was written in a later session than the one
+  this campaign last folded, or never folded; not for a campaign whose digest this one holds (a sequel's predecessor),
+  which the digest already carries, and nothing at all for a closed campaign. The resume reads that file and no other
+  file of that campaign.
+- **The fold.** The next full save sees the same line at its own check, puts the changes into canon as world knowledge
+  (unless the characters saw them), and records `<campaign> sN` on `game-state.md`'s `- **Legacies folded**:` line,
+  which the save keeps: it is a record, not history. The line is not in the template; the first fold adds it.
+
+Session numbers order legacies, not dates or times, which DMC does not write reliably. One campaign is played at a time,
+in one terminal: two linked campaigns played at once are not supported.
 
 ### A digest
 

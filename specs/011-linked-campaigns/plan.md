@@ -102,7 +102,7 @@ kit/
     ├── dmc-migrate-campaign/SKILL.md            # PR 1: § 2, Before the backup
     ├── dmc-new-campaign/SKILL.md                # PR 1: § 2 Continuity; PR 2: § 1c and the description
     ├── dmc-resume-campaign/SKILL.md             # PR 1: notice lines of size --check; PR 3: legacy lines
-    ├── dmc-close-campaign/SKILL.md              # PR 1: § 5 wording
+    ├── dmc-close-campaign/SKILL.md              # PR 1: § 5 wording; PR 3: § 3 step 7, the legacy lines
     ├── dmc-character-sheet-update/SKILL.md      # PR 2: the sheet rule's one home (carried and returning)
     └── dmc-campaign-full-save/SKILL.md          # PR 1: a named campaign (R13); PR 3: the legacy clause
 
@@ -169,7 +169,8 @@ Each PR leaves the build green and its documentation current, and each says `Par
 **PR 3: legacy files**
 
 1. The template, the budget and flag, the `legacy:` and `legacy due:` lines in `dmc size --check`, their tests.
-2. The prompts (full save, resume); docs; the live run of quickstart PR 3; the PR, the review.
+2. The prompts (full save, resume, and the closing save's step 7, which otherwise leaves every `dmc size` line);
+   docs; the live run of quickstart PR 3; the PR, the review.
 
 ## Complexity Tracking
 

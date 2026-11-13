@@ -11,7 +11,7 @@ The campaign folder is `adventures/<name>/`, where `<name>` is in `adventures/.a
 
 ## 1. Game state
 
-Follow the `dmc-update-game-state` skill so `game-state.md` matches this exact moment, including a fight in progress. This file is read whole at every resume: after the update, keep it within the budget `dmc size` checks in step 7, one fact per line, with anything that is history (it belongs in the session log) cut.
+Follow the `dmc-update-game-state` skill so `game-state.md` matches this exact moment, including a fight in progress. This file is read whole at every resume: after the update, keep it within the budget `dmc size` checks in step 7, one fact per line, with anything that is history (it belongs in the session log) cut. Keep a Legacies folded line.
 
 ## 2. Character sheets
 
@@ -65,7 +65,7 @@ Check the facts this save changed against each other with targeted reads: Grep e
 - Every quest in `game-state.md` appears in the summary or session log, and none is marked both active and complete.
 - No name is spelled two ways. No new canon line contradicts an older one (search for the subject).
 - `canon.md` is under its limit (step 4's check, after both the split and the archive), or every subject left in it is live and you have said so in the step 8 report.
-- Sizes: run `dmc size <campaign> --check`. A line ending `(not the full save's to trim)` names a file the save never trims (a session log): leave it. For each other line, trim dead text from the file it names, as steps 1 to 6 say (history out of `game-state.md`, finished fights and plans out of `dm-notes.md`, paid debts and kept promises out of canon, long lines split), and run it again. The save is complete when it prints no other line, or when the step 8 report names each one still printed and why it stays: every subject left in the file is live, or the flagged text is still needed (an enemy that fled and may return).
+- Sizes: run `dmc size <campaign> --check`. First, fold each `legacy:` line's file into canon as world knowledge unless the characters saw it, adding the record the line gives to `game-state.md`'s `- **Legacies folded**:` line; on `legacy due:`, update `legacy.md` as `templates/legacy.md` says. A line ending `(not the full save's to trim)` names a file the save never trims (a session log): leave it. For each other line, trim dead text from the file it names, as steps 1 to 6 say (history out of `game-state.md`, finished fights and plans out of `dm-notes.md`, paid debts and kept promises out of canon, long lines split), and run it again. The save is complete when it prints no other line, or when the step 8 report names each one still printed and why it stays: every subject left in the file is live, or the flagged text is still needed (an enemy that fled and may return).
 
 Fix what you find. If two sources disagree and you cannot tell which is right, ask the player.
 

@@ -109,11 +109,19 @@ with the round.
 
 ## What changed in the world
 
-- <a change, in the world's terms, with sN.M> 
+- <a change, in the world's terms, with sN.M>
 ```
 
-Written at each full save (the closing save included) when the campaign's linked set holds an open campaign, from
-`templates/legacy.md`; `dmc size --check` prints `legacy due:` until it is rewritten (contracts/campaign-links.md). Budget 3,000 estimated tokens.
+Brought up to date at each full save (the closing save included) when the campaign's linked set holds an open
+campaign, from `templates/legacy.md` when it does not exist yet; `dmc size --check` prints `legacy due:` at every check while the set
+holds an open campaign, and the full save acts on it once (contracts/campaign-links.md). A running list, oldest change first: the save adds its own changes, stamps the Written
+line, and drops only the change lines the `legacy due:` line names (`drop the lines from session N and earlier`, or
+`keep every line the budget allows`): the lines every open campaign in the set has folded in. Over budget, the oldest lines go until it fits.
+Budget 3,000 estimated tokens.
+
+What to drop, for writer W: over every open campaign R in W's linked set other than W, the session R's Legacies folded
+line records for W. If any R records none, `keep every line the budget allows`; otherwise `drop the lines from session <lowest> and earlier`. Closed campaigns are left
+out: they never fold again.
 
 News to a reader when its Written session is later than the one the reader's `game-state.md` records for that
 campaign, or none is recorded, or the Written line is unreadable. The reader's full save records the session of each
@@ -122,6 +130,8 @@ legacy it folds, on a line only a linked campaign has (no template change, so no
 ```markdown
 - **Legacies folded**: side-quest s14, old-west s3
 ```
+
+The full save's step 1 keeps it: it is a record, not history, and cutting it would fold every legacy in again.
 
 ## Migration 005 (`kit/migrations/005-continuity-links.md`)
 

@@ -15,7 +15,7 @@ Then run `dmc campaign standard <campaign>` and say nothing if it prints `curren
 
 ## 2. Read, in this order
 
-First run `dmc size <campaign> --check` once. It prints nothing when all is well. A line that canon is over its limit decides item 7. A line that a file is near the Read cap means that file may come back cut: read it in parts if it does, and tell the player in one line, out of character, that the campaign's files have grown large and the next full save will trim them. A `notice:` line is a problem with a link to another campaign: tell the player in one sentence. Any other line is for the full save: do not mention it.
+First run `dmc size <campaign> --check` once. It prints nothing when all is well. A line that canon is over its limit decides item 7. A line that a file is near the Read cap means that file may come back cut: read it in parts if it does, and tell the player in one line, out of character, that the campaign's files have grown large and the next full save will trim them. A `notice:` line is a problem with a link to another campaign: tell the player in one sentence. For a `legacy:` line, read that file and no other of that campaign. Any other line is for the full save: do not mention it.
 
 Open each file with the Read tool, one call per file (several calls can go in one message). Do not join files together with a shell command: output over a few thousand words is cut to a short preview, and you would resume without having read your own notes. If any read comes back shortened, read that file again in parts before going on.
 

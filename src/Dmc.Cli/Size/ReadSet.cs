@@ -124,6 +124,24 @@ internal static partial class ReadSet
         return parts;
     }
 
+    /// <summary>
+    /// The files <c>dmc size</c> measures and flags that the resume does not read, so they are outside its total: the
+    /// campaign's own <c>legacy.md</c>, when it exists, which linked campaigns read and the full save keeps within its
+    /// budget (spec 011 FR-025). None for a campaign with no legacy.
+    /// </summary>
+    /// <param name="dmcFolder">The DMC folder.</param>
+    /// <param name="campaign">The campaign's folder name in <c>adventures/</c>.</param>
+    /// <exception cref="DmcException">A file cannot be read.</exception>
+    public static List<Part> OutsideTheTotal(string dmcFolder, string campaign)
+    {
+        string path = Path.Combine(dmcFolder, "adventures", campaign, Campaign.CampaignLinks.LegacyFile);
+        if (!File.Exists(path))
+            return [];
+        var lines = Measurement.ReadLines(path);
+        return [new Part(Campaign.CampaignLinks.LegacyFile, PartKind.Whole, EntryState.Measured, BudgetKind.Legacy, lines,
+            "outside the total: linked campaigns read it", lines, InTotal: false)];
+    }
+
     /// <summary>A file read whole, or <see cref="EntryState.Missing"/> when it does not exist.</summary>
     /// <param name="path">The file's full path.</param>
     /// <param name="shown">The path the report shows.</param>

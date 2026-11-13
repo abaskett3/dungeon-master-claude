@@ -127,7 +127,10 @@ public abstract class SizeCommandContract
         }, result.StdoutLines);
     }
 
-    /// <summary><c>--check</c> of a campaign whose links are all good prints nothing (SC-007).</summary>
+    /// <summary>
+    /// <c>--check</c> of a campaign whose links are all good and whose linked campaigns are all closed prints nothing
+    /// (SC-007): no notice, and no legacy line, since no open campaign reads its legacy.
+    /// </summary>
     [TestMethod]
     public void TheCheckFormOfACampaignWithLinksAndNoProblemPrintsNothing()
     {
@@ -135,8 +138,45 @@ public abstract class SizeCommandContract
         {
             Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: none\n- **Side campaign of**: none\n" +
                 "- **Shares a world with**: other\n");
-            NewCampaign(_root, "other");
+            string other = NewCampaign(_root, "other");
+            Dmc.Campaign.ClosedCampaign.Write(other, new DateTime(2026, 11, 11, 9, 0, 0, DateTimeKind.Utc), "other_closed_20261111090000.zip");
         });
+        var result = Size("--check", Name);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        Assert.AreEqual("", result.Stdout + result.Stderr);
+    }
+
+    /// <summary>
+    /// <c>--check</c> prints the legacy lines after the notices, uncapped (contracts/campaign-links.md): a linked
+    /// campaign's legacy this one has not folded, then <c>legacy due</c>, since the linked campaign is open.
+    /// </summary>
+    [TestMethod]
+    public void TheCheckFormPrintsTheLegacyLinesAfterTheNotices()
+    {
+        Arrange(() =>
+        {
+            Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: gone\n- **Side campaign of**: none\n" +
+                "- **Shares a world with**: side\n");
+            Write(_root, "game-state.md", GameState([]).Replace("- **Last full save**: never\n", "- **Last full save**: never\n- **Legacies folded**: side s2\n"));
+            string side = NewCampaign(_root, "side");
+            WriteAt(side, "legacy.md", "# Legacy of side\n\n- **Written**: session 3, 2026-11-13\n\n## What changed in the world\n\n- The bridge burned (s3.2).\n");
+            WriteAt(side, "game-state.md", GameState([]).Replace("- **Last full save**: never\n", $"- **Last full save**: never\n- **Legacies folded**: {Name} s7\n"));
+        });
+        var result = Size("--check", Name);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        CollectionAssert.AreEqual(new[]
+        {
+            $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
+            "legacy: read adventures/side/legacy.md (written session 3; record side s3) (not the full save's to trim)",
+            "legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns side: add this save's changes and drop the lines from session 7 and earlier (not the full save's to trim)",
+        }, result.StdoutLines);
+    }
+
+    /// <summary><c>--check</c> of a campaign alone with a legacy file of its own prints nothing (SC-007).</summary>
+    [TestMethod]
+    public void TheCheckFormOfACampaignAloneWithALegacyPrintsNothing()
+    {
+        Arrange(() => Write(_root, "legacy.md", "# Legacy of x\n\n- **Written**: session 3, 2026-11-13\n\n## What changed in the world\n"));
         var result = Size("--check", Name);
         Assert.AreEqual(0, result.ExitCode, result.Stderr);
         Assert.AreEqual("", result.Stdout + result.Stderr);

@@ -76,7 +76,8 @@ internal static partial class Flags
                     $"{part.Path} {Fmt(part.FileTokens)} is over its {Fmt(Budgets.CanonLimit)} limit: read it in sections; "
                     + $"a full save archives it down to {Fmt(Budgets.CanonArchiveMark)} (move about {Fmt(part.FileTokens - Budgets.CanonArchiveMark)})", true));
 
-            if (part.Tokens >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines)
+            // Only a file the resume reads can be cut short at resume; one outside the total (legacy.md) has its budget flag.
+            if (part.InTotal && (part.Tokens >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines))
                 flags.Add(new Flag(FlagKind.NearCap, part.Path,
                     $"{part.Path} {Fmt(part.Tokens)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume"
                     + (trimmed ? "" : $" {NotTheSaves}"), trimmed));

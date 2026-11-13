@@ -104,6 +104,7 @@ internal static partial class SampleDraw
     {
         var units = SequelDigest.Units(source.Files).Select(u => u.Text).ToList();
         var unitSet = units.ToHashSet(StringComparer.Ordinal);
+        var containable = units.Where(u => u.Length >= CampaignVerifier.ContainedFloor).ToList();
         var copies = new List<SampleItem>();
         var only = new List<SampleItem>();
         foreach (var (name, text) in SequelDigest.DigestFiles(source.DigestFolder).Where(f => SequelDigest.IsSubjectFile(f.Name)))
@@ -113,8 +114,7 @@ internal static partial class SampleDraw
             {
                 if (raw[line - 1].TrimStart().StartsWith('#'))
                     continue;
-                bool copy = unitSet.Contains(unit)
-                    || units.Any(u => u.Length >= CampaignVerifier.ContainedFloor && unit.Length > u.Length && unit.Contains(u, StringComparison.Ordinal));
+                bool copy = unitSet.Contains(unit) || containable.Any(u => SequelDigest.Holds(unit, u));
                 (copy ? copies : only).Add(new SampleItem(string.Create(CultureInfo.InvariantCulture, $"{name}:{line}"), unit, copy));
             }
         }

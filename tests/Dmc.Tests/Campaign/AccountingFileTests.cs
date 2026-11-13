@@ -73,7 +73,7 @@ public sealed class AccountingFileTests
     [TestMethod]
     [DataRow("0123456789ab\treworded\tlong enough anchor", "acc.tsv line 1: reworded is not a disposition: use merged or dropped:<class>")]
     [DataRow("# digest\n0123456789ab\tmerged\tshort", "acc.tsv line 2: a merged unit needs an anchor of at least 8 characters")]
-    [DataRow("skipped\tstory/x.md\twhy", "acc.tsv line 1: skipped is not an id of 12 hex digits (take it from dmc campaign verify --list)")]
+    [DataRow("skipped\tstory/x.md\twhy", "acc.tsv line 1: a digest's accounting has no skipped lines: account each line, or copy it")]
     public void ADigestsAccountingRefusesAMigrationsWords(string line, string message) =>
         Assert.AreEqual(message, Assert.ThrowsExactly<DmcException>(() => AccountingFile.Parse(line, "acc.tsv", AccountingFile.Merged)).Message);
 

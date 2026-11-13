@@ -145,7 +145,9 @@ internal static partial class SequelDigest
         SortedDictionary<string, byte[]> held;
         try
         {
-            held = BackupFolder.Open(path, other).ReadCampaign();
+            // Opened without the name check, as verify opens it: a closed campaign imported under another name (import --as)
+            // keeps a backup that names the campaign it was taken of. The byte comparison below is the check.
+            held = ExportSummary.Open(path).ReadCampaign();
         }
         catch (DmcException e)
         {
@@ -334,8 +336,17 @@ internal static partial class SequelDigest
     /// <param name="digest">The digest's units.</param>
     /// <param name="longLines">The digest's units long enough to contain another.</param>
     public static bool IsCopied(string unit, HashSet<string> digest, IReadOnlyList<string> longLines) =>
-        digest.Contains(unit)
-        || (unit.Length >= CampaignVerifier.ContainedFloor && longLines.Any(l => l.Length > unit.Length && l.Contains(unit, StringComparison.Ordinal)));
+        digest.Contains(unit) || (unit.Length >= CampaignVerifier.ContainedFloor && longLines.Any(l => Holds(l, unit)));
+
+    /// <summary>
+    /// The one test of a copy, from either side: a digest line holds a unit when it is the unit, or when the unit, at 20
+    /// characters or more, is inside it. <see cref="IsCopied"/> asks it of a unit, and the sample of a digest line.
+    /// </summary>
+    /// <param name="line">A normalised digest line.</param>
+    /// <param name="unit">A normalised accounted unit.</param>
+    public static bool Holds(string line, string unit) =>
+        line == unit
+        || (unit.Length >= CampaignVerifier.ContainedFloor && line.Length > unit.Length && line.Contains(unit, StringComparison.Ordinal));
 
     /// <summary>The names on the index's Carried line, or none when it says <c>none</c> or is missing.</summary>
     /// <param name="digestFolder">The digest's folder.</param>
@@ -410,12 +421,15 @@ internal static partial class SequelDigest
     static bool IsSheet(string path) =>
         path.StartsWith("character-sheets/", StringComparison.Ordinal) && path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The units of one <c>## </c> section of a text, with their line numbers in the whole text; none when there is no such section.</summary>
+    /// <summary>
+    /// The units of one <c>## </c> section of a text, with their line numbers in the whole text; none when there is no such
+    /// section. Comments are removed first, so a heading inside one is not a section and a comment never spans the cut.
+    /// </summary>
     /// <param name="text">The file's text.</param>
     /// <param name="heading">The section's heading, without <c>## </c>, compared ignoring case.</param>
     static List<(int Line, string Unit)> SectionUnits(string text, string heading)
     {
-        string[] lines = text.Split('\n');
+        string[] lines = ContentUnits.StripComments(text).Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
         int start = Array.FindIndex(lines, l => Measurement.IsSectionHeading(l) && l[3..].Trim().Equals(heading, StringComparison.OrdinalIgnoreCase));
         if (start < 0)
             return [];
@@ -479,10 +493,10 @@ internal static partial class SequelDigest
     {
         var text = new StringBuilder($"# Spine of {source.Name}\n");
         int sessions = 0, scenes = 0;
-        foreach (var (path, bytes) in source.Files.Where(f => IsLog(f.Key)).OrderBy(f => f.Key, StringComparer.Ordinal))
+        foreach (var (path, bytes) in Logs(source.Files))
         {
             string file = path["story/sessions/".Length..];
-            int number = int.Parse(SessionLog.Match(file).Groups[1].Value, CultureInfo.InvariantCulture);
+            string number = SessionNumber(path);
             string[] lines = Text(bytes).Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
             string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal))?[2..].Trim()
                 ?? string.Create(CultureInfo.InvariantCulture, $"Session {number}");
@@ -499,6 +513,22 @@ internal static partial class SequelDigest
         }
         return (text.ToString(), sessions, scenes);
     }
+
+    /// <summary>
+    /// The session logs of the closed campaign in play order: by session number (<c>session-9.md</c> before
+    /// <c>session-10.md</c>, however the numbers are padded), then by name.
+    /// </summary>
+    /// <param name="files">The closed campaign's files.</param>
+    static IEnumerable<KeyValuePair<string, byte[]>> Logs(IReadOnlyDictionary<string, byte[]> files) =>
+        files.Where(f => IsLog(f.Key))
+            .OrderBy(f => SessionNumber(f.Key).Length)
+            .ThenBy(f => SessionNumber(f.Key), StringComparer.Ordinal)
+            .ThenBy(f => f.Key, StringComparer.Ordinal);
+
+    /// <summary>A session log's number as written in its name, without leading zeros (<c>0</c> for all zeros); kept as digits, so no number is too long.</summary>
+    /// <param name="path">The log's campaign path.</param>
+    static string SessionNumber(string path) =>
+        SessionLog.Match(path["story/sessions/".Length..]).Groups[1].Value.TrimStart('0') is { Length: > 0 } digits ? digits : "0";
 
     /// <summary>True for a session log of the closed campaign: <c>story/sessions/session-NNN.md</c>.</summary>
     /// <param name="path">A campaign path.</param>
@@ -566,6 +596,13 @@ internal static partial class SequelDigest
             yield return $"index: no {name} line";
         if (lines.TryGetValue("Campaign", out var campaign) && !campaign.Value.Equals(source.Name, StringComparison.OrdinalIgnoreCase))
             yield return $"index: Campaign names {campaign.Value}, not {source.Name}";
+        if (lines.TryGetValue("Chain", out var chain))
+        {
+            var held = Chain(source);
+            string want = held.Count == 0 ? "none" : string.Join(", ", held);
+            if (!chain.Value.Equals(want, StringComparison.OrdinalIgnoreCase))
+                yield return $"index: Chain names {(chain.Value.Length == 0 ? "nothing" : chain.Value)}, not {want}";
+        }
         if (lines.TryGetValue("Closing backup", out var backup))
         {
             string[] parts = backup.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -588,7 +625,7 @@ internal static partial class SequelDigest
             var twice = new List<string>();
             foreach (var file in files.Where(f => KindFile.Match(f.Name) is { Success: true } m && m.Groups[1].Value == kind))
             {
-                string stripped = Comment.Replace(Text(File.ReadAllBytes(file.FullName)), "");
+                string stripped = ContentUnits.StripComments(Text(File.ReadAllBytes(file.FullName)));
                 foreach (string line in stripped.Split('\n').Select(l => l.TrimEnd('\r')).Where(Measurement.IsSectionHeading))
                 {
                     string heading = line[3..].Trim();
@@ -626,7 +663,7 @@ internal static partial class SequelDigest
         var pieces = new List<Piece>();
         foreach (string path in Sources(files).Where(p => !BriefFiles.Contains(p)))
             pieces.AddRange(Pieces(path, files[path]));
-        foreach (var (path, bytes) in files.Where(f => IsLog(f.Key)).OrderBy(f => f.Key, StringComparer.Ordinal))
+        foreach (var (path, bytes) in Logs(files))
             pieces.Add(new Piece(path, 0, 0, bytes.LongLength));
 
         var parts = new List<List<Piece>>();

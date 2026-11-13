@@ -57,8 +57,7 @@ internal static partial class ContentUnits
     /// <returns>Each unit and its 1-based line number in <paramref name="text"/>.</returns>
     public static List<(int Line, string Unit)> Lines(string text)
     {
-        // A comment becomes its line breaks, so the lines around it stay lines; an unclosed "<!--" is left as content.
-        string stripped = Comment.Replace(text, m => new string('\n', m.Value.Count(c => c == '\n')));
+        string stripped = StripComments(text);
         var units = new List<(int, string)>();
         string[] lines = stripped.Split('\n');
         for (int i = 0; i < lines.Length; i++)
@@ -68,6 +67,13 @@ internal static partial class ContentUnits
         }
         return units;
     }
+
+    /// <summary>
+    /// A text without its HTML comments, a comment over several lines included: each becomes its line breaks, so the lines
+    /// around it keep their numbers. An unclosed <c>&lt;!--</c> is left as content.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    public static string StripComments(string text) => Comment.Replace(text, m => new string('\n', m.Value.Count(c => c == '\n')));
 
     /// <summary>The units of a file's bytes, read as UTF-8.</summary>
     /// <param name="bytes">The file's bytes.</param>

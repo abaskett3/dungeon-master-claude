@@ -72,7 +72,7 @@ error:
 | `unaccounted: N units (dmc campaign sequel NAME --list)` | R9 |
 | `accounting: <id>: <reason>` | An unknown id, a class not declared, an anchor not found in the digest |
 | `copy differs: digests/<X>/<file>` | A chain copy is not byte-identical to OTHER's |
-| `index: <line>` | A required index line missing, or its checksum differs from the closing backup |
+| `index: <line>` | A required index line missing, a Chain line that is not the chain copied, or its checksum differs from the closing backup |
 | `too large: digests/<OTHER>/<file> <N>k tokens (split it by subject)` | Over 20k estimated tokens |
 | `heading twice: digests/<OTHER>/<kind>: <heading>` | A subject heading appears twice across a kind's parts |
 

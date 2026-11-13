@@ -92,7 +92,9 @@ internal sealed record AccountingFile(IReadOnlyDictionary<string, AccountingEntr
                 throw Error(label, number, "expected three fields separated by tabs: id, disposition, detail");
             string first = fields[0].Trim(), second = fields[1].Trim(), detail = fields[2].Trim();
 
-            if (first == SkippedWord && kept == Reworded)
+            if (first == SkippedWord && kept != Reworded)
+                throw Error(label, number, "a digest's accounting has no skipped lines: account each line, or copy it");
+            if (first == SkippedWord)
             {
                 string file = second.Replace('\\', '/');
                 if (ArchivePaths.Refusal(file) is { } why)

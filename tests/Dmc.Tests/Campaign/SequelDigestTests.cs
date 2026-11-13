@@ -356,6 +356,71 @@ public sealed class SequelDigestTests
         Assert.AreEqual($"heading twice: digests/{ClosedName}/people: Rook", result.StdoutLines[1]);
     }
 
+    /// <summary>The spine takes the logs in session order, however their numbers are padded (the code review's finding).</summary>
+    [TestMethod]
+    public void TheSpineTakesTheLogsInSessionOrder()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, beforeClose: campaign =>
+        {
+            File.WriteAllText(Path.Combine(campaign, "story", "sessions", "session-10.md"), "# Session 10\n\n### Scene 1: Late (Day 9)\n");
+            File.WriteAllText(Path.Combine(campaign, "story", "sessions", "session-9.md"), "# Session 9\n\n### Scene 1: Early (Day 8)\n");
+        });
+        Assert.AreEqual(0, Sequel("--start").ExitCode);
+        string spine = Digest(root, "spine.md");
+        Assert.IsLessThan(spine.IndexOf("(session-9.md)", StringComparison.Ordinal), spine.IndexOf("(session-003.md)", StringComparison.Ordinal));
+        Assert.IsLessThan(spine.IndexOf("(session-10.md)", StringComparison.Ordinal), spine.IndexOf("(session-9.md)", StringComparison.Ordinal));
+        StringAssert.Contains(spine, "- s9.1 Early (Day 8)\n");
+        StringAssert.Contains(spine, "- s10.1 Late (Day 9)\n");
+    }
+
+    /// <summary>A heading inside a comment over several lines is no section: not of the DM notes' secrets, not a subject twice (the code review's finding).</summary>
+    [TestMethod]
+    public void AHeadingInsideACommentIsNotASection()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: campaign =>
+        {
+            string notes = Path.Combine(campaign, "story", "dm-notes.md");
+            File.WriteAllText(notes, File.ReadAllText(notes).Replace("## The central conflict", "<!--\n## Secrets\n- a template example, not a secret\n-->\n\n## The central conflict"));
+        });
+        var texts = Units(root).Select(u => u.Text).ToList();
+        Assert.DoesNotContain("a template example, not a secret", texts);
+        Assert.Contains("Marta the ferrywoman is the Ember Witch's sister, and she knows who killed her.", texts);
+
+        WriteDigest(root, "people-2.md", "# People, part 2\n\n<!--\nOne subject a heading, for example:\n## Rook\n-->\n");
+        var result = Sequel("--check");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>A Chain line that is not the chain the copies follow is named (the code review's finding).</summary>
+    [TestMethod]
+    public void AWrongChainLineIsNamed()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true);
+        WriteDigest(root, "index.md", Digest(root, "index.md").Replace("- **Chain**: none", "- **Chain**: old-tale"));
+        var result = Sequel("--check");
+        Assert.AreEqual(1, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { "index: Chain names old-tale, not none" }, result.StdoutLines);
+    }
+
+    /// <summary>
+    /// A closed campaign under another name than its backup's (a copy imported with <c>--as</c>, its backup put back) is
+    /// digested: the bytes are the check, as for <c>verify</c> (the code review's finding).
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignUnderAnotherNameIsDigested()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root);
+        Directory.Move(root.Campaign(ClosedName), root.Campaign("grey-copy"));
+        root.Write("player-options.md", SequelOptions.Replace(ClosedName + " <!--", "grey-copy <!--"), SequelName);
+        var result = Sequel("--start");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        StringAssert.StartsWith(result.StdoutLines[0], "started digests/grey-copy/");
+    }
+
     /// <summary>More than 40 problems print 40, then a count.</summary>
     [TestMethod]
     public void MoreThanFortyProblemsAreCut()

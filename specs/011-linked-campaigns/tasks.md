@@ -646,7 +646,7 @@ sample test passes.
       digest byte for byte; the resume read no digest and no closed campaign; `dmc size` 8.2k either way). Two § 1c
       fixes: Carried names and people headings take the sheets' titles, which the sample matches; the accounting and
       the comparison read only the lines they need, never a whole file
-- [ ] T074 Check the XML doc comments and that the spec folder still matches what ships. Then open PR 2:
+- [X] T074 Check the XML doc comments and that the spec folder still matches what ships. Then open PR 2:
       - commit, push, and open the PR with the full description: the sources (FR-006 to FR-016, FR-008a, FR-021 to
         FR-024) and `Part of #179` on its own line;
       - say why it needs no migration: the digest is a new folder that only new writes create

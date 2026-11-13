@@ -647,7 +647,7 @@ checked digests/the-silver-egg/: 2,841 units (2,610 copied, 148 merged, 83 dropp
 | `unaccounted: N units (dmc campaign sequel NAME --list)` | Lines neither copied nor accounted |
 | `accounting: <id>: <reason>` | An id that is no accounted line's, a class that is not one of the five, an anchor not in the digest |
 | `copy differs: digests/<X>/<file>` | A copied digest missing a file, or with a file changed or added |
-| `index: <what>` | The index missing, a required line missing, another campaign named, or a checksum that is not the closing backup's |
+| `index: <what>` | The index missing, a required line missing, another campaign named, a Chain line that is not the chain copied, or a checksum that is not the closing backup's |
 | `too large: digests/<OTHER>/<file> <N>k tokens (split it by subject)` | A file over 20,000 estimated tokens |
 | `heading twice: digests/<OTHER>/<kind>: <heading>` | A subject heading twice across `people*`, `places*`, `factions*`, `items*` or `world*` |
 

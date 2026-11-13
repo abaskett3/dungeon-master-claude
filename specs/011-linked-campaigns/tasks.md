@@ -841,3 +841,11 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 - [X] T096 Add to the clause in `kit/skills/dmc-character-sheet-update/SKILL.md` § New character that where the history and a species or class default disagree, the sheet states the history's version and, where the history gives one, its reason, per FR-008 (partial)
 - [X] T097 Complete § 1c's list of what the digest leaves out with dice bookkeeping in the logs, maps, and whatever the closing save named as not canon, per FR-014 (partial)
 - [X] T098 Name in § 1c the fallback without subagents (one part per session, as § 1b says, with `import/progress.md`), per FR-006 (partial)
+
+---
+
+## Phase 13: Convergence
+
+- [X] T100 Say in FR-026 (and its echoes in User Story 3's scenario 2 and research R12) that `dmc` does not name the legacy of a linked campaign whose digest a campaign nearer this one holds, since the digest carries it, as `CampaignLinks.LegacyLines`, contracts/campaign-links.md and `.docs/campaign-files.md` already do since PR 3's code review, per FR-026 (contradicts)
+- [X] T101 Replace the stale alternative form in contracts/campaign-links.md's `legacy due:` row (`...: add this save's changes and keep every line`) with `keep every line the budget allows`, the form `dmc` prints, per FR-025 (partial)
+- [X] T102 Mark PR 3's row in `.docs/roadmap.md` done (PR #199) rather than in review, per FR-030 and T089 (partial)

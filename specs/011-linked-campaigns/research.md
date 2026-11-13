@@ -195,7 +195,8 @@ code and the prompts. The spec's own clarifications are not repeated here.
   `- **Written**: session N, <yyyy-MM-dd>`: the session number orders it, the date is for people. The reader's full
   save records the session of each legacy it folds, on one `game-state.md` line only a linked campaign has:
   `- **Legacies folded**: side-quest s14, old-west s3`.
-  `dmc size NAME --check` prints, for each campaign Y in the set with a `legacy.md` whose Written session is later
+  `dmc size NAME --check` prints, for each campaign Y in the set whose digest no campaign nearer NAME holds (a digest
+  carries what Y's legacy says), with a `legacy.md` whose Written session is later
   than the one NAME's Legacies folded line records for Y, or with none recorded, `legacy: read adventures/<campaign>/legacy.md (written session N; record <campaign> sN) (not the full save's to trim)`; an unreadable Written line prints it too, as `written unknown` (a false
   alarm costs a read; a missed one costs a contradiction). It prints `legacy due: at the full save, update this campaign's legacy.md for open linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` (or `keep every line the budget allows`) whenever the set holds an open campaign other than NAME, so
   every full save brings the file up to date, two in one session included (a test on the Written session would miss

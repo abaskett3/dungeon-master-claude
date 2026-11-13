@@ -652,7 +652,7 @@ sample test passes.
       - say why it needs no migration: the digest is a new folder that only new writes create
         (`.docs/development.md` § Changing a campaign-file standard);
       - check it with `gh pr view <n> --json body`.
-- [ ] T075 Run the code review once; show the fixes to the user and commit them on their approval; check the
+- [X] T075 Run the code review once; show the fixes to the user and commit them on their approval; check the
       documents; wait for CI to pass, then ask the user to merge
 
 ---
@@ -801,3 +801,12 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
   (Phase 9).
 - **PR 3**: US3, for players who run more than one open campaign in a world.
 - Each PR leaves the build green and its documents current, says `Part of #179`, and gets one code review.
+
+---
+
+## Phase 12: Convergence
+
+- [X] T095 Say in `kit/skills/dmc-new-campaign/SKILL.md` § 1c that each line the brief writes into the sequel's files keeps its original `sN` or `sN.M` and names the campaign it came from, per FR-007 (partial)
+- [X] T096 Add to the clause in `kit/skills/dmc-character-sheet-update/SKILL.md` § New character that where the history and a species or class default disagree, the sheet states the history's version and, where the history gives one, its reason, per FR-008 (partial)
+- [X] T097 Complete § 1c's list of what the digest leaves out with dice bookkeeping in the logs, maps, and whatever the closing save named as not canon, per FR-014 (partial)
+- [X] T098 Name in § 1c the fallback without subagents (one part per session, as § 1b says, with `import/progress.md`), per FR-006 (partial)

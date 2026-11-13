@@ -195,8 +195,9 @@ written in the sequel; nothing is ever written to the closed campaign. In `diges
 | `accounting.tsv` | One line per line of the closed campaign not copied word for word: `<id>`, a tab, `merged`, a tab and words of the line it went into; or `<id>`, a tab, `dropped:<class>`, a tab and the reason. The classes are `superseded`, `not-canon`, `structure`, `bookkeeping` and `stat-block`. | DMC |
 
 Every line copied keeps its `sN` or `sN.M`, and a fact that lived only in a session log is added under its subject
-with its `sN.M`. Plans the story overtook, scene and combat state, a dead character's stat block and the module's own
-text are left out. The lines that must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
+with its `sN.M`. Plans the story overtook, scene and combat state, a dead character's stat block, dice bookkeeping in
+the logs, maps, the module's own text and whatever the closing save named as not canon are left out. The brief's lines
+keep their `sN.M` and name the campaign they came from. The lines that must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
 `module-progress.md` and every file in `character-sheets/`, with § Secrets of `story/dm-notes.md` and § How it ended of
 `story/summary.md`, all read from the closing backup; `sequel --check` proves each one is copied, merged or dropped
 with a reason, that the copied digests match the closing backup's byte for byte, that no file is over 20k tokens and

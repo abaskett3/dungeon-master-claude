@@ -51,6 +51,21 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section, "dmc recall <folder> <words>");
     }
 
+    /// <summary>
+    /// What the convergence of spec 011's PR 2 found missing (T095 to T098): the brief's lines keep their session and name
+    /// their campaign (FR-007); the leave-out list is whole (FR-014); the fallback without subagents is named (FR-006); and
+    /// a sheet states the history's version, with its reason, where a default disagrees (FR-008).
+    /// </summary>
+    [TestMethod]
+    public void TheImportSaysWhatTheSpecAsks()
+    {
+        string section = SequelSection();
+        StringAssert.Contains(section, "Each line of the brief keeps its `sN` or `sN.M` and names the campaign it came from");
+        StringAssert.Contains(section, "dice bookkeeping in the logs, maps, module text, or whatever the closing save named as not canon");
+        StringAssert.Contains(section, "without subagents, do one part per session as § 1b says, with `import/progress.md`");
+        StringAssert.Contains(Read(SheetSkill), "where the two disagree, the sheet states the history's version, with its reason when the history gives one");
+    }
+
     /// <summary>The skill's description says it starts a sequel, so the player's words find it.</summary>
     [TestMethod]
     public void TheNewCampaignSkillSaysItStartsASequel()

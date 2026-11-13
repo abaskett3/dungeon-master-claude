@@ -67,6 +67,20 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read(SheetSkill), "Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason");
     }
 
+    /// <summary>
+    /// What the rehearsal on The Silver Egg found: each part's subagent re-read the whole growing digest (slower each part),
+    /// and judged a 36k-token <c>people.md</c> "about 20k". A subagent looks up only the subjects it adds to, and moves whole
+    /// subjects to the next part on each <c>too large:</c> line of <c>--check</c> before it ends.
+    /// </summary>
+    [TestMethod]
+    public void EachPartLooksUpItsSubjectsAndKeepsTheFilesUnderTheCap()
+    {
+        string section = SequelSection();
+        StringAssert.Contains(section, "finds that subject with `dmc lookup <folder> <heading>` or a search of the digest and reads only that section, never a whole digest file");
+        StringAssert.Contains(section, "for each `too large:` line, moves whole subjects from that file into the kind's next part");
+        Assert.DoesNotContain("what earlier parts wrote before adding to it", section, "a part never reads the whole digest");
+    }
+
     /// <summary>The skill's description says it starts a sequel, so the player's words find it.</summary>
     [TestMethod]
     public void TheNewCampaignSkillSaysItStartsASequel()

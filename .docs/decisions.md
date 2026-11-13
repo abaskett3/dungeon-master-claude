@@ -601,3 +601,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** `dmc digest` already exists and digests Claude Code transcripts. The campaign verbs are where DMC and players already look, and one verb keeps `campaign --help` short. The sequel is the argument because every write is in it; the closed campaign is never written.
 - **Rejected:** A top-level `dmc sequel`; four verbs (`sequel-start` and the rest).
 - **Source:** Issue #179; `specs/011-linked-campaigns/` (research R8).
+
+## Each part of a sequel's import reads only the subjects it adds to, and keeps its files under the cap (issue #179, Phase B)
+
+- **Date:** 2026-11-12
+- **Decision:** In `dmc-new-campaign` § 1c, a part's subagent finds a subject an earlier part wrote with `dmc lookup <folder> <heading>` or a search of the digest and reads only that section, never a whole digest file. Before it ends it runs `dmc campaign sequel <folder> --check` and, for each `too large:` line, moves whole subjects into the kind's next part (`people-2.md`, then `people-3.md`) and checks again.
+- **Reason:** In the Phase 9 rehearsal, The Silver Egg's digest built into a copy of Rorn's Landing, each subagent was told to read "what earlier parts wrote" and read the whole growing digest, so each part was slower than the last. One judged a 36k-token `people.md` to be "about 20k", nearly twice the cap. With both rules, the full run passed `--check` (1,510 units; 16 files, the largest 19.6k tokens) and the sample's first round.
+- **Limits:** The import is still slow: 59 minutes and 41.4M tokens for the digest alone, because the model retypes every line it copies. The fix for that changes `dmc` and is proposed in issue #198.
+- **Source:** Issue #179; spec 011 Phase 9 (T076/T077); issue #198.

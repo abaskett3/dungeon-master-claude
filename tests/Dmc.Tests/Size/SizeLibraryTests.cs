@@ -116,7 +116,7 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void EveryBudgetSitsWellUnderTheReadCap()
     {
-        int[] budgets = [Budgets.GameState, Budgets.DmNotes, Budgets.Summary, Budgets.PcSheet, Budgets.OtherSheet, Budgets.CanonLimit];
+        int[] budgets = [Budgets.GameState, Budgets.DmNotes, Budgets.Summary, Budgets.PcSheet, Budgets.OtherSheet, Budgets.CanonLimit, Budgets.Legacy];
         foreach (int budget in budgets)
             Assert.IsLessThan(Budgets.NearCapTokens, budget, "every budget is under the near-cap mark, so no file is paged at resume");
         Assert.IsLessThan(Budgets.CanonLimit, Budgets.CanonArchiveMark);
@@ -412,6 +412,31 @@ public sealed class SizeLibraryTests
         Write(_root, "game-state.md", Filler(Budgets.GameState * 4 + 4));
         Assert.AreEqual("game-state.md 4.1k is over its 4k budget", FlagsOf(FlagKind.OverBudget).Single().Line);
     }
+
+    /// <summary>
+    /// A campaign's own <c>legacy.md</c> is measured against its 3k budget and flagged over it, for the full save to trim,
+    /// but its own resume never reads it, so it is never part of the resume total (spec 011 FR-025, FR-020a).
+    /// </summary>
+    [TestMethod]
+    public void ALegacyIsFlaggedOverItsBudgetAndNeverCountsInTheTotal()
+    {
+        long before = Measure().Total;
+        Write(_root, "legacy.md", Filler(Budgets.Legacy * 4));
+        Assert.AreEqual(BudgetKind.Legacy, PartOf("legacy.md").Budget);
+        Assert.AreEqual(Budgets.Legacy, PartOf("legacy.md").Tokens);
+        Assert.IsFalse(PartOf("legacy.md").InTotal);
+        Assert.AreEqual(before, Measure().Total, "the legacy is read by other campaigns, never by this one's resume");
+        Assert.IsEmpty(FlagsOf(FlagKind.OverBudget), "exactly at the budget");
+        Write(_root, "legacy.md", Filler(Budgets.Legacy * 4 + 4));
+        var flag = FlagsOf(FlagKind.OverBudget).Single();
+        Assert.AreEqual("legacy.md 3.1k is over its 3k budget", flag.Line);
+        Assert.IsTrue(flag.HoldsTheSave);
+        Assert.AreEqual(before, Measure().Total);
+    }
+
+    /// <summary>A campaign with no <c>legacy.md</c> lists none.</summary>
+    [TestMethod]
+    public void ACampaignWithNoLegacyListsNone() => Assert.DoesNotContain("legacy.md", Paths());
 
     [TestMethod]
     public void APcSheetHasALargerBudgetThanOtherSheets()

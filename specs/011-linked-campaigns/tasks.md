@@ -683,12 +683,12 @@ legacy at resume, and the next full save folds it into canon (FR-025, FR-026).
 **Independent Test**: Full-save side campaign `d` with a world change, and resume `c`. One `legacy:` line names `d`,
 and `c`'s next full save folds the change into canon. Resume again, and nothing is named.
 
-- [ ] T078 [US3] After PR 2 merges: delete its branch, fetch `origin`, and create `011-legacy-files` from
+- [X] T078 [US3] After PR 2 merges: delete its branch, fetch `origin`, and create `011-legacy-files` from
       `origin/main`
 
 ### Tests
 
-- [ ] T079 [P] [US3] Test the legacy lines in `tests/Dmc.Tests/Campaign/CampaignLinksTests.cs` and
+- [X] T079 [P] [US3] Test the legacy lines in `tests/Dmc.Tests/Campaign/CampaignLinksTests.cs` and
       `tests/Dmc.Tests/Size/SizeCommandContract.cs` (contracts/campaign-links.md § In `dmc size NAME --check`).
       `legacy: <campaign> legacy.md (written session N) (not the full save's to trim)` is printed by
       `dmc size NAME --check`:
@@ -702,7 +702,8 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - and a legacy written in a session of the member that NAME has not recorded is printed whatever the dates say,
         including when both carry the same date (two campaigns played the same day).
 
-      `legacy due: open linked campaigns <names>: update legacy.md (keep from sN)` is printed whenever the set holds
+      `legacy due: open linked campaigns <names>: update legacy.md (keep from sN) (not the full save's to trim)` is
+      printed whenever the set holds
       an open campaign other than NAME, whatever NAME's `legacy.md` says (two full saves in one session each bring it
       up to date); never for a campaign alone, or one whose set holds only closed campaigns. Its keep part
       (data-model.md § Legacy file):
@@ -710,9 +711,9 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
         Legacies folded lines (two readers at s3 and s5 give `keep from s4`);
       - `(keep all)` when any open reader records nothing for NAME, or has no Legacies folded line;
       - a closed reader's record is ignored, whatever it says.
-- [ ] T080 [P] [US3] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, test that a `legacy.md` over 3,000 estimated
+- [X] T080 [P] [US3] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, test that a `legacy.md` over 3,000 estimated
       tokens is flagged, and that it is never part of the resume total
-- [ ] T081 [P] [US3] Add tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`:
+- [X] T081 [P] [US3] Add tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`:
       - `kit/templates/legacy.md` has `# Legacy of`, a `- **Written**:` line and `## What changed in the world`, and
         keeps its guidance in an HTML comment;
       - `kit/skills/dmc-campaign-full-save/SKILL.md` names `legacy due` and `templates/legacy.md`;
@@ -720,21 +721,21 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 
 ### Implementation
 
-- [ ] T082 [P] [US3] Create `kit/templates/legacy.md` (R12, data-model.md § Legacy file):
+- [X] T082 [P] [US3] Create `kit/templates/legacy.md` (R12, data-model.md § Legacy file):
       - the header, the Written line (`- **Written**: session N, yyyy-MM-dd`), and `## What changed in the world`;
       - an HTML comment with the guidance: changes the other campaigns would see or hear of, in the world's terms,
         one line each with its `sN.M`, oldest first; a running list, whose lines go only when `dmc` says every reader
         has them; no secrets and none of the party's private plans; a budget of 3,000 tokens.
-- [ ] T083 [US3] Add the legacy comparison and the keep part (data-model.md § Legacy file) to
+- [X] T083 [US3] Add the legacy comparison and the keep part (data-model.md § Legacy file) to
       `src/Dmc.Cli/Campaign/CampaignLinks.cs`, and the `legacy:` and
       `legacy due:` lines to `dmc size --check` in `src/Dmc.Cli/Commands/SizeCommand.cs`, outside the three-notice cap
       (makes T079 pass). Update the help text and XML comments
-- [ ] T084 [P] [US3] Add `Budgets.Legacy = 3000` and `BudgetKind.Legacy` to `src/Dmc.Cli/Size/Budgets.cs`. Make
+- [X] T084 [P] [US3] Add `Budgets.Legacy = 3000` and `BudgetKind.Legacy` to `src/Dmc.Cli/Size/Budgets.cs`. Make
       `dmc size` measure `legacy.md`, when it is present, as a part that `SizeReport.Total` does not count, and add a
       flag in `src/Dmc.Cli/Size/Flags.cs` when it is over budget (makes T080 pass).
       `src/Dmc.Cli/Size/ReadSet.cs` and `SizeReport.cs` need the change too: `dmc size` has no part outside the total
       today, and the plan names only `Budgets.cs` and `Flags.cs`
-- [ ] T085 [P] [US3] Add one clause to `kit/skills/dmc-campaign-full-save/SKILL.md`:
+- [X] T085 [P] [US3] Add one clause to `kit/skills/dmc-campaign-full-save/SKILL.md`:
       - when `dmc size <campaign> --check` prints `legacy due:`, bring `legacy.md` up to date before step 7's check
         (from `templates/legacy.md` if missing): add this save's changes, one line each with its `sN.M`, stamp the
         Written line, drop only the lines from sessions before the one the line names (none for `keep all`), then the
@@ -743,14 +744,14 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
         context), marked as world knowledge unless the characters saw it, and record the session the line gives on `game-state.md`'s `- **Legacies folded**:` line (`<campaign> sN`, comma-separated),
         adding the line if the file has none (FR-025, FR-026);
       - step 1 keeps that line: it is a record, not history, and cutting it would fold every legacy again.
-- [ ] T086 [P] [US3] In `kit/skills/dmc-resume-campaign/SKILL.md`, extend § 2's size-check sentence: for each
+- [X] T086 [P] [US3] In `kit/skills/dmc-resume-campaign/SKILL.md`, extend § 2's size-check sentence: for each
       `legacy:` line, read that file, and no other file of that campaign. A `legacy due:` line is already covered by
       "for the full save"
-- [ ] T099 [P] [US3] In `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7: a `legacy:` or `legacy due:` line is
+- [X] T099 [P] [US3] In `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7: a `legacy:` or `legacy due:` line is
       acted on as `dmc-campaign-full-save` says; every other `dmc size` line is left, as now. Otherwise a closing
       campaign's last legacy is never written (FR-025, "the closing save included"). Test in
       `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that the step names `legacy due`
-- [ ] T087 [US3] Run the Campaign, Size and Toolkit tests, then the full suite; fix until green
+- [X] T087 [US3] Run the Campaign, Size and Toolkit tests, then the full suite; fix until green
 
 **Checkpoint**: Two open campaigns in one world stay in step; a campaign alone pays nothing. Commit.
 
@@ -758,15 +759,17 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 
 ## Phase 11: PR 3 polish, and convergence
 
-- [ ] T088 [P] Edit `.docs/campaign-files.md` (`legacy.md`: what it holds, its budget, who writes and reads it; the
+- [X] T088 [P] Edit `.docs/campaign-files.md` (`legacy.md`: what it holds, its budget, who writes and reads it; the
       `Legacies folded` line of `game-state.md`, which only a linked campaign has) and
       `.docs/user-guide.md` (campaigns in one world)
-- [ ] T089 [P] Edit `.docs/dmc-reference.md` (`dmc size --check`'s `legacy:` and `legacy due:` lines; the legacy
+- [X] T089 [P] Edit `.docs/dmc-reference.md` (`dmc size --check`'s `legacy:` and `legacy due:` lines; the legacy
       budget),
       `.docs/architecture.md` (the full save writes `legacy.md`), `.docs/decisions.md` (session numbers rather than
       dates, times or file times, R12) and `.docs/roadmap.md` (Phase B done; Phases C and D remain)
-- [ ] T090 Measure the standing cost as in T003. Record PR 3's share and the three PRs' total, which must be under
-      150 tokens (FR-031, SC-007)
+- [X] T090 Measure the standing cost as in T003. Record PR 3's share and the three PRs' total, which must be under
+      150 tokens (FR-031, SC-007). Measured: +354 bytes, about 88 tokens, all in the resume's size-check sentence
+      and the full save's step 7; the close skill's clause is outside the standing cost. With PR 1 and PR 2's 233 bytes,
+      587 bytes, about 146 tokens of FR-031's 150
 - [ ] T091 Run quickstart.md § PR 3, steps 1 to 4, in a scratch DMC folder, and record the results for the PR
 - [ ] T092 Check the XML doc comments and the spec folder. Then open PR 3:
       - commit, push, and open the PR with the full description and `Part of #179` on its own line;

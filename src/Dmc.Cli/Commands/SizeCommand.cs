@@ -6,7 +6,8 @@ namespace Dmc.Commands;
 /// <c>dmc size [NAME] [--check] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
 /// with what to trim. It lists the files <c>dmc-resume-campaign</c> step 2 reads, by that step's rules, and the part of
 /// each; the full report adds the total, the largest sections and the flags, and <c>--check</c>, the form DMC runs in
-/// play, prints only the flags and any problem with the campaign's link lines (spec 011), or nothing when all is well.
+/// play, prints only the flags, any problem with the campaign's link lines and its legacy lines (spec 011), or nothing
+/// when all is well.
 /// </summary>
 /// <remarks>
 /// It never writes, moves or deletes a file. A measured campaign exits 0 whatever the flags, because DMC acts on what it
@@ -34,7 +35,8 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
   NAME      a campaign folder in adventures/ (default: the active campaign)
   --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):
             the flags, then any problem with the links of this campaign or an open linked one (a "notice:"
-            line each, at most three)
+            line each, at most three), then a "legacy:" line for each linked campaign's legacy.md this one
+            has not folded in, and "legacy due:" when a linked campaign is open, with the lines to keep
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 
@@ -63,15 +65,19 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
     }
 
     /// <summary>
-    /// The link notices <c>--check</c> prints after the flags (spec 011 contracts/campaign-links.md): resume and the full
-    /// save already run it, so play learns of a broken link with no command of its own. Only the lines of campaigns that
-    /// are not closed are named, since a closed campaign's file can no longer be changed. Each line, the
-    /// <c>(+N more)</c> line included, ends with the flags' "not the full save's to trim" mark, so the full save leaves
-    /// it; a campaign with no problem gets none.
+    /// The link notices and legacy lines <c>--check</c> prints after the flags (spec 011 contracts/campaign-links.md):
+    /// resume and the full save already run it, so play learns of a broken link or a linked campaign's legacy with no
+    /// command of its own. Only the notices of campaigns that are not closed are named, since a closed campaign's file
+    /// can no longer be changed. Each notice, the <c>(+N more)</c> line included, and each <c>legacy:</c> line end with
+    /// the flags' "not the full save's to trim" mark; the legacy lines are not capped. A campaign alone gets none.
     /// </summary>
     /// <param name="folder">The DMC folder.</param>
     /// <param name="campaign">The campaign measured.</param>
-    static List<string> LinkLines(string folder, string campaign) =>
-        Dmc.Campaign.CampaignLinks.NoticeLines(
-            [.. Dmc.Campaign.CampaignLinks.Build(folder, campaign).Notices.Where(n => !n.InClosed)], "notice: ", " " + Flags.NotTheSaves);
+    static List<string> LinkLines(string folder, string campaign)
+    {
+        var set = Dmc.Campaign.CampaignLinks.Build(folder, campaign);
+        var lines = Dmc.Campaign.CampaignLinks.NoticeLines([.. set.Notices.Where(n => !n.InClosed)], "notice: ", " " + Flags.NotTheSaves);
+        lines.AddRange(Dmc.Campaign.CampaignLinks.LegacyLines(set, " " + Flags.NotTheSaves));
+        return lines;
+    }
 }

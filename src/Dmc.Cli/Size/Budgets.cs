@@ -39,6 +39,9 @@ internal static class Budgets
     /// <summary>The <b>Prices, debts and promises</b> section of canon above this suggests paid debts or kept promises that were not deleted.</summary>
     public const int CanonPricesSection = 3000;
 
+    /// <summary><c>legacy.md</c>, what changed in the shared world, which linked campaigns read once at resume (spec 011 FR-025): about a few pages of change lines. Its own resume never reads it.</summary>
+    public const int Legacy = 3000;
+
     /// <summary>The Read tool returns about this many tokens in one call; used only to say so in the near-cap line.</summary>
     public const int ReadCapTokens = 25000;
 
@@ -63,6 +66,7 @@ internal static class Budgets
         BudgetKind.DmNotes => DmNotes,
         BudgetKind.PcSheet => PcSheet,
         BudgetKind.OtherSheet => OtherSheet,
+        BudgetKind.Legacy => Legacy,
         _ => null,
     };
 }
@@ -87,6 +91,9 @@ internal enum BudgetKind
 
     /// <summary><see cref="Budgets.OtherSheet"/>.</summary>
     OtherSheet,
+
+    /// <summary><see cref="Budgets.Legacy"/>: a file other campaigns read, outside this campaign's resume total.</summary>
+    Legacy,
 
     /// <summary>Canon, which has a limit (<see cref="Budgets.CanonLimit"/>) that decides how it is read, not a budget.</summary>
     Canon,

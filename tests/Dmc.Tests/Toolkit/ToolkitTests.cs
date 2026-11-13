@@ -1311,6 +1311,7 @@ public sealed partial class ToolkitTests
             ("any other sheet, down to its history", Budgets.OtherSheet),
             ("`story/canon.md`: read whole below", Budgets.CanonLimit),
             ("`story/canon.md`: a full save archives down to", Budgets.CanonArchiveMark),
+            ("`legacy.md`", Budgets.Legacy),
         ];
         foreach (var (what, value) in rows)
             StringAssert.Contains(files, $"| {what} | {N(value)} |", $"campaign-files.md must list {what} at {N(value)}, as Budgets does");
@@ -1321,5 +1322,41 @@ public sealed partial class ToolkitTests
             StringAssert.Contains(text, $"Prices, debts and promises section over {N(Budgets.CanonPricesSection)}", doc);
             StringAssert.Contains(text, $"lines over {Budgets.LongLineCharacters} characters", doc);
         }
+    }
+
+    /// <summary>
+    /// The legacy template (spec 011 FR-025, data-model.md § Legacy file): its header, the Written line <c>dmc</c> reads,
+    /// the section of changes, and its guidance in an HTML comment, which costs nothing when another campaign reads the
+    /// file.
+    /// </summary>
+    [TestMethod]
+    public void TheLegacyTemplateHasItsHeaderWrittenLineSectionAndCommentedGuidance()
+    {
+        string text = Read("kit/templates/legacy.md");
+        StringAssert.StartsWith(text, "# Legacy of");
+        StringAssert.Contains(text, "\n- **Written**: session ");
+        Assert.AreEqual(3, Dmc.Campaign.CampaignLinks.WrittenSession(text.Replace("session N", "session 3")), "dmc reads the template's Written line");
+        StringAssert.Contains(text, "\n## What changed in the world\n");
+        string guidance = text[text.IndexOf("<!--", StringComparison.Ordinal)..];
+        StringAssert.Contains(guidance, "-->");
+        StringAssert.Contains(guidance, "sN.M");
+    }
+
+    /// <summary>
+    /// The full save acts on both legacy lines of its <c>dmc size --check</c> (contracts/prompts.md, PR 3): it brings
+    /// <c>legacy.md</c> up to date from the template on <c>legacy due</c>, folds each legacy a <c>legacy:</c> line names,
+    /// and keeps the Legacies folded line in step 1; the resume reads each legacy a <c>legacy:</c> line names; and the
+    /// closing save, which leaves every other <c>dmc size</c> line, acts on these.
+    /// </summary>
+    [TestMethod]
+    public void TheSkillsActOnTheLegacyLines()
+    {
+        string save = Read("kit/skills/dmc-campaign-full-save/SKILL.md");
+        StringAssert.Contains(save, "`legacy due:`");
+        StringAssert.Contains(save, "`legacy:`");
+        StringAssert.Contains(save, "templates/legacy.md");
+        StringAssert.Contains(save, "Legacies folded");
+        StringAssert.Contains(SkillSection("kit/skills/dmc-resume-campaign/SKILL.md", 2), "`legacy:`");
+        StringAssert.Contains(Read("kit/skills/dmc-close-campaign/SKILL.md"), "`legacy due:`");
     }
 }

@@ -383,6 +383,13 @@ side campaign or another campaign of the world is a fact of the world, which thi
 its own files say they learned it. A link that cannot be followed (a folder that is not there, a name that is not a
 folder name) is mentioned in one line when you resume. `dmc campaign links <campaign>` lists them in a terminal.
 
+**Campaigns in one world.** When a campaign is linked to another that is still being played (a side campaign and its
+main campaign, say), each full save of either writes a short `legacy.md` in its folder: what changed in the world that
+the other would see or hear of, a burned bridge or a dead baron. When you next resume the other campaign, DMC reads
+that one file, and its next full save puts the changes into canon as news of the world, which its characters know only
+if they saw it. You need do nothing. A campaign with no links, or whose only link is the closed campaign it continues,
+writes no legacy. Play one campaign at a time: with two running at once in two terminals, a change can be missed.
+
 ### Moving campaigns from a repository checkout
 
 Before DMC had a DMC folder, you played in a checkout of the toolkit's repository, and your campaigns, feedback, modules and rules files were in its `adventures/`, `feedback/`, `modules/` and `rules/` folders (git ignored them). To play from a DMC folder instead, move them across. **DMC never runs these commands: you run them yourself, in your own terminal.**

@@ -8,8 +8,8 @@ namespace Dmc.Size;
 /// <param name="Flags">The flags, in the order they are printed.</param>
 internal sealed record SizeResult(string Campaign, IReadOnlyList<Part> Parts, IReadOnlyList<Flag> Flags)
 {
-    /// <summary>The estimated tokens of everything the resume reads.</summary>
-    public long Total => Parts.Sum(p => p.Tokens);
+    /// <summary>The estimated tokens of everything the resume reads: the parts outside the total (<see cref="Part.InTotal"/>) are left out.</summary>
+    public long Total => Parts.Where(p => p.InTotal).Sum(p => p.Tokens);
 }
 
 /// <summary>
@@ -62,13 +62,17 @@ internal static class SizeReport
         return string.IsNullOrEmpty(name) ? null : name;
     }
 
-    /// <summary>Measures a campaign: its read set (<see cref="ReadSet.Build"/>) and its flags (<see cref="Flags.Find"/>). Writes nothing.</summary>
+    /// <summary>
+    /// Measures a campaign: its read set (<see cref="ReadSet.Build"/>), then the files measured outside the total
+    /// (<see cref="ReadSet.OutsideTheTotal"/>), and the flags of both (<see cref="Flags.Find"/>). Writes nothing.
+    /// </summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="campaign">The campaign's folder name, as <see cref="Target"/> returns it.</param>
     /// <exception cref="DmcException">A file cannot be read.</exception>
     public static SizeResult Measure(string dmcFolder, string campaign)
     {
         var parts = ReadSet.Build(dmcFolder, campaign);
+        parts.AddRange(ReadSet.OutsideTheTotal(dmcFolder, campaign));
         return new SizeResult(campaign, parts, Flags.Find(parts));
     }
 

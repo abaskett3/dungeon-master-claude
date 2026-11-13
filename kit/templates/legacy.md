@@ -11,7 +11,7 @@ the party's private plans.
 
 One line per change, oldest first, each with its sN.M, for example: "- The ford bridge on the east road is burned
 down (s3.2)." This is a running list: the full save adds this save's changes at the end, and drops only what dmc size
---check names ("drop the lines from session N and earlier": every line whose sN.M has a session number of N or less;
-"keep every line" drops none), which every linked campaign has already folded in. Keep the file within the budget dmc
-size checks; past it, drop the oldest lines first.
+--check names ("drop the lines from session N and earlier": every line whose sN.M has a session number of N or less,
+which every linked campaign has already folded in; "keep every line the budget allows" drops none but the oldest past
+it). Keep the file within the budget dmc size checks; past it, drop the oldest lines first.
 -->

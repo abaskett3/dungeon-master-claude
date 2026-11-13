@@ -75,7 +75,7 @@ issue #179.
 
 1. **A side campaign's change.** With `c` and `d` from PR 1 open, play a scene in `d` that burns a bridge, and full-save:
    `d/legacy.md` exists, under 3k tokens, `Written: session N`.
-2. **Resume the main campaign.** `dmc size c --check` prints `legacy: read adventures/d/legacy.md (written session N)`; DMC reads
+2. **Resume the main campaign.** `dmc size c --check` prints `legacy: read adventures/d/legacy.md (written session N; record <campaign> sN)`; DMC reads
    that file only, and at the next full save the bridge is a canon line in `c` marked as world knowledge, and `c`'s
    `game-state.md` says `Legacies folded: d sN`. Resume again: no `legacy:` line (SC-008); `legacy due:`, which
    resume leaves for the full save, still prints, since `d` is open.

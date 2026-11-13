@@ -202,13 +202,14 @@ to a closed campaign, has none and pays nothing for it.
 - **Who writes it.** At every full save, the closing save included, `dmc size --check` prints `legacy due: at the full save, update this campaign's legacy.md for open
   linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` while the
   campaign's linked set holds an open campaign; N is the lowest session of this campaign's legacy that every open
-  linked campaign has folded, so the lines dropped are ones they all have, and the line says `keep every line` while
+  linked campaign has folded, so the lines dropped are ones they all have, and the line says `keep every line the budget allows` while
   any has folded none. The save adds its changes at the end, stamps the Written line and drops what it is told. Past its
   budget the oldest lines go; the writer's canon still holds them, and recall reaches it.
-- **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written session
-  N)` for each
-  linked campaign whose legacy was written in a later session than the one this campaign last folded, or never
-  folded. The resume reads that file and no other file of that campaign.
+- **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written
+  session N; record <campaign> sN)` for each linked campaign whose legacy was written in a later session than the one
+  this campaign last folded, or never folded; not for a campaign whose digest this one holds (a sequel's predecessor),
+  which the digest already carries, and nothing at all for a closed campaign. The resume reads that file and no other
+  file of that campaign.
 - **The fold.** The next full save sees the same line at its own check, puts the changes into canon as world knowledge
   (unless the characters saw them), and records `<campaign> sN` on `game-state.md`'s `- **Legacies folded**:` line,
   which the save keeps: it is a record, not history. The line is not in the template; the first fold adds it.

@@ -137,7 +137,7 @@ The issue left these open for the specs. Each is settled here with its reason; `
 - Q: How far back does a legacy file reach? → A: It is a running list, one line per change with its `sN.M`. At each
   full save the writer adds that save's changes and drops only the lines every open campaign in its linked set has
   folded in: `dmc` names the lowest session any open reader has folded, and the writer drops that session's lines and
-  earlier ones; `dmc` says `keep every line` while any of them has folded nothing. Closed campaigns never fold again,
+  earlier ones; `dmc` says `keep every line the budget allows` while any of them has folded nothing. Closed campaigns never fold again,
   so they do not hold lines back. Past its budget the oldest lines go anyway; the writer's canon still holds them for recall (FR-025). Rewriting the file whole would lose the first of
   two saves made before a reader resumes, and the writer cannot see what each reader folded, since each records it
   only in its own `game-state.md`.
@@ -489,7 +489,7 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   people), within a budget of about 3k tokens that `dmc size` checks. The file is a running list: the save adds its
   own changes and drops the lines `dmc` names (`drop the lines from session N and earlier`), N being the lowest
   session of this campaign's legacy that the open campaigns in the linked set have folded in (FR-026), so a line every
-  open reader has folded is dropped and no other is; while any of them has folded none, `dmc` says `keep every line`. Over budget, the oldest lines go until it fits. A campaign whose linked set holds
+  open reader has folded is dropped and no other is; while any of them has folded none, `dmc` says `keep every line the budget allows`. Over budget, the oldest lines go until it fits. A campaign whose linked set holds
   no open campaign writes none.
 - **FR-026**: At resume, `dmc` MUST name, one line each, every open or closed campaign in the linked set whose legacy
   was written in a later session of that campaign than the one this campaign last folded in, or that this campaign has

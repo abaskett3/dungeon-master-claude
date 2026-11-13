@@ -434,6 +434,18 @@ public sealed class SizeLibraryTests
         Assert.AreEqual(before, Measure().Total);
     }
 
+    /// <summary>
+    /// A <c>legacy.md</c> past the near-cap mark gets no near-cap flag, which would tell the resume a file it reads may be
+    /// cut short: its own resume never reads it, and its budget flag already holds the save.
+    /// </summary>
+    [TestMethod]
+    public void ALegacyIsNeverFlaggedNearTheReadCap()
+    {
+        Write(_root, "legacy.md", Filler(Budgets.NearCapTokens * 4 + 4));
+        Assert.IsFalse(FlagsOf(FlagKind.NearCap).Any(f => f.Path == "legacy.md"));
+        Assert.AreEqual("legacy.md", FlagsOf(FlagKind.OverBudget).Single().Path);
+    }
+
     /// <summary>A campaign with no <c>legacy.md</c> lists none.</summary>
     [TestMethod]
     public void ACampaignWithNoLegacyListsNone() => Assert.DoesNotContain("legacy.md", Paths());

@@ -196,16 +196,15 @@ code and the prompts. The spec's own clarifications are not repeated here.
   save records the session of each legacy it folds, on one `game-state.md` line only a linked campaign has:
   `- **Legacies folded**: side-quest s14, old-west s3`.
   `dmc size NAME --check` prints, for each campaign Y in the set with a `legacy.md` whose Written session is later
-  than the one NAME's Legacies folded line records for Y, or with none recorded, `legacy: read adventures/<campaign>/legacy.md (written
-  session N) (not the full save's to trim)`; an unreadable Written line prints it too, as `written unknown` (a false
-  alarm costs a read; a missed one costs a contradiction). It prints `legacy due: at the full save, update this campaign's legacy.md for open linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` (or `keep every line`) whenever the set holds an open campaign other than NAME, so
+  than the one NAME's Legacies folded line records for Y, or with none recorded, `legacy: read adventures/<campaign>/legacy.md (written session N; record <campaign> sN) (not the full save's to trim)`; an unreadable Written line prints it too, as `written unknown` (a false
+  alarm costs a read; a missed one costs a contradiction). It prints `legacy due: at the full save, update this campaign's legacy.md for open linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` (or `keep every line the budget allows`) whenever the set holds an open campaign other than NAME, so
   every full save brings the file up to date, two in one session included (a test on the Written session would miss
   the second, since resume can reuse a session log with no scenes and Current session need not move); the full save
   acts on it once, before its own size check, and leaves it after; resume ignores it as one for the full save
   (contracts/campaign-links.md).
   The file is a running list, one line per change with its `sN.M`, oldest first. The save adds its changes and drops
   only the lines from the session named and earlier: the lowest session that the open campaigns in the set other
-  than NAME record for NAME on their Legacies folded lines, or `keep every line` while any of them records none.
+  than NAME record for NAME on their Legacies folded lines, or `keep every line the budget allows` while any of them records none.
   Closed campaigns are left out, since they never fold again. Over budget, the oldest lines go until it fits.
   Budget: 3,000 estimated tokens, a new `Budgets` entry and a `dmc size` flag for the file.
 - **Rationale:** FR-025, FR-026, SC-007, SC-008. Session numbers are the one order DMC always writes; every campaign

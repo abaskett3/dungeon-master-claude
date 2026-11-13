@@ -690,7 +690,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 
 - [X] T079 [P] [US3] Test the legacy lines in `tests/Dmc.Tests/Campaign/CampaignLinksTests.cs` and
       `tests/Dmc.Tests/Size/SizeCommandContract.cs` (contracts/campaign-links.md § In `dmc size NAME --check`).
-      `legacy: read adventures/<campaign>/legacy.md (written session N) (not the full save's to trim)` is printed by
+      `legacy: read adventures/<campaign>/legacy.md (written session N; record <campaign> sN) (not the full save's to trim)` is printed by
       `dmc size NAME --check`:
       - for a member, open or closed, whose `legacy.md` `- **Written**: session N, yyyy-MM-dd` line names a session
         later than the one NAME's `game-state.md` `- **Legacies folded**:` line records for it (`<campaign> sN`,
@@ -698,7 +698,8 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - when NAME records nothing for that member, or has no Legacies folded line;
       - as `written unknown` when the member's Written line is unreadable;
       - never for NAME's own `legacy.md`, and never when the recorded session is the same or later;
-      - never at all for a campaign alone (SC-007);
+      - never at all for a campaign alone (SC-007), or for a closed NAME, which is never saved again;
+      - never for a member whose digest a campaign nearer NAME holds, since the digest carries it (code review of PR 3);
       - and a legacy written in a session of the member that NAME has not recorded is printed whatever the dates say,
         including when both carry the same date (two campaigns played the same day).
 
@@ -709,7 +710,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       (data-model.md § Legacy file):
       - N is the lowest session the open campaigns in the set, NAME aside, record for NAME on their
         Legacies folded lines (two readers at s3 and s5 give `drop the lines from session 3 and earlier`);
-      - `keep every line` when any open reader records nothing for NAME, or has no Legacies folded line;
+      - `keep every line the budget allows` when any open reader records nothing for NAME, or has no Legacies folded line;
       - a closed reader's record is ignored, whatever it says.
 - [X] T080 [P] [US3] In `tests/Dmc.Tests/Size/SizeLibraryTests.cs`, test that a `legacy.md` over 3,000 estimated
       tokens is flagged, and that it is never part of the resume total
@@ -738,7 +739,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 - [X] T085 [P] [US3] Add one clause to `kit/skills/dmc-campaign-full-save/SKILL.md`:
       - when `dmc size <campaign> --check` prints `legacy due:`, bring `legacy.md` up to date before step 7's check
         (from `templates/legacy.md` if missing): add this save's changes, one line each with its `sN.M`, stamp the
-        Written line, drop only the lines the line names (session N and earlier; none for `keep every line`), then the
+        Written line, drop only the lines the line names (session N and earlier; none for `keep every line the budget allows`), then the
         oldest lines while it is over its budget; once per save, leaving the line when step 7's check prints it again;
       - fold into canon each legacy a `legacy:` line of that check names (reading the file again if it is not in
         context), marked as world knowledge unless the characters saw it, and record the session the line gives on `game-state.md`'s `- **Legacies folded**:` line (`<campaign> sN`, comma-separated),
@@ -767,9 +768,9 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       `.docs/architecture.md` (the full save writes `legacy.md`), `.docs/decisions.md` (session numbers rather than
       dates, times or file times, R12) and `.docs/roadmap.md` (Phase B done; Phases C and D remain)
 - [X] T090 Measure the standing cost as in T003. Record PR 3's share and the three PRs' total, which must be under
-      150 tokens (FR-031, SC-007). Measured: +354 bytes, about 88 tokens, all in the resume's size-check sentence
-      and the full save's step 7; the close skill's clause is outside the standing cost. With PR 1 and PR 2's 233 bytes,
-      587 bytes, about 146 tokens of FR-031's 150
+      150 tokens (FR-031, SC-007). Measured after the code review's fixes: +349 bytes, about 87 tokens, in the resume's size-check
+      sentence and the full save's steps 1 and 7; the close skill's clause is outside the standing cost. With PR 1 and
+      PR 2's 233 bytes, 582 bytes, about 145 tokens of FR-031's 150
 - [X] T091 Run quickstart.md § PR 3, steps 1 to 4, in a scratch DMC folder, and record the results for the PR.
       Run headless in `D:\Claude	est-campaign` (Sonnet, high effort) on two new linked campaigns, `west-march` and its
       side campaign `east-hills`: all four steps pass. Step 1: `east-hills`' save wrote `legacy.md` from the template
@@ -781,15 +782,15 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       none in the kit: the first resume did not read the legacy, since `legacy:` gave no path (now `legacy: read
       adventures/<campaign>/legacy.md`); it told the player of `legacy due:` as if about the other campaign (now `at the
       full save, update this campaign's legacy.md`); and two saves kept lines told `keep from s3`, reading it as a place
-      in the file (now `drop the lines from session 2 and earlier`, or `keep every line`). Known: each save's report
+      in the file (now `drop the lines from session 2 and earlier`, or `keep every line the budget allows`). Known: each save's report
       mentions the `legacy due:` line, which prints at every check by design (C8)
-- [ ] T092 Check the XML doc comments and the spec folder. Then open PR 3:
+- [X] T092 Check the XML doc comments and the spec folder. Then open PR 3:
       - commit, push, and open the PR with the full description and `Part of #179` on its own line;
       - say why it needs no migration: `legacy.md` is a new file that only new writes create, and the `Legacies
         folded` line is added to `game-state.md` by the full save when it first folds a legacy, not by the template,
         so no older campaign lacks anything it should hold;
       - check it with `gh pr view <n> --json body`.
-- [ ] T093 Run the code review once; show the fixes to the user and commit them on their approval; check the
+- [X] T093 Run the code review once; show the fixes to the user and commit them on their approval; check the
       documents; wait for CI to pass, then ask the user to merge
 - [ ] T094 After each PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
       its PR has merged (`.docs/development.md` § Spec-driven changes)

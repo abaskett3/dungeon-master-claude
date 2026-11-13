@@ -116,11 +116,11 @@ Brought up to date at each full save (the closing save included) when the campai
 campaign, from `templates/legacy.md` when it does not exist yet; `dmc size --check` prints `legacy due:` at every check while the set
 holds an open campaign, and the full save acts on it once (contracts/campaign-links.md). A running list, oldest change first: the save adds its own changes, stamps the Written
 line, and drops only the change lines the `legacy due:` line names (`drop the lines from session N and earlier`, or
-`keep every line`): the lines every open campaign in the set has folded in. Over budget, the oldest lines go until it fits.
+`keep every line the budget allows`): the lines every open campaign in the set has folded in. Over budget, the oldest lines go until it fits.
 Budget 3,000 estimated tokens.
 
 What to drop, for writer W: over every open campaign R in W's linked set other than W, the session R's Legacies folded
-line records for W. If any R records none, `keep every line`; otherwise `drop the lines from session <lowest> and earlier`. Closed campaigns are left
+line records for W. If any R records none, `keep every line the budget allows`; otherwise `drop the lines from session <lowest> and earlier`. Closed campaigns are left
 out: they never fold again.
 
 News to a reader when its Written session is later than the one the reader's `game-state.md` records for that

@@ -301,19 +301,24 @@ internal static partial class CampaignLinks
     /// The legacy lines <c>dmc size --check</c> prints after the notices, uncapped (contracts/campaign-links.md): first a
     /// <c>legacy:</c> line for each member, open or closed, whose <c>legacy.md</c> was written in a later session than the
     /// one the start's <c>game-state.md</c> Legacies folded line records for it, or for which none is recorded, or whose
-    /// Written line cannot be read, giving the path to read; then one <c>legacy due:</c> line whenever the set holds an
-    /// open campaign and the start is open, saying which of the start's own legacy lines to drop: those from the lowest
-    /// session the open members record for the start and earlier, or none while any records none. A closed member never
-    /// folds again, so it holds nothing back. The lines say what to do in words, since a live run showed the model acting
-    /// on words it skipped in shorthand. None for a campaign alone (SC-007).
+    /// Written line cannot be read, giving the path to read and what to record once it is folded; then one
+    /// <c>legacy due:</c> line whenever the set holds an open campaign, saying which of the start's own legacy lines to
+    /// drop: those from the lowest session the open members record for the start and earlier, or none but what the
+    /// budget forces while any records none. A closed member never folds again, so it holds nothing back; a member whose
+    /// digest a campaign nearer the start holds is carried by that digest, so its legacy is not named. The lines say what
+    /// to do in words, since a live run showed the model acting on words it skipped in shorthand. None for a campaign
+    /// alone (SC-007), or for a closed start, which is never saved again.
     /// </summary>
     /// <param name="set">The start's linked set.</param>
     /// <param name="suffix">Written after each line, so the full save, having acted on them first, leaves them at its re-check.</param>
     public static List<string> LegacyLines(LinkedSet set, string suffix)
     {
         var lines = new List<string>();
+        if (ClosedCampaign.IsClosed(set.StartFolder))
+            return lines; // a closed campaign is never resumed or saved again, so it can neither fold nor write
         var folded = LegaciesFolded(ReadText(Path.Combine(set.StartFolder, "game-state.md")) ?? "");
-        foreach (var member in set.Members.Where(m => m.Present))
+        // A member whose digest a campaign nearer the start holds is already carried by that digest, so its legacy is not news.
+        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null))
         {
             if (ReadText(Path.Combine(member.Folder, LegacyFile)) is not { } legacy)
                 continue;
@@ -321,25 +326,16 @@ internal static partial class CampaignLinks
             if (written is null)
                 lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written unknown){suffix}");
             else if (!folded.TryGetValue(member.Name, out int recorded) || written > recorded)
-                lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written session {written}){suffix}");
+                lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written session {written}; record {member.Name} s{written}){suffix}");
         }
 
         var readers = set.Members.Where(m => m.Present && !m.Closed).ToList();
-        if (readers.Count == 0 || ClosedCampaign.IsClosed(set.StartFolder))
+        if (readers.Count == 0)
             return lines;
-        // The lowest session any open reader records for the start; null as soon as one records none.
-        int? lowest = int.MaxValue;
-        foreach (var reader in readers)
-        {
-            var theirs = LegaciesFolded(ReadText(Path.Combine(reader.Folder, "game-state.md")) ?? "");
-            if (!theirs.TryGetValue(set.Start, out int session))
-            {
-                lowest = null;
-                break;
-            }
-            lowest = Math.Min(lowest.Value, session);
-        }
-        string keep = lowest is { } low ? $"drop the lines from session {low} and earlier" : "keep every line";
+        // What each open reader records for the start: a line any of them has not folded must stay.
+        var records = readers.Select(r => LegaciesFolded(ReadText(Path.Combine(r.Folder, "game-state.md")) ?? "")
+            .TryGetValue(set.Start, out int session) ? session : (int?)null).ToList();
+        string keep = records.Any(r => r is null) ? "keep every line the budget allows" : $"drop the lines from session {records.Min()} and earlier";
         lines.Add($"legacy due: at the full save, update this campaign's {LegacyFile} for open linked campaigns {string.Join(", ", readers.Select(r => r.Name))}: add this save's changes and {keep}{suffix}");
         return lines;
     }
@@ -369,7 +365,7 @@ internal static partial class CampaignLinks
     {
         var folded = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         string? value = VisibleLines(text).Select(l => FoldedLine().Match(l)).FirstOrDefault(m => m.Success)?.Groups[1].Value;
-        foreach (string entry in CommentPattern().Replace(value ?? "", "").Split(','))
+        foreach (string entry in (value ?? "").Split(','))
         {
             if (FoldedEntry().Match(entry.Trim()) is { Success: true } match && int.TryParse(match.Groups[2].Value, out int session))
                 folded[match.Groups[1].Value] = Math.Max(session, folded.GetValueOrDefault(match.Groups[1].Value));

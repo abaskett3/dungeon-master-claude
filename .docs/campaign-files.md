@@ -207,8 +207,8 @@ to a closed campaign, has none and pays nothing for it.
   budget the oldest lines go; the writer's canon still holds them, and recall reaches it.
 - **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written
   session N; record <campaign> sN)` for each linked campaign whose legacy was written in a later session than the one
-  this campaign last folded, or never folded; not for a campaign whose digest this one holds (a sequel's predecessor),
-  which the digest already carries, and nothing at all for a closed campaign. The resume reads that file and no other
+  this campaign last folded, or never folded; not for a campaign whose digest this one, or a campaign nearer it in the set, holds (a sequel's
+  predecessor), which the digest already carries, and nothing at all for a closed campaign. The resume reads that file and no other
   file of that campaign.
 - **The fold.** The next full save sees the same line at its own check, puts the changes into canon as world knowledge
   (unless the characters saw them), and records `<campaign> sN` on `game-state.md`'s `- **Legacies folded**:` line,

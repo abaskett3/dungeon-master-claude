@@ -77,10 +77,9 @@ issue #179.
    `d/legacy.md` exists, under 3k tokens, `Written: session N`.
 2. **Resume the main campaign.** `dmc size c --check` prints `legacy: d legacy.md (written session N)`; DMC reads
    that file only, and at the next full save the bridge is a canon line in `c` marked as world knowledge, and `c`'s
-   `game-state.md` says `Legacies folded: d sN`. Resume again: nothing printed (SC-008).
-3. **Two sessions at once.** Resume `c`; while its session runs, play and full-save `d` in a second terminal; then
-   full-save `c`. Resume `c` again: `d`'s new legacy is named (SC-008).
-4. **A campaign alone** writes no `legacy.md` and prints nothing (SC-007).
-5. **Two saves before the reader resumes.** Full-save `d` in two sessions, a change in each, without resuming `c`:
+   `game-state.md` says `Legacies folded: d sN`. Resume again: no `legacy:` line (SC-008); `legacy due:`, which
+   resume leaves for the full save, still prints, since `d` is open.
+3. **A campaign alone** writes no `legacy.md` and prints nothing (SC-007).
+4. **Two saves before the reader resumes.** Full-save `d` in two sessions, a change in each, without resuming `c`:
    the second save's `legacy due:` says `keep from` the session after the one `c` last folded, and `d/legacy.md`
    holds both changes. Resume `c`, which reads both; after `c`'s next full save, `d`'s next save drops them.

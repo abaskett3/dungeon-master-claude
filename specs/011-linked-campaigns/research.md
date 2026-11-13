@@ -212,8 +212,8 @@ code and the prompts. The spec's own clarifications are not repeated here.
 - **Rationale:** FR-025, FR-026, SC-007, SC-008. Session numbers are the one order DMC always writes; every campaign
   in the maintainer's folder has them (Current session lines, `session N` in each Last full save line, numbered and
   titled logs), and the two things compared are new, so no older file lacks them. Recording what was folded, rather
-  than when this campaign last saved, also names a legacy written while this campaign's session runs, and names again
-  one whose session ended before its fold. The file is outside `story/` so the resume's reads, which name files,
+  than when this campaign last saved, names exactly the legacies not yet taken in. Two campaigns played at once, in
+  two terminals, are out of scope (spec Clarifications, 2026-11-13). The file is outside `story/` so the resume's reads, which name files,
   never pick it up by accident. A running list rather than a rewrite, because a rewrite loses the first of two full
   saves made before a reader resumes; and `dmc` names what to keep, because the writer cannot see what each reader
   folded (each records it only in its own `game-state.md`) and `CampaignLinks` already reads every campaign in the
@@ -277,8 +277,9 @@ code and the prompts. The spec's own clarifications are not repeated here.
 
 - **Decision:** Measured per PR as bytes ÷ 4 of what an ordinary session loads: `kit/dm-rules.md` (one line rewritten
   in place, at most one line added), the resume skill (the Predecessor sentence deleted; one clause on `notice:` lines
-  in the size check it already runs; PR 3 adds one for `legacy:` lines), the full save (PR 3: one clause, about 50
-  tokens), skill descriptions (none added: `dmc-new-campaign`'s description gains a few words for sequels). Expected
+  in the size check it already runs; PR 3 adds one for `legacy:` lines), the full save (PR 3: one clause, about 50 to
+  90 tokens since it also keeps lines and folds `legacy:` lines; measured at T090, and if it runs over, its detail
+  moves to the template's comment, read only when the file is written), skill descriptions (none added: `dmc-new-campaign`'s description gains a few words for sequels). Expected
   total under 120 tokens. No command call is added (R1), and `dmc size NAME --check` prints no link line for a
   campaign with no links and no news.
 - **Rationale:** Constitution II; spec SC-007.

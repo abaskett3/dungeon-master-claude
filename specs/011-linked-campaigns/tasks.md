@@ -699,8 +699,8 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - as `written unknown` when the member's Written line is unreadable;
       - never for NAME's own `legacy.md`, and never when the recorded session is the same or later;
       - never at all for a campaign alone (SC-007);
-      - and, for the case of two sessions at once: a legacy written in a session of the member that NAME has not
-        recorded is printed whatever the dates say, including when both carry the same date.
+      - and a legacy written in a session of the member that NAME has not recorded is printed whatever the dates say,
+        including when both carry the same date (two campaigns played the same day).
 
       `legacy due: open linked campaigns <names>: update legacy.md (keep from sN)` is printed whenever the set holds
       an open campaign other than NAME, whatever NAME's `legacy.md` says (two full saves in one session each bring it
@@ -725,7 +725,8 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - an HTML comment with the guidance: changes the other campaigns would see or hear of, in the world's terms,
         one line each with its `sN.M`, oldest first; a running list, whose lines go only when `dmc` says every reader
         has them; no secrets and none of the party's private plans; a budget of 3,000 tokens.
-- [ ] T083 [US3] Add the legacy comparison to `src/Dmc.Cli/Campaign/CampaignLinks.cs`, and the `legacy:` and
+- [ ] T083 [US3] Add the legacy comparison and the keep part (data-model.md § Legacy file) to
+      `src/Dmc.Cli/Campaign/CampaignLinks.cs`, and the `legacy:` and
       `legacy due:` lines to `dmc size --check` in `src/Dmc.Cli/Commands/SizeCommand.cs`, outside the three-notice cap
       (makes T079 pass). Update the help text and XML comments
 - [ ] T084 [P] [US3] Add `Budgets.Legacy = 3000` and `BudgetKind.Legacy` to `src/Dmc.Cli/Size/Budgets.cs`. Make
@@ -766,7 +767,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       dates, times or file times, R12) and `.docs/roadmap.md` (Phase B done; Phases C and D remain)
 - [ ] T090 Measure the standing cost as in T003. Record PR 3's share and the three PRs' total, which must be under
       150 tokens (FR-031, SC-007)
-- [ ] T091 Run quickstart.md § PR 3, steps 1 to 5, in a scratch DMC folder, and record the results for the PR
+- [ ] T091 Run quickstart.md § PR 3, steps 1 to 4, in a scratch DMC folder, and record the results for the PR
 - [ ] T092 Check the XML doc comments and the spec folder. Then open PR 3:
       - commit, push, and open the PR with the full description and `Part of #179` on its own line;
       - say why it needs no migration: `legacy.md` is a new file that only new writes create, and the `Legacies

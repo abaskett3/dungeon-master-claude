@@ -141,6 +141,9 @@ The issue left these open for the specs. Each is settled here with its reason; `
   anyway; the writer's canon still holds them for recall (FR-025). Rewriting the file whole would lose the first of
   two saves made before a reader resumes, and the writer cannot see what each reader folded, since each records it
   only in its own `game-state.md`.
+- Q: Must legacies stay right when two linked campaigns are played at the same time, in two terminals? → A: No; that
+  is not a use case (the user, 2026-11-13). One campaign is played at a time, so a legacy's session number always
+  orders it, and the stamp needs no scene.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -345,8 +348,8 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   closing save settled, and the accounting drops the other reading as superseded, with the line it was superseded by.
 - **A test fight or other non-canon file** the closing save named in § How it ended: left out, accounted as dropped
   under its declared class.
-- **A legacy written while this campaign's session is running** (two sessions at once): named at this campaign's next
-  resume, since what counts is which of the other campaign's sessions this campaign has folded in, not when it saved.
+- **Two linked campaigns played at the same time** (two terminals): out of scope. The player plays one campaign at a
+  time, and each resume starts a new session, so session numbers order every legacy.
 - **A side campaign closed while the main campaign is in play**: its last legacy, written at the closing save, stays
   and is read once at the main campaign's next resume; recall still reaches its folder.
 - **Two full saves of a campaign before a linked campaign resumes**: the legacy keeps both saves' changes, since the
@@ -494,7 +497,7 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   what changed into canon (marked as world knowledge unless the characters saw it) and records, in `game-state.md`,
   the session of each legacy it folded. Session numbers decide, not dates or times, which DMC does not write reliably
   (Rorn's Landing's last full save line is `2026-11-11, session 47, through scene 2`), so two campaigns played the
-  same day, or one saved while the other's session is running, are still told apart.
+  same day are still told apart.
 
 **Modules in a chain**
 
@@ -587,8 +590,7 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
 - **SC-007**: A campaign with no links pays nothing in play: no legacy file, no line at resume, no notice in recall,
   and its standing cost rises by no more than FR-031's 150 tokens of kit text.
 - **SC-008**: A linked open campaign with a legacy this campaign has not folded in is named at resume in exactly one
-  line, and is not named again after this campaign's next full save; a legacy written while this campaign's session is
-  running is named at the next resume.
+  line, and is not named again after this campaign's next full save.
 - **SC-009**: Every digest file is under the near-cap margin of 20,000 estimated tokens, and every subject in it has
   exactly one heading.
 

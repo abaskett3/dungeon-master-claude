@@ -457,8 +457,8 @@ public sealed class CampaignLinksTests
         Folded("c", "d s4");
         CollectionAssert.AreEqual(new[]
         {
-            "legacy: d legacy.md (written session 5) (not the full save's to trim)",
-            "legacy due: open linked campaigns d: update legacy.md (keep all) (not the full save's to trim)",
+            "legacy: read adventures/d/legacy.md (written session 5) (not the full save's to trim)",
+            "legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d: add this save's changes and keep every line (not the full save's to trim)",
         }, LegacyLines("c"));
     }
 
@@ -470,9 +470,9 @@ public sealed class CampaignLinksTests
         Campaign("d", Continuity(side: "c"));
         Legacy("d", "session 5, 2026-11-13");
         Folded("c", "other s9, D s5");
-        Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: ", StringComparison.Ordinal)));
+        Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)));
         Folded("c", "d s7");
-        Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: ", StringComparison.Ordinal)));
+        Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)));
     }
 
     /// <summary>A legacy is named when nothing is recorded for its campaign, or the reader has no Legacies folded line.</summary>
@@ -483,9 +483,9 @@ public sealed class CampaignLinksTests
         Campaign("d", Continuity(side: "c"));
         Legacy("d", "session 2, 2026-11-13");
         Folded("c", null);
-        Assert.AreEqual("legacy: d legacy.md (written session 2) (not the full save's to trim)", LegacyLines("c")[0]);
+        Assert.AreEqual("legacy: read adventures/d/legacy.md (written session 2) (not the full save's to trim)", LegacyLines("c")[0]);
         Folded("c", "other s3");
-        Assert.AreEqual("legacy: d legacy.md (written session 2) (not the full save's to trim)", LegacyLines("c")[0]);
+        Assert.AreEqual("legacy: read adventures/d/legacy.md (written session 2) (not the full save's to trim)", LegacyLines("c")[0]);
     }
 
     /// <summary>An unreadable Written line is named as <c>written unknown</c>: a false alarm costs a read.</summary>
@@ -496,7 +496,7 @@ public sealed class CampaignLinksTests
         Campaign("d", Continuity(side: "c"));
         Legacy("d", "last week");
         Folded("c", "d s9");
-        Assert.AreEqual("legacy: d legacy.md (written unknown) (not the full save's to trim)", LegacyLines("c")[0]);
+        Assert.AreEqual("legacy: read adventures/d/legacy.md (written unknown) (not the full save's to trim)", LegacyLines("c")[0]);
     }
 
     /// <summary>
@@ -511,7 +511,7 @@ public sealed class CampaignLinksTests
         Legacy("d", "session 6, 2026-11-13");
         Write(_root, "adventures/c/game-state.md",
             "# Game state\n\n- **Current session**: 12\n- **Last full save**: 2026-11-13 18:40, session 12, through scene 3\n- **Legacies folded**: d s5\n");
-        Assert.AreEqual("legacy: d legacy.md (written session 6) (not the full save's to trim)", LegacyLines("c")[0]);
+        Assert.AreEqual("legacy: read adventures/d/legacy.md (written session 6) (not the full save's to trim)", LegacyLines("c")[0]);
     }
 
     /// <summary>A closed member's last legacy is still named until it is folded; a closed member never makes one due.</summary>
@@ -522,7 +522,7 @@ public sealed class CampaignLinksTests
         Campaign("d", Continuity(side: "c"));
         Legacy("d", "session 6, 2026-11-13");
         Close("d");
-        CollectionAssert.AreEqual(new[] { "legacy: d legacy.md (written session 6) (not the full save's to trim)" }, LegacyLines("c"));
+        CollectionAssert.AreEqual(new[] { "legacy: read adventures/d/legacy.md (written session 6) (not the full save's to trim)" }, LegacyLines("c"));
     }
 
     /// <summary>
@@ -535,9 +535,9 @@ public sealed class CampaignLinksTests
         Campaign("c", Continuity());
         Campaign("d", Continuity(side: "c"));
         Folded("c", null);
-        Assert.AreEqual("legacy due: open linked campaigns d: update legacy.md (keep all) (not the full save's to trim)", LegacyLines("c").Single());
+        Assert.AreEqual("legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d: add this save's changes and keep every line (not the full save's to trim)", LegacyLines("c").Single());
         Legacy("c", "session 12, 2026-11-13");
-        Assert.AreEqual("legacy due: open linked campaigns d: update legacy.md (keep all) (not the full save's to trim)", LegacyLines("c").Single());
+        Assert.AreEqual("legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d: add this save's changes and keep every line (not the full save's to trim)", LegacyLines("c").Single());
     }
 
     /// <summary>
@@ -555,11 +555,11 @@ public sealed class CampaignLinksTests
         Folded("e", "x s1, c s5");
         Folded("f", "c s1");
         Close("f");
-        Assert.AreEqual("legacy due: open linked campaigns d, e: update legacy.md (keep from s4) (not the full save's to trim)", LegacyLines("c").Single());
+        Assert.AreEqual("legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d, e: add this save's changes and drop the lines from session 3 and earlier (not the full save's to trim)", LegacyLines("c").Single());
         Folded("e", "x s1");
-        Assert.AreEqual("legacy due: open linked campaigns d, e: update legacy.md (keep all) (not the full save's to trim)", LegacyLines("c").Single());
+        Assert.AreEqual("legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d, e: add this save's changes and keep every line (not the full save's to trim)", LegacyLines("c").Single());
         Folded("e", null);
-        Assert.AreEqual("legacy due: open linked campaigns d, e: update legacy.md (keep all) (not the full save's to trim)", LegacyLines("c").Single());
+        Assert.AreEqual("legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns d, e: add this save's changes and keep every line (not the full save's to trim)", LegacyLines("c").Single());
     }
 
     /// <summary>A set that holds only closed campaigns makes nothing due; a missing member counts as neither.</summary>

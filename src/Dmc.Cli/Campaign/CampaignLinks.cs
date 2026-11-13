@@ -301,10 +301,11 @@ internal static partial class CampaignLinks
     /// The legacy lines <c>dmc size --check</c> prints after the notices, uncapped (contracts/campaign-links.md): first a
     /// <c>legacy:</c> line for each member, open or closed, whose <c>legacy.md</c> was written in a later session than the
     /// one the start's <c>game-state.md</c> Legacies folded line records for it, or for which none is recorded, or whose
-    /// Written line cannot be read; then one <c>legacy due:</c> line whenever the set holds an open campaign and the start
-    /// is open, saying which of the start's own legacy lines to keep: those from one after the lowest session the open
-    /// members record for the start, or all of them while any records none. A closed member never folds again, so it
-    /// holds nothing back. None for a campaign alone (SC-007).
+    /// Written line cannot be read, giving the path to read; then one <c>legacy due:</c> line whenever the set holds an
+    /// open campaign and the start is open, saying which of the start's own legacy lines to drop: those from the lowest
+    /// session the open members record for the start and earlier, or none while any records none. A closed member never
+    /// folds again, so it holds nothing back. The lines say what to do in words, since a live run showed the model acting
+    /// on words it skipped in shorthand. None for a campaign alone (SC-007).
     /// </summary>
     /// <param name="set">The start's linked set.</param>
     /// <param name="suffix">Written after each line, so the full save, having acted on them first, leaves them at its re-check.</param>
@@ -318,9 +319,9 @@ internal static partial class CampaignLinks
                 continue;
             int? written = WrittenSession(legacy);
             if (written is null)
-                lines.Add($"legacy: {member.Name} {LegacyFile} (written unknown){suffix}");
+                lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written unknown){suffix}");
             else if (!folded.TryGetValue(member.Name, out int recorded) || written > recorded)
-                lines.Add($"legacy: {member.Name} {LegacyFile} (written session {written}){suffix}");
+                lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written session {written}){suffix}");
         }
 
         var readers = set.Members.Where(m => m.Present && !m.Closed).ToList();
@@ -338,8 +339,8 @@ internal static partial class CampaignLinks
             }
             lowest = Math.Min(lowest.Value, session);
         }
-        string keep = lowest is { } low ? $"keep from s{low + 1}" : "keep all";
-        lines.Add($"legacy due: open linked campaigns {string.Join(", ", readers.Select(r => r.Name))}: update {LegacyFile} ({keep}){suffix}");
+        string keep = lowest is { } low ? $"drop the lines from session {low} and earlier" : "keep every line";
+        lines.Add($"legacy due: at the full save, update this campaign's {LegacyFile} for open linked campaigns {string.Join(", ", readers.Select(r => r.Name))}: add this save's changes and {keep}{suffix}");
         return lines;
     }
 

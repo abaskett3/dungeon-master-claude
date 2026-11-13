@@ -167,8 +167,8 @@ public abstract class SizeCommandContract
         CollectionAssert.AreEqual(new[]
         {
             $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
-            "legacy: side legacy.md (written session 3) (not the full save's to trim)",
-            "legacy due: open linked campaigns side: update legacy.md (keep from s8) (not the full save's to trim)",
+            "legacy: read adventures/side/legacy.md (written session 3) (not the full save's to trim)",
+            "legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns side: add this save's changes and drop the lines from session 7 and earlier (not the full save's to trim)",
         }, result.StdoutLines);
     }
 

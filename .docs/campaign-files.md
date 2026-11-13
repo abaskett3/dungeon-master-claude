@@ -199,12 +199,14 @@ to a closed campaign, has none and pays nothing for it.
 - The baron of Hollin is dead (s14.1).
 ```
 
-- **Who writes it.** At every full save, the closing save included, `dmc size --check` prints `legacy due: open linked
-  campaigns <names>: update legacy.md (keep from sN)` while the campaign's linked set holds an open campaign. The save
-  adds that save's changes at the end, stamps the Written line, and drops only the lines from sessions before the one
-  named, which every open linked campaign has already folded in (`keep all` while any has folded none). Past its
+- **Who writes it.** At every full save, the closing save included, `dmc size --check` prints `legacy due: at the full save, update this campaign's legacy.md for open
+  linked campaigns <names>: add this save's changes and drop the lines from session N and earlier` while the
+  campaign's linked set holds an open campaign; N is the lowest session of this campaign's legacy that every open
+  linked campaign has folded, so the lines dropped are ones they all have, and the line says `keep every line` while
+  any has folded none. The save adds its changes at the end, stamps the Written line and drops what it is told. Past its
   budget the oldest lines go; the writer's canon still holds them, and recall reaches it.
-- **Who reads it.** At resume, `dmc size --check` prints `legacy: <campaign> legacy.md (written session N)` for each
+- **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written session
+  N)` for each
   linked campaign whose legacy was written in a later session than the one this campaign last folded, or never
   folded. The resume reads that file and no other file of that campaign.
 - **The fold.** The next full save sees the same line at its own check, puts the changes into canon as world knowledge

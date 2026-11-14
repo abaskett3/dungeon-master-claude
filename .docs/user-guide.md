@@ -387,8 +387,9 @@ folder name) is mentioned in one line when you resume. `dmc campaign links <camp
 main campaign, say), each full save of either writes a short `legacy.md` in its folder: what changed in the world that
 the other would see or hear of, a burned bridge or a dead baron. When you next resume the other campaign, DMC reads
 that one file, and its next full save puts the changes into canon as news of the world, which its characters know only
-if they saw it. You need do nothing. A campaign with no links, or whose only link is the closed campaign it continues,
-writes no legacy. Play one campaign at a time: with two running at once in two terminals, a change can be missed.
+if they saw it. You need do nothing. A sequel's changes never flow back into the campaign it continues, even one you
+kept open, because they come after that campaign's story; a side campaign's flow both ways. A campaign with no links,
+or whose only link is the campaign it continues, writes no legacy. Play one campaign at a time: with two running at once in two terminals, a change can be missed.
 
 ### Moving campaigns from a repository checkout
 

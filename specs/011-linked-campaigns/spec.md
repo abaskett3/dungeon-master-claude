@@ -495,7 +495,8 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
 - **FR-026**: At resume, `dmc` MUST name, one line each, every open or closed campaign in the linked set whose legacy
   was written in a later session of that campaign than the one this campaign last folded in, or that this campaign has
   never folded in, and nothing when there is none. It names none whose digest a campaign nearer this one holds (this
-  one included), since the digest carries what its legacy says. DMC reads each named legacy file, and at the next full save folds
+  one included), since the digest carries what its legacy says, and none that is a later campaign of this one's chain
+  (a sequel), whose world changes come after this one's story (issue #202). DMC reads each named legacy file, and at the next full save folds
   what changed into canon (marked as world knowledge unless the characters saw it) and records, in `game-state.md`,
   the session of each legacy it folded. Session numbers decide, not dates or times, which DMC does not write reliably
   (Rorn's Landing's last full save line is `2026-11-11, session 47, through scene 2`), so two campaigns played the

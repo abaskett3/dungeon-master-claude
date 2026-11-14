@@ -493,6 +493,30 @@ public sealed class CampaignLinksTests
         Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// A later campaign of the chain is never folded back into the one it continues, whether it names it on a Continues
+    /// line or on an old Predecessor line; it is still an open reader of this campaign's own legacy (issue #202).
+    /// </summary>
+    [TestMethod]
+    public void ASequelsLegacyIsNeverNamedToTheCampaignItContinues()
+    {
+        Campaign("c", Continuity());
+        Campaign("d", Continuity("c"));
+        Legacy("d", "session 53, 2026-11-13");
+        Folded("c", null);
+        var lines = LegacyLines("c");
+        Assert.IsFalse(lines.Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)), string.Join('\n', lines));
+        Assert.IsTrue(lines.Any(l => l.StartsWith("legacy due: ", StringComparison.Ordinal) && l.Contains(" d: ", StringComparison.Ordinal)), string.Join('\n', lines));
+
+        Write(_root, "adventures/d/player-options.md", "# Options\n\n## Rules\n\n- **Predecessor**: c\n");
+        Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)));
+
+        // Forwards it still flows: the sequel is told of the earlier campaign's legacy.
+        Legacy("c", "session 46, 2026-11-10");
+        Folded("d", null);
+        CollectionAssert.Contains(LegacyLines("d"), "legacy: read adventures/c/legacy.md (written session 46; record c s46) (not the full save's to trim)");
+    }
+
     /// <summary>A legacy is named when nothing is recorded for its campaign, or the reader has no Legacies folded line.</summary>
     [TestMethod]
     public void ALegacyNeverFoldedIsNamed()

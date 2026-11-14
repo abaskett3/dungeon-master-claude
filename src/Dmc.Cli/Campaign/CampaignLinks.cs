@@ -299,7 +299,8 @@ internal static partial class CampaignLinks
 
     /// <summary>
     /// The legacy lines <c>dmc size --check</c> prints after the notices, uncapped (contracts/campaign-links.md): first a
-    /// <c>legacy:</c> line for each member, open or closed, whose <c>legacy.md</c> was written in a later session than the
+    /// <c>legacy:</c> line for each member, open or closed, but never a later campaign of the chain (a <c>sequel</c>,
+    /// whose world changes come after the start's story: issue #202), whose <c>legacy.md</c> was written in a later session than the
     /// one the start's <c>game-state.md</c> Legacies folded line records for it, or for which none is recorded, or whose
     /// Written line cannot be read, giving the path to read and what to record once it is folded; then one
     /// <c>legacy due:</c> line whenever the set holds an open campaign, saying which of the start's own legacy lines to
@@ -318,7 +319,9 @@ internal static partial class CampaignLinks
             return lines; // a closed campaign is never resumed or saved again, so it can neither fold nor write
         var folded = LegaciesFolded(ReadText(Path.Combine(set.StartFolder, "game-state.md")) ?? "");
         // A member whose digest a campaign nearer the start holds is already carried by that digest, so its legacy is not news.
-        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null))
+        // A later campaign of the chain (a sequel) is never folded back: its world changes come after the start's story,
+        // and the start's canon is what the sequel's digest copies (issue #202).
+        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null && m.Label != Sequel))
         {
             if (ReadText(Path.Combine(member.Folder, LegacyFile)) is not { } legacy)
                 continue;

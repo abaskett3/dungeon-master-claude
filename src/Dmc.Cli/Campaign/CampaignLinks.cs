@@ -27,7 +27,16 @@ internal enum LinkStep
 /// <param name="Present">False when its folder is not in <c>adventures/</c>.</param>
 /// <param name="Closed">True when its folder holds the closed mark; false when it is open or missing.</param>
 /// <param name="DigestHolder">The campaign nearer the start (the start included) that holds <c>digests/&lt;Name&gt;/</c>, nearest first; null when none does.</param>
-internal sealed record LinkedCampaign(string Name, string Folder, int Distance, string Label, bool Present, bool Closed, string? DigestHolder);
+/// <param name="After">
+/// True when it comes after the start's story: its chain of Continues (or old Predecessor) lines leads back to the start
+/// or to a campaign alongside the start, however else it is linked, or the start reaches it only through such a
+/// campaign. So the start's sequel and the sequel's sequel, the sequel's side campaign, or, from a side campaign of an
+/// earlier campaign, that campaign's sequel (issue #202). Its legacy never flows back to the start.
+/// </param>
+/// <param name="Before">
+/// True when the start comes after its story, the same rule seen from it: it reads none of the start's legacy.
+/// </param>
+internal sealed record LinkedCampaign(string Name, string Folder, int Distance, string Label, bool Present, bool Closed, string? DigestHolder, bool After = false, bool Before = false);
 
 /// <summary>A module a linked set reaches through a campaign's <c>module-progress.md</c>.</summary>
 /// <param name="Name">Its folder name in <c>modules/</c>.</param>
@@ -196,6 +205,13 @@ internal static partial class CampaignLinks
         holders.AddRange(sorted.Where(actual.ContainsKey).Select(n => (n, Path.Combine(adventures, n), reached[n].Distance)));
         bool Holds(string folder, string digested) => HoldsDigest(Path.Combine(folder, "digests", digested));
 
+        // Which members come after the start's story, and after which members' stories the start comes (issue #202).
+        var afterOf = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> After(string name) =>
+            afterOf.TryGetValue(name, out var known) ? known : afterOf[name] = AfterOf(name, StepsOf, actual.ContainsKey,
+                n => entries.TryGetValue(n, out var own) ? Continued(own) : null);
+        var afterStart = After(campaign);
+
         var members = new List<LinkedCampaign>();
         foreach (string name in sorted)
         {
@@ -203,7 +219,8 @@ internal static partial class CampaignLinks
             string folder = Path.Combine(adventures, name);
             bool present = actual.ContainsKey(name);
             string? holder = holders.Where(h => h.Distance < distance && Holds(h.Folder, name)).Select(h => h.Name).FirstOrDefault();
-            members.Add(new LinkedCampaign(name, folder, distance, label!, present, present && ClosedCampaign.IsClosed(folder), holder));
+            members.Add(new LinkedCampaign(name, folder, distance, label!, present, present && ClosedCampaign.IsClosed(folder), holder,
+                After: afterStart.Contains(name), Before: present && After(name).Contains(campaign)));
         }
 
         var notices = new List<LinkNotice>();
@@ -233,6 +250,93 @@ internal static partial class CampaignLinks
 
         return new LinkedSet(campaign, startFolder, members, modules, notices);
     }
+
+    /// <summary>
+    /// The campaigns that come after <paramref name="campaign"/>'s story (issue #202). A campaign does when its chain of
+    /// Continues lines (or Predecessor lines, read in their place), followed back one campaign at a time, leads to this
+    /// campaign or to one this campaign reaches without a step forward along a chain and without passing through it,
+    /// however else it is linked; and so does every campaign this one reaches only through such a campaign. So a sequel
+    /// and a sequel's sequel come after; so does a sequel's own side campaign; and, from a side campaign played alongside
+    /// the earlier campaign, the sequel too. A campaign's own past, reached only through it, does not count: from a
+    /// sequel's side campaign, the sequel stays alongside. Two campaigns that name each other on Continues lines (a slip)
+    /// each come after the other, so no legacy flows between them.
+    /// </summary>
+    /// <param name="campaign">The campaign, as its folder spells it.</param>
+    /// <param name="stepsOf">The steps out of a campaign, both ways.</param>
+    /// <param name="present">True for a campaign whose folder is there, the only kind whose steps are followed.</param>
+    /// <param name="continuedBy">The campaign a campaign's own link lines say it continues, or null.</param>
+    static HashSet<string> AfterOf(string campaign, Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present,
+        Func<string, string?> continuedBy)
+    {
+        var reached = Reachable(campaign, stepsOf, present, forwards: true, null);
+        var later = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string candidate in reached)
+        {
+            if (candidate.Equals(campaign, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var past = PastOf(candidate, continuedBy);
+            if (past.Count == 0)
+                continue;
+            // The candidate's past, reached without it: a campaign of this one's time that the candidate comes after.
+            var without = Reachable(campaign, stepsOf, present, forwards: false, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { candidate });
+            if (past.Any(without.Contains))
+                later.Add(candidate);
+        }
+        reached.ExceptWith(Reachable(campaign, stepsOf, present, forwards: false, later));
+        return reached;
+    }
+
+    /// <summary>
+    /// The campaigns a campaign's chain of Continues lines leads back to, nearest first, each once: the one it continues,
+    /// the one that continues, and so on, stopping at a loop or a campaign with no Continues line.
+    /// </summary>
+    /// <param name="campaign">The campaign.</param>
+    /// <param name="continuedBy">The campaign a campaign's own link lines say it continues, or null.</param>
+    static List<string> PastOf(string campaign, Func<string, string?> continuedBy)
+    {
+        var past = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { campaign };
+        for (string? earlier = continuedBy(campaign); earlier is not null && seen.Add(earlier); earlier = continuedBy(earlier))
+            past.Add(earlier);
+        return past;
+    }
+
+    /// <summary>
+    /// Every campaign reachable from <paramref name="campaign"/> over the steps, itself included; a missing folder is
+    /// reached but names nothing, as in <see cref="Build"/>.
+    /// </summary>
+    /// <param name="campaign">Where the walk starts.</param>
+    /// <param name="stepsOf">The steps out of a campaign, both ways.</param>
+    /// <param name="present">True for a campaign whose folder is there.</param>
+    /// <param name="forwards">False to take no step forward along the chain (<see cref="LinkStep.Later"/>).</param>
+    /// <param name="avoid">Campaigns never entered; null for none.</param>
+    static HashSet<string> Reachable(string campaign, Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present,
+        bool forwards, ISet<string>? avoid)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { campaign };
+        var queue = new Queue<string>([campaign]);
+        while (queue.Count > 0)
+        {
+            string here = queue.Dequeue();
+            if (!present(here))
+                continue;
+            foreach (var (to, step) in stepsOf(here))
+            {
+                if ((forwards || step != LinkStep.Later) && avoid?.Contains(to) != true && seen.Add(to))
+                    queue.Enqueue(to);
+            }
+        }
+        return seen;
+    }
+
+    /// <summary>
+    /// The campaign a set of link entries carries on: the first named Earlier step, which is the Continues line's, or the
+    /// Predecessor line's in a file with no Continuity section. The one reading <see cref="ContinuesOf"/> and the linked
+    /// set share.
+    /// </summary>
+    /// <param name="entries">A campaign's link entries, in file order.</param>
+    static string? Continued(IEnumerable<Entry> entries) =>
+        entries.FirstOrDefault(e => e.Step == LinkStep.Earlier && e.Name is not null)?.Name;
 
     /// <summary>
     /// The label of a campaign one step beyond another (research R2): a run of steps back along the chain is
@@ -307,7 +411,10 @@ internal static partial class CampaignLinks
     /// budget forces while any records none. A closed member never folds again, so it holds nothing back; a member whose
     /// digest a campaign nearer the start holds is carried by that digest, so its legacy is not named. The lines say what
     /// to do in words, since a live run showed the model acting on words it skipped in shorthand. None for a campaign
-    /// alone (SC-007), or for a closed start, which is never saved again.
+    /// alone (SC-007), or for a closed start, which is never saved again. A legacy never flows back against the story
+    /// (issue #202): no <c>legacy:</c> line names a member that comes after the start's story (<see cref="LinkedCampaign.After"/>),
+    /// and no member after whose story the start comes (<see cref="LinkedCampaign.Before"/>) is a reader on the
+    /// <c>legacy due:</c> line. Side and shared-world campaigns alongside the start flow both ways.
     /// </summary>
     /// <param name="set">The start's linked set.</param>
     /// <param name="suffix">Written after each line, so the full save, having acted on them first, leaves them at its re-check.</param>
@@ -318,7 +425,9 @@ internal static partial class CampaignLinks
             return lines; // a closed campaign is never resumed or saved again, so it can neither fold nor write
         var folded = LegaciesFolded(ReadText(Path.Combine(set.StartFolder, "game-state.md")) ?? "");
         // A member whose digest a campaign nearer the start holds is already carried by that digest, so its legacy is not news.
-        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null))
+        // A campaign after the start's story never folds back into it: its changes come later, and the start's canon is
+        // what its sequel's digest copies (issue #202).
+        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null && !m.After))
         {
             if (ReadText(Path.Combine(member.Folder, LegacyFile)) is not { } legacy)
                 continue;
@@ -329,7 +438,8 @@ internal static partial class CampaignLinks
                 lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written session {written}; record {member.Name} s{written}){suffix}");
         }
 
-        var readers = set.Members.Where(m => m.Present && !m.Closed).ToList();
+        // A reader is an open campaign this one's story does not come after: an earlier campaign never folds a later one's (issue #202).
+        var readers = set.Members.Where(m => m.Present && !m.Closed && !m.Before).ToList();
         if (readers.Count == 0)
             return lines;
         // What each open reader records for the start: a line any of them has not folded must stay.
@@ -431,8 +541,7 @@ internal static partial class CampaignLinks
     /// <param name="text">The file's text.</param>
     /// <param name="campaign">The campaign whose file it is, so a link to itself is not followed.</param>
     /// <returns>The folder name, or null when the line says <c>none</c>, is missing or names nothing that could be followed.</returns>
-    public static string? ContinuesOf(string text, string campaign) =>
-        Entries(text, campaign).FirstOrDefault(e => e.Step == LinkStep.Earlier && e.Name is not null)?.Name;
+    public static string? ContinuesOf(string text, string campaign) => Continued(Entries(text, campaign));
 
     /// <summary>The link lines of a <c>player-options.md</c>'s text as entries; see <see cref="Read"/>.</summary>
     /// <param name="text">The file's text.</param>

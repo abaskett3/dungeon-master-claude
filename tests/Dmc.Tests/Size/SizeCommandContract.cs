@@ -172,6 +172,30 @@ public abstract class SizeCommandContract
         }, result.StdoutLines);
     }
 
+    /// <summary>
+    /// Issue #202's shape: an open campaign whose sequel has written a legacy is not told to read it, since the sequel
+    /// comes after its story; it is still told to write its own for the sequel to read.
+    /// </summary>
+    [TestMethod]
+    public void TheCheckFormNamesNoLegacyOfASequelToTheCampaignItContinues()
+    {
+        Arrange(() =>
+        {
+            Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: none\n- **Side campaign of**: none\n" +
+                "- **Shares a world with**: none\n");
+            string sequel = NewCampaign(_root, "sequel");
+            WriteAt(sequel, "player-options.md", $"# Player options\n\n## Continuity\n\n- **Continues**: {Name}\n- **Side campaign of**: none\n" +
+                "- **Shares a world with**: none\n");
+            WriteAt(sequel, "legacy.md", "# Legacy of sequel\n\n- **Written**: session 53, 2026-11-13\n\n## What changed in the world\n\n- The ford is bridged (s53.1).\n");
+        });
+        var result = Size("--check", Name);
+        Assert.AreEqual(0, result.ExitCode, result.Stderr);
+        CollectionAssert.AreEqual(new[]
+        {
+            "legacy due: at the full save, update this campaign\'s legacy.md for open linked campaigns sequel: add this save's changes and keep every line the budget allows (not the full save's to trim)",
+        }, result.StdoutLines);
+    }
+
     /// <summary><c>--check</c> of a campaign alone with a legacy file of its own prints nothing (SC-007).</summary>
     [TestMethod]
     public void TheCheckFormOfACampaignAloneWithALegacyPrintsNothing()

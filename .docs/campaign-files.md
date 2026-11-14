@@ -208,7 +208,12 @@ to a closed campaign, has none and pays nothing for it.
 - **Who reads it.** At resume, `dmc size --check` prints `legacy: read adventures/<campaign>/legacy.md (written
   session N; record <campaign> sN)` for each linked campaign whose legacy was written in a later session than the one
   this campaign last folded, or never folded; not for a campaign whose digest this one, or a campaign nearer it in the set, holds (a sequel's
-  predecessor), which the digest already carries, and nothing at all for a closed campaign. The resume reads that file and no other
+  predecessor), which the digest already carries; never for a campaign that comes after this one's
+  story: a campaign whose chain of Continues lines (or old Predecessor
+  lines) leads back to this one or a campaign played alongside it, however else it is linked, and any campaign reached only through
+  such a campaign: its sequel and beyond, and, for a side campaign, the sequel of the campaign it is played alongside. This campaign's canon is what that sequel's digest copies; and nothing at all for a closed campaign. In the same
+  way a campaign is no reader on the `legacy due:` line of one that comes after its story. A side or shared-world
+  campaign played alongside flows both ways (issue #202). The resume reads that file and no other
   file of that campaign.
 - **The fold.** The next full save sees the same line at its own check, puts the changes into canon as world knowledge
   (unless the characters saw them), and records `<campaign> sN` on `game-state.md`'s `- **Legacies folded**:` line,

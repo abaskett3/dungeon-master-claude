@@ -862,8 +862,10 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 
 ## Phase 14: Issue #202, a sequel's legacy folded into its predecessor at the close
 
-- [X] T104 [US3] In `CampaignLinks.LegacyLines`, never name a later campaign of the chain (label `sequel`, by a
-      Continues or an old Predecessor line) to the campaign it continues, with a test in `CampaignLinksTests`; per
-      FR-026, as amended (issue #202)
+- [X] T104 [US3] In `CampaignLinks.LegacyLines`, name no legacy to a campaign another one carries on (a Continues or
+      an old Predecessor line names it: `LinkedSet.Continued`), and leave such a campaign out of the readers on
+      `legacy due:`, with a test in `CampaignLinksTests` (a Continues and a Predecessor line, a sequel reached first by
+      a world link, a side campaign of the sequel, the sequel's own `legacy due:`); per FR-026, as amended (issue #202
+      and PR #204's code review)
 - [X] T105 [US3] In `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7, act on `legacy due:` only and leave every
       `legacy:` line unread, with a check in `ToolkitTests`; contracts/prompts.md's row says so (issue #202)

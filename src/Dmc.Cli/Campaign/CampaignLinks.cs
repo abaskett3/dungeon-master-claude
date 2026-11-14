@@ -66,8 +66,19 @@ internal sealed record LinkLines(IReadOnlyList<LinkLine>? Section, LinkLine? Pre
 /// <param name="Members">The other campaigns, nearest first, then by name.</param>
 /// <param name="Modules">The modules, each once at its smallest distance, nearest first.</param>
 /// <param name="Notices">The notices, in the order of the campaigns and their lines.</param>
-internal sealed record LinkedSet(string Start, string StartFolder, IReadOnlyList<LinkedCampaign> Members, IReadOnlyList<LinkedModule> Modules, IReadOnlyList<LinkNotice> Notices)
+/// <param name="Continued">
+/// The campaigns, as their folders spell them, that some campaign in <c>adventures/</c> carries on: named on its
+/// Continues line, or on its old Predecessor line when it has no Continuity section. Such a campaign's story is over.
+/// </param>
+internal sealed record LinkedSet(string Start, string StartFolder, IReadOnlyList<LinkedCampaign> Members, IReadOnlyList<LinkedModule> Modules, IReadOnlyList<LinkNotice> Notices, IReadOnlySet<string> Continued)
 {
+    /// <summary>
+    /// True when a campaign carries <paramref name="name"/> on, so its story is over: it folds no legacy and reads none
+    /// (issue #202).
+    /// </summary>
+    /// <param name="name">A folder name.</param>
+    public bool IsContinued(string name) => Continued.Contains(name);
+
     /// <summary>The member of this name, case-insensitively; null when the campaign is not in the set.</summary>
     /// <param name="name">A folder name.</param>
     public LinkedCampaign? Member(string name) => Members.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -231,7 +242,15 @@ internal static partial class CampaignLinks
             modules.Add(new LinkedModule(module, moduleFolder, distance, Directory.Exists(moduleFolder), name));
         }
 
-        return new LinkedSet(campaign, startFolder, members, modules, notices);
+        // A campaign another one carries on: the Earlier step of a Continues line, or of a Predecessor line read in its place.
+        var continued = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string folder in folders)
+        {
+            foreach (var entry in entries[folder].Where(e => e.Name is not null && e.Step == LinkStep.Earlier))
+                continued.Add(actual.GetValueOrDefault(entry.Name!, entry.Name!));
+        }
+
+        return new LinkedSet(campaign, startFolder, members, modules, notices, continued);
     }
 
     /// <summary>
@@ -299,8 +318,7 @@ internal static partial class CampaignLinks
 
     /// <summary>
     /// The legacy lines <c>dmc size --check</c> prints after the notices, uncapped (contracts/campaign-links.md): first a
-    /// <c>legacy:</c> line for each member, open or closed, but never a later campaign of the chain (a <c>sequel</c>,
-    /// whose world changes come after the start's story: issue #202), whose <c>legacy.md</c> was written in a later session than the
+    /// <c>legacy:</c> line for each member, open or closed, whose <c>legacy.md</c> was written in a later session than the
     /// one the start's <c>game-state.md</c> Legacies folded line records for it, or for which none is recorded, or whose
     /// Written line cannot be read, giving the path to read and what to record once it is folded; then one
     /// <c>legacy due:</c> line whenever the set holds an open campaign, saying which of the start's own legacy lines to
@@ -308,7 +326,10 @@ internal static partial class CampaignLinks
     /// budget forces while any records none. A closed member never folds again, so it holds nothing back; a member whose
     /// digest a campaign nearer the start holds is carried by that digest, so its legacy is not named. The lines say what
     /// to do in words, since a live run showed the model acting on words it skipped in shorthand. None for a campaign
-    /// alone (SC-007), or for a closed start, which is never saved again.
+    /// alone (SC-007), or for a closed start, which is never saved again. A campaign that another carries on (its
+    /// Continues or old Predecessor line names it) has finished its story: as the start it gets no <c>legacy:</c> line,
+    /// and as a member it is no reader on the <c>legacy due:</c> line, so a sequel's changes never fold back into it
+    /// (issue #202).
     /// </summary>
     /// <param name="set">The start's linked set.</param>
     /// <param name="suffix">Written after each line, so the full save, having acted on them first, leaves them at its re-check.</param>
@@ -319,9 +340,10 @@ internal static partial class CampaignLinks
             return lines; // a closed campaign is never resumed or saved again, so it can neither fold nor write
         var folded = LegaciesFolded(ReadText(Path.Combine(set.StartFolder, "game-state.md")) ?? "");
         // A member whose digest a campaign nearer the start holds is already carried by that digest, so its legacy is not news.
-        // A later campaign of the chain (a sequel) is never folded back: its world changes come after the start's story,
-        // and the start's canon is what the sequel's digest copies (issue #202).
-        foreach (var member in set.Members.Where(m => m.Present && m.DigestHolder is null && m.Label != Sequel))
+        // A start that another campaign carries on folds nothing: its story is over, every linked campaign's changes
+        // come after it, and its canon is what that sequel's digest copies (issue #202).
+        var writers = set.IsContinued(set.Start) ? [] : set.Members.Where(m => m.Present && m.DigestHolder is null);
+        foreach (var member in writers)
         {
             if (ReadText(Path.Combine(member.Folder, LegacyFile)) is not { } legacy)
                 continue;
@@ -332,7 +354,8 @@ internal static partial class CampaignLinks
                 lines.Add($"legacy: read adventures/{member.Name}/{LegacyFile} (written session {written}; record {member.Name} s{written}){suffix}");
         }
 
-        var readers = set.Members.Where(m => m.Present && !m.Closed).ToList();
+        // A reader is an open campaign whose story goes on: one that another campaign carries on folds nothing (issue #202).
+        var readers = set.Members.Where(m => m.Present && !m.Closed && !set.IsContinued(m.Name)).ToList();
         if (readers.Count == 0)
             return lines;
         // What each open reader records for the start: a line any of them has not folded must stay.

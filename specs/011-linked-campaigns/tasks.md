@@ -862,10 +862,12 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 
 ## Phase 14: Issue #202, a sequel's legacy folded into its predecessor at the close
 
-- [X] T104 [US3] In `CampaignLinks.LegacyLines`, name no legacy to a campaign another one carries on (a Continues or
-      an old Predecessor line names it: `LinkedSet.Continued`), and leave such a campaign out of the readers on
-      `legacy due:`, with a test in `CampaignLinksTests` (a Continues and a Predecessor line, a sequel reached first by
-      a world link, a side campaign of the sequel, the sequel's own `legacy due:`); per FR-026, as amended (issue #202
-      and PR #204's code review)
-- [X] T105 [US3] In `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7, act on `legacy due:` only and leave every
-      `legacy:` line unread, with a check in `ToolkitTests`; contracts/prompts.md's row says so (issue #202)
+- [X] T104 [US3] In `CampaignLinks`, mark each member that comes after the start's story (`LinkedCampaign.After`: a
+      campaign whose Continues or old Predecessor line names the start, or one reached only through such a campaign)
+      and each the start comes after (`Before`); `LegacyLines` names no `legacy:` for the first and leaves the second
+      out of the `legacy due:` readers, with tests in `CampaignLinksTests` (a Continues and a Predecessor line, a sequel
+      reached first by a world link, a side campaign of the sequel, a side campaign alongside, one linked to both, the
+      sequel with no other reader); per FR-026, as amended (issue #202 and PR #204's two code reviews)
+- [X] T105 [US3] Leave `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7 as T099 wrote it: with T104, `dmc` never
+      names a later campaign's legacy at the close, and a side or shared-world campaign's still reaches the closed canon,
+      which a sequel's digest copies (issue #202, PR #204's second code review)

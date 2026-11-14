@@ -635,13 +635,18 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** Dates or file times; a record file per pair of campaigns; holding every line until every reader folds it (the file would grow without bound; a reader left unplayed misses only the oldest lines, which the writer's canon still holds for recall); a scene in the stamp for two sessions at once (out of scope).
 - **Source:** Issue #179; `specs/011-linked-campaigns/` (research R12, the analyze sessions of 2026-11-11 and 2026-11-13).
 
-## A legacy never flows back to the campaign a sequel continues, and a close folds none (issue #202)
+## A legacy never flows back against the story (issue #202)
 
 - **Date:** 2026-11-14
-- **Decision:** A campaign that another carries on (a Continues line, or an old Predecessor line, names it) has finished its story: `dmc size --check` prints it no `legacy:` line, and it is no reader on another campaign's `legacy due:` line. The rule reads the link lines themselves, not a member's label, which comes from whichever path reaches it first. `dmc-close-campaign` § 3, step 7 acts on `legacy due:` only and leaves every `legacy:` line unread, so a close still writes its own last legacy but folds no other campaign's.
-- **Reason:** In spec 011 Phase 9, The Silver Egg was finished but not yet closed, so Rorn's Landing, its sequel, wrote a legacy for it. Closing The Silver Egg then folded that legacy into its canon, under "After the story". The sequel's import copies the predecessor's canon, so Rorn's Landing's own events would have come back into its digest as The Silver Egg's. The import accounted those seven lines as `dropped:not-canon` by hand.
-  - A sequel's world changes come after the predecessor's story, so they are never the predecessor's to fold.
-  - A closed campaign is never played again, so no legacy folded into it at the close has a reader. A side or shared-world campaign's legacy folded at the close would reach a later sequel's digest the same way.
-  - The code rule also guards an open predecessor in a hand-made or pre-migration folder, where the skill rule alone would not apply.
-- **Rejected:** Leaving out only members labelled `sequel` (the first version of PR #204: its code review found a sequel reached first by a world link, and a side campaign of the sequel, still folded back, and the open predecessor stayed a reader that never folds, so the sequel's legacy never dropped a line); the skill rule alone (a prompt, with no guard in `dmc`); the code rule alone (a close would still fold side and shared-world legacies into a campaign no one plays); a `dmc size` flag for the close (the close skill already knows it is closing).
-- **Source:** Issue #202; `specs/011-linked-campaigns/` (FR-026, T104, T105).
+- **Decision:** A campaign comes after another's story when its Continues line (or old Predecessor line) names it, or when it is reached only through such a campaign. `dmc size --check` never prints a `legacy:` line from a campaign that comes after this one's story, and never counts a campaign this one comes after as a reader on this one's `legacy due:` line. Side and shared-world campaigns played alongside flow both ways, and the close goes on folding their legacies as T099 has it.
+- **Reason:**
+  - **The bug.** In spec 011 Phase 9, The Silver Egg was finished but not yet closed, so Rorn's Landing, its sequel, wrote a legacy for it. Closing The Silver Egg folded that legacy into its canon, under "After the story". The sequel's import copies the closed canon, so Rorn's Landing's own events would have come back into its digest as The Silver Egg's. This time the import dropped them by hand.
+  - **Why that is the line.** A sequel's world changes come after the earlier campaign's story, and so do those of a campaign reached only through the sequel, such as its own side campaign.
+  - **Why the rule reads the link lines.** A member's label comes from whichever path reaches it first, so a sequel also linked by a shared world is labelled `world`.
+  - **Why side campaigns still flow.** A side campaign played alongside the earlier campaign is part of its time, even if it is linked to the sequel too. Folding it at the close is what gets its changes into the sequel's digest.
+- **Rejected:**
+  - Leaving out only members labelled `sequel`. This was PR #204's first version: a sequel reached by a world link, and a side campaign of the sequel, still flowed back. The open predecessor also stayed a reader that never folds, so the sequel's legacy never dropped a line.
+  - Treating any campaign a sequel continues as finished, so that it folds and reads nothing, with a close that folds nothing. This was PR #204's second version. The second review found it cut off side campaigns played alongside, both in a predecessor the player kept open (migration 005 allows that after a warning) and at the close, whose fold is how those changes reach the sequel's digest.
+  - A `dmc size` flag for the close.
+- **Limits:** The rule looks only at links. A side campaign linked only to the sequel counts as after the earlier campaign's story, even if it was played alongside.
+- **Source:** Issue #202; `specs/011-linked-campaigns/` (FR-026, T104, T105); PR #204's two code reviews.

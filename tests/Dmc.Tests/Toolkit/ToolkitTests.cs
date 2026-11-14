@@ -1358,7 +1358,5 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(save, "Legacies folded");
         StringAssert.Contains(SkillSection("kit/skills/dmc-resume-campaign/SKILL.md", 2), "`legacy:`");
         StringAssert.Contains(Read("kit/skills/dmc-close-campaign/SKILL.md"), "`legacy due:`");
-        // The close writes its last legacy but folds no other campaign's into itself (issue #202).
-        StringAssert.Contains(Read("kit/skills/dmc-close-campaign/SKILL.md"), "Leave every `legacy:` line unread");
     }
 }

@@ -493,47 +493,65 @@ public sealed class CampaignLinksTests
         Assert.IsFalse(LegacyLines("c").Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal)));
     }
 
+    /// <summary>True when a campaign's legacy lines tell it to read <paramref name="writer"/>'s legacy.</summary>
+    /// <param name="lines">The legacy lines.</param>
+    /// <param name="writer">The campaign whose legacy it would read.</param>
+    static bool Reads(string[] lines, string writer) =>
+        lines.Any(l => l.StartsWith($"legacy: read adventures/{writer}/", StringComparison.Ordinal));
+
     /// <summary>
-    /// A campaign another one carries on has finished its story (issue #202): it is told of no linked campaign's legacy,
-    /// whether its sequel names it on a Continues or an old Predecessor line, is reached first by another link, or the
-    /// legacy is a side campaign's of the sequel; and it is no reader on the sequel's <c>legacy due:</c> line. Forwards
-    /// a legacy still flows: the sequel is told of the earlier campaign's.
+    /// A legacy never flows back against the story (issue #202): a sequel's never reaches the campaign it continues,
+    /// whether by a Continues or an old Predecessor line, or by a sequel reached first through a world link; nor does a
+    /// side campaign's of the sequel. The earlier campaign, open, still reads a side campaign played alongside it, even
+    /// one linked to the sequel too.
     /// </summary>
     [TestMethod]
-    public void ACampaignASequelCarriesOnFoldsNoLegacyAndReadsNone()
+    public void ASequelsLegacyNeverFlowsBackButASideCampaignsStillDoes()
     {
-        static bool Reads(string[] lines) => lines.Any(l => l.StartsWith("legacy: read ", StringComparison.Ordinal));
         Campaign("c", Continuity());
         Campaign("d", Continuity("c"));
         Legacy("d", "session 53, 2026-11-13");
         Folded("c", null);
         var lines = LegacyLines("c");
-        Assert.IsFalse(Reads(lines), string.Join('\n', lines));
+        Assert.IsFalse(Reads(lines, "d"), string.Join('\n', lines));
         Assert.IsTrue(lines.Any(l => l.StartsWith("legacy due: ", StringComparison.Ordinal) && l.Contains(" d: ", StringComparison.Ordinal)), string.Join('\n', lines));
 
-        // The old Predecessor line names it the same way.
         Write(_root, "adventures/d/player-options.md", "# Options\n\n## Rules\n\n- **Predecessor**: c\n");
-        Assert.IsFalse(Reads(LegacyLines("c")));
+        Assert.IsFalse(Reads(LegacyLines("c"), "d"), "an old Predecessor line");
 
-        // Reached first by a world link, the sequel is labelled world, and still folds nothing back.
         Campaign("c", Continuity(shares: "d"));
         Campaign("d", Continuity("c"));
         Assert.AreEqual("world", Build("c").Member("d")!.Label);
-        Assert.IsFalse(Reads(LegacyLines("c")));
+        Assert.IsFalse(Reads(LegacyLines("c"), "d"), "a sequel reached first by a world link");
 
-        // A side campaign of the sequel comes after the story too.
         Campaign("c", Continuity());
         Campaign("e", Continuity(side: "d"));
         Legacy("e", "session 4, 2026-11-13");
-        Assert.IsFalse(Reads(LegacyLines("c")));
+        Assert.IsFalse(Reads(LegacyLines("c"), "e"), "a side campaign of the sequel");
 
-        // Forwards: the sequel reads the earlier campaign's legacy, and the earlier campaign, open as it is, is no reader of
-        // the sequel's, so the sequel's legacy due: names only e.
+        Campaign("s", Continuity(side: "c"));
+        Legacy("s", "session 7, 2026-11-13");
+        Assert.IsTrue(Reads(LegacyLines("c"), "s"), "a side campaign alongside the earlier campaign");
+        Campaign("s", Continuity(side: "c", shares: "d"));
+        Assert.IsTrue(Reads(LegacyLines("c"), "s"), "a side campaign linked to the sequel too");
+    }
+
+    /// <summary>
+    /// Forwards a legacy flows: the sequel reads the earlier campaign's. The earlier campaign is no reader of the
+    /// sequel's, so with no other open campaign the sequel gets no <c>legacy due:</c> line (issue #202).
+    /// </summary>
+    [TestMethod]
+    public void TheEarlierCampaignIsNoReaderOfItsSequelsLegacy()
+    {
+        Campaign("c", Continuity());
+        Campaign("d", Continuity("c"));
         Legacy("c", "session 46, 2026-11-10");
         Folded("d", null);
-        var sequel = LegacyLines("d");
-        CollectionAssert.Contains(sequel, "legacy: read adventures/c/legacy.md (written session 46; record c s46) (not the full save's to trim)");
-        Assert.IsTrue(sequel.Any(l => l.StartsWith("legacy due: ", StringComparison.Ordinal) && l.Contains("open linked campaigns e: ", StringComparison.Ordinal)), string.Join('\n', sequel));
+        var lines = LegacyLines("d");
+        CollectionAssert.AreEqual(new[] { "legacy: read adventures/c/legacy.md (written session 46; record c s46) (not the full save's to trim)" }, lines);
+
+        Campaign("s", Continuity(side: "d"));
+        Assert.IsTrue(LegacyLines("d").Any(l => l.Contains("open linked campaigns s: ", StringComparison.Ordinal)), string.Join('\n', LegacyLines("d")));
     }
 
     /// <summary>A legacy is named when nothing is recorded for its campaign, or the reader has no Legacies folded line.</summary>

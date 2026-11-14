@@ -28,8 +28,10 @@ internal enum LinkStep
 /// <param name="Closed">True when its folder holds the closed mark; false when it is open or missing.</param>
 /// <param name="DigestHolder">The campaign nearer the start (the start included) that holds <c>digests/&lt;Name&gt;/</c>, nearest first; null when none does.</param>
 /// <param name="After">
-/// True when it comes after the start's story: a campaign that continues the start, or one the start reaches only through
-/// such a campaign (issue #202). Its legacy never flows back to the start.
+/// True when it comes after the start's story: its Continues (or old Predecessor) line names the start or a campaign
+/// alongside the start, however else it is linked, or the start reaches it only through such a campaign. So the start's
+/// sequel, the sequel's side campaign, or, from a side campaign of an earlier campaign, that campaign's sequel (issue
+/// #202). Its legacy never flows back to the start.
 /// </param>
 /// <param name="Before">
 /// True when the start comes after its story, the same rule seen from it: it reads none of the start's legacy.
@@ -204,7 +206,10 @@ internal static partial class CampaignLinks
         bool Holds(string folder, string digested) => HoldsDigest(Path.Combine(folder, "digests", digested));
 
         // Which members come after the start's story, and after which members' stories the start comes (issue #202).
-        HashSet<string> After(string name) => AfterOf(name, folders, entries, StepsOf, actual.ContainsKey);
+        var afterOf = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> After(string name) =>
+            afterOf.TryGetValue(name, out var known) ? known : afterOf[name] = AfterOf(name, StepsOf, actual.ContainsKey,
+                n => entries.TryGetValue(n, out var own) ? Continued(own) : null);
         var afterStart = After(campaign);
 
         var members = new List<LinkedCampaign>();
@@ -247,46 +252,69 @@ internal static partial class CampaignLinks
     }
 
     /// <summary>
-    /// The campaigns that come after <paramref name="campaign"/>'s story (issue #202): each campaign whose Continues line
-    /// (or Predecessor line, read in its place) names it, and every campaign it reaches only through one of those. A side
-    /// or shared-world campaign it also reaches another way runs alongside it, and is not after it.
+    /// The campaigns that come after <paramref name="campaign"/>'s story (issue #202). The campaigns alongside it are
+    /// those it reaches without a step forward along a chain and without entering a campaign whose Continues line (or
+    /// Predecessor line, read in its place) names one it reaches alongside without passing through that campaign; every
+    /// other campaign it reaches comes after it. (A sequel's side campaign reaches the earlier campaign only through the
+    /// sequel, so the sequel stays alongside it.)
+    /// So a sequel comes after, however else it is linked; so does the sequel's own side campaign; and, from a side
+    /// campaign played alongside the earlier campaign, the sequel too. Two campaigns that name each other on Continues
+    /// lines (a slip) each come after the other, so no legacy flows between them.
     /// </summary>
     /// <param name="campaign">The campaign, as its folder spells it.</param>
-    /// <param name="folders">Every campaign folder in <c>adventures/</c>.</param>
-    /// <param name="entries">Each folder's link entries.</param>
     /// <param name="stepsOf">The steps out of a campaign, both ways.</param>
     /// <param name="present">True for a campaign whose folder is there, the only kind whose steps are followed.</param>
-    static HashSet<string> AfterOf(string campaign, string[] folders, Dictionary<string, List<Entry>> entries,
-        Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present)
+    /// <param name="continuedBy">The campaign a campaign's own link lines say it continues, or null.</param>
+    static HashSet<string> AfterOf(string campaign, Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present,
+        Func<string, string?> continuedBy)
     {
-        var sequels = folders.Where(f => !f.Equals(campaign, StringComparison.OrdinalIgnoreCase)
-                                         && Continued(entries[f]) is { } name && name.Equals(campaign, StringComparison.OrdinalIgnoreCase))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (sequels.Count == 0)
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        // Everything reachable at all, less what is reachable without passing a sequel: the sequels and what lies beyond them only.
-        HashSet<string> Reach(ISet<string> avoid)
+        // Grow the campaigns kept out until none alongside continues another reached alongside without passing through
+        // it (the campaign it continues, reached only through it, is its own past, not this one's time): each pass can
+        // only shrink the set.
+        var kept = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> alongside;
+        while (true)
         {
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { campaign };
-            var queue = new Queue<string>([campaign]);
-            while (queue.Count > 0)
-            {
-                string here = queue.Dequeue();
-                if (!present(here))
-                    continue;
-                foreach (var (to, _) in stepsOf(here))
-                {
-                    if (!avoid.Contains(to) && seen.Add(to))
-                        queue.Enqueue(to);
-                }
-            }
-            return seen;
+            alongside = Reachable(campaign, stepsOf, present, forwards: false, kept);
+            var later = alongside.Where(n => !n.Equals(campaign, StringComparison.OrdinalIgnoreCase)
+                                             && continuedBy(n) is { } earlier && alongside.Contains(earlier)
+                                             && Reachable(campaign, stepsOf, present, forwards: false, new HashSet<string>(kept, StringComparer.OrdinalIgnoreCase) { n }).Contains(earlier))
+                .ToList();
+            if (later.Count == 0)
+                break;
+            kept.UnionWith(later);
         }
-
-        var after = Reach(new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-        after.ExceptWith(Reach(sequels));
+        var after = Reachable(campaign, stepsOf, present, forwards: true, null);
+        after.ExceptWith(alongside);
         return after;
+    }
+
+    /// <summary>
+    /// Every campaign reachable from <paramref name="campaign"/> over the steps, itself included; a missing folder is
+    /// reached but names nothing, as in <see cref="Build"/>.
+    /// </summary>
+    /// <param name="campaign">Where the walk starts.</param>
+    /// <param name="stepsOf">The steps out of a campaign, both ways.</param>
+    /// <param name="present">True for a campaign whose folder is there.</param>
+    /// <param name="forwards">False to take no step forward along the chain (<see cref="LinkStep.Later"/>).</param>
+    /// <param name="avoid">Campaigns never entered; null for none.</param>
+    static HashSet<string> Reachable(string campaign, Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present,
+        bool forwards, ISet<string>? avoid)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { campaign };
+        var queue = new Queue<string>([campaign]);
+        while (queue.Count > 0)
+        {
+            string here = queue.Dequeue();
+            if (!present(here))
+                continue;
+            foreach (var (to, step) in stepsOf(here))
+            {
+                if ((forwards || step != LinkStep.Later) && avoid?.Contains(to) != true && seen.Add(to))
+                    queue.Enqueue(to);
+            }
+        }
+        return seen;
     }
 
     /// <summary>

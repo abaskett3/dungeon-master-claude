@@ -36,7 +36,8 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
   --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):
             the flags, then any problem with the links of this campaign or an open linked one (a "notice:"
             line each, at most three), then a "legacy:" line for each linked campaign's legacy.md this one
-            has not folded in, and "legacy due:" when a linked campaign is open, with the lines to keep
+            has not folded in (never one after this campaign's story, such as its sequel), and "legacy due:"
+            when a linked campaign is open whose story this one does not come after, with the lines to keep
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 

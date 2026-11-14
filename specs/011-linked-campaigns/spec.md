@@ -243,8 +243,8 @@ into canon at its next full save; resume again and check that nothing is named.
 1. **Given** a campaign linked to at least one open campaign, **When** it is full-saved, **Then** its legacy file gains
    what this save changed in the shared world, keeps every earlier change a linked open campaign has not yet folded in,
    stays within its budget, and is stamped with the session that wrote it and the date.
-2. **Given** campaign X and a linked open campaign Y whose legacy X has not folded in (and whose digest no campaign
-   nearer X holds), **When** X is resumed,
+2. **Given** campaign X and a linked open campaign Y whose legacy X has not folded in (whose digest no campaign
+   nearer X holds, and which does not come after X's story, FR-026), **When** X is resumed,
    **Then** one line names Y and its legacy file, and DMC reads that file and no other file of Y.
 3. **Given** X's next full save after reading Y's legacy, **When** it completes, **Then** the world changes it named are
    canon lines in X, marked as learned from the world rather than seen by X's characters unless they were, X records
@@ -496,7 +496,9 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   was written in a later session of that campaign than the one this campaign last folded in, or that this campaign has
   never folded in, and nothing when there is none. It names none whose digest a campaign nearer this one holds (this
   one included), since the digest carries what its legacy says, and none that comes after this one's story: a
-  campaign whose Continues line (or old Predecessor line) names this one, or one reached only through such a campaign.
+  campaign whose Continues line (or old Predecessor line) names this one or a campaign played alongside it, however
+  else it is linked, or one reached only through such a campaign: its sequel and beyond, and for a side campaign the
+  sequel of the campaign it is played alongside.
   In the same way, no campaign is a reader of the legacy of one that comes after its story. A side or shared-world
   campaign played alongside flows both ways (issue #202). DMC reads each named legacy file, and at the next full save folds
   what changed into canon (marked as world knowledge unless the characters saw it) and records, in `game-state.md`,

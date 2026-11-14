@@ -877,3 +877,11 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
 - [X] T105 [US3] Leave `kit/skills/dmc-close-campaign/SKILL.md` § 3, step 7 as T099 wrote it: with T104, `dmc` never
       names a later campaign's legacy at the close, and a side or shared-world campaign's still reaches the closed canon,
       which a sequel's digest copies (issue #202, PR #204's second code review)
+
+---
+
+## Phase 15: Convergence
+
+- [X] T106 Bring `.docs/architecture.md`'s `CampaignLinks` paragraph up to PR #204: `dmc size --check` prints no `legacy:` line for a campaign that comes after this one's story, and a `legacy due:` line only while an open campaign is linked whose story this one does not come after, per FR-026 and FR-030 (partial)
+- [X] T107 Say in `.docs/user-guide.md` § Campaigns in one world that a sequel's changes never flow back into the campaign it continues, even one kept open, while a side campaign's flow both ways, per FR-026 and FR-030 (partial)
+- [X] T108 Record in `.docs/decisions.md`'s entry "Recall ranks a digest's scene spine at the weight of the logs it copies" that SC-004's second clause misses one fact on the maintainer's play folder (Tallow's "It isn't a vote": the digest's long merged line falls out of the output under a different line of The Silver Egg's logs), and that long-line ranking is left for later BM25 tuning, per SC-004 (partial)

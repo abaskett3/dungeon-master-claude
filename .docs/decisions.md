@@ -624,7 +624,9 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - Leaving the spine out of recall. This was the first version of PR #203, and its code review found it would leave scene titles unrecallable.
   - Leaving the weight as it was. One question is the whole margin SC-004 allows.
   - Tuning BM25's length normalisation for every file. It changes every campaign's ranking and needs its own spec.
-- **Limits:** The margin is narrow. At 0.95 the test misses the lease again.
+- **Limits:**
+  - The margin is narrow. At 0.95 the test misses the lease again.
+  - SC-004's second clause misses one fact. For Tallow's "It isn't a vote", a different line from The Silver Egg's logs ranks above the digest's long merged line, which falls out of the output. In 4 more of the 44 answers a folder line ranks above the digest's, but the digest's line is printed too. Long lines score lower under BM25's length normalisation. Tuning that changes every campaign's ranking, so it is left for later.
 - **Source:** Issue #179; `specs/011-linked-campaigns/` (research R4, T103, T077); the code review of PR #203.
 
 ## A sequel's import keeps its parts on Sonnet (issue #198)

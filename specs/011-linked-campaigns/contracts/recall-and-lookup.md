@@ -6,7 +6,7 @@ here is unchanged (the 6,000-byte cap, the trim, the notices' cap, the exit code
 ## Scope
 
 The campaign; every campaign of its linked set ([campaign-links.md](campaign-links.md)); every `digests/<name>/` in any
-of them, except its `index.md` (no facts); every module any of them names, once, at the smallest distance. Excluded as
+of them, except its `index.md` and `spine.md` (no facts); every module any of them names, once, at the smallest distance. Excluded as
 today: `import/`, `exports/`, `backups/`, dot folders, a module's `source/`.
 
 ## Weights

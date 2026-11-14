@@ -46,7 +46,7 @@ internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double
 /// <summary>
 /// What recall searches (research R1, R6, R11; spec 011 R4): the campaign; every campaign of its linked set
 /// (<see cref="CampaignLinks"/>) whose folder is there; the digests any of them hold, except each digest's
-/// <c>index.md</c>; and each module any of them names, once. Builds the list of files with their weights, and the
+/// <c>index.md</c> and <c>spine.md</c>; and each module any of them names, once. Builds the list of files with their weights, and the
 /// notices for what could not be searched.
 /// </summary>
 internal static class RecallScope
@@ -123,8 +123,11 @@ internal static class RecallScope
                 if (tier == Tier.Digest)
                 {
                     string[] parts = relative.Split('/');
-                    // A digest's index.md holds its format, backup, chain and file list: no fact to recall.
-                    if (parts.Length == 3 && parts[2].Equals("index.md", StringComparison.OrdinalIgnoreCase))
+                    // A digest's index.md holds its format, backup, chain and file list, and its spine.md the scene
+                    // headings, which the digested campaign's logs hold too: no fact to recall, and the spine's short
+                    // lines crowded facts out of the output (spec 011 T077).
+                    if (parts.Length == 3 && (parts[2].Equals(SequelDigest.IndexFile, StringComparison.OrdinalIgnoreCase)
+                                              || parts[2].Equals(SequelDigest.SpineFile, StringComparison.OrdinalIgnoreCase)))
                         continue;
                     distance = set.DigestDistance(parts[1], place.Distance);
                     digestLink = set.DigestLabel(parts[1], place.Link);

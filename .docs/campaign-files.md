@@ -176,7 +176,7 @@ kept open) has not happened yet.
 
 A sequel holds, at its top level, `digests/<campaign>/`: a closed campaign's facts copied word for word and
 reorganised by subject, with its scene spine and its secrets (see [A digest](#a-digest) below). `dmc recall` and `dmc lookup` search a digest like the campaign's own
-files, except its `index.md`, which holds no facts; the resume never reads one, so `dmc size` leaves it out of the
+files, except its `index.md` and `spine.md`, which hold no facts (recall leaves both out; lookup still finds the spine's headings); the resume never reads one, so `dmc size` leaves it out of the
 resume total; and a digest's secrets and its `## Module` section (a copy of `module-progress.md`) are marked DM-only in
 recall. A campaign whose digest a campaign nearer the start holds (a `digests/<campaign>/` folder with a `.md` file in
 it) is the last resort: its own folder is still searched, but the digest's line ranks first, and recall prints a line

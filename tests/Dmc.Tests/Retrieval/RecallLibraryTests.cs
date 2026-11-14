@@ -407,6 +407,18 @@ public sealed class RecallLinkedSetTests
     }
 
     /// <summary>
+    /// A digest's <c>spine.md</c> holds only scene headings, which the digested campaign's logs hold too, and is not
+    /// searched: on the maintainer's play folder its short lines crowded a fact out of the output (spec 011 T077).
+    /// </summary>
+    [TestMethod]
+    public void ADigestsSpineIsNotSearched()
+    {
+        Write(_root, $"adventures/{Last}/digests/{Middle}/spine.md",
+            $"# Spine of {Middle}\n\n## Session 9: The lantern fair (session-009.md)\n\n- s9.1 The afternoon at the Quillfeather counter (the cartographer's shop)\n");
+        CollectionAssert.AreEqual(new[] { "nothing matched: Quillfeather counter cartographer" }, Run("Quillfeather counter cartographer"));
+    }
+
+    /// <summary>
     /// The campaign's own canon (1.30) ranks above a digest's line (1.14), which ranks above the digested campaign's
     /// own canon (1.05).
     /// </summary>

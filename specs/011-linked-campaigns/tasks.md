@@ -661,7 +661,7 @@ sample test passes.
 
 **Goal**: Rorn's Landing gets The Silver Egg's digest once, with the player, on local data that is never committed.
 
-- [ ] T076 [US4] With the player, in `D:\Claude\dmc`:
+- [X] T076 [US4] With the player, in `D:\Claude\dmc`:
       - make sure The Silver Egg is closed, at Rorn's Landing's migration 005 or with `dmc-close-campaign`;
       - run `dmc campaign sequel rorns-landing --start`;
       - build the digest with subagents as § 1c says: the digest only, with no new campaign and no brief;
@@ -672,6 +672,10 @@ sample test passes.
       - at least 28 of 30 named and 23 of 30 indirect;
       - every fact held both in the digest and in The Silver Egg's folder is printed from the digest;
       - with the user's go-ahead, post the figures on issue #179.
+- [X] T103 [US4] Leave each digest's `spine.md` out of recall's scope, as its `index.md` is, in
+      `src/Dmc.Cli/Retrieval/RecallScope.cs`, with a test in `RecallLibraryTests` (research R4): T077's first run gave
+      27 of 30 named and 23 of 30 indirect; the spine's short lines crowded "How long is the Birch shop's lease?" out of
+      the output, and without them the run gives 28 and 23. Then rerun T077 on the installed build.
 
 ---
 

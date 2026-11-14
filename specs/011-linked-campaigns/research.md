@@ -68,7 +68,9 @@ code and the prompts. The spec's own clarifications are not repeated here.
 
   `digests/*/secrets.md` lines are DM-only (`LineUnits`' DM-file test gains the path), and so are the lines under a
   digest's `## Module` heading, which copies the DM-only `module-progress.md`. `digests/*/index.md` is not searched:
-  it holds no facts, and its Carried line would rank at the archive's weight. A campaign holds a digest once
+  it holds no facts, and its Carried line would rank at the archive's weight. Nor is `digests/*/spine.md` (T103): its
+  scene headings are in the digested campaign's logs too, and on the maintainer's play folder its short lines, at the
+  digest's weight, crowded a fact out of the output (the lease question of T077: 27 of 30 named with it, 28 without). A campaign holds a digest once
   `digests/<name>/` has a `.md` file in it; an empty folder stands in for nothing.
 - **Rationale:** FR-017 needs a digest line to beat the same or a weaker line from the digested campaign's folder at
   equal relevance, while the sequel's own canon still wins over both. The factor keeps the folder searchable as the

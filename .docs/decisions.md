@@ -610,6 +610,14 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** The import is still slow: 59 minutes and 41.4M tokens for the digest alone, because the model retypes every line it copies. The fix for that changes `dmc` and is proposed in issue #198.
 - **Source:** Issue #179; spec 011 Phase 9 (T076/T077); issue #198.
 
+## Recall leaves a digest's scene spine out (issue #179, Phase B)
+
+- **Date:** 2026-11-13
+- **Decision:** `dmc recall` searches a digest's files except `index.md` and `spine.md`. `dmc lookup` still finds the spine's headings, and the digest's import still writes and checks it.
+- **Reason:** Phase 9's recall test on the maintainer's play folder (T077), with The Silver Egg digested into Rorn's Landing, gave 27 of 30 named answers against the 28 SC-004 asks. The spine's scene lines are short, name places such as "the Birch shop" in almost every line, and rank at the digest's weight, so they filled 8 of the 20 hits for "How long is the Birch shop's lease?" and pushed the answer out. Run on a copy without the spine, the test gave 28 of 30 named and 23 of 30 indirect; without the digest at all, 28 and 22. The spine holds no facts: its headings are in the digested campaign's session logs too, which recall still searches as the last resort.
+- **Rejected:** A lower weight for the spine (it would still take places in the output for no fact); leaving it and calling the shortfall noise (one question is the whole margin SC-004 allows).
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (research R4, T103, T077).
+
 ## Legacy files are a running list ordered by session numbers (issue #179, Phase B)
 
 - **Date:** 2026-11-13

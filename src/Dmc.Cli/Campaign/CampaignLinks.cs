@@ -28,10 +28,10 @@ internal enum LinkStep
 /// <param name="Closed">True when its folder holds the closed mark; false when it is open or missing.</param>
 /// <param name="DigestHolder">The campaign nearer the start (the start included) that holds <c>digests/&lt;Name&gt;/</c>, nearest first; null when none does.</param>
 /// <param name="After">
-/// True when it comes after the start's story: its Continues (or old Predecessor) line names the start or a campaign
-/// alongside the start, however else it is linked, or the start reaches it only through such a campaign. So the start's
-/// sequel, the sequel's side campaign, or, from a side campaign of an earlier campaign, that campaign's sequel (issue
-/// #202). Its legacy never flows back to the start.
+/// True when it comes after the start's story: its chain of Continues (or old Predecessor) lines leads back to the start
+/// or to a campaign alongside the start, however else it is linked, or the start reaches it only through such a
+/// campaign. So the start's sequel and the sequel's sequel, the sequel's side campaign, or, from a side campaign of an
+/// earlier campaign, that campaign's sequel (issue #202). Its legacy never flows back to the start.
 /// </param>
 /// <param name="Before">
 /// True when the start comes after its story, the same rule seen from it: it reads none of the start's legacy.
@@ -252,14 +252,14 @@ internal static partial class CampaignLinks
     }
 
     /// <summary>
-    /// The campaigns that come after <paramref name="campaign"/>'s story (issue #202). The campaigns alongside it are
-    /// those it reaches without a step forward along a chain and without entering a campaign whose Continues line (or
-    /// Predecessor line, read in its place) names one it reaches alongside without passing through that campaign; every
-    /// other campaign it reaches comes after it. (A sequel's side campaign reaches the earlier campaign only through the
-    /// sequel, so the sequel stays alongside it.)
-    /// So a sequel comes after, however else it is linked; so does the sequel's own side campaign; and, from a side
-    /// campaign played alongside the earlier campaign, the sequel too. Two campaigns that name each other on Continues
-    /// lines (a slip) each come after the other, so no legacy flows between them.
+    /// The campaigns that come after <paramref name="campaign"/>'s story (issue #202). A campaign does when its chain of
+    /// Continues lines (or Predecessor lines, read in their place), followed back one campaign at a time, leads to this
+    /// campaign or to one this campaign reaches without a step forward along a chain and without passing through it,
+    /// however else it is linked; and so does every campaign this one reaches only through such a campaign. So a sequel
+    /// and a sequel's sequel come after; so does a sequel's own side campaign; and, from a side campaign played alongside
+    /// the earlier campaign, the sequel too. A campaign's own past, reached only through it, does not count: from a
+    /// sequel's side campaign, the sequel stays alongside. Two campaigns that name each other on Continues lines (a slip)
+    /// each come after the other, so no legacy flows between them.
     /// </summary>
     /// <param name="campaign">The campaign, as its folder spells it.</param>
     /// <param name="stepsOf">The steps out of a campaign, both ways.</param>
@@ -268,25 +268,37 @@ internal static partial class CampaignLinks
     static HashSet<string> AfterOf(string campaign, Func<string, List<(string To, LinkStep Step)>> stepsOf, Func<string, bool> present,
         Func<string, string?> continuedBy)
     {
-        // Grow the campaigns kept out until none alongside continues another reached alongside without passing through
-        // it (the campaign it continues, reached only through it, is its own past, not this one's time): each pass can
-        // only shrink the set.
-        var kept = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        HashSet<string> alongside;
-        while (true)
+        var reached = Reachable(campaign, stepsOf, present, forwards: true, null);
+        var later = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string candidate in reached)
         {
-            alongside = Reachable(campaign, stepsOf, present, forwards: false, kept);
-            var later = alongside.Where(n => !n.Equals(campaign, StringComparison.OrdinalIgnoreCase)
-                                             && continuedBy(n) is { } earlier && alongside.Contains(earlier)
-                                             && Reachable(campaign, stepsOf, present, forwards: false, new HashSet<string>(kept, StringComparer.OrdinalIgnoreCase) { n }).Contains(earlier))
-                .ToList();
-            if (later.Count == 0)
-                break;
-            kept.UnionWith(later);
+            if (candidate.Equals(campaign, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var past = PastOf(candidate, continuedBy);
+            if (past.Count == 0)
+                continue;
+            // The candidate's past, reached without it: a campaign of this one's time that the candidate comes after.
+            var without = Reachable(campaign, stepsOf, present, forwards: false, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { candidate });
+            if (past.Any(without.Contains))
+                later.Add(candidate);
         }
-        var after = Reachable(campaign, stepsOf, present, forwards: true, null);
-        after.ExceptWith(alongside);
-        return after;
+        reached.ExceptWith(Reachable(campaign, stepsOf, present, forwards: false, later));
+        return reached;
+    }
+
+    /// <summary>
+    /// The campaigns a campaign's chain of Continues lines leads back to, nearest first, each once: the one it continues,
+    /// the one that continues, and so on, stopping at a loop or a campaign with no Continues line.
+    /// </summary>
+    /// <param name="campaign">The campaign.</param>
+    /// <param name="continuedBy">The campaign a campaign's own link lines say it continues, or null.</param>
+    static List<string> PastOf(string campaign, Func<string, string?> continuedBy)
+    {
+        var past = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { campaign };
+        for (string? earlier = continuedBy(campaign); earlier is not null && seen.Add(earlier); earlier = continuedBy(earlier))
+            past.Add(earlier);
+        return past;
     }
 
     /// <summary>

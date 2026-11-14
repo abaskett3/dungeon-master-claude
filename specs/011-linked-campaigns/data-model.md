@@ -31,7 +31,7 @@ Read as R3 says. A campaign with no Continuity section is read through its `- **
 | State | `open` or `closed` (`ClosedCampaign.IsClosed`). |
 | Folder present | False for a link to a missing folder. |
 | Digest held | The campaign in the set nearer to the start that holds `digests/<this>/` with a `.md` file in it other than `index.md` and `spine.md`, if any (R4's last-resort rule). |
-| After | True when it comes after the start's story: its Continues (or old Predecessor) line names the start or a campaign alongside the start, however else it is linked, or the start reaches it only through such a campaign. Its legacy is never named to the start (FR-026, issue #202). |
+| After | True when it comes after the start's story: its chain of Continues (or old Predecessor) lines leads back to the start or a campaign alongside the start, however else it is linked, or the start reaches it only through such a campaign. Its legacy is never named to the start (FR-026, issue #202). |
 | Before | True when the start comes after its story, the same rule from it. It is no reader on the start's `legacy due:` line. |
 
 Validation (notices, FR-004): a missing folder with no digest held, a value that is not a plain name, a link to

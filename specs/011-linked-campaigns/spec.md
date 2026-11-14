@@ -496,7 +496,7 @@ Recall the inn in the sequel: the canon line (or its digest copy) ranks above th
   was written in a later session of that campaign than the one this campaign last folded in, or that this campaign has
   never folded in, and nothing when there is none. It names none whose digest a campaign nearer this one holds (this
   one included), since the digest carries what its legacy says, and none that comes after this one's story: a
-  campaign whose Continues line (or old Predecessor line) names this one or a campaign played alongside it, however
+  campaign whose chain of Continues lines (or old Predecessor lines) leads back to this one or a campaign played alongside it, however
   else it is linked, or one reached only through such a campaign: its sequel and beyond, and for a side campaign the
   sequel of the campaign it is played alongside.
   In the same way, no campaign is a reader of the legacy of one that comes after its story. A side or shared-world

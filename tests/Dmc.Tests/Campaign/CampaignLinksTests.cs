@@ -572,6 +572,26 @@ public sealed class CampaignLinksTests
     }
 
     /// <summary>
+    /// A sequel's sequel comes after the story too, however else it is linked: from a side campaign of the first
+    /// campaign, a grand-sequel that shares a world with it is still after its story, and it is no reader of the
+    /// grand-sequel's legacy (PR #204's fourth review).
+    /// </summary>
+    [TestMethod]
+    public void ASequelsSequelComesAfterTheStoryHoweverItIsLinked()
+    {
+        Campaign("a", Continuity());
+        Campaign("y", Continuity(side: "a"));
+        Campaign("b", Continuity("a"));
+        Campaign("c", Continuity("b", shares: "y"));
+        Legacy("c", "session 9, 2026-11-14");
+        var set = Build("y");
+        Assert.IsTrue(set.Member("b")!.After);
+        Assert.IsTrue(set.Member("c")!.After);
+        Assert.IsFalse(Reads(LegacyLines("y"), "c"));
+        Assert.IsTrue(Build("c").Member("y")!.Before);
+    }
+
+    /// <summary>
     /// Two campaigns that name each other on Continues lines (a slip) each come after the other, so no legacy flows between
     /// them: the documented limit of the rule (.docs/decisions.md).
     /// </summary>

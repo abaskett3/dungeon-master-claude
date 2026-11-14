@@ -638,7 +638,7 @@ This log is for contributors who want to know why the toolkit is the way it is b
 ## A legacy never flows back against the story (issue #202)
 
 - **Date:** 2026-11-14
-- **Decision:** A campaign comes after another's story when its Continues line (or old Predecessor line) names the other or a campaign played alongside the other, however else it is linked, or when it is reached only through such a campaign. That is a sequel and what lies beyond it, and, for a side campaign, the sequel of the campaign it is played alongside. `dmc size --check` never prints a `legacy:` line from a campaign that comes after this one's story, and never counts a campaign this one comes after as a reader on this one's `legacy due:` line. Side and shared-world campaigns played alongside flow both ways, and the close goes on folding their legacies as T099 has it.
+- **Decision:** A campaign comes after another's story when its chain of Continues lines (or old Predecessor lines) leads back to the other or a campaign played alongside the other, however else it is linked, or when it is reached only through such a campaign. That is a sequel and what lies beyond it, and, for a side campaign, the sequel of the campaign it is played alongside. `dmc size --check` never prints a `legacy:` line from a campaign that comes after this one's story, and never counts a campaign this one comes after as a reader on this one's `legacy due:` line. Side and shared-world campaigns played alongside flow both ways, and the close goes on folding their legacies as T099 has it.
 - **Reason:**
   - **The bug.** In spec 011 Phase 9, The Silver Egg was finished but not yet closed, so Rorn's Landing, its sequel, wrote a legacy for it. Closing The Silver Egg folded that legacy into its canon, under "After the story". The sequel's import copies the closed canon, so Rorn's Landing's own events would have come back into its digest as The Silver Egg's. This time the import dropped them by hand.
   - **Why that is the line.** A sequel's world changes come after the earlier campaign's story, and so do those of a campaign reached only through the sequel, such as its own side campaign.
@@ -647,9 +647,10 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:**
   - Leaving out only members labelled `sequel`. This was PR #204's first version: a sequel reached by a world link, and a side campaign of the sequel, still flowed back. The open predecessor also stayed a reader that never folds, so the sequel's legacy never dropped a line.
   - Counting only the start's own sequels and what lies beyond them. This was PR #204's third version: from a side campaign played alongside the earlier campaign, the sequel did not count as after its story, so the sequel's legacy could still fold into it and reach that side campaign's own sequel.
+  - Stopping at the campaign a candidate continues directly. This was PR #204's fourth version: the fourth review found that a sequel's sequel, linked by a shared world to a side campaign of the first campaign, still counted as alongside it.
   - Treating any campaign a sequel continues as finished, so that it folds and reads nothing, with a close that folds nothing. This was PR #204's second version. The second review found it cut off side campaigns played alongside, both in a predecessor the player kept open (migration 005 allows that after a warning) and at the close, whose fold is how those changes reach the sequel's digest.
   - A `dmc size` flag for the close.
 - **Limits:** The rule looks only at links.
   - A side campaign linked only to the sequel counts as after the earlier campaign's story, even if it was played alongside.
   - A campaign that continues one alongside X comes after X, however else it is linked. So two campaigns that name each other on Continues lines (a slip) each come after the other, and no legacy flows between them.
-- **Source:** Issue #202; `specs/011-linked-campaigns/` (FR-026, T104, T105); PR #204's three code reviews.
+- **Source:** Issue #202; `specs/011-linked-campaigns/` (FR-026, T104, T105); PR #204's four code reviews.

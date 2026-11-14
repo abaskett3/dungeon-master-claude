@@ -804,7 +804,7 @@ and `c`'s next full save folds the change into canon. Resume again, and nothing 
       - check it with `gh pr view <n> --json body`.
 - [X] T093 Run the code review once; show the fixes to the user and commit them on their approval; check the
       documents; wait for CI to pass, then ask the user to merge
-- [ ] T094 After each PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
+- [X] T094 After each PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
       its PR has merged (`.docs/development.md` § Spec-driven changes)
 
 ---

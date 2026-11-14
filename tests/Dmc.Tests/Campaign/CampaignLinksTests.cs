@@ -42,11 +42,14 @@ public sealed class CampaignLinksTests
     void Close(string campaign) =>
         ClosedCampaign.Write(Path.Combine(_root, "adventures", campaign), new DateTime(2026, 11, 11, 9, 0, 0, DateTimeKind.Utc), $"{campaign}_closed_20261111090000.zip");
 
-    /// <summary>Makes <c>digests/&lt;digested&gt;/</c> in a campaign, with an index.</summary>
+    /// <summary>Makes <c>digests/&lt;digested&gt;/</c> in a campaign, with an index and one file of copied lines.</summary>
     /// <param name="holder">The campaign that holds the digest.</param>
     /// <param name="digested">The campaign it digests.</param>
-    void Digest(string holder, string digested) =>
+    void Digest(string holder, string digested)
+    {
         Write(_root, $"adventures/{holder}/digests/{digested}/index.md", $"# Digest of {digested}\n\n- **Format**: 1\n");
+        Write(_root, $"adventures/{holder}/digests/{digested}/people.md", $"# People of {digested}\n");
+    }
 
     /// <summary>The linked set of a campaign.</summary>
     /// <param name="campaign">The campaign.</param>
@@ -392,6 +395,21 @@ public sealed class CampaignLinksTests
     {
         Campaign("c", Continuity("gone"));
         Directory.CreateDirectory(Path.Combine(_root, "adventures", "c", "digests", "gone"));
+        var set = Build("c");
+        Assert.IsNull(set.Members.Single().DigestHolder);
+        CollectionAssert.AreEqual(new[] { "c: Continues gone is not in adventures/" }, Notices(set));
+    }
+
+    /// <summary>
+    /// A digest folder with only the index and spine <c>--start</c> writes holds no digest yet: no line has been copied
+    /// into it, so the digested campaign is not yet the last resort (spec 011 T103, the code review of PR #203).
+    /// </summary>
+    [TestMethod]
+    public void ADigestFolderWithOnlyItsIndexAndSpineHoldsNoDigest()
+    {
+        Campaign("c", Continuity("gone"));
+        Write(_root, "adventures/c/digests/gone/index.md", "# Digest of gone\n\n- **Format**: 1\n");
+        Write(_root, "adventures/c/digests/gone/spine.md", "# Spine of gone\n");
         var set = Build("c");
         Assert.IsNull(set.Members.Single().DigestHolder);
         CollectionAssert.AreEqual(new[] { "c: Continues gone is not in adventures/" }, Notices(set));

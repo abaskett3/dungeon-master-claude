@@ -21,7 +21,7 @@ notice: rorns-landing: Shares a world with old-west is not in adventures/
 ```
 
 - `<campaign> <label> <distance> <open|closed|missing>[ digest]`: `missing` when its folder is not in `adventures/`;
-  `digest` when a campaign nearer the start holds its digest (a `digests/<campaign>/` folder with a `.md` file in it).
+  `digest` when a campaign nearer the start holds its digest (a `digests/<campaign>/` folder with a `.md` file in it other than `index.md` and `spine.md`).
 
 The link lines are read outside fenced code blocks and HTML comments, a comment over several lines included, the same
 way for `dmc` and the migration check `continuity-section`.

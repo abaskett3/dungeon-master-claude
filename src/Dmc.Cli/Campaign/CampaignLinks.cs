@@ -511,15 +511,17 @@ internal static partial class CampaignLinks
     static bool IsPlainName(string name) => name.IndexOfAny(['/', '\\', ':']) < 0 && !name.StartsWith('.');
 
     /// <summary>
-    /// True when a digest folder holds a digest: it exists and has at least one <c>.md</c> file, so an empty folder
-    /// stands in for nothing. A folder that cannot be listed holds none.
+    /// True when a digest folder holds a digest: it exists and has at least one file of copied lines
+    /// (<see cref="SequelDigest.IsFactFile"/>), so an empty folder, or one with only the index and spine that
+    /// <c>--start</c> writes, stands in for nothing. A folder that cannot be listed holds none.
     /// </summary>
     /// <param name="folder">The digest's folder, <c>&lt;campaign&gt;/digests/&lt;name&gt;</c>.</param>
     static bool HoldsDigest(string folder)
     {
         try
         {
-            return Directory.Exists(folder) && Directory.EnumerateFiles(folder, "*.md").Any();
+            return Directory.Exists(folder)
+                && Directory.EnumerateFiles(folder, "*.md").Any(f => SequelDigest.IsFactFile(Path.GetFileName(f)));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

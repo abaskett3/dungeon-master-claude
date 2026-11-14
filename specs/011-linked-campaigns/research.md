@@ -68,8 +68,12 @@ code and the prompts. The spec's own clarifications are not repeated here.
 
   `digests/*/secrets.md` lines are DM-only (`LineUnits`' DM-file test gains the path), and so are the lines under a
   digest's `## Module` heading, which copies the DM-only `module-progress.md`. `digests/*/index.md` is not searched:
-  it holds no facts, and its Carried line would rank at the archive's weight. A campaign holds a digest once
-  `digests/<name>/` has a `.md` file in it; an empty folder stands in for nothing.
+  it holds no facts, and its Carried line would rank at the archive's weight. `digests/*/spine.md` is searched at
+  the weight of the session logs it copies, a last resort's (1.00 × 0.85 × the digest's distance factor; T103): it is
+  the only place recall finds a scene's title, since headings are never units, and at the digest's weight its short
+  lines crowded a fact out of the output on the maintainer's play folder (the lease question of T077: 27 of 30 named at
+  1.14, 28 at 0.81). A campaign holds a digest once `digests/<name>/` has a `.md` file other than the index and the
+  spine (`SequelDigest.IsFactFile`); an empty folder, or one `--start` has just written, stands in for nothing.
 - **Rationale:** FR-017 needs a digest line to beat the same or a weaker line from the digested campaign's folder at
   equal relevance, while the sequel's own canon still wins over both. The factor keeps the folder searchable as the
   last resort (the issue's step 5) rather than dropping it. Using the archive's weight places the digest where its

@@ -6,7 +6,7 @@ here is unchanged (the 6,000-byte cap, the trim, the notices' cap, the exit code
 ## Scope
 
 The campaign; every campaign of its linked set ([campaign-links.md](campaign-links.md)); every `digests/<name>/` in any
-of them, except its `index.md` (no facts); every module any of them names, once, at the smallest distance. Excluded as
+of them, except its `index.md` (no facts), its `spine.md` at the weight below; every module any of them names, once, at the smallest distance. Excluded as
 today: `import/`, `exports/`, `backups/`, dot folders, a module's `source/`.
 
 ## Weights
@@ -16,6 +16,7 @@ today: `import/`, `exports/`, `backups/`, dot folders, a module's `source/`.
 | A campaign's own files | Tier weight (canon 1.30, archive 1.20, sheet 1.15, story 1.05, session 1.00) × 0.95^distance |
 | The same, for a last-resort campaign (its digest is held nearer the start) | × 0.85 more |
 | `digests/<name>/*.md` | 1.20 × 0.95^(distance of `<name>`, or the holder's distance + 1 if `<name>` is not in the set) |
+| `digests/<name>/spine.md` | 1.00 × 0.85 × the same distance factor: the session logs it copies, as a last resort's (T103) |
 | A module | 0.80 × 0.95^distance |
 
 Ties break as today: score at two decimals, then tier (Digest sorts between Canon and Archive), distance, place, file,

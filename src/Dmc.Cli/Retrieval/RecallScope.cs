@@ -46,8 +46,8 @@ internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double
 /// <summary>
 /// What recall searches (research R1, R6, R11; spec 011 R4): the campaign; every campaign of its linked set
 /// (<see cref="CampaignLinks"/>) whose folder is there; the digests any of them hold, except each digest's
-/// <c>index.md</c>; and each module any of them names, once. Builds the list of files with their weights, and the
-/// notices for what could not be searched.
+/// <c>index.md</c>, with each digest's <c>spine.md</c> at the weight of the session logs it copies; and each module any
+/// of them names, once. Builds the list of files with their weights, and the notices for what could not be searched.
 /// </summary>
 internal static class RecallScope
 {
@@ -120,16 +120,23 @@ internal static class RecallScope
                 var tier = TierOf(relative);
                 int distance = place.Distance;
                 string? digestLink = null;
+                double weight = WeightOf(tier);
                 if (tier == Tier.Digest)
                 {
                     string[] parts = relative.Split('/');
+                    bool top = parts.Length == 3;
                     // A digest's index.md holds its format, backup, chain and file list: no fact to recall.
-                    if (parts.Length == 3 && parts[2].Equals("index.md", StringComparison.OrdinalIgnoreCase))
+                    if (top && parts[2].Equals(SequelDigest.IndexFile, StringComparison.OrdinalIgnoreCase))
                         continue;
                     distance = set.DigestDistance(parts[1], place.Distance);
                     digestLink = set.DigestLabel(parts[1], place.Link);
+                    // Its spine.md copies the digested campaign's scene headings, which recall finds nowhere else
+                    // (LineUnits skips headings), so it is searched at the weight of the logs it comes from, a last
+                    // resort's: at the digest's weight its short lines crowded facts out of the output (spec 011 T103).
+                    if (top && parts[2].Equals(SequelDigest.SpineFile, StringComparison.OrdinalIgnoreCase))
+                        weight = SessionWeight * LastResortFactor;
                 }
-                files.Add(new ScopeFile(place, relative, tier, WeightOf(tier) * Math.Pow(StepFactor, distance) * factor, digestLink));
+                files.Add(new ScopeFile(place, relative, tier, weight * Math.Pow(StepFactor, distance) * factor, digestLink));
             }
         }
         return files;

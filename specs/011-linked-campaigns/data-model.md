@@ -30,7 +30,7 @@ Read as R3 says. A campaign with no Continuity section is read through its `- **
 | Label | `continues`, `sequel`, `side` or `world` (R2). |
 | State | `open` or `closed` (`ClosedCampaign.IsClosed`). |
 | Folder present | False for a link to a missing folder. |
-| Digest held | The campaign in the set nearer to the start that holds `digests/<this>/` with a `.md` file in it, if any (R4's last-resort rule). |
+| Digest held | The campaign in the set nearer to the start that holds `digests/<this>/` with a `.md` file in it other than `index.md` and `spine.md`, if any (R4's last-resort rule). |
 
 Validation (notices, FR-004): a missing folder with no digest held, a value that is not a plain name, a link to
 itself, a second name for a single-valued line (on it or on a second line of that name). A notice remembers whether

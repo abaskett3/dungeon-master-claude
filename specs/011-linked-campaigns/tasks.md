@@ -668,10 +668,14 @@ sample test passes.
       - account with `--list`;
       - `--check` passes (SC-002);
       - run `--sample` with one fresh subagent: 0 misses (SC-003).
-- [ ] T077 [US4] Rerun `tools/recall-test.ps1` on the play folder (SC-004):
+- [X] T077 [US4] Rerun `tools/recall-test.ps1` on the play folder (SC-004):
       - at least 28 of 30 named and 23 of 30 indirect;
       - every fact held both in the digest and in The Silver Egg's folder is printed from the digest;
       - with the user's go-ahead, post the figures on issue #179.
+      Done on the build with T103: 28 of 30 named and 23 of 30 indirect. Identical lines print once, from the
+      digest. In 5 of 44 answers a different line of The Silver Egg's folder ranks above the digest's, and in one
+      ("It isn't a vote") the digest's long merged line falls out of the output; long-line ranking is left for
+      later BM25 tuning. Posted on issue #179.
 - [X] T103 [US4] Rank each digest's `spine.md` at the weight of the session logs it copies, a last resort's
       (1.00 × 0.85 × the digest's distance factor), in `src/Dmc.Cli/Retrieval/RecallScope.cs`, and count a digest as
       held only once it has a file other than the index and the spine (`SequelDigest.IsFactFile`, used by

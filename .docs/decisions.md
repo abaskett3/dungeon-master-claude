@@ -627,6 +627,17 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** The margin is narrow. At 0.95 the test misses the lease again.
 - **Source:** Issue #179; `specs/011-linked-campaigns/` (research R4, T103, T077); the code review of PR #203.
 
+## A sequel's import keeps its parts on Sonnet (issue #198)
+
+- **Date:** 2026-11-14
+- **Decision:** `dmc-new-campaign` § 1c is unchanged: the parts of a sequel's import run on the model the DM runs on, not on Haiku.
+- **Reason:** The Phase 9 import was rerun in a copy of Rorn's Landing with the DM on Sonnet at high effort and the 11 parts on Haiku at high effort.
+  - **Quality matched.** `dmc campaign sequel --check` passed after one fix round (one unaccounted line, one missing anchor): 1,509 units, 1,305 copied, 41 merged, 163 dropped, against Sonnet's 1,343, 9 and 157. The sample passed in round 1 with 0 misses, and the recall test gave 28 of 30 named and 23 of 30 indirect with the same misses. The DM filled a few lines the parts skipped.
+  - **It was slower.** 105 minutes from start to the passed sample, against Sonnet's 73. Haiku wrote 1.08M output tokens, 0.63M of them thinking, against Sonnet's 0.59M. The import is bound by how fast the model writes the lines it copies, so a smaller model that writes more does not make it faster. The run cost $7.99 at list price.
+- **Rejected:** Haiku for the parts; Haiku at a lower effort, which would write less but was not measured and would risk the accounting the run already needed a fix round for.
+- **Limits:** One run of each. The speed fix proposed in issue #198, `dmc` copying the lines and the model only placing them, is still open.
+- **Source:** Issue #198 (the comparison is posted there); spec 011 Phase 9 (T076, T077).
+
 ## Legacy files are a running list ordered by session numbers (issue #179, Phase B)
 
 - **Date:** 2026-11-13

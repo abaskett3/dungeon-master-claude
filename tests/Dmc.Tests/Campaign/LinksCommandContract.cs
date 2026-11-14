@@ -69,6 +69,7 @@ public abstract class LinksCommandContract
         MakeCampaign("side-quest", side: "rorn");
         ClosedCampaign.Write(Path.Combine(_root, "adventures", "egg"), new DateTime(2026, 11, 11, 9, 0, 0, DateTimeKind.Utc), "egg_closed_20261111090000.zip");
         Write(_root, "adventures/rorn/digests/egg/index.md", "# Digest of egg\n");
+        Write(_root, "adventures/rorn/digests/egg/people.md", "# People of egg\n");
         Write(_root, "adventures/egg/module-progress.md", "# Module progress\n\n- **Module folder**: `modules/moon/`\n");
         Write(_root, "modules/moon/index.md", "# Moon\n");
         Arranged();

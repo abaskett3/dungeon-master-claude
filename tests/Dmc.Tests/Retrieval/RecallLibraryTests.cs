@@ -407,15 +407,32 @@ public sealed class RecallLinkedSetTests
     }
 
     /// <summary>
-    /// A digest's <c>spine.md</c> holds only scene headings, which the digested campaign's logs hold too, and is not
-    /// searched: on the maintainer's play folder its short lines crowded a fact out of the output (spec 011 T077).
+    /// A digest's <c>spine.md</c> is the one place recall finds a scene's title (headings are never units), so it is
+    /// searched, but at the weight of the logs it copies: a short scene line ranks below a longer fact line from a
+    /// subject file that matches the same words (spec 011 T103).
     /// </summary>
     [TestMethod]
-    public void ADigestsSpineIsNotSearched()
+    public void ADigestsSpineIsSearchedBelowItsFacts()
     {
         Write(_root, $"adventures/{Last}/digests/{Middle}/spine.md",
-            $"# Spine of {Middle}\n\n## Session 9: The lantern fair (session-009.md)\n\n- s9.1 The afternoon at the Quillfeather counter (the cartographer's shop)\n");
-        CollectionAssert.AreEqual(new[] { "nothing matched: Quillfeather counter cartographer" }, Run("Quillfeather counter cartographer"));
+            $"# Spine of {Middle}\n\n## Session 9: The lantern fair (session-009.md)\n\n- s9.1 The Quillfeather counter (the cartographer's shop)\n");
+        Write(_root, $"adventures/{Last}/digests/{Middle}/places-2.md",
+            $"# Places of {Middle}, part 2\n\n## The Quillfeather shop\n\n- **The lease** (s9): the Quillfeather counter is let to the cartographer for seven years by the Guild. (s9)\n");
+        var lines = Run("Quillfeather counter cartographer");
+        Assert.AreEqual(0, IndexOf(lines, $"{Last} digests/{Middle}/places-2.md:5 (continues)"), Show(lines));
+        Assert.AreEqual(1, IndexOf(lines, $"{Last} digests/{Middle}/spine.md:5 (continues)"), Show(lines));
+    }
+
+    /// <summary>A spine line takes the weight of the digested campaign's own session log, a last resort's, not the digest's.</summary>
+    [TestMethod]
+    public void ADigestsSpineTakesTheWeightOfTheLogsItCopies()
+    {
+        Write(_root, $"adventures/{Last}/digests/{Middle}/spine.md", $"# Spine of {Middle}\n");
+        var files = RecallScope.Build(_root, Last, []);
+        var world = files.Single(f => f.Relative == $"digests/{Middle}/world.md");
+        var spine = files.Single(f => f.Relative == $"digests/{Middle}/spine.md");
+        // The digest's 1.20 and the spine's 1.00 × 0.85 share the same distance factor.
+        Assert.AreEqual(world.Weight / 1.20 * 1.00 * 0.85, spine.Weight, 1e-9);
     }
 
     /// <summary>

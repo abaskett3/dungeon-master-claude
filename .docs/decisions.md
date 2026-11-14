@@ -610,13 +610,22 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** The import is still slow: 59 minutes and 41.4M tokens for the digest alone, because the model retypes every line it copies. The fix for that changes `dmc` and is proposed in issue #198.
 - **Source:** Issue #179; spec 011 Phase 9 (T076/T077); issue #198.
 
-## Recall leaves a digest's scene spine out (issue #179, Phase B)
+## Recall ranks a digest's scene spine at the weight of the logs it copies (issue #179, Phase B)
 
-- **Date:** 2026-11-13
-- **Decision:** `dmc recall` searches a digest's files except `index.md` and `spine.md`. `dmc lookup` still finds the spine's headings, and the digest's import still writes and checks it.
-- **Reason:** Phase 9's recall test on the maintainer's play folder (T077), with The Silver Egg digested into Rorn's Landing, gave 27 of 30 named answers against the 28 SC-004 asks. The spine's scene lines are short, name places such as "the Birch shop" in almost every line, and rank at the digest's weight, so they filled 8 of the 20 hits for "How long is the Birch shop's lease?" and pushed the answer out. Run on a copy without the spine, the test gave 28 of 30 named and 23 of 30 indirect; without the digest at all, 28 and 22. The spine holds no facts: its headings are in the digested campaign's session logs too, which recall still searches as the last resort.
-- **Rejected:** A lower weight for the spine (it would still take places in the output for no fact); leaving it and calling the shortfall noise (one question is the whole margin SC-004 allows).
-- **Source:** Issue #179; `specs/011-linked-campaigns/` (research R4, T103, T077).
+- **Date:** 2026-11-14
+- **Decision:** `dmc recall` ranks a digest's `spine.md` at 1.00 × 0.85 times the digest's distance factor. That is what a line of the digested campaign's own session log weighs as the last resort, not the 1.20 of the digest's other files. A digest folder counts as held only once it has a `.md` file other than `index.md` and `spine.md`, the two files `--start` writes. `SequelDigest.IsFactFile` is the one rule for this, and the accounting and the linked set both use it.
+- **Reason:**
+  - **The shortfall.** Phase 9's recall test on the maintainer's play folder (T077) gave 27 of 30 named answers, against the 28 that SC-004 asks for. The Silver Egg was digested into Rorn's Landing.
+  - **Why.** The spine's scene lines are short and name places such as "the Birch shop" in almost every line. At the digest's 1.14 they filled 8 of the 20 hits for "How long is the Birch shop's lease?", and the answer was pushed out.
+  - **Why the spine stays searched.** It is the only place recall finds a scene's title: heading lines are never units, so a session log's `### Scene M:` titles are not searched. It is also the only one when the digested campaign's folder is not on the machine.
+  - **The figures.** On the play folder: 28 of 30 named and 23 of 30 indirect at 0.81 or 0.67; 27 and 23 at 0.95 and at 1.14. Leaving the spine out also gave 28 and 23.
+  - **Why the held rule changed.** A folder holding only the index and the spine had already made the digested campaign the last resort, and stopped its legacy being named, though no line had been copied yet. A real import is about an hour of parts.
+- **Rejected:**
+  - Leaving the spine out of recall. This was the first version of PR #203, and its code review found it would leave scene titles unrecallable.
+  - Leaving the weight as it was. One question is the whole margin SC-004 allows.
+  - Tuning BM25's length normalisation for every file. It changes every campaign's ranking and needs its own spec.
+- **Limits:** The margin is narrow. At 0.95 the test misses the lease again.
+- **Source:** Issue #179; `specs/011-linked-campaigns/` (research R4, T103, T077); the code review of PR #203.
 
 ## Legacy files are a running list ordered by session numbers (issue #179, Phase B)
 

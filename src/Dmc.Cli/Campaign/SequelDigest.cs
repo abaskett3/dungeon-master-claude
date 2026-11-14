@@ -322,10 +322,20 @@ internal static partial class SequelDigest
     public static List<(string Name, string Text)> DigestFiles(string digestFolder) =>
         Directory.Exists(digestFolder)
             ? [.. new DirectoryInfo(digestFolder).EnumerateFiles("*.md")
-                .Where(f => f.Name is not (IndexFile or SpineFile))
+                .Where(f => IsFactFile(f.Name))
                 .OrderBy(f => f.Name, StringComparer.Ordinal)
                 .Select(f => (f.Name, Text(File.ReadAllBytes(f.FullName))))]
             : [];
+
+    /// <summary>
+    /// True for a digest file that holds copied lines: any <c>.md</c> file but the index and the spine, which
+    /// <c>--start</c> writes. A digest folder holds a digest once it has one (<see cref="CampaignLinks"/>).
+    /// </summary>
+    /// <param name="name">The file's name.</param>
+    public static bool IsFactFile(string name) =>
+        name.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+        && !name.Equals(IndexFile, StringComparison.OrdinalIgnoreCase)
+        && !name.Equals(SpineFile, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>True for a digest file of one of the subject kinds (<see cref="Kinds"/>), parts included.</summary>
     /// <param name="name">The file's name.</param>

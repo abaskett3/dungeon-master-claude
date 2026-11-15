@@ -178,3 +178,6 @@ the four rested on a wrong premise.
 SC-002 after the second round: 4 of 5 with the first round's message 13 (9′, 10′, 11′ and the attack on Rorn; 10′
 only by implication), 0 of 5 saying the story does not allow it, no die changed, and no reply saying "no, but". Not
 met: 12′ answered with a hook instead of a way forward.
+
+The maintainer accepted 4 of 5 on 2026-11-15, with the wording as it stands (the byte allowance is spent); whether
+"no, but" offers a way forward in real play is left to the after-release review (SC-005).

@@ -11,11 +11,11 @@ DMC's private plans. Nothing here is true in the game until it appears in play; 
 ## Arc plan
 
 <!--
-The current arc of a homebrew campaign, or the stretch after a module ends. Plan it when one starts; the full save checks it. A plan, not a script: change it when the player surprises you.
+The current arc of a homebrew campaign, or the stretch after a module ends; in a module campaign, only Character arcs until then. Plan it when one starts; the full save checks it. A plan, not a script: change it when the player surprises you.
 
 - Shape: the stages (for example exposition, rising action, climax, falling action, resolution), each with what changes in the story.
 - Mix: for each stage, the fights, exploration, puzzles and roleplay it holds. A stage of talk alone is not a stage.
-- Character arcs: for the PC and each companion, what they want or must face in this arc, and a moment that tests it.
+- Character arcs: for the PC and each companion, what they want or must face in this arc, how the main plot meets it, and a moment that tests it.
 - Side quests: two or three short ones tied to the main story, with a reward.
 - The party's gaps: what it cannot do (no healing, no answer to magic) and how the story offers it (an ally, items, a trainer, a place to buy), or which threats are chosen so it need not.
 - Progression: under milestone leveling, the level each milestone gives and where it falls; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.

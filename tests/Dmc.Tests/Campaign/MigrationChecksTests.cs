@@ -212,4 +212,72 @@ public sealed class MigrationChecksTests
     [TestMethod]
     public void AnUnknownCheckIsAnError() =>
         Assert.ThrowsExactly<DmcException>(() => Run("no-such-check"));
+
+    // ---------- companions-have-play-card and people-entries-named (spec 013, migration 006) ----------
+
+    /// <summary>A game state whose Party status has the PC, two companions, a block with no sheet and the not-companions block.</summary>
+    const string PartyState = "# Game state\n\n## Party status\n\n### Wren\n\n- **HP**: 9\n\n### Mara Quill\n\n- **HP**: 9\n\n### Vex\n\n- **HP**: 9\n\n"
+        + "### The chest (s4.2)\n\n- locked\n\n### With the party, not companions\n\n- Tobin\n\n## Pending\n\n- none\n";
+
+    /// <summary>A companion's sheet, with or without a play card as its first section.</summary>
+    static string Companion(string name, bool card) =>
+        $"# {name}\n\n- **Status**: alive\n\n" + (card ? "## Play card\n\n- **Who**: x\n\n" : "") + "## Playing them\n\n- **Voice**: y\n\n## History\n\n- s1\n";
+
+    [TestMethod]
+    public void CompanionsWithAPlayCardFirstPassAndThePcAndABlockWithNoSheetAreNotChecked() =>
+        Assert.IsEmpty(Run("companions-have-play-card", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/pc-wren.md"] = "# Wren\n\n## Combat\n\n## History\n",
+            ["character-sheets/npc-mara.md"] = Companion("Mara Quill", card: true),
+            ["character-sheets/npc-vex.md"] = Companion("Vex", card: true),
+            ["character-sheets/npc-tobin.md"] = Companion("Tobin", card: false),
+        }));
+
+    [TestMethod]
+    public void ACompanionWithNoPlayCardOrOneNotFirstFails()
+    {
+        string late = "# Vex\n\n## Playing them\n\n- y\n\n## Play card\n\n- x\n";
+        CollectionAssert.AreEqual(new[]
+        {
+            "companions-have-play-card: character-sheets/npc-mara.md: the companion Mara Quill has no ## Play card as the sheet's first section",
+            "companions-have-play-card: character-sheets/npc-vex.md: the companion Vex has no ## Play card as the sheet's first section",
+        }, Run("companions-have-play-card", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/npc-mara.md"] = Companion("Mara Quill", card: false),
+            ["character-sheets/npc-vex.md"] = late,
+        }));
+    }
+
+    /// <summary>The check finds companions in the same sheets <c>dmc size</c> does, so a sheet not named npc- is still checked.</summary>
+    [TestMethod]
+    public void ACompanionSheetNotNamedNpcIsCheckedAsDmcSizeFindsIt() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "companions-have-play-card: character-sheets/mara.md: the companion Mara Quill has no ## Play card as the sheet's first section",
+        }, Run("companions-have-play-card", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/mara.md"] = Companion("Mara Quill", card: false),
+            ["character-sheets/npc-vex.md"] = Companion("Vex", card: true),
+        }));
+
+    /// <summary>An indented line under People is a detail of the entry above it, not an entry with no bold name.</summary>
+    [TestMethod]
+    public void AnIndentedPeopleLineIsNotAnEntry() =>
+        Assert.IsEmpty(Run("people-entries-named", now: new()
+        {
+            ["story/canon.md"] = "# Canon\n\n## People\n\n- **Oswin Reed**: the ferry (s3).\n  - lives by the mill (s4).\n",
+        }));
+
+    [TestMethod]
+    public void PeopleEntriesThatStartWithABoldNamePassAndOthersFail()
+    {
+        string canon = "# Canon\n\n## People\n\n<!-- Who exists. -->\n\n- **Oswin Reed** (also: the ferryman): the ferry (s3).\n"
+            + "- Brenna runs the mill (s1).\n\n## Places\n\n- the mill on the hill (s1).\n";
+        CollectionAssert.AreEqual(new[] { "people-entries-named: story/canon.md People: an entry with no bold name first: - Brenna runs the mill (s1)." },
+            Run("people-entries-named", now: new() { ["story/canon.md"] = canon }), "Places is not checked");
+        Assert.IsEmpty(Run("people-entries-named", now: new() { ["story/canon.md"] = "# Canon\n\n## Rulings\n" }), "no People section");
+    }
 }

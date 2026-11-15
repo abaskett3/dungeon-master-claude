@@ -30,7 +30,28 @@ internal static class Budgets
     /// <summary>The part of any other sheet the resume reads (down to its history); companions measured 1.8k to 3.5k.</summary>
     public const int OtherSheet = 4000;
 
-    /// <summary>The resume reads <c>story/canon.md</c> whole below this size, and only its always-read sections at or above it. High enough that a long campaign's canon of live facts stays read whole (it replaced "about 230 lines").</summary>
+    /// <summary>
+    /// The part of a companion's sheet the resume reads when the sheet has a play card: from the top through the card
+    /// (spec 013 FR-003, research R1). A card holds what a scene and a fight need; a hand estimate of one measured 500 to
+    /// 600, so 1k leaves room and saves about 11k on four companions measured at 15.5k down to their histories.
+    /// </summary>
+    public const int PlayCard = 1000;
+
+    /// <summary>
+    /// Canon under this size is read whole at resume; at or over it, the resume reads its always-read sections and the
+    /// scene's best matches (<c>dmc recall --scene</c>, spec 013 FR-007, research R3). At about this size the always-read
+    /// sections and the cut cost what reading the whole file does.
+    /// </summary>
+    public const int CanonWholeBelow = 6000;
+
+    /// <summary>
+    /// The most bytes <c>dmc recall --scene</c> prints: about 3,000 estimated tokens of canon lines ranked for the scene,
+    /// the cut the user chose in spec 013's clarification (about 10k saved on Rorn's Landing's 13k outside the always-read
+    /// sections).
+    /// </summary>
+    public const int SceneReadBytes = 12000;
+
+    /// <summary>A full save archives canon over this size (it replaced "about 230 lines"). Since spec 013 it no longer decides how the resume reads canon (<see cref="CanonWholeBelow"/> does).</summary>
     public const int CanonLimit = 19000;
 
     /// <summary>A full save that finds canon over <see cref="CanonLimit"/> archives it down below this, so the next session's additions do not push it straight back over (it replaced "about 200 lines").</summary>
@@ -75,6 +96,7 @@ internal static class Budgets
         BudgetKind.PcSheet => PcSheet,
         BudgetKind.OtherSheet => OtherSheet,
         BudgetKind.Legacy => Legacy,
+        BudgetKind.PlayCard => PlayCard,
         _ => null,
     };
 }
@@ -99,6 +121,9 @@ internal enum BudgetKind
 
     /// <summary><see cref="Budgets.OtherSheet"/>.</summary>
     OtherSheet,
+
+    /// <summary><see cref="Budgets.PlayCard"/>: a companion's sheet read through its play card.</summary>
+    PlayCard,
 
     /// <summary><see cref="Budgets.Legacy"/>: a file other campaigns read, outside this campaign's resume total.</summary>
     Legacy,

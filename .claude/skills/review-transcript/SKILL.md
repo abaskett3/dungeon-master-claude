@@ -110,3 +110,29 @@ Group the context and token numbers in one entry per cause, with a small table. 
 Then give the user a short report: the verdict on how the sessions went, the entries created and extended (file names, one line each), the player preferences you noticed, and what you did not read.
 
 Acting on the entries, which means finding the cause in the prompts, proposing changes and making them, is `review-feedback`.
+
+## 7. The slip tally (issue #179's gate)
+
+When the user asks for the gate, or the review covers sessions played after Phase D (spec 013), also count the slips.
+`specs/013-slimmer-resume/spec.md` FR-020 to FR-027 is the rule; this is the procedure.
+
+1. **The sessions.** The after set is the first 3 qualifying sessions after the campaign passed migration 006: each
+   starts with a resume, has at least 10 player messages, and is mostly play (not an import, sheet building, a backup
+   or a migration). One session is one `story/sessions/session-NNN.md`.
+2. **What counts.** A slip is a statement DMC made in play that contradicted the files, or showed it did not know a
+   fact they held. Count the slips the files record: each `Slip:` line in the session logs, and any older wording
+   ("DMC's slip", "corrected", "wrongly"). Check each against the transcript (`<id>-transcript.md`) for what happened.
+   Not slips: the player's taste, a fact the files never held, a slip corrected within the same reply, and conduct
+   that is not about a recorded fact (acting early, rolling a die the player rolls).
+3. **Its category.** **canon** when the fact was in `canon.md` or its archive outside the always-read sections;
+   **companion** when it was on a companion's sheet; **hook** when a line the prompt hook printed was wrong, out of
+   date or misled DMC; **other** for the rest. A slip the transcript shows that the files never recorded is listed but
+   not counted, since the baseline could not count such slips.
+4. **The comparison.** The baseline is `specs/013-slimmer-resume/baseline.md`. A category has risen when its average
+   per session in the after set is higher than the baseline's (canon 0.04, companion 0.04, hook 0). Report Rorn's
+   Landing's own average beside the combined one.
+5. **The result.** A table of category, slips and sessions on each side, and the averages; then, for each category
+   that rose, its rollback: canon, the resume reads canon as before spec 013; companion, the resume reads companions
+   down to their history again (the cards stay); hook, the hook stops printing canon lines. None needs a migration.
+   Give the table to the user for issue #179, `.docs/decisions.md` and `.docs/roadmap.md`; the PR that records it says
+   `Closes #179`, whether or not a part rolls back.

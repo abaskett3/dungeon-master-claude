@@ -19,12 +19,13 @@ public sealed class RecallCommand : ICommand
     public string Name => "recall";
 
     /// <inheritdoc />
-    public string Summary => "the lines that best match some words in a campaign and the campaigns linked to it: dmc recall [NAME] WORDS... [--folder PATH]";
+    public string Summary => "the lines that best match some words in a campaign and the campaigns linked to it, or canon's lines for the scene: dmc recall [NAME] WORDS... | --scene [--folder PATH]";
 
     /// <summary>The text <c>--help</c> prints.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
 usage: dmc recall [NAME] WORDS... [--folder PATH]
+       dmc recall [NAME] --scene [--folder PATH]
 
 Searches a campaign's files, the digests of closed campaigns it holds (digests/), every campaign linked to it through
 the Continuity sections of their player-options.md, and their modules, and prints the lines that best match the words,
@@ -37,13 +38,15 @@ backups/ are never searched. It changes nothing and stores nothing.
 
   NAME      a campaign folder in adventures/, when it names one and words follow (default: the active campaign)
   WORDS     what to search for
+  --scene   no words: the canon lines for the scene in game-state.md, outside canon's always-read sections, best
+            first, within about 3,000 estimated tokens; a small canon prints that it is to be read whole
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 
     /// <summary>Parses the arguments, finds the DMC folder and the campaign, recalls and prints.</summary>
     /// <param name="args">The arguments after <c>recall</c>.</param>
     /// <param name="io">Standard output gets the hits.</param>
-    /// <returns>0 for hits, for "nothing matched" or for <c>--help</c>. A usage mistake throws <see cref="DmcException"/> with exit code 2; every other failure exits 1.</returns>
+    /// <returns>0 for hits, for "nothing matched", for a scene read (spec 013) or for <c>--help</c>. A usage mistake throws <see cref="DmcException"/> with exit code 2; every other failure exits 1.</returns>
     public int Run(string[] args, Io io)
     {
         var request = RetrievalArguments.ParseRecall(args);
@@ -53,6 +56,13 @@ backups/ are never searched. It changes nothing and stores nothing.
             return 0;
         }
         string folder = DmcFolder.FromOption(request.Folder);
+        if (request.Scene)
+        {
+            string name = SizeReport.Target(folder, request.Words.Count == 1 ? request.Words[0] : null, Usage);
+            foreach (string line in SceneRead.Run(folder, name))
+                io.Out.WriteLine(line);
+            return 0;
+        }
         var (campaign, words) = Target(folder, request.Words);
         foreach (string line in Recall.Run(folder, campaign, string.Join(' ', words)))
             io.Out.WriteLine(line);

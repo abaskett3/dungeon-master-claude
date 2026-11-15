@@ -37,9 +37,16 @@ internal static partial class ReadSet
     /// <summary>The words in a canon section's comment that make it always read.</summary>
     internal const string AlwaysRead = "Always read";
 
+    /// <summary>The heading of a companion's play card, the first <c>## </c> section of the sheet (spec 013 research R1).</summary>
+    internal const string PlayCardHeading = "## Play card";
+
+    /// <summary>The option of <c>dmc recall</c> the resume runs for canon's scene matches (spec 013 research R3).</summary>
+    internal const string SceneOption = "--scene";
+
     /// <summary>Every marker above, which <c>dmc-resume-campaign</c> § 2 must contain (checked by <c>ToolkitTests</c>).</summary>
     internal static readonly string[] Markers =
-        [HistoryHeading, NotesHeading, HistoryWithThePcHeading, NotCompanions, ThroughScene, ScenePattern, Rulings, Prices, AlwaysRead];
+        [HistoryHeading, NotesHeading, HistoryWithThePcHeading, NotCompanions, ThroughScene, ScenePattern, Rulings, Prices, AlwaysRead,
+         PlayCardHeading, SceneOption];
 
     /// <summary>The history headings, without their <c>## </c>.</summary>
     static readonly string[] HistoryHeadings = [HistoryHeading[3..], NotesHeading[3..], HistoryWithThePcHeading[3..]];
@@ -96,6 +103,10 @@ internal static partial class ReadSet
         "duke", "duchess", "baron", "baroness", "count", "countess", "elder", "high", "priest", "priestess", "doctor",
     };
 
+    /// <summary>Whether a word is one of <see cref="CommonWords"/>, never matched alone as a name; the register (spec 013) uses the same list.</summary>
+    /// <param name="word">A word, compared ignoring case.</param>
+    internal static bool IsCommonNameWord(string word) => CommonWords.Contains(word);
+
     /// <summary>
     /// The read set of a campaign, in the resume's order: item 1 (both player-options files), 2 (<c>game-state.md</c>),
     /// 3 (<c>summary.md</c>), 4 (<c>dm-notes.md</c>), 5 (the sheets), 6 (the latest session log), 7 (canon) and 9 (the
@@ -123,7 +134,7 @@ internal static partial class ReadSet
         parts.Add(Whole(Path.Combine(root, "story", "dm-notes.md"), "story/dm-notes.md", BudgetKind.DmNotes));
         parts.AddRange(Sheets(root, gameState));
         parts.Add(SessionLog(root, gameState));
-        parts.Add(Canon(root));
+        parts.Add(Canon(dmcFolder, campaign, root));
         parts.AddRange(ModuleFiles(dmcFolder, root));
         return parts;
     }
@@ -188,28 +199,31 @@ internal static partial class ReadSet
         }
 
         var chosen = new List<Sheet>();
+        var companions = new HashSet<Sheet>();
         var parts = new List<Part>();
         foreach (var pc in sheets.Where(s => s.Pc))
             chosen.Add(pc);
 
         bool hasParty = Measurement.SectionLines(gameState, "Party status").Count > 0;
+        var titles = sheets.Select(s => s.Title).ToList();
         foreach (string block in CompanionBlocks(gameState))
         {
-            // The best match first: the same name, then the whole title within the block, then a distinctive word of it.
-            var match = sheets.FirstOrDefault(s => string.Equals(s.Title, block, StringComparison.OrdinalIgnoreCase))
-                        ?? sheets.FirstOrDefault(s => IsWholeWord(block, s.Title))
-                        ?? sheets.FirstOrDefault(s => Mentions(block, s.Title));
+            int index = MatchCompanion(block, titles);
+            var match = index >= 0 ? sheets[index] : null;
             if (match is null)
                 parts.Add(Part.Absent($"character-sheets: {block}", EntryState.NotFound, BudgetKind.OtherSheet, "not found"));
             else if (!chosen.Contains(match))
+            {
                 chosen.Add(match);
+                companions.Add(match);
+            }
         }
 
         string scene = PresentText(gameState);
         foreach (var npc in sheets.Where(s => !s.Pc && !chosen.Contains(s) && Mentions(scene, s.Title)))
             chosen.Add(npc);
 
-        var result = chosen.Select(SheetPart).ToList();
+        var result = chosen.Select(s => SheetPart(s, companions.Contains(s))).ToList();
         result.AddRange(parts);
         if (gameState.Count > 0 && (!hasParty || !gameState.Any(l => l.Text.Contains("**Present**", StringComparison.Ordinal))))
             result.Add(Part.Absent("character-sheets: companions and NPCs present", EntryState.NotFound, BudgetKind.None,
@@ -217,9 +231,41 @@ internal static partial class ReadSet
         return result;
     }
 
+    /// <summary>
+    /// The sheet a Party status block names, by its title: the same name, then the whole title within the block, then a
+    /// distinctive word of it as the block's first or last word (a trailing bracket left out); -1 for none. A word inside
+    /// the name does not count, so "The Kelderak treasure (s48.3)" names no Kelderak's sheet. Shared with migration 006's
+    /// <c>companions-have-play-card</c> check (spec 013), so the check and the resume agree on who is a companion.
+    /// </summary>
+    /// <param name="block">The block's heading text.</param>
+    /// <param name="titles">The sheets' titles, in file name order.</param>
+    internal static int MatchCompanion(string block, IReadOnlyList<string> titles)
+    {
+        for (int i = 0; i < titles.Count; i++)
+            if (string.Equals(titles[i], block, StringComparison.OrdinalIgnoreCase))
+                return i;
+        for (int i = 0; i < titles.Count; i++)
+            if (IsWholeWord(block, titles[i]))
+                return i;
+        string edges = EdgeWords(block);
+        for (int i = 0; i < titles.Count; i++)
+            if (Mentions(edges, titles[i]))
+                return i;
+        return -1;
+    }
+
+    /// <summary>A block name's first and last words, with a trailing bracket (<c>(s48.3)</c>) left out; the whole name when it is one word.</summary>
+    /// <param name="block">The block's heading text.</param>
+    static string EdgeWords(string block)
+    {
+        string name = Regex.Replace(block, @"\s*\([^)]*\)\s*$", "");
+        string[] words = name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        return words.Length <= 2 ? name : words[0] + " " + words[^1];
+    }
+
     /// <summary>The names of the <c>### </c> blocks under Party status, except <see cref="NotCompanions"/> and a placeholder in brackets.</summary>
     /// <param name="gameState">The lines of <c>game-state.md</c>.</param>
-    static IEnumerable<string> CompanionBlocks(IReadOnlyList<Line> gameState) =>
+    internal static IEnumerable<string> CompanionBlocks(IReadOnlyList<Line> gameState) =>
         OutsideComments(Measurement.SectionLines(gameState, "Party status"))
             .Where(t => t.StartsWith("### ", StringComparison.Ordinal))
             .Select(t => t[4..].Trim())
@@ -238,7 +284,7 @@ internal static partial class ReadSet
 
     /// <summary>The texts of the lines outside HTML comments (a comment may span lines); a comment within a line is removed.</summary>
     /// <param name="lines">Some lines.</param>
-    static IEnumerable<string> OutsideComments(IEnumerable<Line> lines)
+    internal static IEnumerable<string> OutsideComments(IEnumerable<Line> lines)
     {
         bool inComment = false;
         foreach (var line in lines)
@@ -293,11 +339,20 @@ internal static partial class ReadSet
     static bool IsWholeWord(string text, string word) =>
         word.Length > 0 && Regex.IsMatch(text, $@"(?<!\w){Regex.Escape(word)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    /// <summary>A sheet down to its history: the lines before its last <c>## </c> heading when that is a history heading; the whole sheet otherwise (history in the middle is read whole).</summary>
+    /// <summary>
+    /// A sheet as the resume reads it. A companion's with a <see cref="PlayCardHeading"/> section: from the top through
+    /// the card, against <see cref="Budgets.PlayCard"/> (spec 013 FR-004). Any other sheet, and a companion's with no
+    /// card (marked so the full save writes one): down to its history, the lines before its last <c>## </c> heading when
+    /// that is a history heading; the whole sheet otherwise (history in the middle is read whole).
+    /// </summary>
     /// <param name="sheet">The sheet, with its lines.</param>
-    static Part SheetPart(Sheet sheet)
+    /// <param name="companion">True when the sheet is a companion's (a block under Party status).</param>
+    static Part SheetPart(Sheet sheet, bool companion)
     {
         var lines = sheet.Lines;
+        if (companion && PlayCardEnd(lines) is { } cardEnd)
+            return new Part("character-sheets/" + sheet.File, PartKind.ToPlayCard, EntryState.Measured, BudgetKind.PlayCard,
+                lines.GetRange(0, cardEnd), "to its play card", lines);
         int last = -1;
         for (int i = 0; i < lines.Count; i++)
             if (Measurement.IsSectionHeading(lines[i].Text))
@@ -305,8 +360,30 @@ internal static partial class ReadSet
         string shown = "character-sheets/" + sheet.File;
         var budget = sheet.Pc ? BudgetKind.PcSheet : BudgetKind.OtherSheet;
         if (last >= 0 && HistoryHeadings.Contains(lines[last].Text[3..].Trim(), StringComparer.OrdinalIgnoreCase))
-            return new Part(shown, PartKind.ToHistory, EntryState.Measured, budget, lines.GetRange(0, last), "to its history", lines);
-        return new Part(shown, PartKind.Whole, EntryState.Measured, budget, lines, "whole (no history last)", lines);
+            return new Part(shown, PartKind.ToHistory, EntryState.Measured, budget, lines.GetRange(0, last), "to its history", lines,
+                NoPlayCard: companion);
+        return new Part(shown, PartKind.Whole, EntryState.Measured, budget, lines, "whole (no history last)", lines,
+            NoPlayCard: companion);
+    }
+
+    /// <summary>
+    /// Where the resume stops reading a sheet with a play card: the line of the next <c>## </c> heading after
+    /// <see cref="PlayCardHeading"/>, or the end of the sheet; null when the sheet has no card. The heading is matched
+    /// ignoring case and trailing spaces.
+    /// </summary>
+    /// <param name="lines">The sheet's lines.</param>
+    internal static int? PlayCardEnd(IReadOnlyList<Line> lines)
+    {
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (!lines[i].Text.TrimEnd().Equals(PlayCardHeading, StringComparison.OrdinalIgnoreCase))
+                continue;
+            for (int end = i + 1; end < lines.Count; end++)
+                if (Measurement.IsSectionHeading(lines[end].Text))
+                    return end;
+            return lines.Count;
+        }
+        return null;
     }
 
     // ---------- item 6: the session log ----------
@@ -364,11 +441,15 @@ internal static partial class ReadSet
     // ---------- item 7: canon ----------
 
     /// <summary>
-    /// Canon: whole while it is under <see cref="Budgets.CanonLimit"/>; at or over it, only its always-read sections
-    /// (<see cref="Rulings"/>, <see cref="Prices"/>, and any section whose first comment says <see cref="AlwaysRead"/>).
+    /// Canon (spec 013 FR-007 to FR-009): whole while it is under <see cref="Budgets.CanonWholeBelow"/>; at or over it,
+    /// its always-read sections (<see cref="Rulings"/>, <see cref="Prices"/>, and any section whose first comment says
+    /// <see cref="AlwaysRead"/>) and the bytes <c>dmc recall --scene</c> prints, which <see cref="Retrieval.SceneRead"/>
+    /// builds, so the measure is what the resume reads.
     /// </summary>
+    /// <param name="dmcFolder">The DMC folder.</param>
+    /// <param name="campaign">The campaign's folder name.</param>
     /// <param name="root">The campaign folder.</param>
-    static Part Canon(string root)
+    static Part Canon(string dmcFolder, string campaign, string root)
     {
         string path = Path.Combine(root, "story", "canon.md");
         const string shown = "story/canon.md";
@@ -376,17 +457,29 @@ internal static partial class ReadSet
             return Part.Absent(shown, EntryState.Missing, BudgetKind.Canon, "missing");
         var lines = Measurement.ReadLines(path);
         long tokens = lines.Sum(l => (long)l.Bytes) / 4;
-        if (tokens < Budgets.CanonLimit)
+        if (tokens < Budgets.CanonWholeBelow)
             return new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.Canon, lines, "read whole", lines);
-        return new Part(shown, PartKind.AlwaysReadSections, EntryState.Measured, BudgetKind.Canon, AlwaysReadSections(lines),
-            "read in sections", lines);
+        long scene = Retrieval.SceneRead.Run(dmcFolder, campaign).Sum(l => (long)Retrieval.Recall.Bytes(l));
+        return new Part(shown, PartKind.ByScene, EntryState.Measured, BudgetKind.Canon, AlwaysReadSections(lines),
+            "read in sections and by scene", lines, ExtraBytes: scene);
     }
 
     /// <summary>The lines of canon's always-read sections, in file order.</summary>
     /// <param name="lines">Every line of canon.</param>
     internal static List<Line> AlwaysReadSections(IReadOnlyList<Line> lines)
     {
-        var kept = new List<Line>();
+        var always = AlwaysReadMask(lines);
+        return lines.Where((_, i) => always[i]).ToList();
+    }
+
+    /// <summary>
+    /// For each line of canon (0-based), whether it is in an always-read section, its heading included. The scene read
+    /// and the hook's reminder search the other lines, which the resume does not read whole.
+    /// </summary>
+    /// <param name="lines">Every line of canon.</param>
+    internal static bool[] AlwaysReadMask(IReadOnlyList<Line> lines)
+    {
+        var kept = new bool[lines.Count];
         for (int i = 0; i < lines.Count; i++)
         {
             if (!Measurement.IsSectionHeading(lines[i].Text))
@@ -399,7 +492,8 @@ internal static partial class ReadSet
                           || heading.Equals(Prices, StringComparison.OrdinalIgnoreCase)
                           || FirstComment(lines, i + 1, end).Contains(AlwaysRead, StringComparison.OrdinalIgnoreCase);
             if (always)
-                kept.AddRange(lines.Skip(i).Take(end - i));
+                for (int k = i; k < end; k++)
+                    kept[k] = true;
             i = end - 1;
         }
         return kept;

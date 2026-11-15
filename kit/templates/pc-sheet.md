@@ -6,6 +6,21 @@
 - **Alignment**:
 - **XP or milestone progress**:
 
+## Play card
+
+<!-- A companion's only; leave it out for anyone else. Resume reads a companion's sheet only to the end of this section, so it holds what a scene and a fight need, within the budget `dmc size` checks, and it is the only copy of each number on it. -->
+
+- **Who**:
+- **Looks**:
+- **Voice** (and one sample line):
+- **Names they use**:
+- **Toward the PC, and what they want now**:
+- **AC, max HP, speed, saves, senses**:
+- **Attacks** (to hit, damage, reach or range, anything it needs):
+- **Recharge and limited abilities**:
+- **Standing traits that change play** (an immunity, acting on the PC's turn, who rolls their dice):
+- **Items used in play**:
+
 ## Abilities
 
 | | STR | DEX | CON | INT | WIS | CHA |

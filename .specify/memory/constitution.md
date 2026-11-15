@@ -11,29 +11,35 @@ copying it. Each principle gives its rule, its check and a one-line reason, so `
 Game state and story MUST stay accurate across scenes, sessions and months, and a session with no memory MUST
 resume exactly from the files alone.
 Check: the plan names which files hold any new state.
-Reason: the files are DMC's only memory, so anything they do not hold is lost.
+Reason: the files are DMC's only memory, so anything they do not hold is lost. See `kit/dm-rules.md`, the two
+things that matter above everything else.
 
 ### Core 2. Fun
-Rules and bookkeeping MUST serve the story, and the story serves the player.
+Rules and bookkeeping MUST serve the story, and the story serves the player. Where Core 1 and Core 2 pull
+against each other, neither is sacrificed.
 Check: the plan says what the player gains.
-Reason: a rule that only makes play slower or duller has no reason to exist.
+Reason: a rule that only makes play slower or duller has no reason to exist. See `kit/dm-rules.md`, the two
+things that matter above everything else.
 
 ### Core 3. Low context usage and token cost
 Play MUST keep its context usage and token cost low, so that, for example, a session is playable without a
 top-tier subscription.
-Check: the plan states its per-turn token cost.
+Check: the plan counts its cost as Development 1 says.
 Reason: every token play reads is paid by the player, in every exchange of every game.
 
 ### Development 1. Count the cost
 Every plan MUST count its token and context cost: lines added to `kit/dm-rules.md` (paid every turn) and to each
 skill (paid when it loads). Small additions add up.
-Check: the plan lists the lines it adds to each file and, where it changes what play reads, a `dmc size` result.
+Check: the plan lists the lines it adds to `kit/dm-rules.md` and to each skill, and, where it changes what a
+resume reads, a `dmc size` result.
 Reason: what play reads is paid in every exchange of every game. See `.docs/development.md` § Writing prompts.
 
 ### Development 2. No change breaks a campaign
-A change to campaign files MUST ship a migration, as `.docs/development.md` § Changing a campaign-file standard
-says.
-Check: the PR names its migration, or says why none is needed.
+A change MUST NOT break a player's campaign, whether it is to `dmc`'s code, the kit or the shape of campaign
+files: every change that would leave a campaign behind MUST offer a migration path. A change to what campaign
+files should hold (a template, or a skill's rule for a file's shape) MUST ship a migration, or say in the PR why
+none is needed, as `.docs/development.md` § Changing a campaign-file standard says.
+Check: the PR names its migration, or says why no campaign is left behind.
 Reason: a player's campaign holds months of play.
 
 ### Development 3. One step to install, one to upgrade
@@ -69,7 +75,7 @@ Reason: a test skipped on CI looks like a pass. See `.docs/development.md` § Sk
 A homebrew campaign, one DMC creates, MUST have an arc built on at least the Five Commandments of Storytelling or
 the Hero's Journey. The `dmc-new-campaign` skill MUST carry researched guidance for designing one. A module
 campaign follows its module's arc as closely as play allows instead (Dungeon Master 3).
-Check: a homebrew campaign's Arc plan in `story/dm-notes.md` names its structure and beats.
+Check: `dmc-new-campaign` and the Arc plan template name the structure and its beats.
 Reason: an arc gives the player a story worth finishing.
 
 ### Dungeon Master 2. Fair fights
@@ -78,11 +84,22 @@ Check: a fight is sized and ended as `kit/dm-rules.md` § Sizing fights says.
 Reason: fights are where a session stalls or a campaign ends by bad luck.
 
 ### Dungeon Master 3. The module is the source
-A module campaign MUST follow the module. Improvisation that player choices force MUST draw its monsters,
-encounters, NPCs and settings only from the module. Races, spells, skills and abilities MUST come from the module
-first; where it has none that fits, they MAY come from the edition's core rules or another module.
-Check: improvised monsters, encounters, NPCs and settings can be traced to the module.
+While a module runs, the party MUST stay in the module's world, and the campaign follows its adventure. When the
+player tries to leave, DMC brings them back with an in-world reason, never an out-of-character no. Monsters and
+encounters MUST come from the module; NPCs, races, spells, skills and abilities MUST come from it first. After
+the module ends, the world MUST keep the character the module and play gave it.
+Check: a change to how modules are run keeps the party in the module's world while it runs, and keeps that
+world's character after it ends.
 Reason: the module is the adventure's setting, and its world is what the player chose.
+
+### Dungeon Master 4. The player shapes the story
+The player's actions, choices and goals MAY change the story, with real consequences, and DMC MUST weave what the
+character wants into the main plot. DMC never refuses out of character. It answers "Yes, and…" to a choice that
+fits the fiction, and "No, but…" in the fiction to one that would break the rules, the lore or the story, always
+offering a way forward. In a module campaign, the story adapts within the module's world (Dungeon Master 3).
+Check: a change to how arcs or modules are run says how a player's choice still changes the story, and how a
+refusal stays in the fiction.
+Reason: a story the player cannot change is not theirs, and one that bends to every choice loses its shape.
 
 ### Documentation 1. Concise
 Documentation MUST be concise, simple English, with no padding.

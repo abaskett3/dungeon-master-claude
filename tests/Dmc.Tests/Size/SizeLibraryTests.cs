@@ -708,10 +708,22 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void APointerOfNoneWithProseNamesNoDigest()
     {
-        MakeModuleCampaign(digest: "none. Consult `modules/lmop/` only when the lair or the Draconic page (`items.md`) come up again.");
-        WriteAt(Path.Combine(_root, "modules", "lmop"), "items.md", "# Items\n\n## Draconic page\n\n" + Filler(4000));
-        Assert.IsFalse(Paths().Any(p => p.StartsWith("modules/lmop/", StringComparison.Ordinal) && p != "modules/lmop/index.md"), string.Join(", ", Paths()));
-        Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
+        const string pointer = "none. Consult `modules/lmop/` only when the lair or the Draconic page (`items.md`) come up again.";
+        foreach (string status in new[] { "- 2. Phandalin: in progress\n", "- 1. Goblin Arrows: complete\n- 2. Phandalin: complete\n" })
+        {
+            MakeModuleCampaign(digest: pointer, chapterStatus: status);
+            WriteAt(Path.Combine(_root, "modules", "lmop"), "items.md", "# Items\n\n## Draconic page\n\n" + Filler(4000));
+            Assert.IsFalse(Paths().Any(p => p.StartsWith("modules/lmop/", StringComparison.Ordinal) && p != "modules/lmop/index.md"), status + string.Join(", ", Paths()));
+            Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss), status);
+        }
+    }
+
+    [TestMethod]
+    public void APointerToAFileWhoseNameStartsWithNoneIsMeasured()
+    {
+        MakeModuleCampaign(digest: "nonesuch-annex.md § Area 3: The Inn");
+        File.Move(Path.Combine(_root, "modules", "lmop", "chapters", "02-phandalin.md"), Path.Combine(_root, "modules", "lmop", "nonesuch-annex.md"));
+        Assert.AreEqual(TheInn, PartOf("modules/lmop/nonesuch-annex.md").Bytes, "a word that starts with none is not none");
     }
 
     [TestMethod]

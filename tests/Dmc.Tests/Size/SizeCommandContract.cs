@@ -164,6 +164,7 @@ public abstract class SizeCommandContract
         });
         CollectionAssert.AreEqual(new[] { "module: modules/marsh has 1 problem: run dmc module check marsh (not the full save's to trim)" },
             Size("--check").StdoutLines);
+        Assert.AreEqual(_before, Hash(_root), "the first run wrote nothing either");
 
         Arrange(() =>
         {

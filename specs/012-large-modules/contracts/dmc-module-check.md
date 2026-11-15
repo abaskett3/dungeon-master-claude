@@ -34,8 +34,8 @@ ingested. The full report prints the same line after its flags.
 
 ## `dmc size`, the pointer
 
-- A pointer in the new form (`§ H1; § H2`) is measured as the sections lookup prints, each once, as one part per
-  heading: `modules/<m>/chapters/<file> § <heading>`.
+- A pointer in the new form (`§ H1; § H2`) is measured as the sections lookup prints, each once. One heading is one
+  part under the chapter's path, as today; several are one part per heading, `modules/<m>/chapters/<file> § <heading>`.
 - A heading that matches nothing adds a flag that holds the save:
   `module-progress.md: no heading "<heading>" in chapters/<file> (nearest: <a>; <b>): name one`, and the chapter is
   measured whole, as today.

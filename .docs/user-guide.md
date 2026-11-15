@@ -227,7 +227,9 @@ DMC can run a published adventure from your own copy.
 3. DMC writes an index, a digest of each chapter and reference lists into `modules/<module>/`, with page references back to your copy. A long book takes a while and is best done in its own session; the first chapter or two are enough to start.
 4. Type `/dmc-new-campaign` and say you want to play that module.
 
-During play DMC runs from the digest and the original pages, keeps `module-progress.md` in the campaign folder (where you are, what is cleared, what you found, where you left the script), and scales encounters for a solo character. You are free to leave the script.
+During play DMC runs from the digest and the original pages, keeps `module-progress.md` in the campaign folder (where you are, what is cleared, what you found, where you left the script), and scales encounters for a solo character. You are free to leave the script. At each resume DMC reads the module's index and only the area you are in; it looks other areas, NPCs and stat blocks up as they come up, so even a long book costs little.
+
+The ingest finishes with `dmc module check`, which makes sure every area and stat block can be looked up on its own. A module ingested before that check may fail it, most often because a reference file such as `monsters.md` has grown too large to read in one go. The full save then names it, out of character, once per save; nothing breaks meanwhile. To fix it, ask DMC between sessions to split the file the check names (for example into `monsters-a-m.md` and `monsters-n-z.md`) and run the check again. You never need to ingest the book again.
 
 Password-protected PDFs cannot be read; print-restricted ones can. `modules/` is full of spoilers, and git ignores it because the books are copyrighted: do not share that folder.
 

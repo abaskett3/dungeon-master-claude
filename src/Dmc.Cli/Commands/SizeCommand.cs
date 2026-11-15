@@ -6,8 +6,8 @@ namespace Dmc.Commands;
 /// <c>dmc size [NAME] [--check] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
 /// with what to trim. It lists the files <c>dmc-resume-campaign</c> step 2 reads, by that step's rules, and the part of
 /// each; the full report adds the total, the largest sections and the flags, and <c>--check</c>, the form DMC runs in
-/// play, prints only the flags, any problem with the campaign's link lines and its legacy lines (spec 011), or nothing
-/// when all is well.
+/// play, prints only the flags, a <c>module:</c> line when its module fails <c>dmc module check</c> (spec 012), any
+/// problem with the campaign's link lines and its legacy lines (spec 011), or nothing when all is well.
 /// </summary>
 /// <remarks>
 /// It never writes, moves or deletes a file. A measured campaign exits 0 whatever the flags, because DMC acts on what it
@@ -34,7 +34,8 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
 
   NAME      a campaign folder in adventures/ (default: the active campaign)
   --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):
-            the flags, then any problem with the links of this campaign or an open linked one (a "notice:"
+            the flags, then a "module:" line when the module of a module campaign fails dmc module check,
+            then any problem with the links of this campaign or an open linked one (a "notice:"
             line each, at most three), then a "legacy:" line for each linked campaign's legacy.md this one
             has not folded in (never one after this campaign's story, such as its sequel), and "legacy due:"
             when a linked campaign is open whose story this one does not come after, with the lines to keep
@@ -58,6 +59,8 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
         string campaign = SizeReport.Target(folder, request.Name);
         var result = SizeReport.Measure(folder, campaign);
         var lines = request.Check ? Flags.CheckLines(result.Flags, campaign) : SizeReport.FullReport(result);
+        if (request.Check && result.ModuleLine is { } module)
+            lines.Add(module);
         if (request.Check)
             lines.AddRange(LinkLines(folder, campaign));
         foreach (string line in lines)

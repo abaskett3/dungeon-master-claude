@@ -500,6 +500,26 @@ internal static partial class ReadSet
         return section.Length == 0 ? [] : [section];
     }
 
+    /// <summary>
+    /// The module of a module campaign that is not finished and whose module folder exists, as named by
+    /// <c>module-progress.md</c>'s Module folder line; null for any other campaign. Used for <c>dmc size</c>'s
+    /// <c>module:</c> line (spec 012 research R6), by the same reading as <see cref="ModuleFiles"/>.
+    /// </summary>
+    /// <param name="dmcFolder">The DMC folder.</param>
+    /// <param name="campaign">The campaign's folder name.</param>
+    internal static string? UnfinishedModule(string dmcFolder, string campaign)
+    {
+        string progressPath = Path.Combine(dmcFolder, "adventures", campaign, "module-progress.md");
+        if (!File.Exists(progressPath))
+            return null;
+        var progress = Measurement.ReadLines(progressPath);
+        if (ModuleFinished(progress) || ValueOf(progress, "**Module folder**") is not { } folderLine
+            || ModuleFolder().Match(folderLine) is not { Success: true } named)
+            return null;
+        string module = named.Groups[1].Value;
+        return Directory.Exists(Path.Combine(dmcFolder, "modules", module)) ? module : null;
+    }
+
     /// <summary>The text after <c>key:</c> on the first line that holds <paramref name="key"/>, with HTML comments and backticks removed; null when there is no such line or it holds nothing.</summary>
     /// <param name="lines">The lines of a file.</param>
     /// <param name="key">The bold label, for example <c>**Module folder**</c>.</param>

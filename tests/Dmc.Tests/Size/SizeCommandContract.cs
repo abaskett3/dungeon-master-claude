@@ -104,6 +104,64 @@ public abstract class SizeCommandContract
         }, result.StdoutLines);
     }
 
+    // ---------- spec 012: the module: line ----------
+
+    /// <summary>Makes the campaign a module campaign on a module with <paramref name="problems"/> repeated headings in one file, or none.</summary>
+    /// <param name="problems">How many problems the module has.</param>
+    /// <param name="finished">True to mark every chapter complete.</param>
+    void MakeModuleCampaign(int problems, bool finished = false)
+    {
+        Write(_root, "module-progress.md", "# Module progress\n\n- **Module folder**: `modules/marsh/`\n\n## Current position\n\n"
+            + "- **Digest to read before continuing**: chapters/01-gate.md § 1. Gate\n\n## Chapter status\n\n"
+            + (finished ? "- 1. The Gate: complete\n" : "- 1. The Gate: in progress\n"));
+        string module = Path.Combine(_root, "modules", "marsh");
+        WriteAt(module, "index.md", "# Marsh\n\n- 1. chapters/01-gate.md\n");
+        WriteAt(module, "chapters/01-gate.md", "# The Gate\n\n## 1. Gate\n\nA gate.\n" + string.Concat(Enumerable.Repeat("\n## 2. Yard\n\nA yard.\n", problems + 1)));
+    }
+
+    [TestMethod]
+    public void TheCheckFormPrintsOneModuleLineAfterTheFlagsAndBeforeTheLinkNotices()
+    {
+        Arrange(() =>
+        {
+            MakeModuleCampaign(problems: 2);
+            Write(_root, "game-state.md", GameState([]) + Filler(Budgets.GameState * 4));
+            Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: gone\n");
+        });
+        CollectionAssert.AreEqual(new[]
+        {
+            "game-state.md 4.1k is over its 4k budget",
+            "module: modules/marsh has 2 problems: run dmc module check marsh (not the full save's to trim)",
+            $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
+        }, Size("--check").StdoutLines);
+    }
+
+    [TestMethod]
+    public void OneModuleProblemIsSingularAndTheFullReportPrintsTheLineToo()
+    {
+        Arrange(() => MakeModuleCampaign(problems: 1));
+        CollectionAssert.AreEqual(new[] { "module: modules/marsh has 1 problem: run dmc module check marsh (not the full save's to trim)" },
+            Size("--check").StdoutLines);
+        var report = Size().StdoutLines;
+        CollectionAssert.Contains(report, "  module: modules/marsh has 1 problem: run dmc module check marsh (not the full save's to trim)");
+        CollectionAssert.DoesNotContain(report, "  nothing to flag");
+    }
+
+    [TestMethod]
+    public void ASoundAFinishedAndAMissingModulePrintNoModuleLine()
+    {
+        Arrange(() => MakeModuleCampaign(problems: 0));
+        Assert.AreEqual("", Size("--check").Stdout, "a sound module");
+        Arrange(() => MakeModuleCampaign(problems: 3, finished: true));
+        Assert.AreEqual("", Size("--check").Stdout, "a finished module");
+        Arrange(() =>
+        {
+            MakeModuleCampaign(problems: 3);
+            DmcFolders.Delete(Path.Combine(_root, "modules", "marsh"));
+        });
+        Assert.IsFalse(Size("--check").StdoutLines.Any(l => l.StartsWith("module:", StringComparison.Ordinal)), "a module not ingested");
+    }
+
     /// <summary>
     /// A broken link in a closed campaign's file, which can no longer be changed, is not named at resume; the open
     /// campaign's own broken link still is.

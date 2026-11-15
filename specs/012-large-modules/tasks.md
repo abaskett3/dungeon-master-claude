@@ -133,15 +133,16 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 
 **Independent Test**: quickstart.md § On CI step 6.
 
-- [ ] T020 [P] [US3] Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs`: the `module:` line of
+- [X] T020 [P] [US3] Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs`: the `module:` line of
       contracts/dmc-module-check.md for a planted module, singular and plural, placed after the flags and before the
       link lines; none for a sound, finished, homebrew or not-ingested module; none after the oversized file is
       split (SC-007); the full report prints it too; `modules/` unchanged after `size`, `module check`, `install` and
       `refresh` in a temporary folder
-- [ ] T021 [US3] Edit `src/Dmc.Cli/Commands/SizeCommand.cs` (and `SizeReport` for the full report) to print the line
+- [X] T021 [US3] Edit `src/Dmc.Cli/Commands/SizeCommand.cs` (and `SizeReport` for the full report) to print the line
       from `ModuleCheck`'s count, and its `--help` text
-- [ ] T022 [US3] Edit `kit/skills/dmc-resume-campaign/SKILL.md`, where `dmc size --check` runs: a `module:` line is for
-      the full save, not mentioned to the player
+- [X] T022 [US3] Edit `kit/skills/dmc-resume-campaign/SKILL.md`, where `dmc size --check` runs: a `module:` line is for
+      the full save, not mentioned to the player. Done without an edit: the skill's "Any other line is for the full
+      save: do not mention it" already covers it
 
 **Checkpoint**: build and test pass; commit.
 
@@ -152,7 +153,7 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 **Goal**: The rules and skills say what is read, looked up and opened in `source/`, and what to do when a lookup
 misses. Mostly done by T012, T017 and T018.
 
-- [ ] T023 [US4] Read the changed prompts together against spec FR-015 and FR-016: what a resume reads, what play
+- [X] T023 [US4] Read the changed prompts together against spec FR-015 and FR-016: what a resume reads, what play
       looks up, what is opened in `source/`, the lookup miss; no canon, companion, hook or gate change; no new
       fallback for a missing `dmc` (issue #208). Fix any gap in the file that owns it
 
@@ -160,20 +161,20 @@ misses. Mostly done by T012, T017 and T018.
 
 ## Phase 7: Polish: documents, cost, live runs, the PR
 
-- [ ] T024 [P] Edit `.docs/dmc-reference.md`: a `dmc module` section from contracts/dmc-module-check.md; `dmc size`'s
+- [X] T024 [P] Edit `.docs/dmc-reference.md`: a `dmc module` section from contracts/dmc-module-check.md; `dmc size`'s
       pointer forms, miss flag and `module:` line
-- [ ] T025 [P] Edit `.docs/campaign-files.md`: the pointer's new form in `module-progress.md`, and § Published
+- [X] T025 [P] Edit `.docs/campaign-files.md`: the pointer's new form in `module-progress.md`, and § Published
       modules: the shape a module is checked against
-- [ ] T026 [P] Edit `.docs/user-guide.md` § Published modules: the check, what the player sees of it, and how to
+- [X] T026 [P] Edit `.docs/user-guide.md` § Published modules: the check, what the player sees of it, and how to
       have DMC split a file the check names
-- [ ] T027 [P] Edit `.docs/architecture.md`: resume item 9 reads the pointer's headings through `dmc lookup`
-- [ ] T028 [P] Add to `.docs/decisions.md`, each with its reason and the alternatives rejected: the module check and
+- [X] T027 [P] Edit `.docs/architecture.md`: resume item 9 reads the pointer's headings through `dmc lookup`
+- [X] T028 [P] Add to `.docs/decisions.md`, each with its reason and the alternatives rejected: the module check and
       its command (R1); the section limit (R2); the stat-block and repeat rules (R4, R5); the `module:` line (R6);
       the pointer form (R7); and an **Amended** line on "Lookup and recall are for play only until Phase D" (R10)
-- [ ] T029 [P] Edit `.docs/roadmap.md`: issue #179 Phase C's status
-- [ ] T030 Check every new and changed member has an XML doc comment, private ones included, and that
+- [X] T029 [P] Edit `.docs/roadmap.md`: issue #179 Phase C's status
+- [X] T030 Check every new and changed member has an XML doc comment, private ones included, and that
       `specs/012-large-modules/` matches what ships
-- [ ] T031 Measure the standing cost again as in T003 and record it for the PR (research R12)
+- [X] T031 Measure the standing cost again as in T003 and record it for the PR (research R12)
 - [ ] T032 Run quickstart.md § Live: `dmc module check the-crooked-moon` with the release build against
       `D:\Claude\dmc` (read-only), and a headless resume in `D:\Claude\test-campaign` with
       `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` of a campaign on a synthetic module, played into a fight with a module

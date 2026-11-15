@@ -1197,21 +1197,27 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// The line count of <c>kit/dm-rules.md</c>, which spec 009 (FR-022) let grow by two and which spec 013 (FR-028) holds
-    /// at what it was: every always-loaded line is paid in every exchange of every session.
+    /// at what it was; spec 014 (FR-008) adds no line. Every always-loaded line is paid in every exchange of every session.
     /// </summary>
     const int DmRulesLines = 212;
 
-    /// <summary>The bytes of <c>kit/dm-rules.md</c> before spec 013 (29,643), plus the 400 its FR-028 allows.</summary>
-    const int DmRulesBytesAllowed = 29_643 + 400;
+    /// <summary>
+    /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043, and spec 014 (FR-008) raised it by 559
+    /// of the 560 it allows, to the file's size once "yes, and" and "no, but" landed (about 171 more tokens per turn).
+    /// </summary>
+    const int DmRulesBytesAllowed = 30_602;
 
+    /// <summary>
+    /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
+    /// </summary>
     [TestMethod]
-    public void TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes()
+    public void TheAlwaysLoadedRulesStayAtTheirLineAndByteCaps()
     {
         string rules = Read("kit/dm-rules.md");
         int lines = rules.TrimEnd('\n').Split('\n').Length;
         Assert.IsLessThanOrEqualTo(DmRulesLines, lines, $"kit/dm-rules.md has {lines} lines; spec 013 FR-028 allows at most {DmRulesLines}");
         int bytes = System.Text.Encoding.UTF8.GetByteCount(rules);
-        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 013 FR-028 allows at most {DmRulesBytesAllowed}");
+        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 014 FR-008 allows at most {DmRulesBytesAllowed}");
     }
 
     /// <summary>

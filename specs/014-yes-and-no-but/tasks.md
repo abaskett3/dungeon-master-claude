@@ -66,13 +66,13 @@ no out-of-character "the story does not allow it".
 
 **Independent Test**: quickstart § 3, messages 9 to 14 and the out-of-character fireball question (SC-002, SC-003).
 
-- [ ] T005 [US2] In `kit/dm-rules.md` line 166, append the contract's last two sentences: "When the world rules an
+- [X] T005 [US2] In `kit/dm-rules.md` line 166, append the contract's last two sentences: "When the world rules an
   idea out, use "no, but" in the fiction: turn it aside, with another way forward (no door in that wall, but a
   draughty crawlspace). Never say out of character that the story does not allow it."
-- [ ] T006 [US2] In `kit/dm-rules.md` line 169, append the contract's exception: "Except the first attack on an NPC
+- [X] T006 [US2] In `kit/dm-rules.md` line 169, append the contract's exception: "Except the first attack on an NPC
   the main plot needs (central in the module, or in the Arc plan or Opposition table), at any lethality: a "no,
   but", where they stop it, no one dies, and a canon line records it. After that, the dice fall where they fall."
-- [ ] T007 [US2] Rebuild and have the maintainer refresh `D:\Claude\test-campaign`; choose a major NPC from that
+- [X] T007 [US2] Rebuild and have the maintainer refresh `D:\Claude\test-campaign`; choose a major NPC from that
   campaign's Arc plan or Opposition table (research R9); run quickstart § 3 messages 9 to 12 and the
   out-of-character fireball question; then set **Lethality** to `gritty` in that campaign's `player-options.md` (the
   hardest case for FR-004) and run messages 13 and 14; check that message 13 wrote one canon line with the NPC's
@@ -89,10 +89,10 @@ no out-of-character "the story does not allow it".
 
 **Independent Test**: state a goal in play, then save; the Arc plan's Character arcs holds it with how it ties in.
 
-- [ ] T008 [US3] In `kit/dm-rules.md` line 165, replace "Note what you learn in `dm-notes.md`." with "Note what you
+- [X] T008 [US3] In `kit/dm-rules.md` line 165, replace "Note what you learn in `dm-notes.md`." with "Note what you
   learn in `dm-notes.md`, and weave what the character wants into the main plot through the Arc plan's Character
   arcs." (the contract's line 165)
-- [ ] T009 [US3] Rebuild and refresh; in the headless session, have the character state a goal, then run
+- [X] T009 [US3] Rebuild and refresh; in the headless session, have the character state a goal, then run
   `/dmc-campaign-full-save`; check that the Arc plan's Character arcs in `story/dm-notes.md` holds the goal and how it
   ties into the main plot (data-model.md, "A goal the character wants"); record the result in
   `specs/014-yes-and-no-but/quickstart.md` § Results
@@ -103,24 +103,24 @@ no out-of-character "the story does not allow it".
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T010 Measure `kit/dm-rules.md` and confirm it is 212 lines and at most 30,603 bytes (SC-004; 30,602 if the
+- [X] T010 Measure `kit/dm-rules.md` and confirm it is 212 lines and at most 30,603 bytes (SC-004; 30,602 if the
   wording matches the contract)
-- [ ] T011 In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to the size measured in T010;
+- [X] T011 In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to the size measured in T010;
   rename `TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes` to
   `TheAlwaysLoadedRulesStayAtTheirLineAndByteCaps`; and say in the XML doc comments of the constants and the test,
   and in the assertion message, which specs set each cap (spec 013 FR-028 the lines, spec 014 FR-008 the bytes)
-- [ ] T012 Run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"`: the cap test and the T002 test
+- [X] T012 Run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"`: the cap test and the T002 test
   pass, and only the three failures noted in T001 remain
-- [ ] T013 [P] In `.docs/user-guide.md` § Talking to DMC, add a short paragraph in plain words: DMC builds on a bold
+- [X] T013 [P] In `.docs/user-guide.md` § Talking to DMC, add a short paragraph in plain words: DMC builds on a bold
   idea, turns down what the world rules out inside the story with another way forward, and never tells the player
   the story does not allow it (Documentation 2)
-- [ ] T014 [P] In `.docs/product-overview.md` § What it deliberately does not do, add a bullet: it does not refuse a
+- [X] T014 [P] In `.docs/product-overview.md` § What it deliberately does not do, add a bullet: it does not refuse a
   choice out of character; a story-breaking choice gets a "no, but" in the fiction
-- [ ] T015 [P] In `.docs/decisions.md`, add an entry "A bold idea gets "yes, and", a ruled-out one "no, but" in the
+- [X] T015 [P] In `.docs/decisions.md`, add an entry "A bold idea gets "yes, and", a ruled-out one "no, but" in the
   fiction (issue #216)": the decision, the reason (constitution Dungeon Master 4), the cost (0 lines, 685 bytes,
   about 171 tokens per turn), the clarifications, the rejected alternatives (research R1, R2, R6) and the limits, and
   that it meets the Dungeon Master 4 item of the constitution 3.0.0 entry's Limits
-- [ ] T016 [P] In `.docs/roadmap.md`, add a row for issue #216 with its status and a pointer to the decisions entry
+- [X] T016 [P] In `.docs/roadmap.md`, add a row for issue #216 with its status and a pointer to the decisions entry
 - [ ] T017 Restore `D:\Claude\test-campaign`: put back `adventures/.active-campaign` and the campaign copied in T004,
   which also undoes T007's lethality change
 - [ ] T018 Run `/speckit-converge`, then open the PR with `Closes #216`, the measured cost, the play test results,

@@ -60,7 +60,9 @@ internal static class CanonReminder
         if (named.Count == 0)
             return [];
 
-        var units = SceneRead.Units(root, campaign, canonPath, canon);
+        // A canon under CanonWholeBelow is read whole at resume (FR-015: only lines the resume did not read whole), so only its archive is left.
+        bool small = canon.Sum(l => (long)l.Bytes) / 4 < Budgets.CanonWholeBelow;
+        List<LineUnit> units = small ? [] : SceneRead.Units(root, campaign, canonPath, canon);
         units.AddRange(ArchiveUnits(root, campaign));
         units = Recall.Merge(units);
         return Lines(named, units);
@@ -117,15 +119,16 @@ internal static class CanonReminder
         return LineUnits.Of(file, MarkdownFile.Read(path));
     }
 
-    /// <summary>The campaign <c>adventures/.active-campaign</c> names, when it is a plain folder name that exists; null otherwise.</summary>
+    /// <summary>
+    /// The campaign <c>adventures/.active-campaign</c> names, read as <c>dmc size</c> reads it (<see cref="SizeReport.ActiveName"/>,
+    /// its first line), when it is a plain folder name that exists; null otherwise.
+    /// </summary>
     /// <param name="folder">The DMC folder.</param>
     static string? ActiveCampaign(string folder)
     {
-        string mark = Path.Combine(folder, "adventures", ".active-campaign");
-        if (!File.Exists(mark))
+        if (SizeReport.ActiveName(Path.Combine(folder, "adventures")) is not { } name)
             return null;
-        string name = File.ReadAllText(mark).Trim();
-        bool plain = name.Length > 0 && !name.StartsWith('.') && name.IndexOfAny(['/', '\\', ':']) < 0;
+        bool plain = !name.StartsWith('.') && name.IndexOfAny(['/', '\\', ':']) < 0;
         return plain && Directory.Exists(Path.Combine(folder, "adventures", name)) ? name : null;
     }
 

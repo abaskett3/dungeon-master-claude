@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using Dmc.Size;
 using Dmc.Tests.Support;
 using static Dmc.Tests.Size.SizeFixtures;
 
@@ -19,15 +20,25 @@ public abstract class CanonReminderContract
     /// <summary>Run <c>dmc context-check</c> with this on stdin.</summary>
     protected abstract ProcessResult ContextCheck(string stdin);
 
-    /// <summary>Makes the DMC folder with a canon whose People hold Oswin and Kole.</summary>
+    /// <summary>A canon whose People hold Oswin and Kole; <paramref name="padded"/> adds a Places section naming neither, to take it past <see cref="Budgets.CanonWholeBelow"/>.</summary>
+    /// <param name="padded">Whether canon is large enough that the resume does not read it whole.</param>
+    static string CanonText(bool padded) =>
+        "# Canon\n\n## Rulings\n\n- Oswin's toll is waived for the militia (s2).\n\n## People\n\n"
+        + "- **Oswin Reed** (also: the ferryman): keeps the Marrow ferry and owes Ada a crossing (s3).\n"
+        + "- **Captain Emmajeen Kole** (also: Em): captain of the Pinebrook guard (s1).\n\n## Timeline\n\n"
+        + "- Oswin rowed the party over in the fog and asked after his brother (s4.2).\n- Kole posted Pip on the north wall (s5.1).\n"
+        + (padded ? Places : "");
+
+    /// <summary>A Places section naming no one, about 30k bytes, that takes a canon past <see cref="Budgets.CanonWholeBelow"/>.</summary>
+    static readonly string Places =
+        "\n## Places\n\n" + string.Concat(Enumerable.Range(1, 400).Select(i => $"- The mill at Hollow Ford number {i} grinds barley for the lower farms (s9).\n"));
+
+    /// <summary>Makes the DMC folder with a canon, past the size read whole, whose People hold Oswin and Kole.</summary>
     [TestInitialize]
     public void MakeFolder()
     {
         _root = NewDmcFolderWithCampaign();
-        Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- Oswin's toll is waived for the militia (s2).\n\n## People\n\n"
-            + "- **Oswin Reed** (also: the ferryman): keeps the Marrow ferry and owes Ada a crossing (s3).\n"
-            + "- **Captain Emmajeen Kole** (also: Em): captain of the Pinebrook guard (s1).\n\n## Timeline\n\n"
-            + "- Oswin rowed the party over in the fog and asked after his brother (s4.2).\n- Kole posted Pip on the north wall (s5.1).\n");
+        Write(_root, "story/canon.md", CanonText(padded: true));
         Write(_root, "story/canon-archive.md", "# Canon archive\n\n## Timeline\n\n- Oswin's old raft sank at the weir in spring (s1.4).\n");
     }
 
@@ -72,6 +83,25 @@ public abstract class CanonReminderContract
         Assert.IsFalse(lines.Any(l => l.Contains("toll is waived", StringComparison.Ordinal)), "Rulings were read at resume");
     }
 
+    /// <summary>A canon under the size read whole was read whole at resume, so only the archive is left to remind of (FR-015).</summary>
+    [TestMethod]
+    public void ASmallCanonWasReadWholeSoOnlyTheArchiveIsReminded()
+    {
+        Write(_root, "story/canon.md", CanonText(padded: false));
+        var lines = ContextCheck(Input("Let's ask Oswin about the fog")).StdoutLines;
+        Assert.HasCount(2, lines, "the header and the archive's one line");
+        Assert.Contains("story/canon-archive.md", lines[1]);
+    }
+
+    /// <summary>The active campaign is the first line of <c>.active-campaign</c>, as <c>dmc size</c> reads it.</summary>
+    [TestMethod]
+    public void TheActiveCampaignIsTheMarksFirstLine()
+    {
+        File.WriteAllText(Path.Combine(_root, "adventures", ".active-campaign"), Name + "\nleft here by hand\n");
+        var lines = ContextCheck(Input("Let's ask Oswin about the fog")).StdoutLines;
+        Assert.AreEqual("Canon on Oswin Reed (a reminder of some lines, not all canon says; recall for more):", lines[0]);
+    }
+
     [TestMethod]
     public void TwoPeopleAreRemindedInOneHeaderAnAliasCounts()
     {
@@ -105,7 +135,7 @@ public abstract class CanonReminderContract
             people.Append($"- **Person{i} Reed**: a long-winded neighbour of the ferry who talks about the weather and the eels at length (s{i + 1}).\n");
             timeline.Append($"- Person{i} rowed over again and told the same long story about the eels and the weir and the fog (s{i + 1}.1).\n");
         }
-        Write(_root, "story/canon.md", "# Canon\n\n## People\n\n" + people + "\n## Timeline\n\n" + timeline + timeline.ToString().Replace("rowed", "walked"));
+        Write(_root, "story/canon.md", "# Canon\n\n## People\n\n" + people + "\n## Timeline\n\n" + timeline + timeline.ToString().Replace("rowed", "walked") + Places);
         string prompt = string.Join(" and ", Enumerable.Range(0, 30).Select(i => $"Person{i}"));
         var result = ContextCheck(Input(prompt));
         Assert.IsLessThanOrEqualTo(4000, Encoding.UTF8.GetByteCount(result.Stdout));

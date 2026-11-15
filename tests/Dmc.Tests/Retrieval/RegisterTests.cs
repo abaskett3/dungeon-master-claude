@@ -35,6 +35,32 @@ public sealed class RegisterTests
         Assert.AreEqual(0, Register.Named("the captain says no", [kole]).Count, "a bare title names no one");
     }
 
+    /// <summary>People come in the order the message names them, so the cap drops the last named, not the latest in canon (contracts/context-check-canon.md).</summary>
+    [TestMethod]
+    public void PeopleAreNamedInTheMessagesOrder()
+    {
+        var people = Register.Of(People("- **Captain Emmajeen Kole**: the captain (s1).", "- **Bruni Coalhand**: the smith (s2)."));
+        CollectionAssert.AreEqual(new[] { "Bruni Coalhand", "Captain Emmajeen Kole" },
+            Register.Named("I ask Bruni about Kole", people).Select(p => p.Key).ToArray());
+    }
+
+    /// <summary>An entry under a <c>*</c> bullet reads its also bracket as a <c>-</c> one does.</summary>
+    [TestMethod]
+    public void AStarBulletsAlsoNamesAreRead()
+    {
+        var oswin = Register.Of(People("* **Oswin Reed** (also: the ferryman): keeps the ferry (s3).")).Single();
+        CollectionAssert.Contains(oswin.Phrases.ToArray(), "the ferryman");
+    }
+
+    /// <summary>An indented line is a detail of the entry above it: not a person, and not a shape failure.</summary>
+    [TestMethod]
+    public void AnIndentedLineIsADetailNotAnEntry()
+    {
+        var people = Register.Of(People("- **Oswin Reed**: keeps the ferry (s3).", "  - **His brother**: lost at the weir (s4).", "  - lives by the mill (s4)."));
+        Assert.AreEqual("Oswin Reed", people.Single().Key);
+        Assert.IsTrue(Register.IsNamedOrNotAnEntry("  - lives by the mill (s4)."));
+    }
+
     [TestMethod]
     public void OnlyPeopleEntriesAreRead()
     {

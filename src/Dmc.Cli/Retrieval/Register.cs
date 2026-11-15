@@ -26,7 +26,7 @@ internal static partial class Register
     private static partial Regex Bold();
 
     /// <summary>An entry's start: the first bold span, then an <c>(also: …)</c> bracket; group 1 is the bracket's items.</summary>
-    [GeneratedRegex(@"^\s*-\s*\*\*.+?\*\*\s*\(also:\s*([^)]*)\)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*[-*]\s*\*\*.+?\*\*\s*\(also:\s*([^)]*)\)", RegexOptions.IgnoreCase)]
     private static partial Regex Also();
 
     /// <summary>Words that never name a person alone: titles, kin words and small words (the read set's list, which a Present line also meets).</summary>
@@ -54,22 +54,27 @@ internal static partial class Register
 
     /// <summary>
     /// Whether a line under <c>## People</c> is in the register's shape: a list item whose text starts with a bold name.
-    /// A line that is not a list item (blank, a comment, prose) is not an entry and passes.
+    /// A line that is not a list item (blank, a comment, prose) is not an entry and passes, and nor is an indented one,
+    /// which is a detail of the entry above it.
     /// </summary>
     /// <param name="text">The line.</param>
     public static bool IsNamedOrNotAnEntry(string text)
     {
+        if (text.Length > 0 && char.IsWhiteSpace(text[0]))
+            return true;
         string trimmed = text.TrimStart();
         if (!trimmed.StartsWith("- ", StringComparison.Ordinal) && !trimmed.StartsWith("* ", StringComparison.Ordinal))
             return true;
         return trimmed[2..].TrimStart().StartsWith("**", StringComparison.Ordinal);
     }
 
-    /// <summary>One entry's person, or null for a line that is not a list item starting with a bold name.</summary>
+    /// <summary>One entry's person, or null for a line that is not a list item starting with a bold name, or is indented (a detail of the entry above).</summary>
     /// <param name="text">The line.</param>
     /// <param name="line">Its 1-based line number.</param>
     internal static Person? Parse(string text, int line)
     {
+        if (text.Length > 0 && char.IsWhiteSpace(text[0]))
+            return null;
         string trimmed = text.TrimStart();
         if (!(trimmed.StartsWith("- **", StringComparison.Ordinal) || trimmed.StartsWith("* **", StringComparison.Ordinal)))
             return null;
@@ -121,11 +126,21 @@ internal static partial class Register
     /// <summary>Whether a text holds a name whole (not inside a longer word), ignoring case.</summary>
     /// <param name="text">The text, such as the player's message.</param>
     /// <param name="name">A phrase or word of the register.</param>
-    static bool Holds(string text, string name) =>
-        name.Length > 0 && Regex.IsMatch(text, $@"(?<!\w){Regex.Escape(name)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    static bool Holds(string text, string name) => At(text, name) >= 0;
+
+    /// <summary>Where a text first holds a name whole, ignoring case; -1 when it does not.</summary>
+    /// <param name="text">The text, such as the player's message.</param>
+    /// <param name="name">A phrase or word of the register.</param>
+    static int At(string text, string name)
+    {
+        if (name.Length == 0)
+            return -1;
+        var match = Regex.Match(text, $@"(?<!\w){Regex.Escape(name)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return match.Success ? match.Index : -1;
+    }
 
     /// <summary>
-    /// The people a text names, in canon's order. A person is named by one of their phrases (a bold name or an
+    /// The people a text names, in the order the text first names them (canon's order on a tie). A person is named by one of their phrases (a bold name or an
     /// <c>also:</c> item), or by a word of a bold name that no earlier entry has claimed: People lists a person before the
     /// facts about them (<c>**Kole's rule**</c>), so a lone "Kole" names the first entry it fits, not every one.
     /// </summary>
@@ -134,18 +149,19 @@ internal static partial class Register
     public static List<Person> Named(string text, IReadOnlyList<Person> people)
     {
         var claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var named = new List<Person>();
+        var named = new List<(Person Person, int At)>();
         foreach (var person in people)
         {
-            bool byPhrase = person.Phrases.Any(p => Holds(text, p));
-            bool byWord = person.Words.Any(w => !claimed.Contains(w) && Holds(text, w));
-            if (byPhrase || byWord)
+            var hits = person.Phrases.Select(p => At(text, p))
+                .Concat(person.Words.Where(w => !claimed.Contains(w)).Select(w => At(text, w)))
+                .Where(i => i >= 0).ToList();
+            if (hits.Count > 0)
             {
-                named.Add(person);
+                named.Add((person, hits.Min()));
                 claimed.UnionWith(person.Words.Where(w => Holds(text, w)));
             }
         }
-        return named;
+        return named.OrderBy(n => n.At).Select(n => n.Person).ToList(); // a stable sort keeps canon's order on a tie
     }
 
     /// <summary>The words a person's canon lines are ranked by: the words of their phrases, less titles and small words ("Captain" would rank every captain).</summary>

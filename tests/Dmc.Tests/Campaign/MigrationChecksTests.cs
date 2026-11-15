@@ -250,6 +250,27 @@ public sealed class MigrationChecksTests
         }));
     }
 
+    /// <summary>The check finds companions in the same sheets <c>dmc size</c> does, so a sheet not named npc- is still checked.</summary>
+    [TestMethod]
+    public void ACompanionSheetNotNamedNpcIsCheckedAsDmcSizeFindsIt() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "companions-have-play-card: character-sheets/mara.md: the companion Mara Quill has no ## Play card as the sheet's first section",
+        }, Run("companions-have-play-card", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/mara.md"] = Companion("Mara Quill", card: false),
+            ["character-sheets/npc-vex.md"] = Companion("Vex", card: true),
+        }));
+
+    /// <summary>An indented line under People is a detail of the entry above it, not an entry with no bold name.</summary>
+    [TestMethod]
+    public void AnIndentedPeopleLineIsNotAnEntry() =>
+        Assert.IsEmpty(Run("people-entries-named", now: new()
+        {
+            ["story/canon.md"] = "# Canon\n\n## People\n\n- **Oswin Reed**: the ferry (s3).\n  - lives by the mill (s4).\n",
+        }));
+
     [TestMethod]
     public void PeopleEntriesThatStartWithABoldNamePassAndOthersFail()
     {

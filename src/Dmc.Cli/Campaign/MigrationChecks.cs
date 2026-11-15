@@ -264,7 +264,11 @@ internal static partial class MigrationChecks
     {
         if (!input.New.TryGetValue(GameState, out string? state))
             yield break;
-        var sheets = SheetsOf(input.New, npcOnly: false).ToList();
+        // Every sheet the read set considers (ReadSet.Sheets), in the same order, so the indexes and the match agree with dmc size.
+        var sheets = input.New.Where(f => f.Key.StartsWith(Sheets, StringComparison.Ordinal) && f.Key.EndsWith(".md", StringComparison.Ordinal)
+                                          && f.Key[Sheets.Length..] is var name && !name.Contains('/') && name != "minor-npcs.md"
+                                          && !name.EndsWith("-history.md", StringComparison.Ordinal))
+            .OrderBy(f => f.Key, StringComparer.Ordinal).ToList();
         var titles = sheets.Select(s => Lines(s.Value).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t
             ? t[2..].Trim() : Path.GetFileNameWithoutExtension(s.Key)).ToList();
         var seen = new HashSet<string>(StringComparer.Ordinal);

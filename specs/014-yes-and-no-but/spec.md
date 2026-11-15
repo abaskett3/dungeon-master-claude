@@ -16,7 +16,7 @@ constitution states principles of its own (version 3.0.0)", Limits.
 
 ### What the play rules say today
 
-`kit/dm-rules.md` (212 lines, 29,856 bytes on `main` at `5b0e7a8`) has pieces of this, but no rule for answering a
+`kit/dm-rules.md` (212 lines, 29,917 bytes on `main` at `adb0e07`) has pieces of this, but no rule for answering a
 choice that would break the rules, the lore or the story:
 
 - § Fun first, line 166: "Say yes to creative ideas when you can. When a strict reading would kill the momentum over
@@ -48,8 +48,8 @@ From `.docs/decisions.md` § "The constitution states principles of its own (ver
 
 `TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes`
 (`tests/Dmc.Tests/Toolkit/ToolkitTests.cs:1207`) holds `kit/dm-rules.md` at 212 lines and 30,043 bytes (spec 013,
-FR-028). The file is at 212 lines and 29,856 bytes, so 187 bytes and no line are left. A definition and an example of
-each does not fit in 187 bytes.
+FR-028). The file is at 212 lines and 29,917 bytes, so 126 bytes and no line are left (187 before PR #220 added 61
+to line 58). A definition and an example of each does not fit in 126 bytes.
 
 ## Clarifications
 
@@ -76,6 +76,8 @@ each does not fit in 187 bytes.
   possible"? → A: Yes. There is no general no-one-dies policy; the first attack on a major NPC is the one exception,
   at every lethality, once. After it, the dice fall where they fall, for both sides: the NPC fights at full strength
   and is not shielded either.
+- Q: PR #220 grew `kit/dm-rules.md` by 61 bytes after the plan, so the wording needs a cap rise of 559, over the 500
+  agreed. Cut words, or raise the allowance? → A: Raise the allowance to 560 bytes and keep every word.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -184,7 +186,7 @@ plot, and a later scene moves it on.
 - **FR-007**: Nothing in this change may contradict § Fun first (no shown die changed; recklessness lands) or
   § Running a published module ("Do not railroad"), except FR-004's one first-attack exception to the lethality
   setting and the recklessness rule.
-- **FR-008**: `kit/dm-rules.md` MUST gain no line, and its byte cap in the toolkit test MAY rise by at most 500
+- **FR-008**: `kit/dm-rules.md` MUST gain no line, and its byte cap in the toolkit test MAY rise by at most 560
   bytes; the definitions and examples go into existing bullets. The plan MUST look for cuts first, and MUST state the
   bytes added and the estimated tokens per turn (Core 3, Development 1). The test's comment MUST name this spec.
 - **FR-009**: The documents MUST be updated in the same PR (Documentation 4): at least `.docs/decisions.md` and
@@ -202,7 +204,8 @@ plot, and a later scene moves it on.
 - **SC-003**: In the same tests, no reply changes a shown die or undoes a resolved choice, and no reply says the
   words "yes, and" or "no, but" to the player (0 of all replies). Replies are judged by what they do, not by the
   phrase.
-- **SC-004**: `kit/dm-rules.md` stays at 212 lines and grows by at most 500 bytes, and the toolkit test passes.
+- **SC-004**: `kit/dm-rules.md` stays at 212 lines, its byte cap rises by at most 560 bytes, and the toolkit test
+  passes.
 - **SC-005**: After release, a `review-transcript` review of the first 3 play sessions finds no flat out-of-character
   refusal of a player's choice, and, for each goal the character stated in them, a later scene that moves it on (or
   says the main plot has not yet reached a point where it fits). The review counts the "No, but…" and "Yes, and…"

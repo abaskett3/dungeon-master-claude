@@ -23,7 +23,7 @@ order, not in parallel.
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the baseline of `kit/dm-rules.md` (expected 212 lines, 29,856 bytes) and run
+- [ ] T001 Record the baseline of `kit/dm-rules.md` (expected 212 lines, 29,917 bytes) and run
   `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"`, noting the three toolkit tests that fail
   locally on `main` (quickstart § 1)
 
@@ -103,7 +103,7 @@ no out-of-character "the story does not allow it".
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T010 Measure `kit/dm-rules.md` and confirm it is 212 lines and at most 30,543 bytes (SC-004; 30,541 if the
+- [ ] T010 Measure `kit/dm-rules.md` and confirm it is 212 lines and at most 30,603 bytes (SC-004; 30,602 if the
   wording matches the contract)
 - [ ] T011 In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to the size measured in T010;
   rename `TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes` to

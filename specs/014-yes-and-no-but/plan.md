@@ -9,7 +9,7 @@
 Teach DMC to answer a bold choice with "yes, and", a choice the world rules out with "no, but" in the fiction, and a
 first attack on a major NPC with a "no, but" that leaves everyone alive and is recorded in canon; and to weave what
 the character wants into the main plot. The change is three existing bullets of `kit/dm-rules.md` § Fun first,
-rewritten in place: no new line, 685 bytes (about 171 tokens per turn). The toolkit test's byte cap rises by 498
+rewritten in place: no new line, 685 bytes (about 171 tokens per turn). The toolkit test's byte cap rises by 559
 bytes. No template changes, so no migration. See [research.md](research.md) and the exact wording in
 [contracts/dm-rules-fun-first.md](contracts/dm-rules-fun-first.md).
 
@@ -33,7 +33,7 @@ Character arcs in `story/dm-notes.md`
 **Performance Goals**: about 171 more tokens per turn (685 bytes / 4, the estimate `dmc size` uses,
 `src/Dmc.Cli/Size/Measurement.cs:16`)
 
-**Constraints**: `kit/dm-rules.md` stays at 212 lines; bytes at most 30,543 (spec FR-008); measured draft 30,541
+**Constraints**: `kit/dm-rules.md` stays at 212 lines; bytes at most 30,603 (spec FR-008); measured draft 30,602
 
 **Scale/Scope**: 3 bullets of one section; 1 toolkit test changed and 1 added; 4 documents
 
@@ -85,7 +85,7 @@ kit/
 └── dm-rules.md                      # § Fun first: three bullets rewritten in place
 
 tests/Dmc.Tests/Toolkit/
-└── ToolkitTests.cs                  # byte cap 30,043 → 30,541 and its comment; one new test
+└── ToolkitTests.cs                  # byte cap 30,043 → 30,602 and its comment; one new test
 
 .docs/
 ├── user-guide.md                    # § Talking to DMC: one paragraph

@@ -1,6 +1,6 @@
 # Research: "Yes, and…" and "No, but…"
 
-All measurements on `main` at `5b0e7a8`, on a scratch copy of `kit/dm-rules.md`.
+All measurements on `main` at `adb0e07`, on a scratch copy of `kit/dm-rules.md`.
 
 ## R1. Where the rule goes
 
@@ -13,16 +13,16 @@ All measurements on `main` at `5b0e7a8`, on a scratch copy of `kit/dm-rules.md`.
 
 ## R2. The budget, and cuts looked for first
 
-- **Decision**: +685 bytes, 0 lines. The file goes from 29,856 to 30,541 bytes; the test's cap
-  (`DmRulesBytesAllowed`, `tests/Dmc.Tests/Toolkit/ToolkitTests.cs:1205`) goes from 30,043 to 30,541, a rise of 498
-  bytes, under the 500 the spec allows.
+- **Decision**: +685 bytes, 0 lines. The file goes from 29,917 to 30,602 bytes; the test's cap
+  (`DmRulesBytesAllowed`, `tests/Dmc.Tests/Toolkit/ToolkitTests.cs:1205`) goes from 30,043 to 30,602, a rise of 559
+  bytes, under the 560 the spec allows.
 - **Cuts found**: the rewrite of line 166 replaces "Say yes to creative ideas when you can" instead of adding to it,
   and shortens "rule in favor of the cool idea and keep moving" to "rule for the cool idea". No other bullet of
   § Fun first or § Out of character (lines 161 to 180, read in full) repeats another, so nothing else was cut. The
   rest of the file was not searched for cuts.
 - **Cost**: about 171 tokens per turn, by `dmc`'s estimate of bytes / 4 (`src/Dmc.Cli/Size/Measurement.cs:16`).
 - **Alternatives considered**: definitions without examples (about 300 bytes less, but the clarification chose the
-  examples); the cap set to 30,543 (leaves 2 bytes nobody has decided to spend; the cap is set to the new size
+  examples); the cap set to 30,603 (leaves 1 byte nobody has decided to spend; the cap is set to the new size
   instead, as spec 013's FR-028 held it to what was used).
 
 ## R3. Who counts as a major NPC, in the rule's words
@@ -64,7 +64,7 @@ All measurements on `main` at `5b0e7a8`, on a scratch copy of `kit/dm-rules.md`.
 
 ## R8. Tests
 
-- **Decision**: in `ToolkitTests.cs`, raise `DmRulesBytesAllowed` to 30,541 and name this spec in its comment and
+- **Decision**: in `ToolkitTests.cs`, raise `DmRulesBytesAllowed` to 30,602 and name this spec in its comment and
   message; add one test that § Fun first holds "yes, and" and "no, but", so a later cut cannot drop them silently.
 - **Rationale**: the toolkit tests are how this repository checks the prompts (`.docs/development.md` § Writing
   prompts). No test quotes the three bullets being changed (searched `tests/`, `src/` and `kit/` for their
@@ -84,7 +84,7 @@ All measurements on `main` at `5b0e7a8`, on a scratch copy of `kit/dm-rules.md`.
   "use "no, but" in the fiction: turn it aside"), and its examples show the technique without the words.
 - **Rationale**: the maintainer's clarification. "Answer with "yes, and"" or "say "no, but"" could be read as a
   phrase to open replies with. A model copies the shape of its examples, so the examples carry no such phrase.
-- **Cost**: +54 bytes over the earlier draft, with R11; the cap rises by 498 of the 500 allowed, leaving 2.
+- **Cost**: +54 bytes over the earlier draft, with R11; the cap rises by 559 of the 560 allowed, leaving 1.
 
 ## R11. The exception says "at any lethality"
 

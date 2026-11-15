@@ -1,8 +1,8 @@
 # Contract: `kit/dm-rules.md` § Fun first, three bullets
 
 The play rules are this feature's interface: DMC reads them on every turn. Lines 165, 166 and 169 change in place;
-lines 167 and 168 do not. Measured on a scratch copy of `main` at `5b0e7a8`: 212 lines before and after, 29,856 bytes
-before, 30,541 after (+685).
+lines 167 and 168 do not. Measured on a scratch copy of `main` at `adb0e07`: 212 lines before and after, 29,917 bytes
+before, 30,602 after (+685).
 
 ## Line 165
 
@@ -57,7 +57,7 @@ Meets FR-004 and FR-007.
 
 - `TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes`, renamed
   `TheAlwaysLoadedRulesStayAtTheirLineAndByteCaps`: still 212 lines; `DmRulesBytesAllowed` becomes the file's new size
-  (30,541 if the wording lands as above), and the comments and message say which spec set each cap.
+  (30,602 if the wording lands as above), and the comments and message say which spec set each cap.
 - A new test: § Fun first contains `"yes, and"` and `"no, but"`.
 
 Each line is one line of the file; the wrapping above is for reading only.

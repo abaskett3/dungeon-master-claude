@@ -472,15 +472,19 @@ internal static partial class ReadSet
             parts.Add(DigestSection(chapterPath, chapterShown, sections.Count == 0 ? "" : sections[0], relative));
             return parts;
         }
-        // Several headings (an area and the event it depends on): one part each, each section counted once.
-        var seen = new HashSet<int>();
-        foreach (string section in sections)
+        // Several headings (an area and the event it depends on): one part each, each section counted once. When any
+        // misses, the chapter is measured whole once, as for one heading, and its flag names every miss.
+        var found = sections.Select(s => DigestSectionAt(chapterPath, $"{chapterShown} § {s}", s, relative)).ToList();
+        var misses = found.Where(f => f.Part.PointerMiss is not null).Select(f => f.Part).ToList();
+        if (misses.Count > 0)
         {
-            var (part, start) = DigestSectionAt(chapterPath, $"{chapterShown} § {section}", section, relative);
-            if (start > 0 && !seen.Add(start))
-                continue;
-            parts.Add(part);
+            string line = misses[0].PointerMiss!
+                + string.Concat(misses.Skip(1).Select(m => "; " + m.PointerMiss!["module-progress.md: ".Length..]));
+            parts.Add(misses[0] with { Path = chapterShown, PointerMiss = line });
+            return parts;
         }
+        var seen = new HashSet<int>();
+        parts.AddRange(found.Where(f => seen.Add(f.Start)).Select(f => f.Part));
         return parts;
     }
 
@@ -568,14 +572,26 @@ internal static partial class ReadSet
         var lines = Measurement.ReadLines(path);
         if (section.Length == 0)
             return (new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, "whole (no section named)", lines), 0);
-        var file = Retrieval.MarkdownFile.Read(path);
+        Retrieval.MarkdownFile file;
+        try
+        {
+            file = Retrieval.MarkdownFile.Read(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            throw new DmcException($"cannot read {path}: {e.Message.TrimEnd('.', '\r', '\n')}");
+        }
         var (matches, nearest) = Retrieval.Lookup.FindSection(file, section);
         if (matches.Count == 1)
         {
+            // The section's lines come from the parsed file, whose line numbers they share, so a UTF-16 digest
+            // (re-encoded as UTF-8 by MarkdownFile) is measured as lookup prints it.
             var heading = file.Headings[matches[0]];
             int last = Retrieval.MarkdownHeadings.SectionEnd(file.Headings, matches[0], file.Lines.Length);
+            var sectionLines = Enumerable.Range(heading.Line - 1, last - heading.Line + 1)
+                .Select(i => new Line(file.Lines[i], file.LineBytes[i])).ToList();
             return (new Part(shown, PartKind.Section, EntryState.Measured, BudgetKind.None,
-                [.. lines.Skip(heading.Line - 1).Take(last - heading.Line + 1)], "the section named", lines), heading.Line);
+                sectionLines, "the section named", lines), heading.Line);
         }
         string miss = matches.Count == 0
             ? $"module-progress.md: no heading \"{section}\" in {relative}"
@@ -583,15 +599,5 @@ internal static partial class ReadSet
             : $"module-progress.md: \"{section}\" matches {matches.Count} headings in {relative}: name one";
         string note = matches.Count == 0 ? $"whole (no heading holds \"{section}\")" : $"whole (\"{section}\" matches {matches.Count} headings)";
         return (new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, note, lines, PointerMiss: miss), 0);
-    }
-
-    /// <summary>The level of a Markdown heading (the number of leading <c>#</c> before a space), or 0 for a line that is not one.</summary>
-    /// <param name="text">A line's text.</param>
-    static int HeadingLevel(string text)
-    {
-        int level = 0;
-        while (level < text.Length && text[level] == '#')
-            level++;
-        return level > 0 && level < text.Length && text[level] == ' ' ? level : 0;
     }
 }

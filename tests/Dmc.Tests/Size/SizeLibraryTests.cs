@@ -681,6 +681,31 @@ public sealed class SizeLibraryTests
         Assert.AreEqual("module-progress.md: \"Area\" matches 3 headings in chapters/02-phandalin.md: name one", FlagsOf(FlagKind.PointerMiss).Single().Line);
     }
 
+    [TestMethod]
+    public void SeveralHeadingsWithAMissMeasureTheChapterWholeOnceAndOneFlagNamesEveryMiss()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § The Lighthouse; § Area 3: The Inn; § The Dock");
+        var parts = Measure().Parts.Where(p => p.Path.StartsWith("modules/lmop/chapters/", StringComparison.Ordinal)).ToList();
+        Assert.HasCount(1, parts, "the whole chapter holds the matched section, so it is counted once and alone");
+        Assert.AreEqual("modules/lmop/chapters/02-phandalin.md", parts[0].Path);
+        Assert.AreEqual(PartKind.Whole, parts[0].Kind);
+        var miss = FlagsOf(FlagKind.PointerMiss).Single();
+        StringAssert.StartsWith(miss.Line, "module-progress.md: no heading \"The Lighthouse\"");
+        StringAssert.Contains(miss.Line, "; no heading \"The Dock\"");
+    }
+
+    [TestMethod]
+    public void ASectionOfAUtf16DigestIsMeasuredAsLookupPrintsIt()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § Area 3: The Inn");
+        string text = "# Phandalin\n\n## Area 2: The Square\n\n" + Filler(400) + "## Area 3: The Inn\n\n" + Filler(800)
+            + "## Area 4: The Mill\n\n" + Filler(400);
+        File.WriteAllText(Path.Combine(_root, "modules", "lmop", "chapters", "02-phandalin.md"), text, new System.Text.UnicodeEncoding(false, true));
+        var part = PartOf("modules/lmop/chapters/02-phandalin.md");
+        Assert.AreEqual(PartKind.Section, part.Kind);
+        Assert.AreEqual("## Area 3: The Inn\n\n".Length + 800, part.Bytes, "the UTF-8 bytes of the section, as lookup prints it");
+    }
+
     // ---------- the campaign ----------
 
     [TestMethod]

@@ -706,7 +706,7 @@ Added in spec 012 (issue #179, Phase C). Checks an ingested module in `modules/N
 
 | Problem | Line |
 |---|---|
-| A file of 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call | `modules/<m>/<file> <t> tokens, <n> lines: at the Read cap mark (20k): split it by heading into files under it` |
+| A file of 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call | `modules/<m>/<file> <t> tokens, <n> lines: at the Read cap mark (20k): split it by heading into smaller files beside it` |
 | A heading whose own text (to the next heading of any level) is over 3,000 estimated tokens | `modules/<m>/<file>:<line> "<heading>" <t> tokens, over the 3k section limit: give each area or entry its own heading` |
 | A heading whose own text holds two or more stat blocks (an `AC` or `Armor Class` line followed within eight lines by an `HP` or `Hit Points` line, each with a number) | `modules/<m>/<file>:<line> "<heading>" holds <k> stat blocks: give each its own heading` |
 | The same heading (as lookup compares headings) at the same level under the same parent, in one file | `modules/<m>/<file>:<line> "<heading>" repeats line <first>: make each heading unique` |
@@ -715,7 +715,7 @@ Lines come by file, in lookup's order, then by line; a heading with several stat
 
 ```
 $ dmc module check the-sunken-keep
-modules/the-sunken-keep/monsters.md 37.4k tokens, 1,351 lines: at the Read cap mark (20k): split it by heading into files under it
+modules/the-sunken-keep/monsters.md 37.4k tokens, 1,351 lines: at the Read cap mark (20k): split it by heading into smaller files beside it
 modules/the-sunken-keep/chapters/05-the-hub.md:40 "NPCs in this chapter" holds 4 stat blocks: give each its own heading
 ```
 

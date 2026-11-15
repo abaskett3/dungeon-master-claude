@@ -33,7 +33,7 @@ internal static partial class ModuleCheck
         string modules = Path.Combine(dmcFolder, "modules");
         bool plain = text.Length > 0 && text != ".." && text.IndexOfAny([':', '/']) < 0;
         if (!plain || !Directory.Exists(Path.Combine(modules, text)) || SourceFiles.Module(Path.Combine(modules, text)).Count == 0)
-            throw new DmcException($"no module {text} (modules: {Listed(modules)})");
+            throw new DmcException($"no module {text} (modules: {LookupSource.Listed(modules)})");
         return text;
     }
 
@@ -74,7 +74,7 @@ internal static partial class ModuleCheck
         long fileTokens = file.LineBytes.Sum(b => (long)b) / 4;
         if (fileTokens >= Budgets.NearCapTokens || file.Lines.Length >= Budgets.NearCapLines)
             problems.Add($"{shown} {Measurement.FormatTokens(fileTokens)} tokens, {file.Lines.Length.ToString("N0", CultureInfo.InvariantCulture)} lines: "
-                + $"at the Read cap mark ({Measurement.FormatTokens(Budgets.NearCapTokens)}): split it by heading into files under it");
+                + $"at the Read cap mark ({Measurement.FormatTokens(Budgets.NearCapTokens)}): split it by heading into smaller files beside it");
 
         var firstUnderParent = new Dictionary<(int Parent, int Level, string Key), int>();
         var open = new List<int>(); // the indexes of the headings enclosing the current one, outermost first
@@ -134,20 +134,6 @@ internal static partial class ModuleCheck
             }
         }
         return count;
-    }
-
-    /// <summary>The folder names in <c>modules/</c>, at most five, for the "no module" message; dot folders left out.</summary>
-    /// <param name="modules">The <c>modules/</c> folder.</param>
-    static string Listed(string modules)
-    {
-        if (!Directory.Exists(modules))
-            return "none";
-        var names = Directory.EnumerateDirectories(modules).Select(Path.GetFileName).OfType<string>()
-            .Where(n => !n.StartsWith('.')).Order(StringComparer.Ordinal).ToList();
-        if (names.Count == 0)
-            return "none";
-        string shown = string.Join(", ", names.Take(5));
-        return names.Count > 5 ? $"{shown}, …" : shown;
     }
 
     /// <summary>A line that starts, after list marks, <c>&gt;</c> and emphasis, with <c>AC</c> or <c>Armor Class</c> and then a number.</summary>

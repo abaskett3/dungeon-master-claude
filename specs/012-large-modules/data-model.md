@@ -24,7 +24,7 @@ One line each, in this order: files, then sections in file order, then repeats.
 
 | Kind | Raised when | Line |
 |---|---|---|
-| File at the mark | file tokens ≥ `Budgets.NearCapTokens` or lines ≥ `Budgets.NearCapLines` | `modules/<m>/<file> <t> tokens, <n> lines: at the Read cap mark (<mark>): split it by heading into files under it` |
+| File at the mark | file tokens ≥ `Budgets.NearCapTokens` or lines ≥ `Budgets.NearCapLines` | `modules/<m>/<file> <t> tokens, <n> lines: at the Read cap mark (<mark>): split it by heading into smaller files beside it` |
 | Section over the limit | own tokens > `Budgets.ModuleSection` | `modules/<m>/<file>:<line> "<heading>" <t> tokens, over the <limit> section limit: give each area or entry its own heading` |
 | Several stat blocks | stat blocks ≥ 2 | `modules/<m>/<file>:<line> "<heading>" holds <k> stat blocks: give each its own heading` |
 | Repeated heading | same key, same level, same parent, second and later | `modules/<m>/<file>:<line> "<heading>" repeats line <first>: make each heading unique` |

@@ -1238,7 +1238,7 @@ public sealed partial class ToolkitTests
     public void TheResumeReadsTheModulePointersHeadingsWithLookup()
     {
         string step = Read("kit/skills/dmc-resume-campaign/SKILL.md").Split('\n').Single(l => l.StartsWith("9. If `module-progress.md` exists", StringComparison.Ordinal));
-        StringAssert.Contains(step, "`dmc lookup <module>/chapters/NN-title.md <heading>`", "spec 012 FR-001");
+        StringAssert.Contains(step, "`dmc lookup modules/<module>/chapters/NN-title.md <heading>`", "spec 012 FR-001");
         StringAssert.Contains(step, "and nothing else of the module", "spec 012 FR-001");
         StringAssert.Contains(step, "the nearest heading", "spec 012 FR-003");
         StringAssert.Contains(Read("kit/templates/module-progress.md"), "chapters/NN-title.md § <the area's heading>", "spec 012 FR-002");

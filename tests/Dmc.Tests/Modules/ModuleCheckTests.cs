@@ -45,7 +45,7 @@ public sealed class ModuleCheckTests
         var problems = Problems();
         Assert.HasCount(1, problems);
         StringAssert.StartsWith(problems[0], $"modules/{Module}/monsters.md ");
-        StringAssert.EndsWith(problems[0], $"at the Read cap mark ({Measurement.FormatTokens(Budgets.NearCapTokens)}): split it by heading into files under it");
+        StringAssert.EndsWith(problems[0], $"at the Read cap mark ({Measurement.FormatTokens(Budgets.NearCapTokens)}): split it by heading into smaller files beside it");
     }
 
     [TestMethod]

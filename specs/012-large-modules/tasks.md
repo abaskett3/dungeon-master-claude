@@ -180,7 +180,7 @@ misses. Mostly done by T012, T017 and T018.
       `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` of a campaign on a synthetic module, played into a fight with a module
       creature; record what DMC read at the resume (the index and the pointer's headings only) and that it looked the
       stat block up rather than reading the reference file (User Story 4's Independent Test)
-- [ ] T033 Open the PR, then check it:
+- [X] T033 Open the PR, then check it:
       - commit, push, and open the PR with the full description: what changed, why, the sources (spec 012, the
         research items, issue #179 step 7), the tests, the documents changed, why no migration is needed (the
         template keeps its line and label and every old pointer stays valid), the measured cost, and

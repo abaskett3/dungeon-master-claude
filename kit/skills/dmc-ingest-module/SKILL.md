@@ -92,7 +92,7 @@ Every stat block, NPC, item, spell, rule, player option and handout gets a headi
 - Spells, rules and player options the module adds: in `items.md`, or a file of their own when there are many.
 - Handouts and player-facing text: list them in the index with page numbers.
 
-Keep each file readable in one call: when `dmc module check` says a file is at the mark, split it by heading into files under it (`monsters-a-m.md`, `monsters-n-z.md`, or by kind). Lookup searches every top-level file, so a split breaks nothing.
+Keep each file readable in one call: when `dmc module check` says a file is at the mark, split it by heading into smaller files beside it, in the module's top folder (`monsters-a-m.md`, `monsters-n-z.md`, or by kind), never in a subfolder. Lookup searches every top-level file, so a split breaks nothing.
 
 ## 5. Verify
 

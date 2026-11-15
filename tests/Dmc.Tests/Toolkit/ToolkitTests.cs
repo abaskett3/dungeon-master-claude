@@ -1202,10 +1202,11 @@ public sealed partial class ToolkitTests
     const int DmRulesLines = 212;
 
     /// <summary>
-    /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043, and spec 014 (FR-008) raised it by 559
-    /// of the 560 it allows, to the file's size once "yes, and" and "no, but" landed (about 171 more tokens per turn).
+    /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043, and spec 014 (FR-008) raised it by 593,
+    /// the allowance after its play test (the way-forward wording added 34 to the first 559), to the file's size once
+    /// "yes, and" and "no, but" landed (about 180 more tokens per turn).
     /// </summary>
-    const int DmRulesBytesAllowed = 30_602;
+    const int DmRulesBytesAllowed = 30_636;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.

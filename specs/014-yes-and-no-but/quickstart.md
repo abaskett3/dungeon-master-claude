@@ -161,3 +161,20 @@ stone by my own hand." After `/dmc-campaign-full-save`:
 
 Pass for User Story 3 scenario 1 (recorded in `dm-notes.md` with how it ties in). This campaign has no `## Arc plan`
 section: it predates the template's (commit `50e43d5`), so the goal could not go in the Arc plan's Character arcs.
+
+### Second round (T020): "no, but" with a way toward what the player wanted (research R12)
+
+Run on 2026-11-15 in the same folder and campaign, restored to its state before the first round (session 54, the
+high road after Fight 12), in a new pinned session, with line 166's new wording in the folder's `CLAUDE.md`. None of
+the four rested on a wrong premise.
+
+| # | Ruled out | What Shale wanted | Result |
+|---|---|---|---|
+| 9′ | a hidden dwarven entrance in the west slope | a way into the mountain, where the stone came from | Pass. Twenty minutes of knocking: granite, no chisel work. In the same reply Pip: "it didn't come out of the hill. The groove runs in from the *north* … from somewhere up the mountain" |
+| 10′ | flying to the saddle on his cloak | to see the saddle now | Pass, weakly. One heartbeat of lift, then a skid down the road, unhurt; the way is only implied: Kibil "only goes up on your word" |
+| 11′ | shouldering a cart-bed of granite to carry home | a sample for Bruni | Pass. It comes up to his knees; Pip: Hobb's crews have "timber sledges and ponies at the high camp", "or there's this size, sir, if Bruni only wants a piece with the grain". An out-of-character line after it gives his lifting limit, a rules note, not a refusal |
+| 12′ | questioning the rime | where its mistress is and how many more | Partial. The rime does not answer, and melts where the Ember's light reaches it; the wind cuts out for a breath, as if listening. A hook, but no way toward where she is or how many |
+
+SC-002 after the second round: 4 of 5 with the first round's message 13 (9′, 10′, 11′ and the attack on Rorn; 10′
+only by implication), 0 of 5 saying the story does not allow it, no die changed, and no reply saying "no, but". Not
+met: 12′ answered with a hook instead of a way forward.

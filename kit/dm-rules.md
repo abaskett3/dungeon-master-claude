@@ -55,7 +55,7 @@ Shared templates for new files are in `templates/`. Ingested published modules a
 Write changes to disk when they happen, not later. A crash, a closed terminal or a context compaction should never cost more than the current exchange.
 
 - **Any change to the present moment** (HP, spell slots, conditions, inventory, gold, location, time, quest status): update `game-state.md` before you narrate the next beat. In combat, bring the tracker up to date once per reply, with a single edit that replaces the tracker block, not one edit per change.
-- **Any new fact you invent that could come up again** (an NPC's name, a price, a distance, a piece of lore, a promise): add one line to `story/canon.md` right away.
+- **Any new fact you invent that could come up again** (an NPC's name, a price, a distance, a piece of lore, a promise): add one line to `story/canon.md` right away (a person's starts with their bold name, then `(also: …)`).
 - **End of a scene**: append its beats to the current session log.
 - **Level-ups, new items, new relationships, changed goals**: update the character sheet.
 - **Stopping play, before `/compact` or `/clear`, or when the player asks**: run `/dmc-campaign-full-save`.

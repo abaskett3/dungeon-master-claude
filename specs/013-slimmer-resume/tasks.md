@@ -168,11 +168,11 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
       `dmc recall --scene` (quickstart 1, 2, 4; SC-001 to SC-004, SC-006)
 - [x] T043 Headless play test in `D:\Claude\test-campaign` (quickstart 5): record `.active-campaign` and the campaign
       first, ask the user to refresh the folder from the build, run, restore both
-- [ ] T044 Open the PR with the full description (what, why, sources, tests, documents, migration 006, the standing
+- [x] T044 Open the PR with the full description (what, why, sources, tests, documents, migration 006, the standing
       cost, `Part of #179`), then check it with `gh pr view <n> --json body`
-- [ ] T045 Run the built-in code review once on the PR; check each finding; show the fixes to the user and commit
+- [x] T045 Run the built-in code review once on the PR; check each finding; show the fixes to the user and commit
       them only on approval; check the documents are current; ask the user to merge once CI passes
-- [ ] T046 After the merge: delete the branch; run `/speckit-converge` until a pass appends nothing, then tick the last
+- [x] T046 After the merge: delete the branch; run `/speckit-converge` until a pass appends nothing, then tick the last
       tasks in a small PR
 
 ## Dependencies and order
@@ -200,3 +200,8 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
 
 US1 is the MVP: cards alone save about 11k. Deliver all five stories in the one PR; the phases are checkpoints, each
 committed.
+
+## Phase 9: Convergence
+
+- [x] T047 Mark issue #179 Phase D shipped in `.docs/roadmap.md` (PR #213 merged; the gate checked after release, pending) per FR-030 (partial)
+- [x] T048 Give a People entry's shape where DMC adds a canon line in play (`kit/dm-rules.md` line 58: a person's line starts with their bold name, then `(also: …)`), within FR-028's 400 bytes and no new line, per FR-019 (partial)

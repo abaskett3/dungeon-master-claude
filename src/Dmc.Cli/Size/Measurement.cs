@@ -28,8 +28,14 @@ internal enum PartKind
     /// <summary>The session log from the third-last scene to the end.</summary>
     Tail,
 
-    /// <summary>Canon over its limit: the always-read sections only (the search the resume also does is not counted).</summary>
+    /// <summary>Canon over its limit: the always-read sections only (the search the resume also does is not counted). Kept for the rollback of spec 013's canon read (research R8); no read set uses it now.</summary>
     AlwaysReadSections,
+
+    /// <summary>Canon at or over <see cref="Budgets.CanonWholeBelow"/>: its always-read sections and what <c>dmc recall --scene</c> prints (spec 013 FR-009).</summary>
+    ByScene,
+
+    /// <summary>A companion's sheet from the top through its play card (spec 013 FR-004).</summary>
+    ToPlayCard,
 
     /// <summary>One section of a module's chapter digest.</summary>
     Section,
@@ -64,11 +70,14 @@ internal enum EntryState
 /// <param name="FileLines">Every line of the file, for a check that looks past the part read (canon's sections when it is read in sections); the same as <paramref name="Lines"/> otherwise.</param>
 /// <param name="InTotal">False for a file measured and flagged that the resume does not read (a campaign's own <c>legacy.md</c>, which other campaigns read), so the total leaves it out.</param>
 /// <param name="PointerMiss">For a module digest named by <c>module-progress.md</c>: the line saying a heading it names was not found, or found more than once, so the save fixes the pointer (spec 012 research R8); null otherwise.</param>
+/// <param name="ExtraBytes">Bytes the resume reads for this file beyond <paramref name="Lines"/>: for canon read by scene, what <c>dmc recall --scene</c> prints (spec 013 FR-009); 0 otherwise.</param>
+/// <param name="NoPlayCard">True for a companion's sheet that has no play card, which the full save writes (spec 013 FR-004).</param>
 internal sealed record Part(string Path, PartKind Kind, EntryState State, BudgetKind Budget, IReadOnlyList<Line> Lines,
-    string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true, string? PointerMiss = null)
+    string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true, string? PointerMiss = null, long ExtraBytes = 0,
+    bool NoPlayCard = false)
 {
-    /// <summary>The bytes of the part read.</summary>
-    public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes);
+    /// <summary>The bytes of the part read, <see cref="ExtraBytes"/> included.</summary>
+    public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes) + ExtraBytes;
 
     /// <summary>The estimated tokens of the part read: bytes ÷ 4, rounded down.</summary>
     public long Tokens => Bytes / 4;

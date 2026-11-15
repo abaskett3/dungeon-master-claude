@@ -306,19 +306,20 @@ public abstract class SizeCommandContract
         Assert.AreEqual("", result.Stderr);
         CollectionAssert.AreEqual(new[]
         {
-            "story/canon.md 19.2k is over its 19k limit: read it in sections; a full save archives it down to 16k (move about 3.2k)",
+            "story/canon.md 19.2k is over its 19k limit: a full save archives it down to 16k (move about 3.2k)",
             "game-state.md 4.1k is over its 4k budget",
         }, result.StdoutLines);
     }
 
+    /// <summary>The full report shows canon read by scene (spec 013), with no note that a search is left uncounted, and still lists canon's own sections.</summary>
     [TestMethod]
-    public void TheFullReportShowsCanonInSectionsAndSaysTheSearchIsNotCounted()
+    public void TheFullReportShowsCanonReadBySceneAndListsItsSections()
     {
         Arrange(() => Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- one\n\n## Timeline\n\n" + Filler(Budgets.CanonLimit * 4 + 400)));
         string[] lines = Size().StdoutLines;
         int canon = Array.FindIndex(lines, l => l.TrimStart().StartsWith("story/canon.md", StringComparison.Ordinal));
-        StringAssert.Contains(lines[canon], "read in sections");
-        Assert.AreEqual("    (the search for the scene's names is not counted)", lines[canon + 1]);
+        StringAssert.Contains(lines[canon], "read in sections and by scene");
+        Assert.DoesNotContain("is not counted", string.Join("\n", lines));
         string sections = lines.Single(l => l.StartsWith("  story/canon.md: ", StringComparison.Ordinal));
         StringAssert.StartsWith(sections, "  story/canon.md: Timeline 19.2k", "canon's own sections are listed when it is over its limit, the archive step's guide");
     }

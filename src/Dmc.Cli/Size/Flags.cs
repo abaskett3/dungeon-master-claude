@@ -2,10 +2,10 @@ using System.Text.RegularExpressions;
 
 namespace Dmc.Size;
 
-/// <summary>The kinds of flag, in the order their lines are printed: canon over its limit first, because the resume acts on it before it reads.</summary>
+/// <summary>The kinds of flag, in the order their lines are printed: canon over its limit first.</summary>
 internal enum FlagKind
 {
-    /// <summary>Canon is at or over <see cref="Budgets.CanonLimit"/>, so the resume reads it in sections.</summary>
+    /// <summary>Canon is at or over <see cref="Budgets.CanonLimit"/>, so the full save archives it (since spec 013 it no longer decides how the resume reads canon).</summary>
     CanonOverLimit,
 
     /// <summary>The part read is near the Read tool's cap for one call.</summary>
@@ -13,6 +13,9 @@ internal enum FlagKind
 
     /// <summary>A file the full save trims is over its budget.</summary>
     OverBudget,
+
+    /// <summary>A companion's sheet has no play card, so the resume reads it down to its history (spec 013 FR-004).</summary>
+    NoPlayCard,
 
     /// <summary>A section of <c>dm-notes.md</c> with a budget of its own is over it.</summary>
     SectionOverBudget,
@@ -76,7 +79,7 @@ internal static partial class Flags
             bool trimmed = part.Budget != BudgetKind.None;
             if (part.Budget == BudgetKind.Canon && part.FileTokens >= Budgets.CanonLimit)
                 flags.Add(new Flag(FlagKind.CanonOverLimit, part.Path,
-                    $"{part.Path} {Fmt(part.FileTokens)} is over its {Fmt(Budgets.CanonLimit)} limit: read it in sections; "
+                    $"{part.Path} {Fmt(part.FileTokens)} is over its {Fmt(Budgets.CanonLimit)} limit: "
                     + $"a full save archives it down to {Fmt(Budgets.CanonArchiveMark)} (move about {Fmt(part.FileTokens - Budgets.CanonArchiveMark)})", true));
 
             // Only a file the resume reads can be cut short at resume; one outside the total (legacy.md) has its budget flag.
@@ -88,6 +91,9 @@ internal static partial class Flags
             if (Budgets.Of(part.Budget) is { } budget && part.Tokens > budget)
                 flags.Add(new Flag(FlagKind.OverBudget, part.Path, $"{part.Path} {Fmt(part.Tokens)} is over its {Fmt(budget)} budget", true));
 
+            if (part.NoPlayCard)
+                flags.Add(new Flag(FlagKind.NoPlayCard, part.Path, $"{part.Path}: a companion with no play card: the full save writes one", true));
+
             if (part.PointerMiss is { } miss)
                 flags.Add(new Flag(FlagKind.PointerMiss, "module-progress.md", miss, true));
 
@@ -97,9 +103,11 @@ internal static partial class Flags
                 flags.AddRange(CanonFlags(part));
 
             // Only the files the full save trims (a session log or a digest is prose nobody splits, so a flag there could never
-            // be fixed), in the part the resume reads whatever its kind (a sheet to its history, canon's always-read sections),
-            // and only their content: the templates' own guidance, in the preamble and in comments, is not counted.
-            if (trimmed && Measurement.ContentLines(part.Lines).Count(l => l.Text.Length > Budgets.LongLineCharacters) is var longLines and > 0)
+            // be fixed), in the part the resume reads whatever its kind (a sheet to its history or its card), and only their
+            // content: the templates' own guidance, in the preamble and in comments, is not counted. Canon read by scene is
+            // counted whole, since the scene read may print any of its lines.
+            var counted = part.Kind == PartKind.ByScene ? part.FileLines : part.Lines;
+            if (trimmed && Measurement.ContentLines(counted).Count(l => l.Text.Length > Budgets.LongLineCharacters) is var longLines and > 0)
                 flags.Add(new Flag(FlagKind.LongLines, part.Path,
                     $"{part.Path}: {Count(longLines, "line")} over {Budgets.LongLineCharacters} characters", true));
         }

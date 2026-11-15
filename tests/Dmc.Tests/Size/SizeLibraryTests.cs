@@ -221,6 +221,17 @@ public sealed class SizeLibraryTests
         CollectionAssert.AreEqual(new[] { "character-sheets/npc-maren.md" }, sheets);
     }
 
+    /// <summary>A lone word matches only at the block name's edge, so a treasure named after a family names no one (seen on Rorn's Landing, 2026-11-15).</summary>
+    [TestMethod]
+    public void ACompanionIsMatchedByAWordOnlyAtTheBlockNamesStartOrEnd()
+    {
+        string[] titles = ["Warden Brunna Kelderak", "Captain Emmajeen Kole", "Kibil Rornson"];
+        Assert.AreEqual(-1, ReadSet.MatchCompanion("The Kelderak treasure (s48.3)", titles), "a word inside the name");
+        Assert.AreEqual(1, ReadSet.MatchCompanion("Captain Kole", titles), "the last word");
+        Assert.AreEqual(2, ReadSet.MatchCompanion("Kibil (s12)", titles), "the trailing bracket is left out");
+        Assert.AreEqual(0, ReadSet.MatchCompanion("Brunna the warden of Kelderak", titles), "the first word");
+    }
+
     [TestMethod]
     public void ASheetThatIsBothCompanionAndPresentIsListedOnce()
     {
@@ -322,38 +333,120 @@ public sealed class SizeLibraryTests
         return fixedPart + Filler(bytes - Encoding.UTF8.GetByteCount(fixedPart), lineLength);
     }
 
+    /// <summary>Canon under the whole mark is read whole; at it, its always-read sections and what the scene read prints, which is what the resume reads (spec 013 FR-007, FR-009, SC-004).</summary>
     [TestMethod]
-    public void CanonJustUnderItsLimitIsReadWholeAndAtItIsReadInItsAlwaysReadSections()
+    public void CanonUnderTheWholeMarkIsReadWholeAndAtItByItsAlwaysReadSectionsAndTheScene()
     {
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonLimit * 4 - 4));
+        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4 - 4));
         Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind);
-        Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit));
 
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonLimit * 4));
+        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4));
         var canon = PartOf("story/canon.md");
-        Assert.AreEqual(PartKind.AlwaysReadSections, canon.Kind);
+        Assert.AreEqual(PartKind.ByScene, canon.Kind);
         CollectionAssert.AreEqual(new[] { "Rulings", "Prices, debts and promises", "Cast" }, canon.Sections.Select(s => s.Heading).ToArray(),
-            "the two always-read sections and the one whose comment says Always read; the Timeline is searched, not read");
-        Assert.HasCount(1, FlagsOf(FlagKind.CanonOverLimit));
+            "the two always-read sections and the one whose comment says Always read; the Timeline is read by scene");
+        long scene = global::Dmc.Retrieval.SceneRead.Run(_root, Name).Sum(l => (long)global::Dmc.Retrieval.Recall.Bytes(l));
+        Assert.IsGreaterThan(0L, scene);
+        Assert.AreEqual(canon.Lines.Sum(l => (long)l.Bytes) + scene, canon.Bytes, "the sections plus the bytes the scene read prints");
+        Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit), "the archive limit is still 19k");
+    }
+
+    /// <summary>The scene read's bytes are its real output: a scene that matches Timeline lines adds them (spec 013 SC-004).</summary>
+    [TestMethod]
+    public void CanonReadByScenePaysForTheLinesTheSceneMatches()
+    {
+        string canon = CanonOf(Budgets.CanonWholeBelow * 4) + "- The ferryman Oswin charges three silver a head at the Marrow ford (s3.2).\n";
+        Write(_root, "story/canon.md", canon);
+        long before = PartOf("story/canon.md").Bytes;
+        Write(_root, "game-state.md", GameState([]).Replace("- **Location**: a road", "- **Location**: the Marrow ford, Oswin's hut"));
+        Assert.IsGreaterThan(before, PartOf("story/canon.md").Bytes, "the matching line is read and counted");
     }
 
     [TestMethod]
     public void TwoCanonsOfTheSameLineCountAreTreatedByTheirSize()
     {
-        Write(_root, "story/canon.md", CanonOf(32000, lineLength: 160));
-        Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind, "8k of short lines");
-        Write(_root, "story/canon.md", CanonOf(96000, lineLength: 480));
-        Assert.AreEqual(PartKind.AlwaysReadSections, PartOf("story/canon.md").Kind, "24k of long lines");
+        Write(_root, "story/canon.md", CanonOf(20000, lineLength: 160));
+        Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind, "5k of short lines");
+        Write(_root, "story/canon.md", CanonOf(60000, lineLength: 480));
+        Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind, "15k of long lines");
     }
 
+    /// <summary>The long campaign's canon (15.5k, about 17k once fight stories reach it), read whole before spec 013, is now read by scene.</summary>
     [TestMethod]
-    public void TheLongCampaignsCanonIsReadWholeNowAndAfterTheReviewsAdditions()
+    public void TheLongCampaignsCanonIsReadBySceneNowAndAfterTheReviewsAdditions()
     {
         foreach (int tokens in new[] { 15500, 17000 })
         {
             Write(_root, "story/canon.md", CanonOf(tokens * 4));
-            Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind, $"{tokens} tokens");
+            Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind, $"{tokens} tokens");
+            Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit), $"{tokens} tokens is under the archive limit");
         }
+    }
+
+    /// <summary>Canon over the archive limit is still flagged for the full save, read by scene as below it.</summary>
+    [TestMethod]
+    public void CanonOverItsLimitIsFlaggedForTheArchiveAndStillReadByScene()
+    {
+        Write(_root, "story/canon.md", CanonOf(Budgets.CanonLimit * 4));
+        Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind);
+        Assert.HasCount(1, FlagsOf(FlagKind.CanonOverLimit));
+    }
+
+    /// <summary>Canon read by scene counts its long lines across the whole file, since the scene read may print any of them.</summary>
+    [TestMethod]
+    public void CanonReadBySceneCountsLongLinesInTheWholeFile()
+    {
+        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4) + new string('b', 500) + "\n");
+        StringAssert.Contains(FlagsOf(FlagKind.LongLines).Single().Line, "story/canon.md: 1 line over 400 characters");
+    }
+
+    // ---------- play cards (spec 013) ----------
+
+    /// <summary>A sheet with a play card first: a title, a top field, the card of <paramref name="cardBytes"/>, a Playing them section and a history.</summary>
+    /// <param name="title">The character's name.</param>
+    /// <param name="cardBytes">The card's filler.</param>
+    static string CardSheet(string title, int cardBytes = 600) =>
+        $"# {title}\n\n- **Role in the story**: a friend\n\n## Play card\n\n" + Filler(cardBytes)
+        + "## Playing them\n\n" + Filler(1000) + "## History\n\n" + Filler(400);
+
+    [TestMethod]
+    public void ACompanionWithAPlayCardIsReadThroughItAgainstItsBudget()
+    {
+        Write(_root, "game-state.md", GameState(["Kibil Rornson"]));
+        string sheet = CardSheet("Kibil Rornson");
+        Write(_root, "character-sheets/npc-kibil-rornson.md", sheet);
+        var part = PartOf("character-sheets/npc-kibil-rornson.md");
+        Assert.AreEqual(PartKind.ToPlayCard, part.Kind);
+        Assert.AreEqual(BudgetKind.PlayCard, part.Budget);
+        Assert.AreEqual("to its play card", part.Note);
+        Assert.AreEqual(sheet.IndexOf("## Playing them", StringComparison.Ordinal), part.Bytes, "from the top to the heading after the card");
+        Assert.IsEmpty(FlagsOf(FlagKind.NoPlayCard));
+        Assert.IsEmpty(FlagsOf(FlagKind.OverBudget));
+
+        Write(_root, "character-sheets/npc-kibil-rornson.md", CardSheet("Kibil Rornson", cardBytes: Budgets.PlayCard * 4));
+        StringAssert.Contains(FlagsOf(FlagKind.OverBudget).Single().Line, "is over its 1k budget");
+    }
+
+    [TestMethod]
+    public void ACompanionWithNoPlayCardIsReadToItsHistoryAndFlaggedForTheFullSave()
+    {
+        Write(_root, "game-state.md", GameState(["Kibil Rornson"]));
+        Write(_root, "character-sheets/npc-kibil-rornson.md", Sheet("Kibil Rornson"));
+        Assert.AreEqual(PartKind.ToHistory, PartOf("character-sheets/npc-kibil-rornson.md").Kind);
+        var flag = FlagsOf(FlagKind.NoPlayCard).Single();
+        Assert.AreEqual("character-sheets/npc-kibil-rornson.md: a companion with no play card: the full save writes one", flag.Line);
+        Assert.IsTrue(flag.HoldsTheSave);
+    }
+
+    [TestMethod]
+    public void ThePcAndAnNpcPresentAreReadToTheirHistoryEvenWithAPlayCard()
+    {
+        Write(_root, "game-state.md", GameState(["Ada Stone"], present: "Dessa Birch"));
+        Write(_root, "character-sheets/pc-ada-stone.md", CardSheet("Ada Stone"));
+        Write(_root, "character-sheets/npc-dessa-birch.md", CardSheet("Dessa Birch"));
+        Assert.AreEqual(PartKind.ToHistory, PartOf("character-sheets/pc-ada-stone.md").Kind, "the PC's sheet is read as before (FR-006a)");
+        Assert.AreEqual(PartKind.ToHistory, PartOf("character-sheets/npc-dessa-birch.md").Kind, "cards are for companions only (FR-006a)");
+        Assert.IsEmpty(FlagsOf(FlagKind.NoPlayCard), "neither is a companion");
     }
 
     // ---------- the flags ----------

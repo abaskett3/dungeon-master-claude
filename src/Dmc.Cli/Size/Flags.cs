@@ -31,6 +31,9 @@ internal enum FlagKind
 
     /// <summary>A file read whole has lines over <see cref="Budgets.LongLineCharacters"/> characters.</summary>
     LongLines,
+
+    /// <summary><c>module-progress.md</c>'s pointer names a heading its chapter digest does not have, or has more than once (spec 012 research R8).</summary>
+    PointerMiss,
 }
 
 /// <summary>A condition worth acting on, with the file it concerns and the line the report prints for it.</summary>
@@ -84,6 +87,9 @@ internal static partial class Flags
 
             if (Budgets.Of(part.Budget) is { } budget && part.Tokens > budget)
                 flags.Add(new Flag(FlagKind.OverBudget, part.Path, $"{part.Path} {Fmt(part.Tokens)} is over its {Fmt(budget)} budget", true));
+
+            if (part.PointerMiss is { } miss)
+                flags.Add(new Flag(FlagKind.PointerMiss, "module-progress.md", miss, true));
 
             if (part.Budget == BudgetKind.DmNotes)
                 flags.AddRange(DmNotesFlags(part));

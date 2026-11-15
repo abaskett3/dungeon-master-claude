@@ -1218,15 +1218,42 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("kit/skills/dmc-setup-rules/SKILL.md"), "`dmc lookup rules <entry>`");
     }
 
+    /// <summary>
+    /// Spec 009 FR-020a, as spec 012 FR-016 amends it: the resume and the full save use neither recall nor lookup, except
+    /// the resume's module item (step 9), which reads the module pointer's headings with lookup (Phase C). Canon,
+    /// companions and the rest wait for Phase D's gate.
+    /// </summary>
     [TestMethod]
-    public void TheResumeAndTheFullSaveDoNotUseLookupOrRecall()
+    public void TheResumeAndTheFullSaveDoNotUseLookupOrRecallOutsideTheModuleRead()
     {
         foreach (string skill in new[] { "kit/skills/dmc-resume-campaign/SKILL.md", "kit/skills/dmc-campaign-full-save/SKILL.md" })
         {
-            string text = Read(skill);
+            string text = string.Join('\n', Read(skill).Split('\n').Where(l => !l.StartsWith("9. If `module-progress.md` exists", StringComparison.Ordinal)));
             Assert.DoesNotContain("dmc recall", text, $"{skill}: changing what the resume and full save read is Phase D's, behind its gate (FR-020a)");
-            Assert.DoesNotContain("dmc lookup", text, $"{skill}: changing what the resume and full save read is Phase D's, behind its gate (FR-020a)");
+            Assert.DoesNotContain("dmc lookup", text, $"{skill}: only the module read uses lookup; the rest is Phase D's, behind its gate (spec 012 FR-016)");
         }
+    }
+
+    [TestMethod]
+    public void TheResumeReadsTheModulePointersHeadingsWithLookup()
+    {
+        string step = Read("kit/skills/dmc-resume-campaign/SKILL.md").Split('\n').Single(l => l.StartsWith("9. If `module-progress.md` exists", StringComparison.Ordinal));
+        StringAssert.Contains(step, "`dmc lookup modules/<module>/chapters/NN-title.md <heading>`", "spec 012 FR-001");
+        StringAssert.Contains(step, "and nothing else of the module", "spec 012 FR-001");
+        StringAssert.Contains(step, "the nearest heading", "spec 012 FR-003");
+        StringAssert.Contains(Read("kit/templates/module-progress.md"), "chapters/NN-title.md § <the area's heading>", "spec 012 FR-002");
+        StringAssert.Contains(Read("kit/dm-rules.md"), "point \"Digest to read before continuing\" at the heading of the area the party is in", "spec 012 FR-002");
+    }
+
+    [TestMethod]
+    public void TheIngestSkillAsksForOneHeadingPerEntryAndRunsTheModuleCheck()
+    {
+        string skill = Read("kit/skills/dmc-ingest-module/SKILL.md");
+        StringAssert.Contains(skill, "each under a heading of its own, `## NN. Name (PDF n)`", "spec 012 FR-005: areas");
+        StringAssert.Contains(skill, "one heading each, `### Name (PDF n)`", "spec 012 FR-005: a chapter's NPCs");
+        StringAssert.Contains(skill, "Every stat block, NPC, item, spell, rule, player option and handout gets a heading of its own", "spec 012 FR-005");
+        StringAssert.Contains(SkillSection("kit/skills/dmc-ingest-module/SKILL.md", 5), "Run `dmc module check <module>`", "spec 012 FR-010");
+        StringAssert.Contains(SkillSection("kit/skills/dmc-ingest-module/SKILL.md", 6), "only once `dmc module check` prints nothing", "spec 012 FR-010");
     }
 
     // ---------- dmc size and the size rules ----------

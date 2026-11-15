@@ -35,17 +35,15 @@ internal static partial class Lookup
         if (source.Kind == SourceKind.Rules && files.Count == 0)
             return PdfRules(dmcFolder, source, heading);
 
-        var candidates = new List<(MarkdownFile File, string Relative, int Index)>();
+        var candidates = new List<(MarkdownFile File, int Index)>();
         foreach (string relative in files)
         {
             var file = Read(dmcFolder, Path.Combine(source.Folder, relative));
             for (int i = 0; i < file.Headings.Count; i++)
-                candidates.Add((file, relative, i));
+                candidates.Add((file, i));
         }
 
-        string key = MarkdownHeadings.Key(heading);
-        var matches = candidates.Where(c => key.Length > 0 && MarkdownHeadings.Key(c.File.Headings[c.Index].Text) == key).ToList();
-        var wanted = Words.Stems(heading).ToHashSet(StringComparer.Ordinal);
+        var matches = Exact(candidates, heading);
         // Markdown beside a rules PDF (house rules, say) wins only with an exact heading; otherwise the PDF's index and
         // pages come first, and only when they hold nothing do the markdown's looser matches and nearest headings follow.
         if (matches.Count == 0 && source.Kind == SourceKind.Rules && source.File is null && source.HasPdf)
@@ -59,10 +57,8 @@ internal static partial class Lookup
                 // Nothing in the PDF: fall through to the markdown.
             }
         }
-        if (matches.Count == 0 && wanted.Count > 0)
-        {
-            matches = candidates.Where(c => wanted.IsSubsetOf(Words.Stems(c.File.Headings[c.Index].Text))).ToList();
-        }
+        if (matches.Count == 0)
+            matches = Loose(candidates, heading);
 
         if (matches.Count == 1)
             return Section(dmcFolder, matches[0].File, matches[0].Index);
@@ -76,14 +72,57 @@ internal static partial class Lookup
             return lines;
         }
 
+        var nearest = Nearest(candidates, heading);
+        string near = nearest.Count > 0 ? $" (nearest: {string.Join("; ", nearest)})" : "";
+        throw new DmcException($"no heading \"{heading}\" in {sourceArgument}{near}");
+    }
 
-        var nearest = candidates
+    /// <summary>
+    /// The headings of one file that a heading's words find, by the matcher <c>dmc lookup</c> uses (exact, then every
+    /// word), and, when none does, the nearest headings its failure would name. <c>dmc size</c> resolves a module
+    /// campaign's pointer with it, so that what it measures is what the resume's lookup prints (spec 012 research R8).
+    /// </summary>
+    /// <param name="file">The file.</param>
+    /// <param name="heading">The heading's words.</param>
+    /// <returns>The indexes of the matching headings in <see cref="MarkdownFile.Headings"/>, and the nearest headings' texts when there is none.</returns>
+    internal static (List<int> Matches, List<string> Nearest) FindSection(MarkdownFile file, string heading)
+    {
+        var candidates = Enumerable.Range(0, file.Headings.Count).Select(i => (file, i)).ToList();
+        var matches = Exact(candidates, heading);
+        if (matches.Count == 0)
+            matches = Loose(candidates, heading);
+        return (matches.Select(m => m.Index).ToList(), matches.Count == 0 ? Nearest(candidates, heading) : []);
+    }
+
+    /// <summary>The candidates whose heading has the same key as <paramref name="heading"/> (<see cref="MarkdownHeadings.Key"/>).</summary>
+    /// <param name="candidates">Every heading searched, as a file and an index into its headings.</param>
+    /// <param name="heading">The heading's words.</param>
+    static List<(MarkdownFile File, int Index)> Exact(IReadOnlyList<(MarkdownFile File, int Index)> candidates, string heading)
+    {
+        string key = MarkdownHeadings.Key(heading);
+        return candidates.Where(c => key.Length > 0 && MarkdownHeadings.Key(c.File.Headings[c.Index].Text) == key).ToList();
+    }
+
+    /// <summary>The candidates whose heading holds every word stem of <paramref name="heading"/>.</summary>
+    /// <param name="candidates">Every heading searched, as a file and an index into its headings.</param>
+    /// <param name="heading">The heading's words.</param>
+    static List<(MarkdownFile File, int Index)> Loose(IReadOnlyList<(MarkdownFile File, int Index)> candidates, string heading)
+    {
+        var wanted = Words.Stems(heading).ToHashSet(StringComparer.Ordinal);
+        return wanted.Count == 0 ? [] : candidates.Where(c => wanted.IsSubsetOf(Words.Stems(c.File.Headings[c.Index].Text))).ToList();
+    }
+
+    /// <summary>The texts of the headings sharing the most word stems with <paramref name="heading"/>, at most <see cref="NearestListed"/>, in order.</summary>
+    /// <param name="candidates">Every heading searched, as a file and an index into its headings.</param>
+    /// <param name="heading">The heading's words.</param>
+    static List<string> Nearest(IReadOnlyList<(MarkdownFile File, int Index)> candidates, string heading)
+    {
+        var wanted = Words.Stems(heading).ToHashSet(StringComparer.Ordinal);
+        return candidates
             .Select((c, order) => (Text: c.File.Headings[c.Index].Text, Shared: Words.Stems(c.File.Headings[c.Index].Text).Distinct().Count(wanted.Contains), order))
             .Where(n => n.Shared > 0)
             .OrderByDescending(n => n.Shared).ThenBy(n => n.order)
             .Select(n => n.Text).Distinct(StringComparer.Ordinal).Take(NearestListed).ToList();
-        string near = nearest.Count > 0 ? $" (nearest: {string.Join("; ", nearest)})" : "";
-        throw new DmcException($"no heading \"{heading}\" in {sourceArgument}{near}");
     }
 
     /// <summary>

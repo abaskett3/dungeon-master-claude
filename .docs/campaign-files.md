@@ -304,6 +304,10 @@ modules/<module>/
 
 A campaign is a module campaign when its folder holds `module-progress.md`, which names the module and records the party's place in it. Page references in the digests are PDF page numbers, as `dmc pdf` and the Read tool use them; `index.md` records the offset to the printed numbers.
 
+Every keyed area, NPC, stat block, item, spell, rule, player option and handout has a heading of its own, `## NAME (PDF n)`, so that `dmc lookup` prints one of them and nothing more, and no file is so large that the Read tool cuts it. `dmc module check <module>` reports what breaks this (a file at the Read cap mark, a heading over the section limit or over several stat blocks, a heading repeated under one parent; see [dmc-reference.md](dmc-reference.md#module)); the ingest runs it, and the fix is an edit to the files: split a file by heading (`monsters-a-m.md`, `monsters-n-z.md`), since lookup searches every top-level file, or give each entry its own heading. A module ingested before this check keeps working while it fails it.
+
+`module-progress.md`'s "Digest to read before continuing" line names the chapter file and the headings a resume reads, the area the party is in and any scripted event it depends on: `chapters/05-the-hub.md § 12. The Well; § The Bell Tolls`. The resume reads the index and those sections, with `dmc lookup`, and no other part of the module. The older form, `chapters/05-the-hub.md, section The Well`, still works, so no campaign needs a migration.
+
 ## The rules folder
 
 `rules/` holds the player's optional rules reference, normally the SRD, and is the player's. `/dmc-setup-rules` writes `rules/index.md` (which document and edition, a section table with page ranges, a finer breakdown of the long alphabetical sections, and the pages most needed in play). For a PDF it first runs `dmc pdf text`, which writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`.

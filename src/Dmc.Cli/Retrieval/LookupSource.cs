@@ -100,9 +100,9 @@ internal sealed record LookupSource(SourceKind Kind, string Name, string Folder,
         };
     }
 
-    /// <summary>The folder names in a folder, at most <see cref="NamesListed"/>, for a message; dot folders left out.</summary>
+    /// <summary>The folder names in a folder, at most <see cref="NamesListed"/>, for a message; dot folders left out. Also used by <c>dmc module check</c>'s "no module" message.</summary>
     /// <param name="folder">The folder.</param>
-    static string Listed(string folder)
+    internal static string Listed(string folder)
     {
         if (!Directory.Exists(folder))
             return "none";

@@ -66,15 +66,16 @@ Write in your own words, as terse DM notes, not a copy of the text. Each digest 
 
 - **Overview**: what this chapter is for, expected level, how the party arrives and what moves them on.
 - **Timeline or triggers**: scripted events and what sets them off.
-- **Keyed areas**, one entry each, keeping the module's own numbering:
+- **Keyed areas**, each under a heading of its own, `## NN. Name (PDF n)`, keeping the module's own numbering, so that `dmc lookup` prints one area and a resume reads only the one the party is in:
   - area number and name, source page
+  - any scripted event that happens here, named in the area, not only in the timeline
   - what is immediately apparent, and what is hidden (with the DCs to find it)
   - creatures present (count and type, where their stat block is) and how they behave
   - traps and hazards (trigger, effect, DCs, damage)
   - treasure (exact contents)
   - exits and where they lead
   - whether there is read-aloud text, and its page (leave the wording in the source; read it from there at the table)
-- **NPCs in this chapter**: who, where, what they want, what they know, what they will do.
+- **NPCs in this chapter**: one heading each, `### Name (PDF n)`: who, where, what they want, what they know, what they will do.
 - **Clues and information**: what the party can learn here and where each clue points.
 - **Maps**: the page of each map, plus an ASCII sketch of the layout with the area numbers for DM use. A player-facing version is drawn later with the `dmc-draw-map` skill, showing only what has been seen.
 - **Milestones**: level-ups or story beats that end the chapter.
@@ -83,10 +84,15 @@ Copy numbers exactly: DCs, damage, quantities, HP, prices, distances. A wrong nu
 
 ## 4. Reference files
 
+Every stat block, NPC, item, spell, rule, player option and handout gets a heading of its own, `## NAME (PDF n)`, named as the module names it, so that a lookup by name prints that one entry. Never put two stat blocks under one heading.
+
 - `monsters.md`: every stat block that is unique to this module, in full and exact. Then a list of standard creatures the module uses, with where each appears.
 - `npcs.md`: major NPCs across the whole module: role, appearance, personality, goals, secrets, where they appear, stat block reference.
 - `items.md`: module-specific magic items and notable treasure, with their rules and where they are found.
+- Spells, rules and player options the module adds: in `items.md`, or a file of their own when there are many.
 - Handouts and player-facing text: list them in the index with page numbers.
+
+Keep each file readable in one call: when `dmc module check` says a file is at the mark, split it by heading into smaller files beside it, in the module's top folder (`monsters-a-m.md`, `monsters-n-z.md`, or by kind), never in a subfolder. Lookup searches every top-level file, so a split breaks nothing.
 
 ## 5. Verify
 
@@ -95,6 +101,7 @@ Copy numbers exactly: DCs, damage, quantities, HP, prices, distances. A wrong nu
 - Spot-check a sample of numbers in each chapter (a few DCs, a stat block, a treasure list) against the source and fix any mismatch.
 - Every map has been looked at and sketched, and the index says which page images were viewed.
 - Note in the index anything unreadable or missing.
+- Run `dmc module check <module>`. It prints nothing when every file and heading is in shape; otherwise one line per problem, with the fix: split a file at the mark, give each area or entry its own heading, make a repeated heading unique. Fix each line and run it again until it prints nothing. Do this at every pause too, over the chapters written so far.
 
 ## 6. Size and context
 
@@ -104,4 +111,4 @@ A full hardcover is hundreds of pages; ingesting it uses a lot of context.
 - It does not have to be done at once. The survey plus the first chapter or two is enough to begin; ingest later chapters before the party reaches them, using the status checklist.
 - If the player has asked for subagents and they are available, one per chapter works well: run `dmc pdf all` once first, then give each the page range, the paths of the extracted text and page images, the page offset and the digest format above, and have it write its chapter file directly.
 
-When finished or pausing, tell the player which chapters are ready, without describing what is in them.
+When finished or pausing, and only once `dmc module check` prints nothing, tell the player which chapters are ready, without describing what is in them.

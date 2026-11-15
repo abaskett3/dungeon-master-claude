@@ -6,7 +6,8 @@ namespace Dmc.Size;
 /// <param name="Campaign">The campaign's folder name.</param>
 /// <param name="Parts">The read set, in the resume's order.</param>
 /// <param name="Flags">The flags, in the order they are printed.</param>
-internal sealed record SizeResult(string Campaign, IReadOnlyList<Part> Parts, IReadOnlyList<Flag> Flags)
+/// <param name="ModuleLine">The <c>module:</c> line for a module campaign whose module fails <c>dmc module check</c> (spec 012 research R6), or null.</param>
+internal sealed record SizeResult(string Campaign, IReadOnlyList<Part> Parts, IReadOnlyList<Flag> Flags, string? ModuleLine = null)
 {
     /// <summary>The estimated tokens of everything the resume reads: the parts outside the total (<see cref="Part.InTotal"/>) are left out.</summary>
     public long Total => Parts.Where(p => p.InTotal).Sum(p => p.Tokens);
@@ -64,7 +65,8 @@ internal static class SizeReport
 
     /// <summary>
     /// Measures a campaign: its read set (<see cref="ReadSet.Build"/>), then the files measured outside the total
-    /// (<see cref="ReadSet.OutsideTheTotal"/>), and the flags of both (<see cref="Flags.Find"/>). Writes nothing.
+    /// (<see cref="ReadSet.OutsideTheTotal"/>), the flags of both (<see cref="Flags.Find"/>), and, for an unfinished
+    /// module campaign, the module's check (<see cref="ModuleLine"/>). Writes nothing.
     /// </summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="campaign">The campaign's folder name, as <see cref="Target"/> returns it.</param>
@@ -73,7 +75,32 @@ internal static class SizeReport
     {
         var parts = ReadSet.Build(dmcFolder, campaign);
         parts.AddRange(ReadSet.OutsideTheTotal(dmcFolder, campaign));
-        return new SizeResult(campaign, parts, Flags.Find(parts));
+        return new SizeResult(campaign, parts, Flags.Find(parts), ModuleLine(dmcFolder, campaign));
+    }
+
+    /// <summary>
+    /// The one line <c>dmc size</c> prints when an unfinished module campaign's module has problems
+    /// (contracts/dmc-module-check.md): how many, and the command that lists them, ending with the mark that tells the full
+    /// save the line is not its to trim. Null for a sound module, a finished one, a homebrew campaign or a module not
+    /// ingested; a module the check cannot read says so in the same line, so the measure itself never fails on it.
+    /// </summary>
+    /// <param name="dmcFolder">The DMC folder.</param>
+    /// <param name="campaign">The campaign's folder name.</param>
+    static string? ModuleLine(string dmcFolder, string campaign)
+    {
+        if (ReadSet.UnfinishedModule(dmcFolder, campaign) is not { } module)
+            return null;
+        string end = " " + Flags.NotTheSaves;
+        try
+        {
+            int count = Modules.ModuleCheck.Problems(dmcFolder, module).Count;
+            return count == 0 ? null
+                : $"module: modules/{module} has {count} problem{(count == 1 ? "" : "s")}: run dmc module check {module}{end}";
+        }
+        catch (DmcException e)
+        {
+            return $"module: modules/{module}: {e.Message}{end}";
+        }
     }
 
     /// <summary>
@@ -122,9 +149,11 @@ internal static class SizeReport
         }
 
         lines.Add("flags:");
-        if (result.Flags.Count == 0)
+        if (result.Flags.Count == 0 && result.ModuleLine is null)
             lines.Add("  nothing to flag");
         lines.AddRange(result.Flags.Select(f => "  " + f.Line));
+        if (result.ModuleLine is { } module)
+            lines.Add("  " + module);
         return lines;
     }
 

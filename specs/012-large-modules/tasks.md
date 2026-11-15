@@ -205,17 +205,17 @@ misses. Mostly done by T012, T017 and T018.
 
 | Requirements | Tasks |
 |---|---|
-| FR-001 to FR-004 (resume, pointer, `dmc size`) | T005, T014, T016, T017, T018 |
+| FR-001 to FR-004 (resume, pointer, `dmc size`) | T005, T014, T016, T017, T018, T039 |
 | FR-005 to FR-011 (the check, ingest) | T004, T006 to T013 |
 | FR-012 to FR-014 (existing modules) | T005, T020 to T022 |
-| FR-015, FR-016 (the rules, Phase D kept out) | T018, T023, T028 |
-| FR-017 (documents) | T024 to T030 |
+| FR-015, FR-016 (the rules, Phase D kept out) | T018, T023, T028, T036 |
+| FR-017 (documents) | T024 to T030, T041 |
 | FR-018 (constraints) | every code task; T030 |
-| SC-001 to SC-003 | T014, T015 |
+| SC-001 to SC-003 | T014, T015, T037 |
 | SC-004, SC-009 | T007 |
 | SC-005 | T032 |
 | SC-006 | T009 |
-| SC-007 | T020 |
+| SC-007 | T020, T038 |
 | SC-008 | T018, T031 |
 
 ## Parallel examples

@@ -190,7 +190,8 @@ misses. Mostly done by T012, T017 and T018.
       user and commit them only on their approval; check the documents; wait for CI to pass, then ask the user to
       merge
 - [X] T035 After the PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
-      its PR has merged (`.docs/development.md` § Spec-driven changes)
+      its PR has merged (`.docs/development.md` § Spec-driven changes). Done: the third pass, on `main` at 6230a5f
+      after #211 merged, appended nothing; the spec is frozen when the PR that ticks this task merges
 
 ---
 

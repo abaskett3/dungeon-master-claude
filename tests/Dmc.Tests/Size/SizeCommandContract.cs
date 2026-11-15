@@ -147,6 +147,34 @@ public abstract class SizeCommandContract
         CollectionAssert.DoesNotContain(report, "  nothing to flag");
     }
 
+    /// <summary>
+    /// SC-007: a reference file over the mark gives exactly one module line, and once it is split by hand into two files
+    /// beside it, each under the mark, none. A homebrew campaign is <see cref="TheCheckFormPrintsNothingWhenAllIsWell"/>.
+    /// </summary>
+    [TestMethod]
+    public void AnOversizedReferenceFileGivesOneModuleLineAndNoneOnceSplit()
+    {
+        static string Entries(int from, int to) =>
+            string.Concat(Enumerable.Range(from, to - from + 1).Select(n => $"## Beast {n} (PDF {n})\n\n{Filler(2000)}"));
+        string module = Path.Combine(_root, "modules", "marsh");
+        Arrange(() =>
+        {
+            MakeModuleCampaign(problems: 0);
+            WriteAt(module, "monsters.md", "# Monsters\n\n" + Entries(1, 45));
+        });
+        CollectionAssert.AreEqual(new[] { "module: modules/marsh has 1 problem: run dmc module check marsh (not the full save's to trim)" },
+            Size("--check").StdoutLines);
+        Assert.AreEqual(_before, Hash(_root), "the first run wrote nothing either");
+
+        Arrange(() =>
+        {
+            File.Delete(Path.Combine(module, "monsters.md"));
+            WriteAt(module, "monsters-a-m.md", "# Monsters A to M\n\n" + Entries(1, 23));
+            WriteAt(module, "monsters-n-z.md", "# Monsters N to Z\n\n" + Entries(24, 45));
+        });
+        Assert.AreEqual("", Size("--check").Stdout, "split into two files under the mark");
+    }
+
     [TestMethod]
     public void ASoundAFinishedAndAMissingModulePrintNoModuleLine()
     {

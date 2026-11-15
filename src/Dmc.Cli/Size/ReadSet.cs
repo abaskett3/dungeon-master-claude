@@ -64,6 +64,10 @@ internal static partial class ReadSet
     [GeneratedRegex(@"modules/([^/`\s]+)")]
     private static partial Regex ModuleFolder();
 
+    /// <summary>A pointer that names no digest: the word <c>none</c>, in any case, alone or followed by punctuation and prose.</summary>
+    [GeneratedRegex(@"^none\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NoDigest();
+
     /// <summary>The chapter digest file named in <c>module-progress.md</c>.</summary>
     [GeneratedRegex(@"[\w./-]+\.md")]
     private static partial Regex DigestFile();
@@ -456,7 +460,10 @@ internal static partial class ReadSet
             : Part.Absent(indexShown, EntryState.NotIngested, BudgetKind.None, "not ingested"));
 
         string? digest = ValueOf(progress, "**Digest to read before continuing**");
-        if (digest is null || DigestFile().Match(digest) is not { Success: true } file)
+        // "none", and "none." with prose after it (the-silver-egg's "none. Consult … (`items.md`) …"), name no digest,
+        // even when the prose names a file (spec 012 FR-003).
+        if (digest is null || NoDigest().IsMatch(digest)
+            || DigestFile().Match(digest) is not { Success: true } file)
             return parts;
         string relative = file.Value.StartsWith($"modules/{module}/", StringComparison.Ordinal) ? file.Value[$"modules/{module}/".Length..] : file.Value;
         string chapterShown = $"modules/{module}/{relative}";

@@ -20,6 +20,9 @@ are bytes ÷ 4, a section is a heading's own text (to the next heading of any le
   sections of `monsters-crooked-moon.md`.
 - The one campaign on a module that is still open, `the-silver-egg`, has `Digest to read before continuing: none.
   Consult … only when …`, which today's `dmc size` already reads as no digest. Nothing in it breaks.
+  *Corrected in Phase 8 (T039):* it holds only because that module is finished, so no digest is read at all. The
+  pointer's prose names `items.md`, which the digest pattern matched, so on an unfinished campaign it was measured as
+  a pointer to `items.md`. `dmc size` now reads a pointer that starts with the word `none` as no digest.
 
 ## R1. Where the check lives
 

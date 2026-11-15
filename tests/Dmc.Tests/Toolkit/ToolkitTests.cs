@@ -1243,7 +1243,14 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(step, "the nearest heading", "spec 012 FR-003");
         StringAssert.Contains(Read("kit/templates/module-progress.md"), "chapters/NN-title.md § <the area's heading>", "spec 012 FR-002");
         StringAssert.Contains(Read("kit/dm-rules.md"), "point \"Digest to read before continuing\" at the heading of the area the party is in", "spec 012 FR-002");
+        StringAssert.Contains(step, "a line that starts `none` names no digest", "spec 012 FR-003: as dmc size reads it");
     }
+
+    [TestMethod]
+    public void TheRulesSayWhatToDoWhenALookupInPlayFindsNoHeading() =>
+        StringAssert.Contains(Read("kit/dm-rules.md"),
+            "if it finds no heading, try a nearest heading it lists, then Grep the module's files (never read one whole) and open the pages they cite in `source/`",
+            "spec 012 FR-015");
 
     [TestMethod]
     public void TheIngestSkillAsksForOneHeadingPerEntryAndRunsTheModuleCheck()

@@ -681,6 +681,39 @@ public sealed class SizeLibraryTests
         Assert.AreEqual("module-progress.md: \"Area\" matches 3 headings in chapters/02-phandalin.md: name one", FlagsOf(FlagKind.PointerMiss).Single().Line);
     }
 
+    /// <summary>
+    /// SC-001: on a module of the measured shape (38 chapters, a hub chapter of about 13.6k with eight areas, a 37k
+    /// monster file), a pointer to one hub area measures that area, about 1.7k, not the hub chapter.
+    /// </summary>
+    [TestMethod]
+    public void OnAModuleOfTheMeasuredShapeAResumeReadsTheIndexAndOneAreaNotTheHubChapter()
+    {
+        Modules.ModuleFixtures.WriteSoundModule(_root, monsters: 57);
+        string m = Modules.ModuleFixtures.Module;
+        Write(_root, "module-progress.md", $"# Module progress\n\n- **Module folder**: `modules/{m}/`\n\n## Current position\n\n"
+            + "- **Digest to read before continuing**: chapters/05-the-hub.md § 3. Area 5-3\n\n## Chapter status\n\n- 5. The Hub: in progress\n");
+        var parts = Measure().Parts.Where(p => p.Path.StartsWith($"modules/{m}/", StringComparison.Ordinal)).ToList();
+        CollectionAssert.AreEqual(new[] { $"modules/{m}/index.md", $"modules/{m}/chapters/05-the-hub.md" }, parts.Select(p => p.Path).ToArray());
+        var area = parts[1];
+        Assert.AreEqual(PartKind.Section, area.Kind);
+        Assert.IsLessThanOrEqualTo(2_000L, area.Tokens, "one area, about 2k at most");
+        Assert.IsGreaterThan(13_000L, area.FileTokens, "where the hub chapter is over 13k");
+        Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
+    }
+
+    /// <summary>
+    /// FR-003: the-silver-egg's pointer, "none" followed by prose that names a file, names no digest, so no module file
+    /// is measured beyond the index and nothing holds the save, whether or not the module is finished.
+    /// </summary>
+    [TestMethod]
+    public void APointerOfNoneWithProseNamesNoDigest()
+    {
+        MakeModuleCampaign(digest: "none. Consult `modules/lmop/` only when the lair or the Draconic page (`items.md`) come up again.");
+        WriteAt(Path.Combine(_root, "modules", "lmop"), "items.md", "# Items\n\n## Draconic page\n\n" + Filler(4000));
+        Assert.IsFalse(Paths().Any(p => p.StartsWith("modules/lmop/", StringComparison.Ordinal) && p != "modules/lmop/index.md"), string.Join(", ", Paths()));
+        Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
+    }
+
     [TestMethod]
     public void SeveralHeadingsWithAMissMeasureTheChapterWholeOnceAndOneFlagNamesEveryMiss()
     {

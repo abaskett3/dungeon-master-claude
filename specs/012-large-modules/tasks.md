@@ -186,7 +186,7 @@ misses. Mostly done by T012, T017 and T018.
         template keeps its line and label and every old pointer stays valid), the measured cost, and
         `Part of #179` on its own line;
       - check the description with `gh pr view <n> --json body`
-- [ ] T034 Finish the PR: run the built-in code review once and check each finding yourself; show the fixes to the
+- [X] T034 Finish the PR: run the built-in code review once and check each finding yourself; show the fixes to the
       user and commit them only on their approval; check the documents; wait for CI to pass, then ask the user to
       merge
 - [ ] T035 After the PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
@@ -233,8 +233,8 @@ build and tests passing.
 
 ## Phase 8: Convergence
 
-- [ ] T036 Edit `kit/dm-rules.md` § Running a published module, "Run from the files", with no line added: when `dmc lookup` finds no heading in play, search the module's files and open the pages they cite in `source/` per FR-015 (partial)
-- [ ] T037 Add to `tests/Dmc.Tests/Size/`: on `ModuleFixtures.WriteSoundModule`'s measured shape (38 chapters, a hub chapter of about 13k, a 37k reference file), a campaign whose pointer names one hub area measures the index plus about 2k at most, not the hub chapter per SC-001 (partial)
-- [ ] T038 Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs` the cases T020 names that no test holds: a module with an oversized reference file prints one `module:` line and none once the file is split by hand; a homebrew campaign prints none; `modules/` is byte for byte unchanged after `dmc size`, `dmc module check`, `dmc install` and `dmc refresh` in a temporary folder per SC-007, FR-012, FR-013 (partial)
-- [ ] T039 Add to `tests/Dmc.Tests/Size/SizeLibraryTests.cs` the old pointer form T014 names that no test holds, the-silver-egg's `none. Consult …`, measuring as before per FR-003 (partial)
+- [X] T036 Edit `kit/dm-rules.md` § Running a published module, "Run from the files", with no line added: when `dmc lookup` finds no heading in play, search the module's files and open the pages they cite in `source/` per FR-015 (partial)
+- [X] T037 Add to `tests/Dmc.Tests/Size/`: on `ModuleFixtures.WriteSoundModule`'s measured shape (38 chapters, a hub chapter of about 13k, a 37k reference file), a campaign whose pointer names one hub area measures the index plus about 2k at most, not the hub chapter per SC-001 (partial)
+- [X] T038 Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs` the cases T020 names that no test holds: a module with an oversized reference file prints one `module:` line and none once the file is split by hand; a homebrew campaign prints none; `modules/` is byte for byte unchanged after `dmc size`, `dmc module check`, `dmc install` and `dmc refresh` in a temporary folder per SC-007, FR-012, FR-013 (partial)
+- [X] T039 Add to `tests/Dmc.Tests/Size/SizeLibraryTests.cs` the old pointer form T014 names that no test holds, the-silver-egg's `none. Consult …`, measuring as before per FR-003 (partial)
 - [ ] T040 Tick T034 (done in PR #209: review once, fixes approved, CI passed, merged) and, once this phase is done and a further converge pass appends nothing, T035 per plan: Spec Kit workflow (partial)

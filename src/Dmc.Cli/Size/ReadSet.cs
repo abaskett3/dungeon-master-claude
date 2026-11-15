@@ -456,7 +456,10 @@ internal static partial class ReadSet
             : Part.Absent(indexShown, EntryState.NotIngested, BudgetKind.None, "not ingested"));
 
         string? digest = ValueOf(progress, "**Digest to read before continuing**");
-        if (digest is null || DigestFile().Match(digest) is not { Success: true } file)
+        // "none", and "none." with prose after it (the-silver-egg's "none. Consult … (`items.md`) …"), name no digest,
+        // even when the prose names a file (spec 012 FR-003).
+        if (digest is null || digest.StartsWith("none", StringComparison.OrdinalIgnoreCase)
+            || DigestFile().Match(digest) is not { Success: true } file)
             return parts;
         string relative = file.Value.StartsWith($"modules/{module}/", StringComparison.Ordinal) ? file.Value[$"modules/{module}/".Length..] : file.Value;
         string chapterShown = $"modules/{module}/{relative}";

@@ -27,7 +27,7 @@ Append any scenes not yet written to the current `story/sessions/session-NNN.md`
 
 ## 4. Canon
 
-Go back over the session for facts you established and did not log: names, places, distances, prices, dates, lore, promises made by or to the PC, rulings. Add each to `story/canon.md` under the right heading. One line per fact, with the session number; a new person's People line starts with their bold name, then `(also: …)` with any other names and role words the player may use. Resume reads only the always-read sections and the lines that match the scene, so a fact that must hold in every scene (a standing ruling, an immunity, a house rule) goes under Rulings, on a play card or under Pending, not only in a searched section; do not move existing lines to do it.
+Go back over the session for facts you established and did not log: names, places, distances, prices, dates, lore, promises made by or to the PC, rulings. Add each to `story/canon.md` under the right heading. One line per fact, with the session number; a new person's People line starts with their bold name, then `(also: …)` with any other names and role words the player may use for them alone. Resume reads only the always-read sections and the lines that match the scene, so a fact that must hold in every scene (a standing ruling, an immunity, a house rule) goes under Rulings, on a play card or under Pending, not only in a searched section; do not move existing lines to do it.
 
 Then prune. Merge lines that say the same thing, replace a superseded fact instead of keeping both versions, and delete anything struck through or marked void. Every line left should be true now.
 

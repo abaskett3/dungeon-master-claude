@@ -5,7 +5,7 @@ namespace Dmc.Retrieval;
 
 /// <summary>One person of the names-and-roles register: an entry of canon's <c>## People</c> (spec 013 FR-018, research R6).</summary>
 /// <param name="Key">The entry's first bold name, which names the person in the hook's header and in the log.</param>
-/// <param name="Phrases">The names matched as written, whole and ignoring case: every bold span before the entry's first colon outside brackets, and the items of its <c>(also: …)</c> bracket.</param>
+/// <param name="Phrases">The names matched as written, whole and ignoring case: every bold span before the entry's first colon outside brackets, and the items of its <c>(also: …)</c> bracket except a bare title or small word.</param>
 /// <param name="Words">The words of the bold names matched alone: 3 letters or more, starting with a capital, not a title or small word.</param>
 /// <param name="Line">The entry's 1-based line in canon.</param>
 internal sealed record Person(string Key, IReadOnlyList<string> Phrases, IReadOnlyList<string> Words, int Line);
@@ -79,7 +79,8 @@ internal static partial class Register
             return null;
         var phrases = new List<string>(bold);
         if (Also().Match(trimmed) is { Success: true } also)
-            phrases.AddRange(also.Groups[1].Value.Split([',', ';']).Select(Clean).Where(a => a.Length > 0));
+            phrases.AddRange(also.Groups[1].Value.Split([',', ';']).Select(Clean)
+                .Where(a => a.Length > 0 && !IsTitleOrSmall(a))); // a bare "Captain" would name every captain
         var words = bold.SelectMany(b => b.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
             .Select(Clean)
             .Select(w => w.EndsWith("'s", StringComparison.OrdinalIgnoreCase) ? w[..^2] : w)

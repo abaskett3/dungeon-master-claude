@@ -26,6 +26,15 @@ public sealed class RegisterTests
         CollectionAssert.AreEquivalent(new[] { "Emmajeen", "Kole" }, kole.Words.ToArray(), "Captain is a title, never a name alone");
     }
 
+    /// <summary>A bare title in the also bracket is dropped: "Captain" would name every captain (seen in a model's migration, 2026-11-15).</summary>
+    [TestMethod]
+    public void ABareTitleInTheAlsoBracketIsNotAName()
+    {
+        var kole = Register.Of(People("- **Captain Emmajeen Kole** (also: Kole, Captain, Auntie, Auntie Em): captain of the guard (s1).")).Single();
+        CollectionAssert.AreEquivalent(new[] { "Captain Emmajeen Kole", "Kole", "Auntie Em" }, kole.Phrases.ToArray());
+        Assert.AreEqual(0, Register.Named("the captain says no", [kole]).Count, "a bare title names no one");
+    }
+
     [TestMethod]
     public void OnlyPeopleEntriesAreRead()
     {

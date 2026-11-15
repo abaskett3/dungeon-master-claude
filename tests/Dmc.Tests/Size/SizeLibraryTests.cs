@@ -221,6 +221,17 @@ public sealed class SizeLibraryTests
         CollectionAssert.AreEqual(new[] { "character-sheets/npc-maren.md" }, sheets);
     }
 
+    /// <summary>A lone word matches only at the block name's edge, so a treasure named after a family names no one (seen on Rorn's Landing, 2026-11-15).</summary>
+    [TestMethod]
+    public void ACompanionIsMatchedByAWordOnlyAtTheBlockNamesStartOrEnd()
+    {
+        string[] titles = ["Warden Brunna Kelderak", "Captain Emmajeen Kole", "Kibil Rornson"];
+        Assert.AreEqual(-1, ReadSet.MatchCompanion("The Kelderak treasure (s48.3)", titles), "a word inside the name");
+        Assert.AreEqual(1, ReadSet.MatchCompanion("Captain Kole", titles), "the last word");
+        Assert.AreEqual(2, ReadSet.MatchCompanion("Kibil (s12)", titles), "the trailing bracket is left out");
+        Assert.AreEqual(0, ReadSet.MatchCompanion("Brunna the warden of Kelderak", titles), "the first word");
+    }
+
     [TestMethod]
     public void ASheetThatIsBothCompanionAndPresentIsListedOnce()
     {

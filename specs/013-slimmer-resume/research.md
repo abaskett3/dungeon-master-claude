@@ -13,7 +13,8 @@ read whole under the 19k limit; its largest sections are Timeline 5.6k, Rulings 
 
 - **Decision:** cards for companions (R1) and canon read as always-read sections plus a ranked scene read (R3).
 - **Expected:** companions from 15.5k to at most 4k; canon from 18.5k to about 8.4k (5.4k always read + 3k matches);
-  the resume from 69.5k to about 48k (SC-001 to SC-003).
+  the resume from 69.5k to about 48k (SC-001 to SC-003). Measured after a model ran migration 006 on a copy
+  (2026-11-15): 46.5k, the four cards 718 to 903 tokens each, canon 8.5k.
 
 ## R1. The play card is a section of the sheet, first after the title block
 

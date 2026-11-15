@@ -31,9 +31,9 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm branch `013-slimmer-resume` sits on an up-to-date `origin/main`; build and test it as it stands and
+- [x] T001 Confirm branch `013-slimmer-resume` sits on an up-to-date `origin/main`; build and test it as it stands and
       record the result
-- [ ] T002 [P] Measure the standing cost's baseline (bytes ÷ 4) of `kit/dm-rules.md`, the resume, full save, sheet
+- [x] T002 [P] Measure the standing cost's baseline (bytes ÷ 4) of `kit/dm-rules.md`, the resume, full save, sheet
       update and review-transcript skills, `kit/templates/npc-sheet.md`, `pc-sheet.md`, `session-log.md` and
       `campaign/story/canon.md`, and every skill's description (research R9)
 
@@ -41,16 +41,16 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
 
 **Purpose**: What every story uses. Blocks Phases 3 to 7.
 
-- [ ] T003 Add `Budgets.PlayCard` (1,000), `Budgets.CanonWholeBelow` (6,000) and `Budgets.SceneReadBytes` (12,000),
+- [x] T003 Add `Budgets.PlayCard` (1,000), `Budgets.CanonWholeBelow` (6,000) and `Budgets.SceneReadBytes` (12,000),
       with their reasons, in `src/Dmc.Cli/Size/Budgets.cs`; add `BudgetKind.PlayCard`
-- [ ] T004 [P] Write tests for the register's parse (bold spans before the first colon outside brackets, `(also: …)`
+- [x] T004 [P] Write tests for the register's parse (bold spans before the first colon outside brackets, `(also: …)`
       items, words of 3 letters or more outside `ReadSet.CommonWords`, whole-word case-insensitive match, Rorn's
       `(properly **Hysvearorn**, …)` bracket not read as aliases, a two-person entry) in
       `tests/Dmc.Tests/Retrieval/RegisterTests.cs`
-- [ ] T005 Implement `src/Dmc.Cli/Retrieval/Register.cs` (research R6, data-model § Register) until T004 passes
-- [ ] T006 [P] Write tests for the scene's words from `game-state.md` (Scene fields, Active quests, Pending; comments
+- [x] T005 Implement `src/Dmc.Cli/Retrieval/Register.cs` (research R6, data-model § Register) until T004 passes
+- [x] T006 [P] Write tests for the scene's words from `game-state.md` (Scene fields, Active quests, Pending; comments
       left out; none found) in `tests/Dmc.Tests/Retrieval/SceneReadTests.cs`
-- [ ] T007 Implement `src/Dmc.Cli/Retrieval/SceneRead.cs`: the words, canon outside `ReadSet.AlwaysReadSections`,
+- [x] T007 Implement `src/Dmc.Cli/Retrieval/SceneRead.cs`: the words, canon outside `ReadSet.AlwaysReadSections`,
       ranked with `Recall.Rank`, printed with `Recall.Hit` within `Budgets.SceneReadBytes`, the "small" line under
       `Budgets.CanonWholeBelow` (contracts/dmc-recall-scene.md), until T006 passes
 
@@ -58,92 +58,92 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
 
 ## Phase 3: User Story 1: a companion costs a play card at resume (Priority: P1) 🎯 MVP
 
-- [ ] T008 [P] [US1] Write `dmc size` tests: a companion sheet with `## Play card` first is measured to the card's end
+- [x] T008 [P] [US1] Write `dmc size` tests: a companion sheet with `## Play card` first is measured to the card's end
       against 1k and shown `to its play card`; one without is measured to its history and flagged `a companion with
       no play card: the full save writes one`; the PC and a Present NPC unchanged, in `tests/Dmc.Tests/Size/`
-- [ ] T009 [US1] Implement the card part in `src/Dmc.Cli/Size/ReadSet.cs` (a new `PartKind.ToPlayCard` in
+- [x] T009 [US1] Implement the card part in `src/Dmc.Cli/Size/ReadSet.cs` (a new `PartKind.ToPlayCard` in
       `Measurement.cs`), the flag in `src/Dmc.Cli/Size/Flags.cs`, the report label in `SizeReport.cs`, and add
       `## Play card` to `ReadSet.Markers`, until T008 passes
-- [ ] T010 [P] [US1] Add the `## Play card` section, with its fields and a comment that it is for a companion only and
+- [x] T010 [P] [US1] Add the `## Play card` section, with its fields and a comment that it is for a companion only and
       is the only copy of its numbers, to `kit/templates/npc-sheet.md` and `kit/templates/pc-sheet.md` (research R1)
-- [ ] T011 [US1] Edit `kit/skills/dmc-resume-campaign/SKILL.md` item 5: a companion's sheet is read through its play
+- [x] T011 [US1] Edit `kit/skills/dmc-resume-campaign/SKILL.md` item 5: a companion's sheet is read through its play
       card; one with none down to its history, as now; the "read the history only when…" rule extended to the rest of
       a companion's sheet
-- [ ] T012 [US1] Edit `kit/dm-rules.md` line 78's last sentence to cover FR-005 in one sentence (research R2); measure
+- [x] T012 [US1] Edit `kit/dm-rules.md` line 78's last sentence to cover FR-005 in one sentence (research R2); measure
       its bytes
-- [ ] T013 [P] [US1] Edit `kit/skills/dmc-character-sheet-update/SKILL.md`: write the card when a character becomes a
+- [x] T013 [P] [US1] Edit `kit/skills/dmc-character-sheet-update/SKILL.md`: write the card when a character becomes a
       companion; keep it current in the same edit as the fact it holds
-- [ ] T014 [P] [US1] Edit `kit/skills/dmc-campaign-full-save/SKILL.md`: keep each card within its budget, write one for
+- [x] T014 [P] [US1] Edit `kit/skills/dmc-campaign-full-save/SKILL.md`: keep each card within its budget, write one for
       a flagged companion, and compare the cards' max HP and items with `game-state.md` in the consistency check
 
 **Checkpoint**: build, test, commit.
 
 ## Phase 4: User Story 2: migration 006 (Priority: P1)
 
-- [ ] T015 [P] [US2] Write tests for the shape checks `companions-have-play-card` and `people-entries-named` in
+- [x] T015 [P] [US2] Write tests for the shape checks `companions-have-play-card` and `people-entries-named` in
       `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`
-- [ ] T016 [US2] Implement both checks in `src/Dmc.Cli/Campaign/MigrationChecks.cs`, `people-entries-named` through
+- [x] T016 [US2] Implement both checks in `src/Dmc.Cli/Campaign/MigrationChecks.cs`, `people-entries-named` through
       `Register`, until T015 passes
-- [ ] T017 [US2] Write `kit/migrations/006-play-cards-and-names.md` (standard 6, touches, no drops, both checks, steps
+- [x] T017 [US2] Write `kit/migrations/006-play-cards-and-names.md` (standard 6, touches, no drops, both checks, steps
       and judgments as research R7 says)
-- [ ] T018 [US2] Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/006/` (before, after, accounting) with
+- [x] T018 [US2] Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/006/` (before, after, accounting) with
       two companions (one built on the PC template, one with history in the middle), a Party status block that is not
       a character, a "With the party, not companions" block, and People entries with and without other names; make
       the migration tests pass
-- [ ] T019 [US2] Check the standard: `dmc campaign standard` reports `behind` for a standard-5 campaign and the migrate
+- [x] T019 [US2] Check the standard: `dmc campaign standard` reports `behind` for a standard-5 campaign and the migrate
       skill lists 006; adjust tests in `tests/Dmc.Tests/Campaign/` that assume the kit is at standard 5
 
 **Checkpoint**: build, test, commit.
 
 ## Phase 5: User Story 3: canon read as Rulings, Prices and the scene's matches (Priority: P1)
 
-- [ ] T020 [P] [US3] Write the contract tests for `dmc recall NAME --scene` (small canon, hits within 12,000 bytes and
+- [x] T020 [P] [US3] Write the contract tests for `dmc recall NAME --scene` (small canon, hits within 12,000 bytes and
       the closing line, nothing matched, no scene, words with `--scene` exit 2, no canon exit 1), in-process and
       through the binary, in `tests/Dmc.Tests/Retrieval/RecallSceneContract.cs`
-- [ ] T021 [US3] Add `--scene` to `src/Dmc.Cli/Retrieval/RetrievalArguments.cs` and `RecallCommand.cs` (help text
+- [x] T021 [US3] Add `--scene` to `src/Dmc.Cli/Retrieval/RetrievalArguments.cs` and `RecallCommand.cs` (help text
       included), calling `SceneRead`, until T020 passes
-- [ ] T022 [P] [US3] Write `dmc size` tests: canon under 6k read whole; at or over it, the always-read sections plus
+- [x] T022 [P] [US3] Write `dmc size` tests: canon under 6k read whole; at or over it, the always-read sections plus
       the scene read's bytes, shown `read in sections and by scene`; the over-limit flag's new wording; the measured
       part equals what `--scene` prints (SC-004), in `tests/Dmc.Tests/Size/`
-- [ ] T023 [US3] Implement the canon part in `src/Dmc.Cli/Size/ReadSet.cs` and the flag wording in `Flags.cs`; add
+- [x] T023 [US3] Implement the canon part in `src/Dmc.Cli/Size/ReadSet.cs` and the flag wording in `Flags.cs`; add
       `--scene` to `ReadSet.Markers`, until T022 passes
-- [ ] T024 [US3] Edit `kit/skills/dmc-resume-campaign/SKILL.md` item 7: run `dmc recall <campaign> --scene`; on the
+- [x] T024 [US3] Edit `kit/skills/dmc-resume-campaign/SKILL.md` item 7: run `dmc recall <campaign> --scene`; on the
       "small" line read canon whole; otherwise read the always-read sections whole and take the lines as the scene's
       matches; the joined-terms Grep and its escaping rules go; § 2's first paragraph no longer decides item 7 by the
       canon line
-- [ ] T025 [US3] Edit `kit/skills/dmc-campaign-full-save/SKILL.md`'s canon step: a fact that must hold in every scene
+- [x] T025 [US3] Edit `kit/skills/dmc-campaign-full-save/SKILL.md`'s canon step: a fact that must hold in every scene
       belongs in an always-read section, on a card or under Pending (FR-010); a new People entry in the register's
       shape (FR-019)
-- [ ] T026 [P] [US3] Edit `kit/templates/campaign/story/canon.md`: the People comment gives the entry's shape
+- [x] T026 [P] [US3] Edit `kit/templates/campaign/story/canon.md`: the People comment gives the entry's shape
       (`- **Name** (also: …): …`); the paragraph on how canon is read says "read in part at every resume"
-- [ ] T027 [P] [US3] Add a timing test for `--scene` on a synthetic canon the size of Rorn's Landing's, on the release
+- [x] T027 [P] [US3] Add a timing test for `--scene` on a synthetic canon the size of Rorn's Landing's, on the release
       build, as `RecallTimingTests` does, in `tests/Dmc.Tests/Retrieval/`
 
 **Checkpoint**: build, test, commit.
 
 ## Phase 6: User Story 5: the hook's canon reminder (Priority: P3)
 
-- [ ] T028 [P] [US5] Write tests: a prompt naming two registered people prints the header and at most 3 lines each
+- [x] T028 [P] [US5] Write tests: a prompt naming two registered people prints the header and at most 3 lines each
       within 4,000 bytes; a log holding that header after its latest compaction boundary prints nothing for them; a
       header before the boundary does not count; silence for no campaign, a closed one, a `/` prompt, no name, no
       canon, bad JSON; the break line still first; always exit 0, in `tests/Dmc.Tests/ContextCheck/`
-- [ ] T029 [US5] Implement `src/Dmc.Cli/Retrieval/CanonReminder.cs`, the reminded names in
-      `src/Dmc.Cli/ContextCheck/TranscriptReader.cs`, and the call in `src/Dmc.Cli/Commands/ContextCheckCommand.cs`,
+- [x] T029 [US5] Implement `src/Dmc.Cli/Retrieval/CanonReminder.cs` (with the reminded names in its `Reminded`),
+      and the call in `src/Dmc.Cli/Commands/ContextCheckCommand.cs`,
       until T028 passes
-- [ ] T030 [P] [US5] Add a timing test for the hook's canon part on the release build (SC-007)
-- [ ] T031 [US5] Edit `kit/skills/dmc-character-sheet-update/SKILL.md`: a new character's People entry in the
+- [x] T030 [P] [US5] Add a timing test for the hook's canon part on the release build (SC-007)
+- [x] T031 [US5] Edit `kit/skills/dmc-character-sheet-update/SKILL.md`: a new character's People entry in the
       register's shape
 
 **Checkpoint**: build, test, commit.
 
 ## Phase 7: User Story 4: the gate (Priority: P2)
 
-- [ ] T032 [P] [US4] Add the `Slip:` bullet to `kit/templates/session-log.md`'s scene comment, and "and log a `Slip:`
+- [x] T032 [P] [US4] Add the `Slip:` bullet to `kit/templates/session-log.md`'s scene comment, and "and log a `Slip:`
       line" to `kit/dm-rules.md` line 85's sentence (FR-033, research R8); measure the bytes
-- [ ] T033 [US4] Add "The slip tally" to `.claude/skills/review-transcript/SKILL.md`: where slips are recorded, the
+- [x] T033 [US4] Add "The slip tally" to `.claude/skills/review-transcript/SKILL.md`: where slips are recorded, the
       categories, the qualifying sessions, the baseline file, the table, the threshold, the rollback per category and
       where the result is recorded (FR-020 to FR-027)
-- [ ] T034 [US4] Count the baseline: every session log of The Silver Egg and Rorn's Landing in `D:\Claude\dmc` (read
+- [x] T034 [US4] Count the baseline: every session log of The Silver Egg and Rorn's Landing in `D:\Claude\dmc` (read
       only), plus the sheets', canon's and `dm-notes.md`'s slip notes, by category, into
       `specs/013-slimmer-resume/baseline.md`, with Rorn's Landing's own average beside the combined one
 
@@ -151,22 +151,22 @@ One PR, on branch `013-slimmer-resume`. It says `Part of #179`: the gate is chec
 
 ## Phase 8: Polish: documents, cost, live runs, the PR
 
-- [ ] T035 Tighten the toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` to 212 lines for `kit/dm-rules.md`
+- [x] T035 Tighten the toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` to 212 lines for `kit/dm-rules.md`
       and add the byte cap (the T002 figure + 400) (FR-028)
-- [ ] T036 [P] Edit `.docs/campaign-files.md`: the play card, the People shape, canon's read, the budgets table
+- [x] T036 [P] Edit `.docs/campaign-files.md`: the play card, the People shape, canon's read, the budgets table
       (equal to `Budgets`), standard 6
-- [ ] T037 [P] Edit `.docs/dmc-reference.md`: `recall --scene`, `size`'s new labels and flag, `context-check`'s
+- [x] T037 [P] Edit `.docs/dmc-reference.md`: `recall --scene`, `size`'s new labels and flag, `context-check`'s
       reminder
-- [ ] T038 [P] Edit `.docs/architecture.md` (resume items 5 and 7, the hook) and `.docs/user-guide.md` (what a
+- [x] T038 [P] Edit `.docs/architecture.md` (resume items 5 and 7, the hook) and `.docs/user-guide.md` (what a
       resume reads, the migration)
-- [ ] T039 [P] Edit `.docs/decisions.md`: decisions for the play card, canon by scene, the hook and register, and the
+- [x] T039 [P] Edit `.docs/decisions.md`: decisions for the play card, canon by scene, the hook and register, and the
       gate (with the baseline totals); amend "Lookup and recall are for play only until Phase D" and "Size rules are
       measured in tokens by `dmc size`"
-- [ ] T040 [P] Edit `.docs/roadmap.md`: issue #179 Phase D shipped, the gate pending
-- [ ] T041 Measure the standing cost again as in T002 and record the change by when it is paid (FR-029)
-- [ ] T042 Live checks on a scratch copy of Rorn's Landing: migrate by migration 006, then `dmc size` and
+- [x] T040 [P] Edit `.docs/roadmap.md`: issue #179 Phase D shipped, the gate pending
+- [x] T041 Measure the standing cost again as in T002 and record the change by when it is paid (FR-029)
+- [x] T042 Live checks on a scratch copy of Rorn's Landing: migrate by migration 006, then `dmc size` and
       `dmc recall --scene` (quickstart 1, 2, 4; SC-001 to SC-004, SC-006)
-- [ ] T043 Headless play test in `D:\Claude\test-campaign` (quickstart 5): record `.active-campaign` and the campaign
+- [x] T043 Headless play test in `D:\Claude\test-campaign` (quickstart 5): record `.active-campaign` and the campaign
       first, ask the user to refresh the folder from the build, run, restore both
 - [ ] T044 Open the PR with the full description (what, why, sources, tests, documents, migration 006, the standing
       cost, `Part of #179`), then check it with `gh pr view <n> --json body`

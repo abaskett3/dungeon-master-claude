@@ -233,8 +233,9 @@ internal static partial class ReadSet
 
     /// <summary>
     /// The sheet a Party status block names, by its title: the same name, then the whole title within the block, then a
-    /// distinctive word of it; -1 for none. Shared with migration 006's <c>companions-have-play-card</c> check (spec 013),
-    /// so the check and the resume agree on who is a companion.
+    /// distinctive word of it as the block's first or last word (a trailing bracket left out); -1 for none. A word inside
+    /// the name does not count, so "The Kelderak treasure (s48.3)" names no Kelderak's sheet. Shared with migration 006's
+    /// <c>companions-have-play-card</c> check (spec 013), so the check and the resume agree on who is a companion.
     /// </summary>
     /// <param name="block">The block's heading text.</param>
     /// <param name="titles">The sheets' titles, in file name order.</param>
@@ -246,10 +247,20 @@ internal static partial class ReadSet
         for (int i = 0; i < titles.Count; i++)
             if (IsWholeWord(block, titles[i]))
                 return i;
+        string edges = EdgeWords(block);
         for (int i = 0; i < titles.Count; i++)
-            if (Mentions(block, titles[i]))
+            if (Mentions(edges, titles[i]))
                 return i;
         return -1;
+    }
+
+    /// <summary>A block name's first and last words, with a trailing bracket (<c>(s48.3)</c>) left out; the whole name when it is one word.</summary>
+    /// <param name="block">The block's heading text.</param>
+    static string EdgeWords(string block)
+    {
+        string name = Regex.Replace(block, @"\s*\([^)]*\)\s*$", "");
+        string[] words = name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        return words.Length <= 2 ? name : words[0] + " " + words[^1];
     }
 
     /// <summary>The names of the <c>### </c> blocks under Party status, except <see cref="NotCompanions"/> and a placeholder in brackets.</summary>

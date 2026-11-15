@@ -88,11 +88,11 @@ src/Dmc.Cli/
 │   ├── Register.cs            # new: names from canon's People entries
 │   ├── CanonReminder.cs       # new: the hook's lines for new names in a prompt
 │   ├── RetrievalArguments.cs  # --scene
-│   └── Recall.cs              # Rank and Hit reused, unchanged in behaviour
+│   ├── Recall.cs              # Rank and Hit reused, unchanged in behaviour
+│   └── CanonReminder.cs       # the hook's canon lines; Reminded reads names already reminded after the latest compaction boundary
 ├── Commands/
 │   ├── RecallCommand.cs       # --scene form and help
 │   └── ContextCheckCommand.cs # prints the reminder after the break line
-├── ContextCheck/TranscriptReader.cs  # names already reminded after the latest compaction boundary
 ├── Size/
 │   ├── Budgets.cs             # PlayCard 1000, CanonWholeBelow 6000, SceneReadBytes 12000
 │   ├── ReadSet.cs             # companion to its play card; canon by scene; markers

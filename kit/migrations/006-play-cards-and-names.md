@@ -38,7 +38,8 @@ card, or an entry already in shape, is left as it is.
 4. **People.** In `story/canon.md` under `## People`, give each entry that does not start with a bold name its person's
    bold name first, with the rest of the line unchanged after a colon. Then, after an entry's first bold name, add
    `(also: …)` with the other names and role words this campaign's files already use for that person (a nickname, a
-   surname used alone, a title such as "the ferryman"), separated by commas; leave it out when there are none.
+   surname used alone, a role such as "the ferryman"; never a bare title such as "Captain", which names others too),
+   separated by commas; leave it out when there are none.
 5. **Account.** Run the list form of the verify command, as the `dmc-migrate-campaign` skill says. Account each line
    that moved to the card or was shortened as `reworded`, with the card line that now holds it as the anchor, and each
    People line you changed as `reworded`, with its new start as the anchor.

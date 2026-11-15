@@ -1354,7 +1354,10 @@ public sealed partial class ToolkitTests
             ("`story/summary.md`", Budgets.Summary),
             ("a PC's sheet, down to its history", Budgets.PcSheet),
             ("any other sheet, down to its history", Budgets.OtherSheet),
-            ("`story/canon.md`: read whole below", Budgets.CanonLimit),
+            ("a companion's sheet, through its play card", Budgets.PlayCard),
+            ("`story/canon.md`: read whole below", Budgets.CanonWholeBelow),
+            ("`story/canon.md`: the scene's matches, at most (bytes)", Budgets.SceneReadBytes),
+            ("`story/canon.md`: a full save archives above", Budgets.CanonLimit),
             ("`story/canon.md`: a full save archives down to", Budgets.CanonArchiveMark),
             ("`legacy.md`", Budgets.Legacy),
         ];

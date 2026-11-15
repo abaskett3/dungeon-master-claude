@@ -205,12 +205,11 @@ internal static partial class ReadSet
             chosen.Add(pc);
 
         bool hasParty = Measurement.SectionLines(gameState, "Party status").Count > 0;
+        var titles = sheets.Select(s => s.Title).ToList();
         foreach (string block in CompanionBlocks(gameState))
         {
-            // The best match first: the same name, then the whole title within the block, then a distinctive word of it.
-            var match = sheets.FirstOrDefault(s => string.Equals(s.Title, block, StringComparison.OrdinalIgnoreCase))
-                        ?? sheets.FirstOrDefault(s => IsWholeWord(block, s.Title))
-                        ?? sheets.FirstOrDefault(s => Mentions(block, s.Title));
+            int index = MatchCompanion(block, titles);
+            var match = index >= 0 ? sheets[index] : null;
             if (match is null)
                 parts.Add(Part.Absent($"character-sheets: {block}", EntryState.NotFound, BudgetKind.OtherSheet, "not found"));
             else if (!chosen.Contains(match))
@@ -232,9 +231,30 @@ internal static partial class ReadSet
         return result;
     }
 
+    /// <summary>
+    /// The sheet a Party status block names, by its title: the same name, then the whole title within the block, then a
+    /// distinctive word of it; -1 for none. Shared with migration 006's <c>companions-have-play-card</c> check (spec 013),
+    /// so the check and the resume agree on who is a companion.
+    /// </summary>
+    /// <param name="block">The block's heading text.</param>
+    /// <param name="titles">The sheets' titles, in file name order.</param>
+    internal static int MatchCompanion(string block, IReadOnlyList<string> titles)
+    {
+        for (int i = 0; i < titles.Count; i++)
+            if (string.Equals(titles[i], block, StringComparison.OrdinalIgnoreCase))
+                return i;
+        for (int i = 0; i < titles.Count; i++)
+            if (IsWholeWord(block, titles[i]))
+                return i;
+        for (int i = 0; i < titles.Count; i++)
+            if (Mentions(block, titles[i]))
+                return i;
+        return -1;
+    }
+
     /// <summary>The names of the <c>### </c> blocks under Party status, except <see cref="NotCompanions"/> and a placeholder in brackets.</summary>
     /// <param name="gameState">The lines of <c>game-state.md</c>.</param>
-    static IEnumerable<string> CompanionBlocks(IReadOnlyList<Line> gameState) =>
+    internal static IEnumerable<string> CompanionBlocks(IReadOnlyList<Line> gameState) =>
         OutsideComments(Measurement.SectionLines(gameState, "Party status"))
             .Where(t => t.StartsWith("### ", StringComparison.Ordinal))
             .Select(t => t[4..].Trim())

@@ -40,7 +40,12 @@ internal static partial class MigrationChecks
         ["fights-have-timeline"] = FightsHaveTimeline,
         ["one-last-played-line"] = OneLastPlayedLine,
         ["continuity-section"] = ContinuitySection,
+        ["companions-have-play-card"] = CompanionsHavePlayCard,
+        ["people-entries-named"] = PeopleEntriesNamed,
     };
+
+    /// <summary>The game state, whose Party status names the companions.</summary>
+    const string GameState = "game-state.md";
 
     /// <summary>The campaign's own player options, which hold the Continuity section (spec 011).</summary>
     const string PlayerOptions = "player-options.md";
@@ -246,5 +251,48 @@ internal static partial class MigrationChecks
             if (!section.Any(l => l.Name == name))
                 yield return $"{PlayerOptions}'s Continuity section has no {name} line";
         }
+    }
+
+    /// <summary>
+    /// <c>companions-have-play-card</c> (migration 006, spec 013 FR-012): each companion's sheet, found from
+    /// <c>game-state.md</c>'s Party status as <c>dmc size</c> finds it (<see cref="ReadSet.MatchCompanion"/>), has
+    /// <c>## Play card</c> as its first <c>## </c> section. A PC's sheet and a block with no sheet (a treasure kept under
+    /// Party status) are not checked.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> CompanionsHavePlayCard(CheckInput input)
+    {
+        if (!input.New.TryGetValue(GameState, out string? state))
+            yield break;
+        var sheets = SheetsOf(input.New, npcOnly: false).ToList();
+        var titles = sheets.Select(s => Lines(s.Value).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t
+            ? t[2..].Trim() : Path.GetFileNameWithoutExtension(s.Key)).ToList();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string block in ReadSet.CompanionBlocks(Measurement.Split(System.Text.Encoding.UTF8.GetBytes(state))))
+        {
+            int index = ReadSet.MatchCompanion(block, titles);
+            if (index < 0)
+                continue;
+            var (path, text) = sheets[index];
+            if (path[Sheets.Length..].StartsWith("pc-", StringComparison.Ordinal) || !seen.Add(path))
+                continue;
+            string? first = SectionHeadings(text).FirstOrDefault();
+            if (!string.Equals(first, ReadSet.PlayCardHeading[3..], StringComparison.OrdinalIgnoreCase))
+                yield return $"{path}: the companion {block} has no ## Play card as the sheet's first section";
+        }
+    }
+
+    /// <summary>
+    /// <c>people-entries-named</c> (migration 006, spec 013 FR-012, FR-018): every list item under <c>## People</c> in
+    /// <c>story/canon.md</c> starts with a bold name (<see cref="Retrieval.Register.IsNamedOrNotAnEntry"/>), the shape the
+    /// hook's register reads.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> PeopleEntriesNamed(CheckInput input)
+    {
+        if (!input.New.TryGetValue(Canon, out string? canon) || Section(canon, Retrieval.Register.PeopleHeading) is not { } people)
+            yield break;
+        foreach (string line in people.Where(l => !Retrieval.Register.IsNamedOrNotAnEntry(l)))
+            yield return $"{Canon} People: an entry with no bold name first: {(line.Length > 80 ? line[..80] + "..." : line.Trim())}";
     }
 }

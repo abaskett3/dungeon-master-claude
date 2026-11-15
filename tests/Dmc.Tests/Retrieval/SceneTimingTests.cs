@@ -83,4 +83,30 @@ public sealed class SceneTimingTests
             DmcFolders.Delete(root);
         }
     }
+
+    [TestMethod]
+    public void TheHooksCanonReminderTakesUnderHalfASecond()
+    {
+        string root = NewFolder();
+        try
+        {
+            string input = new System.Text.Json.Nodes.JsonObject
+            {
+                ["prompt"] = "We should ask Oswin and Kole about the ferry",
+                ["cwd"] = root,
+                ["transcript_path"] = "",
+            }.ToJsonString();
+            double best = Best(() =>
+            {
+                var result = DmcRunner.BlackBox(["context-check"], input);
+                Assert.AreEqual(0, result.ExitCode, result.Stderr);
+                StringAssert.StartsWith(result.Stdout, "Canon on Oswin Reed; Captain Emmajeen Kole (");
+            });
+            Assert.IsLessThan(Limit, best, $"the hook took {best:0.000} s");
+        }
+        finally
+        {
+            DmcFolders.Delete(root);
+        }
+    }
 }

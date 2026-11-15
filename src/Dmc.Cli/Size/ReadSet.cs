@@ -103,6 +103,10 @@ internal static partial class ReadSet
         "duke", "duchess", "baron", "baroness", "count", "countess", "elder", "high", "priest", "priestess", "doctor",
     };
 
+    /// <summary>Whether a word is one of <see cref="CommonWords"/>, never matched alone as a name; the register (spec 013) uses the same list.</summary>
+    /// <param name="word">A word, compared ignoring case.</param>
+    internal static bool IsCommonNameWord(string word) => CommonWords.Contains(word);
+
     /// <summary>
     /// The read set of a campaign, in the resume's order: item 1 (both player-options files), 2 (<c>game-state.md</c>),
     /// 3 (<c>summary.md</c>), 4 (<c>dm-notes.md</c>), 5 (the sheets), 6 (the latest session log), 7 (canon) and 9 (the

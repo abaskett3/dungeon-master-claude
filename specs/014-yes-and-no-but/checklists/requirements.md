@@ -34,4 +34,7 @@
 - The three clarifications were answered by the maintainer on 2026-11-15 (spec § Clarifications).
 - The spec names `kit/dm-rules.md` and its toolkit test because the budget is the feature's main constraint
   (constitution Core 3, Development 1); it names no code or framework.
+- After the first play test (2026-11-15), four more clarifications (spec § Clarifications, "after the play test"). The
+  items above still hold; FR-005b names `src/Dmc.Cli/Campaign/MigrationChecks.cs` because the development guide
+  requires every migration to name a shape check there.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

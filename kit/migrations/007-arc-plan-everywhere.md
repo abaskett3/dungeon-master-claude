@@ -35,9 +35,9 @@ copied exactly.
    the file's title and the lines before its first `## ` heading.
 4. **Character arcs.** If no line in the Arc plan, outside its comment, starts with `Character arcs`, add one right
    after the comment: `- Character arcs:` and then, for the PC and each companion (each `### ` block under
-   `## Party status` in `game-state.md`, other than "With the party, not companions"), their name, what the files
-   already say they want, and how `dm-notes.md` already ties it to the main plot where it does, separated by
-   semicolons. Take a want from their sheet (the PC's "Long-term goals"; a companion's play card line "Toward the PC,
+   `## Party status` in `game-state.md`, other than "With the party, not companions"), one sentence each in the form
+   `Name: what they want; how the main plot meets it.`, leaving out the part after the semicolon where `dm-notes.md`
+   does not tie it to the plot. Take a want from their sheet (the PC's "Long-term goals"; a companion's play card line "Toward the PC,
    and what they want now", or "What they want") or from the notes. When the files say nothing for anyone, write `- Character arcs: none yet`.
 5. **Account.** Run the list form of verify, as the `dmc-migrate-campaign` skill says. These steps add lines and
    change heading levels only, so it should list no `unaccounted:` line; if it lists one, you changed a line you

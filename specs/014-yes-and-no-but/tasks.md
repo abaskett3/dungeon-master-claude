@@ -99,47 +99,47 @@ campaign lands in Character arcs (US3 scenarios 1 and 3, SC-006).
   line 165
 - [X] T009 [US3] State a goal in play, run the full save, and record where it landed in
   `specs/014-yes-and-no-but/quickstart.md` § Results
-- [ ] T021 [P] [US3] Write the tests of the check `dm-notes-have-arc-plan` in
+- [X] T021 [P] [US3] Write the tests of the check `dm-notes-have-arc-plan` in
   `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`, in the style of the existing ones, each with an XML doc
   comment: no `story/dm-notes.md` passes; a `dm-notes.md` with no `## Arc plan` fails with "story/dm-notes.md has no
   ## Arc plan section"; a section whose only Character arcs line is inside its HTML comment fails with
   "story/dm-notes.md's Arc plan has no Character arcs line"; a section with `- Character arcs: …` (and one with
   `- **Character arcs**: …`) passes; a `### ` subsection inside the Arc plan does not end it
   ([contracts/migration-007.md](contracts/migration-007.md), § The check); run them and see them fail
-- [ ] T022 [US3] Add `DmNotesHaveArcPlan` to `src/Dmc.Cli/Campaign/MigrationChecks.cs`, registered as
+- [X] T022 [US3] Add `DmNotesHaveArcPlan` to `src/Dmc.Cli/Campaign/MigrationChecks.cs`, registered as
   `["dm-notes-have-arc-plan"]` after `people-entries-named`, using the file's `Section` and `Lines` helpers (comments
   stripped, the heading compared ignoring case) and matching a line that starts with `Character arcs` after list
   marks and bold; an XML doc comment naming migration 007 and spec 014 FR-005b; T021's tests pass
-- [ ] T023 [P] [US3] In `kit/templates/campaign/story/dm-notes.md`, change the Arc plan comment's first line and its
+- [X] T023 [P] [US3] In `kit/templates/campaign/story/dm-notes.md`, change the Arc plan comment's first line and its
   Character arcs line exactly as [contracts/dm-notes-arc-plan.md](contracts/dm-notes-arc-plan.md) says (+82 bytes);
   nothing else in the template changes
-- [ ] T024 [US3] Write `kit/migrations/007-arc-plan-everywhere.md` as [contracts/migration-007.md](contracts/migration-007.md)
+- [X] T024 [US3] Write `kit/migrations/007-arc-plan-everywhere.md` as [contracts/migration-007.md](contracts/migration-007.md)
   and research R15 say: front matter `standard: 7`, title, `shipped: issue #216` (set to the PR in T035),
   `touches: [story/dm-notes.md]`, `drops: []`, `checks: [dm-notes-have-arc-plan]`; the five headings in order (What
   changes, Steps, Judgments, Declared drops, Done when), written for a campaign its author has never seen, each step
   first checking whether it is needed, in the style of `kit/migrations/006-play-cards-and-names.md`
-- [ ] T025 [US3] Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/007/` as the contract's § The fixture
+- [X] T025 [US3] Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/007/` as the contract's § The fixture
   says: `before/` (standard 6, made from the templates: `game-state.md` with a PC and one companion under Party
   status, their sheets with a goal each, `story/dm-notes.md` from the template before T023 without `## Arc plan`, its
   arc under `## The three acts` with `### ` acts); `after/` (the same with `## Arc plan`, the new comment and a
   Character arcs line before `### The three acts`, its acts at `#### `); `accounting.tsv` with its comment lines
   only; run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Migration"` until `MigrationGoldenTests`,
   `MigrationFilesTests` and T021's tests pass
-- [ ] T026 [US3] Check the standard: a standard-6 campaign is reported `behind: standard 6, kit 7: 007-arc-plan-everywhere.md`
+- [X] T026 [US3] Check the standard: a standard-6 campaign is reported `behind: standard 6, kit 7: 007-arc-plan-everywhere.md`
   by `artifacts/bin/dmc campaign standard`; run the tests in `tests/Dmc.Tests/Campaign/` and fix any that assume the
   kit is at standard 6 (none found by search, research R17)
-- [ ] T027 [US3] Live run, quickstart § 3b steps 1 to 3: with T020's backups in place, copy fixture 007's `before/` to
+- [X] T027 [US3] Live run, quickstart § 3b steps 1 to 3: with T020's backups in place, copy fixture 007's `before/` to
   `D:\Claude\test-campaign\adventures\arc-test\` with `.standard` `6`, `kit/migrations/007-arc-plan-everywhere.md`
   into the folder's `migrations/`, and the changed template into its `templates/campaign/story/` (back up the
   folder's copy first); make `arc-test` active; with `artifacts\bin` first on `PATH`, ask DMC headless to bring the
   campaign's files up to date; check `dmc campaign verify arc-test` passes and the result matches `after/`; fix the
   migration's prose for anything DMC got wrong and rerun; record the result in
   `specs/014-yes-and-no-but/quickstart.md` § Results
-- [ ] T028 [US3] Goal check, quickstart § 3b step 4: resume the migrated `arc-test` headless, have the character state
+- [X] T028 [US3] Goal check, quickstart § 3b step 4: resume the migrated `arc-test` headless, have the character state
   a goal, run the full save, and check the Arc plan's Character arcs in `story/dm-notes.md` holds it with how it ties
   into the main plot; if `arc-test` is too thin to resume, migrate a copy of the play-test campaign instead (006
   then 007); record the result in `specs/014-yes-and-no-but/quickstart.md` § Results
-- [ ] T029 [US3] Restore `D:\Claude\test-campaign` (quickstart § 3b step 5): remove `arc-test` (move it to the
+- [X] T029 [US3] Restore `D:\Claude\test-campaign` (quickstart § 3b step 5): remove `arc-test` (move it to the
   scratchpad), the copied migration and template (put the folder's own copies back), and restore `CLAUDE.md`,
   `adventures/.active-campaign` and the play-test campaign from T020's backups; check the restored campaign matches
   its backup file for file

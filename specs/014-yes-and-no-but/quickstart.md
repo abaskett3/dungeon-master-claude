@@ -181,3 +181,27 @@ met: 12′ answered with a hook instead of a way forward.
 
 The maintainer accepted 4 of 5 on 2026-11-15, with the wording as it stands (the byte allowance is spent); whether
 "no, but" offers a way forward in real play is left to the after-release review (SC-005).
+
+### T026 to T028: migration 007, live
+
+Run on 2026-11-15 in `D:\Claude\test-campaign` with the dev `dmc` (`artifacts\bin`) first on `PATH`; fixture 007's
+`before/` as campaign `arc-test` at standard 6, migration 007, the current template, and the kit's
+`dmc-campaign-full-save` and `dmc-character-sheet-update` (each one line newer than the folder's) copied in by hand.
+
+- **T026**: `dmc campaign standard arc-test` printed `behind: standard 6, kit 7: 007-arc-plan-everywhere.md`. The
+  campaign and toolkit tests pass (783, 4 skipped); none assumed standard 6.
+- **T027, first run**: `/dmc-migrate-campaign`, then yes. DMC showed What changes and "nothing" dropped, backed up,
+  and `dmc campaign verify` passed (76 of 76 lines matched). The result matched `after/` except the Character arcs
+  line's form (`Wren, a ferry …; … Mara Quill, …`), every fact in it from the files. Step 4 was given an exact form
+  (`Name: what they want; how the main plot meets it.`) and the fixture's line follows it.
+- **T027, second run** (fresh `before/`, the revised step 4): verified again (76 of 76); identical to `after/` but
+  for the Character arcs line, which DMC wrote as a nested list, one `Name: want; tie` item per character. Kept: it
+  passes `dm-notes-have-arc-plan` and holds only facts from the files.
+- **T028, the goal**: the migrated `arc-test` resumed (it named its missing canon, summary and logs, and recapped
+  both wants from Character arcs). Wren said she will take the ferry "all the way down the Marrow to the sea, where my
+  mother came from" with Tobin as first deckhand. After `/dmc-campaign-full-save`, `story/dm-notes.md`'s Arc plan
+  read: "Wren: wants a ferry of her own on the Marrow, to sail it down to the sea where her mother came from (s6.1),
+  with Tobin as first deckhand; the ferry rights are on the table in Act 2. Test: the Drowned King offers the rights
+  at a price, or Tobin is put at risk." Pass (US3 scenarios 1 and 3, SC-006).
+- **T029**: the folder restored: `CLAUDE.md`, the template, both skills, `.active-campaign` and `rorns-landing`
+  (131 files, 0 differences) match their backups; migration 007 and `arc-test` were moved to the scratchpad.

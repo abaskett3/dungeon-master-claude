@@ -175,7 +175,7 @@ misses. Mostly done by T012, T017 and T018.
 - [X] T030 Check every new and changed member has an XML doc comment, private ones included, and that
       `specs/012-large-modules/` matches what ships
 - [X] T031 Measure the standing cost again as in T003 and record it for the PR (research R12)
-- [ ] T032 Run quickstart.md § Live: `dmc module check the-crooked-moon` with the release build against
+- [X] T032 Run quickstart.md § Live: `dmc module check the-crooked-moon` with the release build against
       `D:\Claude\dmc` (read-only), and a headless resume in `D:\Claude\test-campaign` with
       `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` of a campaign on a synthetic module, played into a fight with a module
       creature; record what DMC read at the resume (the index and the pointer's headings only) and that it looked the

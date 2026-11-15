@@ -7,24 +7,31 @@ dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"
 ```
 
 Pass: the line and byte cap test passes at 212 lines and the new cap (SC-004), and the new § Fun first test passes.
-Three toolkit tests fail locally on `main` before this change (`WithoutAWorkingDmcASessionIsToldOnceToReinstall`,
-`PlayRunsTheBreakReminderBeforeEachMessageAndItNeverGetsInTheWay`, `PlayRedrawsTheMapAfterEachReplyAndOnlyRefusalsAreHeard`);
-they are not this feature's, and CI is the check.
+Three toolkit tests fail locally when `artifacts/bin/dmc.exe` is older than `kit/dm-rules.md`
+(`WithoutAWorkingDmcASessionIsToldOnceToReinstall`, `PlayRunsTheBreakReminderBeforeEachMessageAndItNeverGetsInTheWay`,
+`PlayRedrawsTheMapAfterEachReplyAndOnlyRefusalsAreHeard`): run `dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`
+first. The whole suite (`dotnet test tests/Dmc.Tests`) also runs the migration tests: `MigrationGoldenTests` and
+`MigrationFilesTests` on fixture 007, and the check's tests in `MigrationChecksTests` (SC-006).
 
 ## 2. The wording
 
-Compare `kit/dm-rules.md` lines 165, 166 and 169 with [contracts/dm-rules-fun-first.md](contracts/dm-rules-fun-first.md).
+Compare `kit/dm-rules.md` lines 165, 166 and 169 with [contracts/dm-rules-fun-first.md](contracts/dm-rules-fun-first.md),
+the template's Arc plan comment with [contracts/dm-notes-arc-plan.md](contracts/dm-notes-arc-plan.md), and
+`kit/migrations/007-*.md` with [contracts/migration-007.md](contracts/migration-007.md).
 
 ## 3. Headless play test
 
-In `D:\Claude\test-campaign`: record `adventures/.active-campaign` and copy the campaign under test to the
-scratchpad first, and restore both afterwards. The maintainer refreshes the folder from the build in their own
-terminal: `<worktree>\artifacts\bin\dmc.exe refresh D:\Claude\test-campaign`. Then, from that folder:
+In `D:\Claude\test-campaign`: record `adventures/.active-campaign`, and copy the campaign under test and the folder's
+`CLAUDE.md` to the scratchpad first; restore all three afterwards. The folder's `CLAUDE.md` is `kit/dm-rules.md`
+word for word, so a rules-only change is copied in by hand (`dmc refresh` refuses inside Claude Code); a change to a
+template, a skill or a migration needs the maintainer's `<worktree>\artifacts\bin\dmc.exe refresh D:\Claude\test-campaign`
+in their own terminal, or the changed files copied in by hand. The folder is not trusted, so its own allow list is
+ignored: pass `Edit(adventures/**)` too, or DMC cannot write canon or save. Then, from that folder, pinning the session:
 
 ```text
 $env:CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
-claude -p "/dmc-resume-campaign" --model sonnet --effort high --allowedTools "Bash(dmc:*)" "Bash(dmc *)" "PowerShell(dmc *)"
-claude -p --continue "<one player message>" --model sonnet --effort high --allowedTools "Bash(dmc:*)" "Bash(dmc *)" "PowerShell(dmc *)"
+claude -p "/dmc-resume-campaign" --session-id <uuid> --model sonnet --effort high --allowedTools "Bash(dmc:*)" "Bash(dmc *)" "PowerShell(dmc *)" "Edit(adventures/**)"
+claude -p --resume <uuid> "<one player message>" --model sonnet --effort high --allowedTools "Bash(dmc:*)" "Bash(dmc *)" "PowerShell(dmc *)" "Edit(adventures/**)"
 ```
 
 Send one message per call, in this order:
@@ -44,6 +51,37 @@ Across all replies: no shown die changed, no resolved choice undone, and no repl
 character cast fireball?" for a character without it still gets a frank no (US2 scenario 4).
 
 Which major NPC to use is chosen from the test campaign's files when the test runs (research R9).
+
+An idea that rests on a fact the character would know is different (a tree that is not there, a potion the sheet does
+not hold) gets line 153's out-of-character correction (US2 scenario 5): it passes if the correction offers the ways
+forward, and is not counted in SC-002; send another ruled-out idea in its place.
+
+## 3a. The second play test (after research R12)
+
+Only what changed since § Results' first run is rerun (research R18), with § 3's method:
+
+| # | Kind | Message (adapt to the scene) | Pass |
+|---|---|---|---|
+| 9′–12′ | Ruled out by the world, none resting on a wrong premise | e.g. a hidden door in plain rock; flying without magic; lifting something far too heavy; talking to a creature that cannot understand | Refused in the fiction and, in the same reply, a way toward what the player wanted (SC-002) |
+
+SC-002's five are these four and the first run's message 13 (line 169 has not changed). The goal check (US3 scenario
+1, SC-006) runs after § 3b: a goal stated in a migrated campaign lands in the Arc plan's Character arcs with how it
+ties into the main plot.
+
+## 3b. Migration 007, live
+
+`dmc install` refuses inside Claude Code, so the live run uses the installed test folder (research R17):
+
+1. Record `adventures/.active-campaign`. Copy fixture 007's `before/` to `adventures/arc-test/` with `.standard` `6`,
+   and `kit/migrations/007-*.md` into the folder's `migrations/` (and the changed template into its `templates/`).
+2. With `<worktree>\artifacts\bin` first on `PATH` (the installed `dmc` has no `dm-notes-have-arc-plan`), make
+   `arc-test` active and ask DMC, headless, to bring the campaign's files up to date (`dmc-migrate-campaign`).
+3. Pass: `dmc campaign verify arc-test` passes; the result matches `after/` (the Arc plan, the comment, the Character
+   arcs line, the acts demoted, nothing else changed). Fix the migration's prose for anything DMC got wrong.
+4. § 3a's goal check runs on the migrated `arc-test`: resume it, have the character state a goal, run the full save.
+   Only if `arc-test` is too thin to resume, migrate a copy of the play-test campaign instead (standard 5, so 006
+   then 007; its "The five stages and the hero's journey" moves inside the Arc plan by step 2).
+5. Remove `arc-test`, the copied migration and template, and restore `.active-campaign` and the play-test campaign.
 
 ## 4. After release
 

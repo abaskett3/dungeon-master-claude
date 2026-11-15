@@ -238,7 +238,8 @@ plot, and a later scene moves it on.
 - **FR-005b**: A migration MUST bring every campaign's `story/dm-notes.md` to an `## Arc plan` section (Development 2):
   added from the template where it is missing; an arc already planned under another heading moved into it with its
   content unchanged; and Character arcs filled from what the campaign's files already say the PC and each companion
-  want, inventing nothing. A campaign that already has the section is left as it is. The migration names a shape check
+  want, inventing nothing. A campaign that already has the section keeps its content; only the template's comment is
+  brought up to date (FR-005a). The migration names a shape check
   in `src/Dmc.Cli/Campaign/MigrationChecks.cs` that fails on a `dm-notes.md` with no `## Arc plan` section, and ships
   with a golden fixture and one live run, as `.docs/development.md` § Changing a campaign-file standard says.
 - **FR-006**: The play rules MUST give one short example of "Yes, and…" and one of "No, but…".
@@ -250,8 +251,8 @@ plot, and a later scene moves it on.
   bullets. The plan MUST look for cuts first, and MUST state the bytes added and the estimated tokens per turn (Core 3,
   Development 1). The test's comment MUST name this spec.
 - **FR-009**: The documents MUST be updated in the same PR (Documentation 4): at least `.docs/decisions.md` and
-  `.docs/roadmap.md`, the user guide if it describes how DMC answers the player, and `.docs/campaign-files.md` and
-  `.docs/dmc-reference.md` for the new standard and its check.
+  `.docs/roadmap.md`, the user guide if it describes how DMC answers the player, `.docs/campaign-files.md` for the
+  Arc plan, and any document that lists the migrations or their checks.
 
 ## Success Criteria *(mandatory)*
 

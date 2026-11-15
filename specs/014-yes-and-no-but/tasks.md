@@ -67,14 +67,14 @@ does not allow it".
 - [X] T006 [US2] In `kit/dm-rules.md` line 169, append the contract's first-attack exception
 - [X] T007 [US2] Run quickstart § 3 messages 9 to 14 and the out-of-character fireball question at `gritty` for 13
   and 14; record the results in `specs/014-yes-and-no-but/quickstart.md` § Results
-- [ ] T018 [US2] In `kit/dm-rules.md` line 166, replace "turn it aside, with another way forward (no door" with
+- [X] T018 [US2] In `kit/dm-rules.md` line 166, replace "turn it aside, with another way forward (no door" with
   "turn it aside and offer, in the same reply, a way toward what they wanted (no door"
   ([contracts/dm-rules-fun-first.md](contracts/dm-rules-fun-first.md), research R12); measure the file: 212 lines
   and 30,636 bytes; no other line of the file changes
-- [ ] T019 [US2] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to `30_636` and say in its
+- [X] T019 [US2] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to `30_636` and say in its
   XML doc comment that spec 014 FR-008 raised the cap by 593, the allowance after the play test (the way-forward
   wording added 34); keep the assertion message naming spec 014 FR-008
-- [ ] T020 [US2] Publish (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`); back up
+- [X] T020 [US2] Publish (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`); back up
   `D:\Claude\test-campaign\CLAUDE.md`, `adventures/.active-campaign` and the play-test campaign to the scratchpad;
   copy `kit/dm-rules.md` over the folder's `CLAUDE.md`; in a new pinned headless session (quickstart § 3's method,
   with `Edit(adventures/**)`), resume and send quickstart § 3a's four ruled-out ideas, none resting on a wrong

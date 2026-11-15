@@ -121,7 +121,7 @@ no out-of-character "the story does not allow it".
   about 171 tokens per turn), the clarifications, the rejected alternatives (research R1, R2, R6) and the limits, and
   that it meets the Dungeon Master 4 item of the constitution 3.0.0 entry's Limits
 - [X] T016 [P] In `.docs/roadmap.md`, add a row for issue #216 with its status and a pointer to the decisions entry
-- [ ] T017 Restore `D:\Claude\test-campaign`: put back `adventures/.active-campaign` and the campaign copied in T004,
+- [X] T017 Restore `D:\Claude\test-campaign`: put back `adventures/.active-campaign` and the campaign copied in T004,
   which also undoes T007's lethality change
 - [ ] T018 Run `/speckit-converge`, then open the PR with `Closes #216`, the measured cost, the play test results,
   the documents changed, and a line saying no migration is needed (no template or campaign file changes shape);

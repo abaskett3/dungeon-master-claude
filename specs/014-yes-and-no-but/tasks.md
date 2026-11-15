@@ -23,7 +23,7 @@ order, not in parallel.
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the baseline of `kit/dm-rules.md` (expected 212 lines, 29,917 bytes) and run
+- [X] T001 Record the baseline of `kit/dm-rules.md` (expected 212 lines, 29,917 bytes) and run
   `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"`, noting the three toolkit tests that fail
   locally on `main` (quickstart § 1)
 
@@ -31,7 +31,7 @@ order, not in parallel.
 
 ## Phase 2: Foundational
 
-- [ ] T002 Add a toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that § Fun first of `kit/dm-rules.md`
+- [X] T002 Add a toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` that § Fun first of `kit/dm-rules.md`
   contains `"yes, and"` and `"no, but"`, with an XML doc comment naming spec 014 (research R8); run it and see it fail
 
 **Checkpoint**: the new test fails until User Stories 1 and 2 land.

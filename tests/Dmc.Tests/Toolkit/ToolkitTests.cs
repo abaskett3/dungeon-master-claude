@@ -1214,6 +1214,22 @@ public sealed partial class ToolkitTests
         Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 013 FR-028 allows at most {DmRulesBytesAllowed}");
     }
 
+    /// <summary>
+    /// Spec 014 (FR-001, FR-002): § Fun first of <c>kit/dm-rules.md</c> names "yes, and" and "no, but" as techniques, so a
+    /// later cut to the always-loaded rules cannot drop them silently.
+    /// </summary>
+    [TestMethod]
+    public void FunFirstNamesYesAndAndNoBut()
+    {
+        string rules = Read("kit/dm-rules.md");
+        int start = rules.IndexOf("\n## Fun first\n", StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(0, start, "kit/dm-rules.md has a § Fun first");
+        int end = rules.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        string section = end < 0 ? rules[start..] : rules[start..end];
+        StringAssert.Contains(section, "\"yes, and\"", "spec 014 FR-001");
+        StringAssert.Contains(section, "\"no, but\"", "spec 014 FR-002");
+    }
+
     [TestMethod]
     public void ThePlayRulesNameRecallAndLookupAndKeepTheFallback()
     {

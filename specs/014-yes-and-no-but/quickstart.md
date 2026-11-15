@@ -83,3 +83,43 @@ Changes from § 3:
 SC-001: 5 of 5 bold choices got a detail or hook; 0 of 3 routine actions got one. No reply said "yes, and".
 Separately, one reply (rolling the two Perception checks) showed no dice and no narration, only "both missed"; that is
 not this feature's.
+
+### T007: "no, but" (line 166 whole, line 169's exception)
+
+Run in the same session as T004 for messages 9 to 12, with line 165 (T008) also in place for the goal and the save
+below; then, after a full save, in a second session (resumed) at **Lethality** `gritty` for messages 13 and 14. The
+major NPC was **Rorn**, the adult silver dragon, named in the campaign's five stages (its arc plan, from before the
+template's `## Arc plan` section existed); the main antagonist Hush is dead (s28.1) and Gloam cannot be put in a scene.
+
+| # | Kind | Message | Result |
+|---|---|---|---|
+| 9 | Ruled out | pries at a roadside boulder for a hidden dwarven door | Partial. Refused in the fiction (Stonecunning: natural granite, no chisel work), with a clue (the rock holds no rime, so the cold is the stone-thing's own); no way forward toward what he wanted |
+| 10 | Ruled out | spreads his cloak and tries to fly to the saddle | Partial. Refused in the fiction (a four-foot fall into the heather, unhurt; Kibil: "Cwoak is *not* wings!"); no way forward offered |
+| 11 | Ruled out | drinks "that third potion of greater healing" (the sheet has two) | Pass on the ban, not in the fiction. Out of character, as line 153 asks when a premise is wrong: two potions, not three, and the real choice; never "the story does not allow it" |
+| 12 | Ruled out | casts Fireball (a fighter) | Pass. Nothing comes out of his palm; Ixenna: "It wants a *slot*"; then the wind drops dead for a breath and Kole says "it heard you" |
+| OOC | Out of character | "is there any way Shale can cast fireball?" | Pass. A frank no ("not as Shale stands"), with three real ways to fire (a necklace of fireballs, alchemist's fire, Ixenna) |
+| 13 | Major NPC, first attack, `gritty` | hurls Varunhal at Rorn's eye and charges, ordering the party in | Pass. DMC first confirmed the attack on a non-hostile (line 155). Rorn caught the axe, stopped the charge with a claw, struck no one: "I will allow this once … I will not allow it twice. Who has put this in you?" Canon line 285: "**Shale attacks Rorn** (s55.1 …) … allows it **once** … **not twice** … Nobody was hurt." |
+| 14 | Major NPC, again, `gritty` | attacks her again | Pass, with a note. Fight 13, initiative and every attack shown; Rorn is not shielded (Kole's crit 21, Shale 8). She answers with her paralyzing breath (DC 20; all four fail) and does not strike; DMC offers to run the saves on while "Rorn waits and does not attack". The dice fell, but she chose not to kill, so `gritty` was not tested by damage |
+
+SC-002: of the 4 ruled-out choices played (9 to 12), 1 was refused in the fiction with a way forward (12), 2 were
+refused in the fiction with no way forward (9, 10), and 1 was refused out of character under line 153 (11); 0 of 4
+said out of character that the story does not allow it. The first attack on the major NPC left everyone alive (1 of
+1). No die was changed and no resolved choice undone; no reply said "no, but" or "yes, and".
+
+Out-of-character premise checks: messages 4, 5, 11 and the lantern (session 2) each rested on a wrong fact (a
+position, a pine, a potion count, which light calls Rorn). Each time DMC stopped and said so before resolving, as
+`kit/dm-rules.md:153` asks, and offered the ways forward. That rule and the new "no, but" overlap: when the player's
+idea rests on a fact the world contradicts, DMC uses line 153 out of character, not "no, but" in the fiction.
+
+### T009: a goal the character wants (line 165)
+
+Shale told Kole: "When this is done, I want one thing for myself. A hearth-stone for the Landing, cut from Kelderak
+stone by my own hand." After `/dmc-campaign-full-save`:
+
+- `story/dm-notes.md:211`, in "Left open after the Heartpine": the goal, with its payoff tied to the main plot in
+  Stage 5 ("or as the tower's last gift": a spare Kelderak block, lit from the Ember's light once the tower burns),
+  "Never offered unprompted before then".
+- `story/canon.md:211` and Shale's sheet (Long-term goals) hold it too.
+
+Pass for User Story 3 scenario 1 (recorded in `dm-notes.md` with how it ties in). This campaign has no `## Arc plan`
+section: it predates the template's (commit `50e43d5`), so the goal could not go in the Arc plan's Character arcs.

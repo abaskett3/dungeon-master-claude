@@ -189,8 +189,9 @@ misses. Mostly done by T012, T017 and T018.
 - [X] T034 Finish the PR: run the built-in code review once and check each finding yourself; show the fixes to the
       user and commit them only on their approval; check the documents; wait for CI to pass, then ask the user to
       merge
-- [ ] T035 After the PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
-      its PR has merged (`.docs/development.md` § Spec-driven changes)
+- [X] T035 After the PR merges, the user runs `/speckit-converge`. The spec is frozen once a pass adds no tasks and
+      its PR has merged (`.docs/development.md` § Spec-driven changes). Done: the third pass, on `main` at 6230a5f
+      after #211 merged, appended nothing; the spec is frozen when the PR that ticks this task merges
 
 ---
 
@@ -237,7 +238,7 @@ build and tests passing.
 - [X] T037 Add to `tests/Dmc.Tests/Size/`: on `ModuleFixtures.WriteSoundModule`'s measured shape (38 chapters, a hub chapter of about 13k, a 37k reference file), a campaign whose pointer names one hub area measures the index plus about 2k at most, not the hub chapter per SC-001 (partial)
 - [X] T038 Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs` the cases T020 names that no test holds: a module with an oversized reference file prints one `module:` line and none once the file is split by hand; a homebrew campaign prints none; `modules/` is byte for byte unchanged after `dmc size`, `dmc module check`, `dmc install` and `dmc refresh` in a temporary folder per SC-007, FR-012, FR-013 (partial)
 - [X] T039 Add to `tests/Dmc.Tests/Size/SizeLibraryTests.cs` the old pointer form T014 names that no test holds, the-silver-egg's `none. Consult …`, measuring as before per FR-003 (partial)
-- [ ] T040 Tick T034 (done in PR #209: review once, fixes approved, CI passed, merged) and, once this phase is done and a further converge pass appends nothing, T035 per plan: Spec Kit workflow (partial)
+- [X] T040 Tick T034 (done in PR #209: review once, fixes approved, CI passed, merged) and, once this phase is done and a further converge pass appends nothing, T035 per plan: Spec Kit workflow (partial)
 
 ---
 

@@ -1009,7 +1009,9 @@ public sealed partial class ToolkitTests
             string last = Regex.Matches(Read(sheet), @"^## (.+)$", RegexOptions.Multiline).Last().Groups[1].Value;
             Assert.AreEqual("History", last, $"{sheet} must end with its History section");
         }
-        StringAssert.Contains(Read("kit/skills/dmc-resume-campaign/SKILL.md"), "Read a sheet down to its history, not through it");
+        string resume = Read("kit/skills/dmc-resume-campaign/SKILL.md");
+        StringAssert.Contains(resume, "Read any other sheet down to its history, not through it");
+        StringAssert.Contains(resume, "A companion's sheet with a `## Play card` section", "spec 013 FR-004");
         string save = Read("kit/skills/dmc-campaign-full-save/SKILL.md");
         StringAssert.Contains(save, "with targeted reads");
         StringAssert.Contains(save, "never one Edit per line");
@@ -1194,16 +1196,22 @@ public sealed partial class ToolkitTests
     // ---------- dmc lookup and dmc recall in the play rules (spec 009) ----------
 
     /// <summary>
-    /// The line count of <c>kit/dm-rules.md</c> before spec 009, which may add at most two (FR-022): the rules for lookup
-    /// and recall are rewritten into the lines that already say where facts come from.
+    /// The line count of <c>kit/dm-rules.md</c>, which spec 009 (FR-022) let grow by two and which spec 013 (FR-028) holds
+    /// at what it was: every always-loaded line is paid in every exchange of every session.
     /// </summary>
-    const int DmRulesLinesBeforeRetrieval = 212;
+    const int DmRulesLines = 212;
+
+    /// <summary>The bytes of <c>kit/dm-rules.md</c> before spec 013 (29,643), plus the 400 its FR-028 allows.</summary>
+    const int DmRulesBytesAllowed = 29_643 + 400;
 
     [TestMethod]
-    public void TheAlwaysLoadedRulesGrowByAtMostTwoLinesForLookupAndRecall()
+    public void TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes()
     {
-        int lines = Read("kit/dm-rules.md").TrimEnd('\n').Split('\n').Length;
-        Assert.IsLessThanOrEqualTo(DmRulesLinesBeforeRetrieval + 2, lines, $"kit/dm-rules.md has {lines} lines; spec 009 FR-022 allows at most {DmRulesLinesBeforeRetrieval + 2}");
+        string rules = Read("kit/dm-rules.md");
+        int lines = rules.TrimEnd('\n').Split('\n').Length;
+        Assert.IsLessThanOrEqualTo(DmRulesLines, lines, $"kit/dm-rules.md has {lines} lines; spec 013 FR-028 allows at most {DmRulesLines}");
+        int bytes = System.Text.Encoding.UTF8.GetByteCount(rules);
+        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 013 FR-028 allows at most {DmRulesBytesAllowed}");
     }
 
     [TestMethod]
@@ -1219,19 +1227,22 @@ public sealed partial class ToolkitTests
     }
 
     /// <summary>
-    /// Spec 009 FR-020a, as spec 012 FR-016 amends it: the resume and the full save use neither recall nor lookup, except
-    /// the resume's module item (step 9), which reads the module pointer's headings with lookup (Phase C). Canon,
-    /// companions and the rest wait for Phase D's gate.
+    /// Spec 009 FR-020a, as spec 012 FR-016 and spec 013 FR-007 amend it: the resume and the full save use lookup only in
+    /// the resume's module item (step 9, Phase C), and recall only in the resume's canon item (step 7), as
+    /// <c>dmc recall &lt;campaign&gt; --scene</c> (Phase D).
     /// </summary>
     [TestMethod]
-    public void TheResumeAndTheFullSaveDoNotUseLookupOrRecallOutsideTheModuleRead()
+    public void TheResumeAndTheFullSaveUseRecallOnlyForCanonsSceneAndLookupOnlyForTheModule()
     {
         foreach (string skill in new[] { "kit/skills/dmc-resume-campaign/SKILL.md", "kit/skills/dmc-campaign-full-save/SKILL.md" })
         {
             string text = string.Join('\n', Read(skill).Split('\n').Where(l => !l.StartsWith("9. If `module-progress.md` exists", StringComparison.Ordinal)));
-            Assert.DoesNotContain("dmc recall", text, $"{skill}: changing what the resume and full save read is Phase D's, behind its gate (FR-020a)");
-            Assert.DoesNotContain("dmc lookup", text, $"{skill}: only the module read uses lookup; the rest is Phase D's, behind its gate (spec 012 FR-016)");
+            Assert.DoesNotContain("dmc lookup", text, $"{skill}: only the module read uses lookup (spec 012 FR-016)");
+            Assert.DoesNotContain("dmc recall", text.Replace("dmc recall <campaign> --scene", ""), $"{skill}: the one recall is canon's scene read (spec 013 FR-007)");
         }
+        string canon = Read("kit/skills/dmc-resume-campaign/SKILL.md").Split('\n').Single(l => l.StartsWith("7. `story/canon.md`", StringComparison.Ordinal));
+        StringAssert.Contains(canon, "run `dmc recall <campaign> --scene`", "spec 013 FR-007");
+        StringAssert.Contains(canon, "story/canon.md is small: read it whole", "the line SceneRead prints");
     }
 
     [TestMethod]

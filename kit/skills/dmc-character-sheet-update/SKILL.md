@@ -12,6 +12,7 @@ A sheet must let a DM who has never met the character play them correctly: the n
 ## Which kind of record
 
 - **PC or companion**: full sheet from `templates/pc-sheet.md`.
+- **A companion's sheet** starts with the template's `## Play card`, the only part resume reads: fill it from the rest of the sheet when the character joins the party. Anyone else's sheet leaves it out.
 - **Recurring NPC, villain, patron, rival, anyone with a stat block the player may fight or travel with**: sheet from `templates/npc-sheet.md`.
 - **Shopkeeper, guard, passer-by with a name**: one line in `minor-npcs.md` (name, role, place, one distinguishing trait, attitude to the PC). Promote to a full sheet on their second meaningful appearance.
 
@@ -23,10 +24,11 @@ A sheet must let a DM who has never met the character play them correctly: the n
 4. Keep the story sections current: what the character wants now, what they know, how they feel about the PC, what they have promised or been promised, what has happened to them. Add dated notes to the sheet's `## History` section, which is its last section, instead of deleting old ones when history matters. The full save moves history older than the current stretch of the story to a separate file, so the sheet stays a size resume can read.
 5. For NPCs and companions, keep the voice note (speech pattern, mannerism, a sample line), the names they use for people, places and things that matter, and the secrets section up to date. Secrets are spoilers; do not show the player an NPC sheet without warning them.
 6. If current HP, slots or conditions changed, `game-state.md` is where those live during play. Update it too so the two agree.
+7. On a companion's sheet, change anything the play card holds on the card, in the same edit. The card is the only copy of each number on it; keep it within the budget `dmc size` checks.
 
 ## New character
 
-Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md` for the character's first appearance.
+Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md`'s People for the character's first appearance, starting with their bold name, then `(also: …)` with any other names and role words the player may use.
 
 A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history, and use species or class defaults only where it says nothing. Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason when the history gives one, so no later reader puts the default back. Their voice, the names they use and their appearance go on the sheet itself.
 

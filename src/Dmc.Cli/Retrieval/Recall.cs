@@ -64,13 +64,29 @@ internal static class Recall
             return output;
         }
 
-        int used = output.Sum(Bytes);
+        output.AddRange(Fit(ranked, wanted, CapBytes, output.Sum(Bytes)));
+        return output;
+    }
+
+    /// <summary>
+    /// The hit lines of some ranked units, best first, while they fit in a cap, then <c>(N more lines matched)</c> when
+    /// some did not. Room for the closing line is kept while hits are added. Shared by recall, the scene read and the
+    /// hook's canon reminder (spec 013), so all three print hits the same way.
+    /// </summary>
+    /// <param name="ranked">The units, best first.</param>
+    /// <param name="wanted">The stems the text is trimmed around.</param>
+    /// <param name="cap">The most bytes the whole output may hold.</param>
+    /// <param name="used">Bytes already printed before these lines, counted against the cap.</param>
+    /// <returns>The lines to print.</returns>
+    internal static List<string> Fit(IReadOnlyList<LineUnit> ranked, IReadOnlySet<string> wanted, int cap, int used = 0)
+    {
+        var output = new List<string>();
         int shown = 0;
         foreach (var unit in ranked)
         {
             string line = Hit(unit, wanted);
             bool more = shown + 1 < ranked.Count;
-            if (used + Bytes(line) + (more ? ClosingLineRoom : 0) > CapBytes)
+            if (used + Bytes(line) + (more ? ClosingLineRoom : 0) > cap)
                 break;
             output.Add(line);
             used += Bytes(line);
@@ -190,7 +206,7 @@ internal static class Recall
     /// </summary>
     /// <param name="unit">The unit.</param>
     /// <param name="wanted">The query's stems.</param>
-    static string Hit(LineUnit unit, IReadOnlySet<string> wanted)
+    internal static string Hit(LineUnit unit, IReadOnlySet<string> wanted)
     {
         var line = new StringBuilder();
         line.Append(unit.File.Place.Label);
@@ -209,5 +225,5 @@ internal static class Recall
 
     /// <summary>The bytes a printed line costs: its UTF-8 and its line end.</summary>
     /// <param name="line">The line.</param>
-    static int Bytes(string line) => Encoding.UTF8.GetByteCount(line) + 1;
+    internal static int Bytes(string line) => Encoding.UTF8.GetByteCount(line) + 1;
 }

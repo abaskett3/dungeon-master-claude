@@ -228,3 +228,13 @@ misses. Mostly done by T012, T017 and T018.
 MVP is US1 with US2's check behind it: the resume saving needs the pointer, and the shape that makes the pointer
 work needs the check. Deliver all four stories in the one PR; the phases are checkpoints, each committed with the
 build and tests passing.
+
+---
+
+## Phase 8: Convergence
+
+- [ ] T036 Edit `kit/dm-rules.md` § Running a published module, "Run from the files", with no line added: when `dmc lookup` finds no heading in play, search the module's files and open the pages they cite in `source/` per FR-015 (partial)
+- [ ] T037 Add to `tests/Dmc.Tests/Size/`: on `ModuleFixtures.WriteSoundModule`'s measured shape (38 chapters, a hub chapter of about 13k, a 37k reference file), a campaign whose pointer names one hub area measures the index plus about 2k at most, not the hub chapter per SC-001 (partial)
+- [ ] T038 Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs` the cases T020 names that no test holds: a module with an oversized reference file prints one `module:` line and none once the file is split by hand; a homebrew campaign prints none; `modules/` is byte for byte unchanged after `dmc size`, `dmc module check`, `dmc install` and `dmc refresh` in a temporary folder per SC-007, FR-012, FR-013 (partial)
+- [ ] T039 Add to `tests/Dmc.Tests/Size/SizeLibraryTests.cs` the old pointer form T014 names that no test holds, the-silver-egg's `none. Consult …`, measuring as before per FR-003 (partial)
+- [ ] T040 Tick T034 (done in PR #209: review once, fixes approved, CI passed, merged) and, once this phase is done and a further converge pass appends nothing, T035 per plan: Spec Kit workflow (partial)

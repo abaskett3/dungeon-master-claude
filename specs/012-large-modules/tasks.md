@@ -238,3 +238,9 @@ build and tests passing.
 - [X] T038 Add to `tests/Dmc.Tests/Size/SizeCommandContract.cs` the cases T020 names that no test holds: a module with an oversized reference file prints one `module:` line and none once the file is split by hand; a homebrew campaign prints none; `modules/` is byte for byte unchanged after `dmc size`, `dmc module check`, `dmc install` and `dmc refresh` in a temporary folder per SC-007, FR-012, FR-013 (partial)
 - [X] T039 Add to `tests/Dmc.Tests/Size/SizeLibraryTests.cs` the old pointer form T014 names that no test holds, the-silver-egg's `none. Consult …`, measuring as before per FR-003 (partial)
 - [ ] T040 Tick T034 (done in PR #209: review once, fixes approved, CI passed, merged) and, once this phase is done and a further converge pass appends nothing, T035 per plan: Spec Kit workflow (partial)
+
+---
+
+## Phase 9: Convergence
+
+- [X] T041 Edit `.docs/roadmap.md`: issue #179 Phase C's row still says "In review"; set it to "Done (PR #209, with its convergence tasks in PR #210), for the next release", as the Phase B rows read, per FR-017 (partial)

@@ -55,3 +55,31 @@ do, not by their words, and flags a session where "No, but…" answers outnumber
 ## Results
 
 Filled in by T004, T007 and T009: one line per message, with pass or fail and the reply's key words.
+
+Run on 2026-11-15 in `D:\Claude\test-campaign`, campaign `rorns-landing` (session 54, the high road after Fight 12,
+level 7), one pinned `claude -p` session (`--session-id`, then `--resume`) on `--model sonnet --effort high`.
+Changes from § 3:
+
+- The rules were copied into the folder's `CLAUDE.md` by hand instead of with `dmc refresh`. The folder's `CLAUDE.md`
+  is `kit/dm-rules.md` word for word, and `dmc refresh` refuses to run inside Claude Code.
+- `Edit(adventures/**)` was added to `--allowedTools`. The folder is not trusted, so the allow list in its
+  `.claude/settings.json` is ignored, and without that entry DMC could not write canon or save.
+
+### T004: "yes, and" (lines 166's first three sentences only)
+
+| # | Kind | Message | Result |
+|---|---|---|---|
+| 1 | Bold | rides his shield like a sled down the road on a rimed slab | Pass. Acrobatics DC 10 rolled (20). Kibil flies after him, Hala stands up on the rise, and the slab will not stop on its own |
+| 2 | Bold | hooks Varunhal into the frost to spin the slab to a stop, bows to Hala | Pass. It stops a hand's breadth from the rise; Hala bows back, then looks at his pocket (the Ember he promised her) |
+| 3 | Bold | the fair trick: "finds" the Ember behind Hala's ear | Pass. The trick works; the Ember stops her shivering; "You bwought it back. And you bwought *you* back." |
+| 4 | Bold (invalid) | throws a torch into the groove, from the rise | Not counted: the message was wrong about the scene (the groove starts 240 yards back; his torches are unlit). DMC said so out of character before resolving and offered the ways forward (`kit/dm-rules.md:153`). It did not say the story forbids it |
+| 4b | Bold | walks back up, flings Pip's torch into the groove's start | Pass. The rime does not melt a pace past the flame; a cold draught leans the flame down the groove from the north; Kibil: "it stiww come" |
+| 5 | Bold (invalid) | climbs the tallest pine by the road | Not counted: no pine stands there. DMC said so out of character and offered the west slope, a boulder, or Kibil (line 153 again) |
+| 5b | Bold | climbs the west slope for a look north | Pass. From a shelf 40 feet up: the groove runs into a saddle of the Greywall, the snowline is lower than this morning, and a dark fleck stands on the snow (a Perception check) |
+| 6 | Routine | climbs down, hands Pip his torch back | Pass. Resolved plainly; Pip asks what he saw |
+| 7 | Routine | eats a strip of dried meat | Pass. Resolved plainly; Kibil begs; Kole asks about the fleck Shale played down |
+| 8 | Routine | feeds Kibil, sits on a boulder to eat | Pass. Resolved plainly, with the scene's weather and light |
+
+SC-001: 5 of 5 bold choices got a detail or hook; 0 of 3 routine actions got one. No reply said "yes, and".
+Separately, one reply (rolling the two Perception checks) showed no dice and no narration, only "both missed"; that is
+not this feature's.

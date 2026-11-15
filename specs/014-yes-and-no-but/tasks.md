@@ -44,12 +44,12 @@ order, not in parallel.
 
 **Independent Test**: quickstart § 3, messages 1 to 8 (SC-001).
 
-- [ ] T003 [US1] In `kit/dm-rules.md` line 166, replace "Say yes to creative ideas when you can. … rule in favor of
+- [X] T003 [US1] In `kit/dm-rules.md` line 166, replace "Say yes to creative ideas when you can. … rule in favor of
   the cool idea and keep moving." with the first three sentences of the contract's line 166: "Meet a bold idea with
   "yes, and" (a technique, never said): it happens, plus a detail or hook (the chandelier holds, and a key ring
   hangs by the ledge). Routine acts get nothing added. When a strict reading would kill the momentum over something
   minor, rule for the cool idea." Keep it one line
-- [ ] T004 [US1] Build `dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, have the maintainer refresh
+- [X] T004 [US1] Build `dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, have the maintainer refresh
   `D:\Claude\test-campaign` from it, and run quickstart § 3 messages 1 to 8; record each reply's pass or fail in
   `specs/014-yes-and-no-but/quickstart.md` § Results (first record `adventures/.active-campaign` and copy the
   campaign under test to the scratchpad)

@@ -466,11 +466,38 @@ internal static partial class ReadSet
             parts.Add(Part.Absent(chapterShown, EntryState.NotIngested, BudgetKind.None, "not ingested"));
             return parts;
         }
-        string section = digest[(file.Index + file.Length)..].Trim(' ', ',', ';', ':', '§', '-', '–', '`', '.');
+        var sections = Headings(digest[(file.Index + file.Length)..]);
+        if (sections.Count <= 1)
+        {
+            parts.Add(DigestSection(chapterPath, chapterShown, sections.Count == 0 ? "" : sections[0], relative));
+            return parts;
+        }
+        // Several headings (an area and the event it depends on): one part each, each section counted once.
+        var seen = new HashSet<int>();
+        foreach (string section in sections)
+        {
+            var (part, start) = DigestSectionAt(chapterPath, $"{chapterShown} § {section}", section, relative);
+            if (start > 0 && !seen.Add(start))
+                continue;
+            parts.Add(part);
+        }
+        return parts;
+    }
+
+    /// <summary>
+    /// The headings a pointer names after its file (spec 012 research R7): each after a <c>§</c>, separated by <c>;</c>, in
+    /// the new form; otherwise the one section the old forms name (<c>, section Name</c>, or the text alone), or none.
+    /// </summary>
+    /// <param name="rest">The pointer's text after the file's path.</param>
+    internal static List<string> Headings(string rest)
+    {
+        char[] trim = [' ', ',', ';', ':', '-', '–', '`', '.'];
+        if (rest.Contains('§'))
+            return rest.Split('§').Select(p => p.Trim(trim)).Where(p => p.Length > 0).ToList();
+        string section = rest.Trim(trim);
         if (section.StartsWith("section ", StringComparison.OrdinalIgnoreCase))
             section = section["section ".Length..].Trim();
-        parts.Add(DigestSection(chapterPath, chapterShown, section));
-        return parts;
+        return section.Length == 0 ? [] : [section];
     }
 
     /// <summary>The text after <c>key:</c> on the first line that holds <paramref name="key"/>, with HTML comments and backticks removed; null when there is no such line or it holds nothing.</summary>
@@ -496,30 +523,46 @@ internal static partial class ReadSet
             t.Contains("complete", StringComparison.OrdinalIgnoreCase) && !t.Contains("incomplete", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>The digest section a module campaign reads next (see <see cref="DigestSectionAt"/>).</summary>
+    /// <param name="path">The chapter digest file.</param>
+    /// <param name="shown">The path the report shows.</param>
+    /// <param name="section">The heading named in <c>module-progress.md</c>, or empty.</param>
+    /// <param name="relative">The chapter's path in the module, as the pointer writes it, for the miss line.</param>
+    static Part DigestSection(string path, string shown, string section, string relative) =>
+        DigestSectionAt(path, shown, section, relative).Part;
+
     /// <summary>
-    /// The digest section a module campaign reads next: from the heading that holds <paramref name="section"/> (ignoring
-    /// case) to the next heading of the same or a higher level. The whole chapter when no section is named or none matches,
-    /// and the note says which.
+    /// The digest section a module campaign reads next, found as <c>dmc lookup</c> finds it, by the same matcher
+    /// (<see cref="Retrieval.Lookup.FindSection"/>, spec 012 research R8), so that what is measured is what the resume's
+    /// lookup prints: from the heading to the next heading of the same or a higher level. The whole chapter when no section
+    /// is named; also when the heading matches none or several, with the note saying which and the
+    /// <see cref="Part.PointerMiss"/> line for the save.
     /// </summary>
     /// <param name="path">The chapter digest file.</param>
     /// <param name="shown">The path the report shows.</param>
-    /// <param name="section">The section named in <c>module-progress.md</c>, or empty.</param>
-    static Part DigestSection(string path, string shown, string section)
+    /// <param name="section">The heading named in <c>module-progress.md</c>, or empty.</param>
+    /// <param name="relative">The chapter's path in the module, as the pointer writes it, for the miss line.</param>
+    /// <returns>The part, and the 1-based line its section starts on (0 when the chapter is measured whole).</returns>
+    static (Part Part, int Start) DigestSectionAt(string path, string shown, string section, string relative)
     {
         var lines = Measurement.ReadLines(path);
         if (section.Length == 0)
-            return new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, "whole (no section named)", lines);
-        for (int i = 0; i < lines.Count; i++)
+            return (new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, "whole (no section named)", lines), 0);
+        var file = Retrieval.MarkdownFile.Read(path);
+        var (matches, nearest) = Retrieval.Lookup.FindSection(file, section);
+        if (matches.Count == 1)
         {
-            int level = HeadingLevel(lines[i].Text);
-            if (level == 0 || !lines[i].Text.Contains(section, StringComparison.OrdinalIgnoreCase))
-                continue;
-            int end = i + 1;
-            while (end < lines.Count && (HeadingLevel(lines[end].Text) is 0 || HeadingLevel(lines[end].Text) > level))
-                end++;
-            return new Part(shown, PartKind.Section, EntryState.Measured, BudgetKind.None, lines.GetRange(i, end - i), "the section named", lines);
+            var heading = file.Headings[matches[0]];
+            int last = Retrieval.MarkdownHeadings.SectionEnd(file.Headings, matches[0], file.Lines.Length);
+            return (new Part(shown, PartKind.Section, EntryState.Measured, BudgetKind.None,
+                [.. lines.Skip(heading.Line - 1).Take(last - heading.Line + 1)], "the section named", lines), heading.Line);
         }
-        return new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, $"whole (no heading holds \"{section}\")", lines);
+        string miss = matches.Count == 0
+            ? $"module-progress.md: no heading \"{section}\" in {relative}"
+              + (nearest.Count > 0 ? $" (nearest: {string.Join("; ", nearest)})" : "") + ": name one"
+            : $"module-progress.md: \"{section}\" matches {matches.Count} headings in {relative}: name one";
+        string note = matches.Count == 0 ? $"whole (no heading holds \"{section}\")" : $"whole (\"{section}\" matches {matches.Count} headings)";
+        return (new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, note, lines, PointerMiss: miss), 0);
     }
 
     /// <summary>The level of a Markdown heading (the number of leading <c>#</c> before a space), or 0 for a line that is not one.</summary>

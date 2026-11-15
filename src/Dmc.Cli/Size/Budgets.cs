@@ -51,6 +51,14 @@ internal static class Budgets
     /// <summary>A part read of this many lines or more is near the Read tool's limit of 2,000 lines in one call (80% of it).</summary>
     public const int NearCapLines = 1600;
 
+    /// <summary>
+    /// A heading of an ingested module whose own text (to the next heading of any level) is over this many estimated
+    /// tokens holds more than one area or entry, so <c>dmc module check</c> reports it (spec 012 research R2). A stat
+    /// block measured about 650; the largest section of a 638-page module written one heading per area was 2,428, and a
+    /// hub chapter under one heading 13.8k.
+    /// </summary>
+    public const int ModuleSection = 3000;
+
     /// <summary>A line longer than this many characters breaks the rule of one fact per line.</summary>
     public const int LongLineCharacters = 400;
 

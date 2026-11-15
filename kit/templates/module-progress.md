@@ -13,7 +13,7 @@
 
 - **Chapter**:
 - **Area**: <!-- the module's area number and name -->
-- **Digest to read before continuing**: <!-- chapters/NN-title.md, section -->
+- **Digest to read before continuing**: <!-- chapters/NN-title.md § <the area's heading>; § <a scripted event's heading, if the area needs it> -->
 - **What the party is in the middle of**:
 - **Likely next areas**:
 

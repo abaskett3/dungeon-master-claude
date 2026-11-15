@@ -602,6 +602,85 @@ public sealed class SizeLibraryTests
         Assert.IsFalse(paths.Any(p => p.StartsWith("modules/", StringComparison.Ordinal)));
     }
 
+    // ---------- spec 012: the pointer names areas ----------
+
+    /// <summary>The bytes of a section of the fixture's chapter, heading line to the end of its subsections.</summary>
+    static readonly int TheInn = "## Area 3: The Inn\n\n".Length + 800 + "### Upstairs\n\n".Length + 200;
+
+    [TestMethod]
+    public void APointerInTheNewFormMeasuresTheHeadingItNames()
+    {
+        MakeModuleCampaign(digest: "`chapters/02-phandalin.md` § Area 3: The Inn");
+        var part = PartOf("modules/lmop/chapters/02-phandalin.md");
+        Assert.AreEqual(PartKind.Section, part.Kind);
+        Assert.AreEqual(TheInn, part.Bytes);
+        Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
+    }
+
+    [TestMethod]
+    public void APointerNamingTwoHeadingsMeasuresEachOnceAsItsOwnPart()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § Area 3: The Inn; § Area 4: The Mill; § The Inn");
+        var parts = Measure().Parts.Where(p => p.Path.StartsWith("modules/lmop/chapters/", StringComparison.Ordinal)).ToList();
+        CollectionAssert.AreEqual(new[] { "modules/lmop/chapters/02-phandalin.md § Area 3: The Inn", "modules/lmop/chapters/02-phandalin.md § Area 4: The Mill" },
+            parts.Select(p => p.Path).ToArray(), "the third names the first again, so it is counted once");
+        Assert.AreEqual(TheInn, parts[0].Bytes);
+        Assert.AreEqual("## Area 4: The Mill\n\n".Length + 400, parts[1].Bytes);
+    }
+
+    [TestMethod]
+    public void TheTotalStaysTheSameWhenTheOtherChaptersGrowTenfold()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § Area 3: The Inn");
+        long before = Measure().Total;
+        string module = Path.Combine(_root, "modules", "lmop");
+        WriteAt(module, "chapters/01-goblin-arrows.md", "# Goblin Arrows\n\n## Area 1\n\n" + Filler(40_000));
+        WriteAt(module, "monsters.md", "# Monsters\n\n## Goblin\n\n" + Filler(60_000));
+        Assert.AreEqual(before, Measure().Total);
+    }
+
+    [TestMethod]
+    public void TheOldFormsMeasureAsBefore()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md, section Area 3: The Inn");
+        Assert.AreEqual(TheInn, PartOf("modules/lmop/chapters/02-phandalin.md").Bytes);
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md The Inn");
+        Assert.AreEqual(TheInn, PartOf("modules/lmop/chapters/02-phandalin.md").Bytes, "a heading's words find it, as lookup finds it");
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md");
+        Assert.AreEqual(PartKind.Whole, PartOf("modules/lmop/chapters/02-phandalin.md").Kind);
+        MakeModuleCampaign(digest: "none");
+        Assert.IsFalse(Paths().Any(p => p.Contains("chapters/", StringComparison.Ordinal)));
+        Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
+    }
+
+    [TestMethod]
+    public void AHeadingThePointerNamesIsFoundAsLookupFindsItNotByTheFirstThatContainsIt()
+    {
+        // "Inn" is inside "Innkeeper's Cellar", which comes first; lookup's exact match finds "The Inn".
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § The Inn");
+        WriteAt(Path.Combine(_root, "modules", "lmop"), "chapters/02-phandalin.md",
+            "# Phandalin\n\n## The Innkeeper's Cellar\n\n" + Filler(400) + "## The Inn\n\n" + Filler(800));
+        var part = PartOf("modules/lmop/chapters/02-phandalin.md");
+        Assert.AreEqual("## The Inn\n\n".Length + 800, part.Bytes);
+    }
+
+    [TestMethod]
+    public void AHeadingThatMatchesNothingMeasuresTheChapterWholeAndHoldsTheSaveWithTheNearest()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § The Old Mill");
+        Assert.AreEqual(PartKind.Whole, PartOf("modules/lmop/chapters/02-phandalin.md").Kind);
+        var miss = FlagsOf(FlagKind.PointerMiss).Single();
+        Assert.AreEqual("module-progress.md: no heading \"The Old Mill\" in chapters/02-phandalin.md (nearest: Area 4: The Mill): name one", miss.Line);
+        Assert.IsTrue(miss.HoldsTheSave);
+    }
+
+    [TestMethod]
+    public void AHeadingThatMatchesSeveralSaysHowMany()
+    {
+        MakeModuleCampaign(digest: "chapters/02-phandalin.md § Area");
+        Assert.AreEqual("module-progress.md: \"Area\" matches 3 headings in chapters/02-phandalin.md: name one", FlagsOf(FlagKind.PointerMiss).Single().Line);
+    }
+
     // ---------- the campaign ----------
 
     [TestMethod]

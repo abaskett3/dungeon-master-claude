@@ -34,9 +34,9 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 
 ## Phase 1: Setup
 
-- [ ] T001 Fetch `origin` and confirm branch `012-large-modules` sits on an up-to-date `origin/main`
-- [ ] T002 Build and test the branch as it stands, and record the result
-- [ ] T003 [P] Measure the standing cost's baseline: bytes ÷ 4 of `kit/dm-rules.md`, `kit/skills/dmc-resume-campaign/SKILL.md`
+- [X] T001 Fetch `origin` and confirm branch `012-large-modules` sits on an up-to-date `origin/main`
+- [X] T002 Build and test the branch as it stands, and record the result
+- [X] T003 [P] Measure the standing cost's baseline: bytes ÷ 4 of `kit/dm-rules.md`, `kit/skills/dmc-resume-campaign/SKILL.md`
       and the skill descriptions
 
 ---
@@ -45,12 +45,12 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 
 **Purpose**: What every story uses. Blocks Phases 3 to 6.
 
-- [ ] T004 Add `Budgets.ModuleSection = 3000` to `src/Dmc.Cli/Size/Budgets.cs`, with its reason in the XML comment
+- [X] T004 Add `Budgets.ModuleSection = 3000` to `src/Dmc.Cli/Size/Budgets.cs`, with its reason in the XML comment
       (research R2)
-- [ ] T005 Factor `Lookup.FindSection(MarkdownFile file, string heading)` out of `Lookup.Run` in
+- [X] T005 Factor `Lookup.FindSection(MarkdownFile file, string heading)` out of `Lookup.Run` in
       `src/Dmc.Cli/Retrieval/Lookup.cs`: the heading's index, the several matches, or the nearest headings, with no
       change to what `dmc lookup` prints (research R8). Every test in `tests/Dmc.Tests/Retrieval/` passes unchanged
-- [ ] T006 [P] Write `tests/Dmc.Tests/Modules/ModuleFixtures.cs`: builders for a synthetic module (index, chapters
+- [X] T006 [P] Write `tests/Dmc.Tests/Modules/ModuleFixtures.cs`: builders for a synthetic module (index, chapters
       with keyed areas `## NN. Name (PDF n)`, a monster file with one stat block per heading, `- AC n; …` and
       `- HP n (…)` lines in both 2014 and 2024 wording), with knobs for each planted problem of quickstart.md § On CI
       step 2, the old skill format (step 3) and a module campaign whose `module-progress.md` names a pointer
@@ -67,27 +67,27 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 
 ### Tests
 
-- [ ] T007 [P] [US2] Write `tests/Dmc.Tests/Modules/ModuleCheckTests.cs` (library): a sound module gives no problem;
+- [X] T007 [P] [US2] Write `tests/Dmc.Tests/Modules/ModuleCheckTests.cs` (library): a sound module gives no problem;
       each planted problem gives exactly its line (data-model.md § Module problem); a section over the limit with
       several stat blocks gives the stat-block line only; `### PLAYER-SAFE` under two parents gives none; a heading
       shared by two files gives none; fenced and commented headings are not headings; a chapter the index lists but
       no file holds is not a problem; `source/` is never read; the old skill format fails and its re-headed copy
       passes (SC-009)
-- [ ] T008 [P] [US2] Write `tests/Dmc.Tests/Modules/ModuleCommandContract.cs` (black box): every row of
+- [X] T008 [P] [US2] Write `tests/Dmc.Tests/Modules/ModuleCommandContract.cs` (black box): every row of
       contracts/dmc-module-check.md § `dmc module check`, including `modules/<NAME>`, a dot name, the 12-line cap
       with `... and <n> more`, `--help`, and that nothing under the module changes (file list and timestamps)
-- [ ] T009 [P] [US2] Write a timing test beside `RecallTimingTests`: the check over a fixture of about 1.5 MB within
+- [X] T009 [P] [US2] Write a timing test beside `RecallTimingTests`: the check over a fixture of about 1.5 MB within
       one second on the release build (SC-006)
 
 ### Implementation
 
-- [ ] T010 [US2] Write `src/Dmc.Cli/Modules/ModuleCheck.cs`: the sections (research R3), the stat-block rule
+- [X] T010 [US2] Write `src/Dmc.Cli/Modules/ModuleCheck.cs`: the sections (research R3), the stat-block rule
       (research R4), the repeat rule (research R5), the lines and their order (data-model.md)
-- [ ] T011 [US2] Write `src/Dmc.Cli/Modules/ModuleArguments.cs` and `src/Dmc.Cli/Commands/ModuleCommand.cs` (verb
+- [X] T011 [US2] Write `src/Dmc.Cli/Modules/ModuleArguments.cs` and `src/Dmc.Cli/Commands/ModuleCommand.cs` (verb
       `check`, `NAME`, `--folder`, `--help`, as `SizeArguments` parses), and add `ModuleCommand` to
       `src/Dmc.Cli/CommandTable.cs`
-- [ ] T012 [US2] Edit `kit/skills/dmc-ingest-module/SKILL.md` § 3 to § 6 as contracts/prompts.md says
-- [ ] T013 [P] [US2] Add prompt tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`: the ingest skill names
+- [X] T012 [US2] Edit `kit/skills/dmc-ingest-module/SKILL.md` § 3 to § 6 as contracts/prompts.md says
+- [X] T013 [P] [US2] Add prompt tests to `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`: the ingest skill names
       `dmc module check` at its verify step, and asks for one heading per area, NPC, stat block, item and handout
 
 **Checkpoint**: build and test pass; commit.
@@ -103,24 +103,24 @@ One PR, on branch `012-large-modules` (this branch, with the spec folder). It sa
 
 ### Tests
 
-- [ ] T014 [P] [US1] Add to `tests/Dmc.Tests/Size/`: a pointer `§ H` measures the index and that section; `§ H1; § H2`
+- [X] T014 [P] [US1] Add to `tests/Dmc.Tests/Size/`: a pointer `§ H` measures the index and that section; `§ H1; § H2`
       measures both, each once; the total does not change when every other chapter grows tenfold (SC-001, SC-002);
       the old forms (`, section H`, a file alone, `none`, the-silver-egg's `none. Consult …`) and a finished module
       measure as before; a heading lookup would match differently from today's "contains, first" is measured as
       lookup matches it; a miss gives the flag line with the nearest headings and the chapter whole (research R8)
-- [ ] T015 [P] [US1] Add to `tests/Dmc.Tests/Retrieval/`: a stat block from a 37k fixture file prints about 650 tokens
+- [X] T015 [P] [US1] Add to `tests/Dmc.Tests/Retrieval/`: a stat block from a 37k fixture file prints about 650 tokens
       (SC-003)
 
 ### Implementation
 
-- [ ] T016 [US1] Edit `src/Dmc.Cli/Size/ReadSet.cs`: parse the pointer's `§` form (research R7), resolve each heading
+- [X] T016 [US1] Edit `src/Dmc.Cli/Size/ReadSet.cs`: parse the pointer's `§` form (research R7), resolve each heading
       with `Lookup.FindSection` on that one file, one part per heading; keep the old forms; and edit
       `src/Dmc.Cli/Size/Flags.cs` for `FlagKind.PointerMiss`, which holds the save
-- [ ] T017 [US1] Edit `kit/skills/dmc-resume-campaign/SKILL.md` step 9 and `kit/templates/module-progress.md`'s
+- [X] T017 [US1] Edit `kit/skills/dmc-resume-campaign/SKILL.md` step 9 and `kit/templates/module-progress.md`'s
       comment as contracts/prompts.md says
-- [ ] T018 [US1] Edit `kit/dm-rules.md` § Running a published module, "Keep your place", as contracts/prompts.md says,
+- [X] T018 [US1] Edit `kit/dm-rules.md` § Running a published module, "Keep your place", as contracts/prompts.md says,
       with no line added; check the existing growth test still passes
-- [ ] T019 [P] [US1] Add prompt tests: the resume's step 9 names `dmc lookup` for the pointer's headings, and the
+- [X] T019 [P] [US1] Add prompt tests: the resume's step 9 names `dmc lookup` for the pointer's headings, and the
       template's comment shows the `§` form
 
 **Checkpoint**: build and test pass; commit.

@@ -89,8 +89,10 @@ Not slips: s1.39, s1.42, s9.36, s13.27, s41.75, s44.26 (characters slipping in t
 
 ## After (Rorn's Landing, from 2026-11-15)
 
-Counted with `review-transcript` § 7 on 2026-11-16 from the session logs' `Slip:` lines, each checked against its
-transcript (`dmc digest show`). Session 54 is not in the set: it began on 2026-11-13, and migration 006 ran inside it.
+Counted with `review-transcript` § 7 on 2026-11-15, sessions 55 and 56 first and session 57 once it was played, from the
+session logs' `Slip:` lines, each checked against its transcript (`dmc digest show`). A `Slip:` line the transcript shows
+was not DMC's error is not counted (FR-020), and is listed under Not counted. Session 54 is not in the set: it began on
+2026-11-13, and migration 006 ran inside it.
 
 | Session | Claude Code session | Category | What |
 |---|---|---|---|
@@ -116,6 +118,6 @@ three sessions read canon by scene. Session 58 (`919e6e15`, after migration 007,
 | hook | 0 / 100 | 0 / 3 | 0 (0) | 0, kept |
 | other | 23 / 100 | 3 / 3 | 0.23 (0.30) | 1.0 (does not decide) |
 
-The verdict (FR-024, FR-026): canon rose and is rolled back, after sessions 55 and 56, in PR #223 (released in 0.4.1);
-the play cards and the hook's canon lines stay. All three canon slips were canon lines outside the always-read sections
+The verdict (FR-024, FR-026): canon rose. Its rollback, decided after sessions 55 and 56, shipped in PR #223 (0.4.1)
+after session 57 was played. The play cards and the hook's canon lines stay. All three canon slips were canon lines outside the always-read sections
 that a whole read holds.

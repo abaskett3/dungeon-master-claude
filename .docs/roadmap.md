@@ -1,6 +1,6 @@
 # Roadmap
 
-This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-11-16; the PRs and issues named are on GitHub.
+This document is for anyone who wants to know what is finished, what comes next and what has been set aside. Status is as of 2026-11-15; the PRs and issues named are on GitHub.
 
 ## Status by area
 

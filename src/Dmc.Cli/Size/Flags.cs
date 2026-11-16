@@ -126,7 +126,7 @@ internal static partial class Flags
             int? budget = section.Heading.StartsWith(AboutThePlayer, StringComparison.OrdinalIgnoreCase) ? Budgets.DmNotesAboutThePlayer
                 : section.Heading.Equals(ArcPlan, StringComparison.OrdinalIgnoreCase) ? Budgets.DmNotesArcPlan
                 : null;
-            long tokens = budget == Budgets.DmNotesArcPlan ? ArcPlanContentTokens(part.Lines) : section.Tokens;
+            long tokens = SectionTokens(part, section);
             if (budget is { } b && tokens > b)
                 yield return new Flag(FlagKind.SectionOverBudget, part.Path,
                     $"{part.Path} {section.Heading}: {Fmt(tokens)}, over its {Fmt(b)} budget", true);
@@ -158,6 +158,17 @@ internal static partial class Flags
     /// <param name="lines">The lines of <c>dm-notes.md</c>.</param>
     static long ArcPlanContentTokens(IReadOnlyList<Line> lines) =>
         Measurement.ContentLines(Measurement.SectionLines(lines, ArcPlan)).Sum(l => (long)l.Bytes) / 4;
+
+    /// <summary>
+    /// The estimated tokens of one section of a part, as <c>dmc size</c> both flags and lists it: the Arc plan of
+    /// <c>dm-notes.md</c> by its content only (<see cref="ArcPlanContentTokens"/>), chosen by its heading; any other
+    /// section whole.
+    /// </summary>
+    /// <param name="part">The measured file.</param>
+    /// <param name="section">One of its sections.</param>
+    internal static long SectionTokens(Part part, Section section) =>
+        part.Budget == BudgetKind.DmNotes && section.Heading.Equals(ArcPlan, StringComparison.OrdinalIgnoreCase)
+            ? ArcPlanContentTokens(part.Lines) : section.Tokens;
 
     /// <summary>The lines of a file without one <c>## </c> section (its heading included), compared ignoring case.</summary>
     /// <param name="lines">The lines of a file.</param>

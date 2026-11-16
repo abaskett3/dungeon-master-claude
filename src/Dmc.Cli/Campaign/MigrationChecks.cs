@@ -160,11 +160,22 @@ internal static partial class MigrationChecks
         return section?.ToString();
     }
 
-    /// <summary>Whether some text holds an HTML comment that contains the given words, compared ignoring case.</summary>
+
+    /// <summary>
+    /// Whether a section's template guidance is current: some comment in it names <paramref name="marker"/>, and no comment
+    /// that opens with <paramref name="opening"/>, the words every version of the template's comment opens with, lacks
+    /// it. An older template comment left beside the new one is not current.
+    /// </summary>
     /// <param name="text">A section's raw text.</param>
-    /// <param name="words">The words the comment must contain.</param>
-    static bool HasCommentWith(string text, string words) =>
-        Comment.Matches(text).Any(m => m.Value.Contains(words, StringComparison.OrdinalIgnoreCase));
+    /// <param name="opening">The opening words of the template's comment, in every version.</param>
+    /// <param name="marker">Words only the current version holds.</param>
+    static bool GuidanceCurrent(string text, string opening, string marker)
+    {
+        var comments = Comment.Matches(text).Select(m => m.Value).ToList();
+        bool Opens(string c) => c[4..].TrimStart().StartsWith(opening, StringComparison.OrdinalIgnoreCase);
+        bool Names(string c) => c.Contains(marker, StringComparison.OrdinalIgnoreCase);
+        return comments.Any(Names) && !comments.Any(c => Opens(c) && !Names(c));
+    }
 
     /// <summary>The rows of the first table in some lines, after its header and separator; null when there is no table.</summary>
     /// <param name="lines">A section's lines.</param>
@@ -375,11 +386,11 @@ internal static partial class MigrationChecks
     {
         if (!input.New.TryGetValue(DmNotes, out string? text))
             yield break;
-        if (RawSection(text, Flags.ArcPlan) is { } plan && !HasCommentWith(plan, "Five Commandments"))
+        if (RawSection(text, Flags.ArcPlan) is { } plan && !GuidanceCurrent(plan, "The current arc of a homebrew campaign", "Five Commandments"))
             yield return $"{DmNotes}'s {Flags.ArcPlan} has an older template comment";
         if (RawSection(text, Antagonists) is not { } antagonists)
             yield return $"{DmNotes} has no ## {Antagonists} section";
-        else if (!HasCommentWith(antagonists, "next move"))
+        else if (!GuidanceCurrent(antagonists, "For each: what they want", "next move"))
             yield return $"{DmNotes}'s {Antagonists} has an older template comment";
     }
 }

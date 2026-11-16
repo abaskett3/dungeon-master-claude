@@ -380,4 +380,21 @@ public sealed class MigrationChecksTests
     [TestMethod]
     public void DmNotesWithBothCommentsCurrentPass() =>
         Assert.IsEmpty(RunGuidance($"# DM notes\n\n## arc plan\n\n### Stages\n\n{CurrentArcComment}\n## ANTAGONISTS\n\n{CurrentAntagonistsComment}\n- Mara.\n"));
+
+    /// <summary>
+    /// An older template comment left beside the current one fails (the code review of PR #228): migration 008 replaces
+    /// the old comment, never adds the new one beside it.
+    /// </summary>
+    [TestMethod]
+    public void AnOlderCommentBesideTheCurrentOneFails() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "arc-plan-guidance-current: story/dm-notes.md's Arc plan has an older template comment",
+            "arc-plan-guidance-current: story/dm-notes.md's Antagonists has an older template comment",
+        }, RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}{ArcPlanComment}\n## Antagonists\n\n{CurrentAntagonistsComment}<!-- For each: what they want, what they know about the PC. -->\n"));
+
+    /// <summary>A comment of the DM's own beside the current template comment passes: only the template's openings count.</summary>
+    [TestMethod]
+    public void TheDmsOwnCommentBesideTheCurrentOnePasses() =>
+        Assert.IsEmpty(RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}<!-- My note: acts 2 and 3 can swap. -->\n\n## Antagonists\n\n{CurrentAntagonistsComment}<!-- Mara lies about the bell. -->\n"));
 }

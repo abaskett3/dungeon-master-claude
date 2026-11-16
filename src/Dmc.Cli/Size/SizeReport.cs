@@ -141,8 +141,8 @@ internal static class SizeReport
             lines.Add("largest sections:");
             foreach (var (part, sections) in sectioned)
             {
-                var largest = sections.OrderByDescending(s => s.Bytes).ToList();
-                string shown = string.Join(", ", largest.Take(SectionsShown).Select(s => $"{Cut(s.Heading, HeadingWidth)} {Fmt(s.Tokens)}"));
+                var largest = sections.OrderByDescending(s => Flags.SectionTokens(part, s)).ToList();
+                string shown = string.Join(", ", largest.Take(SectionsShown).Select(s => $"{Cut(s.Heading, HeadingWidth)} {Fmt(Flags.SectionTokens(part, s))}"));
                 string more = largest.Count > SectionsShown ? $" (+{largest.Count - SectionsShown} more)" : "";
                 lines.Add($"  {part.Path}: {shown}{more}");
             }

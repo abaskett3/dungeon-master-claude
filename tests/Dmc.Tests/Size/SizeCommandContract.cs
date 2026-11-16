@@ -333,6 +333,19 @@ public abstract class SizeCommandContract
         Assert.AreEqual("  story/dm-notes.md: B 1.1k, E 401, D 301, C 201 (+2 more)", line);
     }
 
+    /// <summary>
+    /// Spec 015, from the code review of PR #228: the largest-sections line lists the Arc plan by its content, the same
+    /// figure its budget flag uses, so the template's comment never makes the two disagree.
+    /// </summary>
+    [TestMethod]
+    public void TheArcPlanIsListedByItsContentAsItsBudgetCountsIt()
+    {
+        Arrange(() => Write(_root, "story/dm-notes.md",
+            "# Notes\n\n## Arc plan\n\n<!--\n" + Filler(4000) + "\n-->\n" + Filler(800) + "## B\n\n" + Filler(2000)));
+        string line = Size().StdoutLines.Single(l => l.StartsWith("  story/dm-notes.md: ", StringComparison.Ordinal));
+        StringAssert.StartsWith(line, "  story/dm-notes.md: B 501, Arc plan 200", $"the comment's 1k left out, so B comes first: {line}");
+    }
+
     [TestMethod]
     public void ANamedCampaignIsMeasuredInsteadOfTheActiveOne()
     {

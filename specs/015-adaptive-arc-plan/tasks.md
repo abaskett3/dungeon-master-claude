@@ -252,7 +252,7 @@ several sessions").
   from T001; then check each rule has one home (FR-010): search `kit/skills/dmc-campaign-full-save/SKILL.md`,
   `kit/templates/campaign/story/dm-notes.md` and `kit/dm-rules.md` for any copy of step 4a's revision rules ("word for
   word", "never restart") or of § Compaction's break test, and replace a copy with a pointer
-- [ ] T033 Push the branch; open the PR (the user runs `/speckit-converge` first) with `Closes #217` and `Part of
+- [X] T033 Push the branch; open the PR (the user runs `/speckit-converge` first) with `Closes #217` and `Part of
   #181` on their own lines; what changed and why, the sources, the measured cost, the migration live run and the play
   tests, the documents changed, and that it adds migration 008; set `shipped:` in
   `kit/migrations/008-arc-plan-structure.md` to the PR's number and push; check the description with

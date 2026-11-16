@@ -11,16 +11,16 @@ threat still acts)." and before "A beat with no decision in it…". No line is a
 ## The sentence
 
 ```text
- When a scene's point has landed and nothing is half done (the break test, § Compaction and long sessions), offer the jump in one line ("Skip to the morning?"), stopping at any clock due inside it; if they decline, offer again only once the next scene's point lands.
+ When a scene's point has landed and nothing is half done (the break test, § Compaction and long sessions), offer the jump in one line ("Skip to the morning?"), stopping at any clock due inside it or this session; if they decline, offer again only once the next scene's point lands.
 ```
 
 (The leading space joins it to the sentence before.)
 
 ## Budget
 
-- 267 bytes (UTF-8), about 67 tokens per turn by bytes / 4. FR-008 allows at most 300.
+- 283 bytes (UTF-8), about 71 tokens per turn by bytes / 4 (267 before the code review of PR #228 added "or this session", since clocks run on sessions). FR-008 allows at most 300.
 - `kit/dm-rules.md` stays at 212 lines. `DmRulesBytesAllowed` in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs` rises from
-  30,631 to the file's size after the change (30,898 if nothing else changes the file first), and its comment names
+  30,631 to the file's size after the change (30,914), and its comment names
   spec 015 FR-008.
 
 ## What it must and must not do

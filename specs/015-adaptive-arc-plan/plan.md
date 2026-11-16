@@ -38,8 +38,8 @@ in the rest. See [research.md](research.md) and the exact wording in [contracts/
 
 | Where | Lines | Bytes | Estimated tokens (bytes / 4) | Paid |
 |---|---|---|---|---|
-| `kit/dm-rules.md` § Narration | 0 | +267 | about 67 | every turn |
-| `dmc-campaign-full-save` step 5 | +3 | +1,345 (measured; +1,082 before research R15) | about 336 | each full save |
+| `kit/dm-rules.md` § Narration | 0 | +283 (measured) | about 71 | every turn |
+| `dmc-campaign-full-save` step 5 | +3 | +1,425 (measured; +1,082 before research R15 and the code review) | about 356 | each full save |
 | `dmc-new-campaign` step 4 and new 4a | +22 | +3,090 (measured) | about 773 | campaign creation; a full save that plans or revises (reads 4a only) |
 | Template: Arc plan and Antagonists comments | 0 (+1 for Money) | +439 (measured) | about 110 | every resume of a campaign holding them |
 | Migration 008 | new file | | | once, when a campaign is migrated |

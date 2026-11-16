@@ -1,7 +1,7 @@
 ---
 standard: 8
 title: The Arc plan names its story structure, and antagonists move on a clock of sessions
-shipped: issues #217, #181
+shipped: PR #228
 touches: [story/dm-notes.md]
 drops: []
 checks: [arc-plan-guidance-current]

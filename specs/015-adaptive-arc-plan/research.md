@@ -195,9 +195,10 @@ Measurements were taken on `015-adaptive-arc-plan` at `5a03569` on 2026-11-15.
   Antagonists comment of the first kit (`d4523c6`, "For each: what they want, what they are doing right now offscreen,
   what they know about the PC.") and of PR #170 (adds the names). Every version opens "The current arc of a homebrew
   campaign" or "For each: what they want", so the migration matches on those openings.
-- **Order**: migration 007 has not shipped (0.4.0 is `adb0e07`, before PR #221, `.docs/releases.md`). A campaign at
+- **Order**: migration 007 shipped in 0.4.1 (`.docs/releases.md`; when this was planned it had not: 0.4.0 is
+  `adb0e07`, before PR #221). A campaign at standard 7 holds PR #221's comment, which 008 replaces. A campaign at
   standard 6 takes 007 then 008 in one run; 007 copies the template's comment, already the new one, so 008 finds
-  nothing to do. A campaign that took 007 from a development build holds PR #221's comment, which 008 replaces.
+  nothing to do.
 - **The check** (`src/Dmc.Cli/Campaign/MigrationChecks.cs`): fails when `story/dm-notes.md` has an `## Arc plan`
   section with no comment naming "Five Commandments", or has no `## Antagonists` section, or one with no comment naming
   "next move". The existing `Section` helper strips comments (`Lines`, line 106), so the check reads the section raw.

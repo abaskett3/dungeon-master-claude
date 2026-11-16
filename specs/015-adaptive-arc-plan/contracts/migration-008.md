@@ -56,6 +56,7 @@ comments included (the existing `Section` helper strips them).
 | An Arc plan with no comment naming "Five Commandments" | `story/dm-notes.md's Arc plan has an older template comment` |
 | No `## Antagonists` section | `story/dm-notes.md has no ## Antagonists section` |
 | An Antagonists section with no comment naming "next move" | `story/dm-notes.md's Antagonists has an older template comment` |
+| An older template comment (opening "The current arc of a homebrew campaign" or "For each: what they want", without "Five Commandments" or "next move") beside the current one | that section's older-template-comment line |
 | Both current | passes |
 
 An XML doc comment on the function names migration 008 and spec 015 FR-011; tests in

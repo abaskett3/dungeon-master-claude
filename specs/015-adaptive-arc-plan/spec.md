@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented in PR #228; SC-002 not met; SC-003 and SC-004 not run
 
 **Input**: User description: "#217 and #181 (causes 2 to 6), one spec, because both change the Arc plan in
 `kit/templates/campaign/story/dm-notes.md`." From #217: arc guidance in `dmc-new-campaign` built on at least the Five
@@ -244,8 +244,8 @@ open exchange and a beat mid-scene get none; a declined offer is not repeated in
 ### Edge Cases
 
 - **A module campaign.** Stories 1, 2, 4 and 5 apply to a homebrew campaign or after the module ends; while the module
-  runs the Arc plan holds Character arcs only (template, migration 007). Story 6 applies in every campaign. Story 3
-  applies to a homebrew campaign's antagonists; a module's antagonists follow the module.
+  runs the Arc plan holds Character arcs only (template, migration 007). Stories 3 and 6 apply in every campaign: in
+  a module campaign an antagonist's next move comes from the module (the code review of PR #228).
 - **A revision must not override a choice.** A revision changes what the world does next, never what the player chose
   or what is already canon (Dungeon Master 4; § Principle of #181).
 - **The arc's last stage is done.** The existing rule plans the next arc (full save line 44); a revision (Story 2) is
@@ -287,7 +287,8 @@ open exchange and a beat mid-scene get none; a declined offer is not repeated in
 - **FR-004**: The template MUST ask for each antagonist's next move with the session by which it happens; the full
   save MUST, when that session has come, make the move happen in the world and name in the plan the sign of it the
   next session shows where the party is (news, a consequence, a changed place, an NPC's reaction; not necessarily a
-  confrontation), and MUST restate any clock timed by an in-world date only in sessions.
+  confrontation), and MUST restate any clock timed by an in-world date only in sessions. This holds in every campaign; in
+  a module campaign the next move comes from the module (the code review of PR #228).
 - **FR-005**: The template MUST ask for each milestone as an achievement with an equivalent ("or a victory of the same
   weight"); the full save MUST award a milestone whose achievement or equivalent was reached, and MUST re-anchor every
   milestone not yet awarded on any revision. An awarded milestone is never awarded again.
@@ -347,13 +348,20 @@ open exchange and a beat mid-scene get none; a declined offer is not repeated in
 - **SC-002**: On a copy of a campaign whose Arc plan is overtaken (an antagonist dead, a stage put off), one full save
   leaves no stage still ahead resting on the dead antagonist (0), every stage and thread play did not contradict
   unchanged word for word, every milestone not yet awarded anchored in the revised plan, and a final stage (100%).
+  **Result: not met.** Two full saves on the migrated Rorn's Landing copy (Auntie Hush dead since s28.1) left
+  her the villain of stages 3 and 4 and filled in no budget or clock (`quickstart.md` § Results). The maintainer chose
+  on 2026-11-15 to stop and leave the revision to issue #181, with cause 1.
 - **SC-003**: Played over at least 5 consecutive headless sessions on such a copy, with a full save after each: an
   antagonist move whose session comes in the run happens, and the session after it shows a sign of it where the party
   is (at least 1 of 1); a milestone reached by its equivalent is awarded at the next full save; and no full save churns a plan nothing
   contradicted.
+  **Result: not run.** The five sessions were not played after SC-002 failed; the maintainer chose on 2026-11-15
+  to stop and leave this to issue #181, with cause 1.
 - **SC-004**: In the same run, of the scenes whose point landed and that pass line 205's test at their end, each gets
   a one-line jump offer (all of them, at least 3); of the open exchanges, beats mid-scene and fights, none gets one (0);
   a declined offer is not repeated in the same scene (0); and no reply hurries an open exchange because a stage is over budget (0).
+  **Result: not run.** The five sessions were not played after SC-002 failed; the maintainer chose on 2026-11-15
+  to stop and leave this to issue #181, with cause 1.
 - **SC-005**: `kit/dm-rules.md` stays at 212 lines with its byte cap risen by no more than FR-008 allows; the filled
   seven-stage Arc plan is within its `dmc size` budget; the toolkit tests pass.
 - **SC-006**: The migration (FR-011) passes its golden fixture on CI and one live run, with `dmc campaign verify`

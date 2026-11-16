@@ -45,9 +45,6 @@ internal static partial class MigrationChecks
         ["dm-notes-have-arc-plan"] = DmNotesHaveArcPlan,
     };
 
-    /// <summary>The DM notes' section that holds the arc and the characters' arcs (spec 014).</summary>
-    const string ArcPlan = "Arc plan";
-
     /// <summary>The game state, whose Party status names the companions.</summary>
     const string GameState = "game-state.md";
 
@@ -83,8 +80,11 @@ internal static partial class MigrationChecks
     [GeneratedRegex(@"^[\s\-*>_]*Last played\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LastPlayed { get; }
 
-    /// <summary>A line that starts, after list marks, quote marks and bold, with "Character arcs" (the Arc plan's line for what each character wants).</summary>
-    [GeneratedRegex(@"^[\s\-*+>_]*Character arcs\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    /// <summary>
+    /// A line that starts, after heading marks, list marks, quote marks and bold, with "Character arcs": the Arc plan's
+    /// line, or a subheading such as <c>### Character arcs</c>, for what each character wants.
+    /// </summary>
+    [GeneratedRegex(@"^[\s#\-*+>_]*Character arcs\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex CharacterArcs { get; }
 
     /// <summary>The character sheets of a campaign that have sections: <c>pc-*.md</c> and <c>npc-*.md</c>, not their <c>-history.md</c> files.</summary>
@@ -310,18 +310,18 @@ internal static partial class MigrationChecks
 
     /// <summary>
     /// <c>dm-notes-have-arc-plan</c> (migration 007, spec 014 FR-005b): <c>story/dm-notes.md</c> has a <c>## Arc plan</c>
-    /// section, and a line in it, outside comments, that starts with "Character arcs", where line 165 of the play rules
-    /// sends what each character wants. A <c>### </c> subsection stays inside the section; a campaign with no
-    /// <c>dm-notes.md</c> is not checked.
+    /// section (the heading <see cref="Flags.ArcPlan"/>, as <c>dmc size</c> reads it), and a line or subheading in it,
+    /// outside comments, that starts with "Character arcs", where § Fun first of the play rules sends what each character
+    /// wants. A <c>### </c> subsection stays inside the section; a campaign with no <c>dm-notes.md</c> is not checked.
     /// </summary>
     /// <param name="input">The migrated campaign.</param>
     static IEnumerable<string> DmNotesHaveArcPlan(CheckInput input)
     {
         if (!input.New.TryGetValue(DmNotes, out string? text))
             yield break;
-        if (Section(text, ArcPlan) is not { } plan)
-            yield return $"{DmNotes} has no ## {ArcPlan} section";
+        if (Section(text, Flags.ArcPlan) is not { } plan)
+            yield return $"{DmNotes} has no ## {Flags.ArcPlan} section";
         else if (!plan.Any(l => CharacterArcs.IsMatch(l)))
-            yield return $"{DmNotes}'s {ArcPlan} has no Character arcs line";
+            yield return $"{DmNotes}'s {Flags.ArcPlan} has no Character arcs line";
     }
 }

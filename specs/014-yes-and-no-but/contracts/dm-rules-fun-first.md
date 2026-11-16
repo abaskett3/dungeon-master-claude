@@ -2,7 +2,7 @@
 
 The play rules are this feature's interface: DMC reads them on every turn. Lines 165, 166 and 169 change in place;
 lines 167 and 168 do not. Measured on a scratch copy of `main` at `adb0e07`: 212 lines before and after, 29,917 bytes
-before, 30,602 after the first wording (+685), and 30,636 after line 166's way-forward change (+719, research R12).
+before, 30,602 after the first wording (+685), 30,636 after line 166's way-forward change (+719, research R12), and 30,631 after the code review named Antagonists in line 169 instead of the Opposition table (+714, research R20).
 
 ## Line 165
 
@@ -49,7 +49,7 @@ After:
 
 > - Recklessness is different from bad luck. Signal serious danger clearly in the fiction, once. If the player goes
 >   ahead anyway, let the consequences land in full, including character death. Except the first attack on an NPC
->   the main plot needs (central in the module, or in the Arc plan or Opposition table), at any lethality: a "no,
+>   the main plot needs (central in the module, or in the Arc plan or Antagonists), at any lethality: a "no,
 >   but", where they stop it, no one dies, and a canon line records it. After that, the dice fall where they fall.
 
 Meets FR-004 and FR-007.
@@ -58,7 +58,7 @@ Meets FR-004 and FR-007.
 
 - `TheAlwaysLoadedRulesStayAtTheirLineCountAndGrowByAtMostFourHundredBytes`, renamed
   `TheAlwaysLoadedRulesStayAtTheirLineAndByteCaps`: still 212 lines; `DmRulesBytesAllowed` becomes the file's new size
-  (30,636 if the wording lands as above, a rise of 593), and the comments and message say which spec set each cap.
+  (30,631 if the wording lands as above, a rise of 588 of the 593 allowed), and the comments and message say which spec set each cap.
 - A new test: § Fun first contains `"yes, and"` and `"no, but"`.
 
 Each line is one line of the file; the wrapping above is for reading only.

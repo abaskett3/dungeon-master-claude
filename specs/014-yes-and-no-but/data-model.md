@@ -21,8 +21,9 @@ The "no, but" record needs no new shape.
 - **In a homebrew campaign, or after a module ends**: the whole plan (shape, mix, Character arcs, side quests, the
   party's gaps, progression, wonder), as now.
 - **In a module campaign, while the module runs**: Character arcs only.
-- **Shape rule** (the check `dm-notes-have-arc-plan`): the section exists, and holds a line, outside comments, that
-  starts with `Character arcs`.
+- **Shape rule** (the check `dm-notes-have-arc-plan`): the section, headed exactly `## Arc plan`, exists, and holds a
+  line or subheading, outside comments, that starts with `Character arcs`; the template starts it as
+  `- Character arcs: none yet`.
 - **Budget**: `Budgets.DmNotesArcPlan` (`src/Dmc.Cli/Size/Budgets.cs:21`), unchanged; `### ` subsections count inside
   it.
 

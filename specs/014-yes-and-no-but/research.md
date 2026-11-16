@@ -222,3 +222,27 @@ item, that item says so.
   006 it lacked). The user guide and `dmc-migrate-campaign` list no migrations by number or check, so they do not
   change. (Corrected by the convergence pass: this item first said the reference named no checks; the search had
   looked for the numbers and missed the list.)
+
+## R20. Fixes from the code review of PR #221
+
+The built-in code review ran once on the finished PR; the maintainer approved these fixes:
+
+- **Line 169 names Antagonists, not the Opposition table** (the maintainer's choice): the table holds one row per enemy
+  group the party may meet, so naming it would have spared the first fight against bandits or ghouls. -5 bytes: the
+  file at 30,631, the cap rise 588 of the 593 allowed, about 179 tokens per turn.
+- **The template gets `- Character arcs: none yet`** after the Arc plan comment: a new module campaign is recorded at
+  standard 7 by `dmc-new-campaign`, and without the line it would lack the shape `dm-notes-have-arc-plan` checks.
+  +28 bytes; the template's change is +110 in all, about 27 tokens per resume.
+- **The check accepts a subheading** (`### Character arcs`, or `####` after step 2 demotes it): `#` joins the
+  regex's leading marks, with tests for both.
+- **Step 1 of migration 007** replaces only the template's earlier comment, leaves any other comment (it may hold the
+  DM's notes; comments are not content units, so verify would not see them go), adds the comment where there is none,
+  and treats a heading that only begins with Arc plan as step 2's case, since the check, like `dmc size`, matches the
+  heading exactly.
+- **One constant**: `MigrationChecks` uses `Flags.ArcPlan` (`src/Dmc.Cli/Size/Flags.cs`), now internal.
+- **Wording**: the check's doc comment names § Fun first instead of a line number; the product overview no longer
+  says DMC never answers out of character, or that any story-breaking choice gets "no, but".
+- **Not changed**: the exception's place after the recklessness sentence ("at any lethality" covers every first attack,
+  reckless or not, and the play test behaved so), and the canon record's reach on a later attack (the prompt hook
+  prints up to 3 canon lines for each person the player names, `.docs/decisions.md` § "The prompt hook reminds DMC of
+  canon for people the player names", and line 78 sends DMC to recall a returning NPC; not tested in play).

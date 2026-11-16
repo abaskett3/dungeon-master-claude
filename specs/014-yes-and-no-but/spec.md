@@ -119,6 +119,9 @@ The headless play test of the first wording (2026-11-15, `quickstart.md` § Resu
   ruled-out idea got a hook instead of a way forward, and the byte allowance is spent. Accept, rerun, or reword? → A:
   Accept 4 of 5 (2026-11-15) and keep the wording; whether "no, but" offers a way forward in real play is left to the
   after-release review (SC-005).
+- Q (from the code review of PR #221): the Opposition table holds every enemy group the party may meet, so naming it in
+  line 169 would spare the first fight against any of them. Which section names a major NPC? → A: Antagonists, which
+  holds the named villains; the Opposition table stays for numbers.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -229,7 +232,7 @@ plot, and a later scene moves it on.
 - **FR-003**: The play rules MUST tell DMC never to refuse out of character with "that is not how the story works";
   an out-of-character question is still answered frankly (§ Out of character).
 - **FR-004**: The play rules MUST give a major NPC, one the main plot depends on (named as central in the module, or
-  in the Arc plan or Opposition table of `story/dm-notes.md`), a "No, but…": the first time the party attacks, the
+  in the Arc plan or Antagonists of `story/dm-notes.md`), a "No, but…": the first time the party attacks, the
   NPC stops it without being killed and without killing them, and the story turns the moment into something new.
   This holds once per NPC, at every lethality, and is the only exception to the lethality setting; there is no
   general no-one-dies rule. DMC records it as a canon line in `story/canon.md` with its scene number, one per NPC. A

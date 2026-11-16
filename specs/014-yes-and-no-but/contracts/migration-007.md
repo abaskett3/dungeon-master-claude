@@ -25,7 +25,9 @@ Body, with the five headings in order:
   heading has that plan moved under the Arc plan, unchanged. Nothing is removed. If the moved plan is long, `dmc
   size` may flag it until the next full save shortens finished parts.
 - **Steps**: R15's five, in order, each first checking whether it is needed:
-  1. An existing `## Arc plan`: content kept; the template's earlier comment replaced by the current one.
+  1. A section headed exactly `## Arc plan`: content kept; the template's earlier comment replaced by the current
+     one, any other comment left, the comment added where there is none; a heading that only begins with Arc plan is
+     step 2's case (research R20).
   2. No `## Arc plan`, one `## ` section laying out the arc: `## Arc plan` and the comment inserted before it; that
      section's headings demoted one level.
   3. Otherwise: `## Arc plan` and the comment added after `## The central conflict`.
@@ -48,7 +50,7 @@ In `src/Dmc.Cli/Campaign/MigrationChecks.cs`, registered with the others:
 |---|---|
 | No `story/dm-notes.md` | passes (not checked) |
 | No `## Arc plan` section (comments stripped, heading compared ignoring case) | `story/dm-notes.md has no ## Arc plan section` |
-| The section, but no line in it, outside comments, starting `Character arcs` after list marks and bold | `story/dm-notes.md's Arc plan has no Character arcs line` |
+| The section, but no line or subheading in it, outside comments, starting `Character arcs` after heading marks, list marks and bold | `story/dm-notes.md's Arc plan has no Character arcs line` |
 | Both | passes |
 
 An XML doc comment on the function names migration 007 and spec 014 FR-005b.

@@ -461,8 +461,8 @@ section); `continuity-section` (the campaign's `player-options.md`, when it has 
 a `## Continuity` section holding its three lines); `companions-have-play-card` (each companion's sheet, found from
 `game-state.md`'s Party status as `dmc size` finds it, has `## Play card` as its first `## ` section; a PC's sheet is
 not checked); `people-entries-named` (each list item under `## People` in `story/canon.md` starts with a bold name);
-`dm-notes-have-arc-plan` (`story/dm-notes.md` has a `## Arc plan` section, with a line in it, outside comments, that
-starts with Character arcs).
+`dm-notes-have-arc-plan` (`story/dm-notes.md` has a section headed exactly `## Arc plan`, with a line or subheading in
+it, outside comments, that starts with Character arcs).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

@@ -24,6 +24,8 @@ The current arc of a homebrew campaign, or the stretch after a module ends; in a
 Mark a stage done when it ends, cut to one line (what changed), and a milestone awarded when it is given; delete finished beats. The full save's check of what was last played is one "Last played" line at the end of this section, overwritten each save, never a log. Keep the section short: the full save checks its size with `dmc size`.
 -->
 
+- Character arcs: none yet
+
 ## Antagonists
 
 <!-- For each: what they want, what they are doing right now offscreen, what they know about the PC, and the names the party knows them by. Speak only those to the player. -->

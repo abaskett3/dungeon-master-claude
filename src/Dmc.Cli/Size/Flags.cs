@@ -49,8 +49,11 @@ internal sealed record Flag(FlagKind Kind, string Path, string Line, bool HoldsT
 /// <summary>Finds the flags of a read set (research R3, R6) and writes the lines of <c>dmc size --check</c>.</summary>
 internal static partial class Flags
 {
-    /// <summary>The section of <c>dm-notes.md</c> where a finished stage is legitimately one line marked done.</summary>
-    const string ArcPlan = "Arc plan";
+    /// <summary>
+    /// The section of <c>dm-notes.md</c> where a finished stage is legitimately one line marked done, and which holds the
+    /// characters' arcs; migration 007's check (<c>MigrationChecks</c>) looks for the same heading.
+    /// </summary>
+    internal const string ArcPlan = "Arc plan";
 
     /// <summary>The section of <c>dm-notes.md</c> about the player.</summary>
     const string AboutThePlayer = "About this player";

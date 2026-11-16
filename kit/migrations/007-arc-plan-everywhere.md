@@ -23,9 +23,11 @@ Read `story/dm-notes.md` and `templates/campaign/story/dm-notes.md` before you c
 `## Arc plan` section is a heading and one comment (`<!-- … -->`); "the template's comment" below means that comment,
 copied exactly.
 
-1. **An Arc plan already there.** If `story/dm-notes.md` has a `## Arc plan` section, keep everything in it. If its
-   comment does not say "in a module campaign, only Character arcs until then", replace that comment with the
-   template's. Then go to step 4.
+1. **An Arc plan already there.** If `story/dm-notes.md` has a section headed exactly `## Arc plan`, keep everything in
+   it. If its comment is the template's earlier one (it starts "The current arc of a homebrew campaign, or the stretch
+   after a module ends. Plan it"), replace that comment with the template's; leave any other comment as it is, since it
+   may hold your own notes. If the section has no comment, add the template's right after the heading. Then go to step
+   4. A heading that only begins with Arc plan (`## Arc plan: the thaw`) is an arc under another heading: step 2.
 2. **An arc under another heading.** If there is no `## Arc plan` but one `## ` section lays out the campaign's arc
    (see Judgments), insert a line `## Arc plan`, a blank line and the template's comment just before that section's
    heading. Then demote that section's headings by one level, down to the next `## ` heading: its own `## ` becomes
@@ -33,7 +35,8 @@ copied exactly.
 3. **No Arc plan.** Otherwise, add `## Arc plan`, a blank line and the template's comment as a new section after
    `## The central conflict`, before the section that follows it; when there is no Central conflict section, after
    the file's title and the lines before its first `## ` heading.
-4. **Character arcs.** If no line in the Arc plan, outside its comment, starts with `Character arcs`, add one right
+4. **Character arcs.** If no line or subheading in the Arc plan, outside its comment, starts with `Character arcs`
+   (`- Character arcs: …`, or `### Character arcs` with a list under it), add one right
    after the comment: `- Character arcs:` and then, for the PC and each companion (each `### ` block under
    `## Party status` in `game-state.md`, other than "With the party, not companions"), one sentence each in the form
    `Name: what they want; how the main plot meets it.`, leaving out the part after the semicolon where `dm-notes.md`

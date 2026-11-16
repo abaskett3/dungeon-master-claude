@@ -309,14 +309,16 @@ public sealed class MigrationChecksTests
             RunArcPlan($"# DM notes\n\n## Arc plan\n\n{ArcPlanComment}\n## Antagonists\n\n- Character arcs: not in the Arc plan.\n"));
 
     /// <summary>
-    /// An Arc plan with a Character arcs line passes, plain or bold, in any case, and after a <c>### </c> subsection,
-    /// which does not end the section.
+    /// An Arc plan with a Character arcs line passes, plain or bold, in any case, or as a subheading (one step 2 of
+    /// migration 007 may have demoted), and after a <c>### </c> subsection, which does not end the section.
     /// </summary>
     /// <param name="line">The Character arcs line.</param>
     [TestMethod]
     [DataRow("- Character arcs: Wren: a boat of her own; the ferry war is how she earns it.")]
     [DataRow("- **Character arcs**: Wren: a boat of her own.")]
     [DataRow("- character arcs: none yet")]
+    [DataRow("### Character arcs\n\n- Wren: a boat of her own.")]
+    [DataRow("#### Character arcs\n\n- Wren: a boat of her own.")]
     public void AnArcPlanWithACharacterArcsLinePasses(string line)
     {
         Assert.IsEmpty(RunArcPlan($"# DM notes\n\n## arc plan\n\n{ArcPlanComment}\n{line}\n\n## Antagonists\n"));

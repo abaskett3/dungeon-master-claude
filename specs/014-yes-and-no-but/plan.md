@@ -10,7 +10,7 @@ Teach DMC to answer a bold choice with "yes, and", a choice the world rules out 
 in the same reply, a way toward what the player wanted), and a first attack on a major NPC with a "no, but" that
 leaves everyone alive and is recorded in canon; and to weave what the character wants into the main plot through the
 Arc plan's Character arcs. The rules change is three existing bullets of `kit/dm-rules.md` § Fun first, rewritten in
-place: no new line, 719 bytes (about 180 tokens per turn); the toolkit test's byte cap rises by 593. The first play
+place: no new line, 714 bytes (about 179 tokens per turn); the toolkit test's byte cap rises by 588 of the 593 allowed (research R20). The first play
 test found that many campaigns have no Arc plan, so the template's Arc plan comment keeps Character arcs in every
 campaign, and migration 007 gives every campaign an Arc plan section, with a shape check and a golden fixture. See
 [research.md](research.md) and the exact wording in [contracts/](contracts/).
@@ -37,11 +37,11 @@ toolkit tests, the documents and the first play test. What remains is research R
 
 **Project Type**: prompt change in a CLI toolkit, with one campaign-file standard change
 
-**Performance Goals**: about 180 more tokens per turn (719 bytes / 4, `src/Dmc.Cli/Size/Measurement.cs:16`); about
-21 more tokens per resume in a campaign holding the new Arc plan comment (82 bytes, research R14)
+**Performance Goals**: about 179 more tokens per turn (714 bytes / 4, `src/Dmc.Cli/Size/Measurement.cs:16`); about
+27 more tokens per resume in a campaign holding the new Arc plan comment and line (110 bytes, research R14, R20)
 
 **Constraints**: `kit/dm-rules.md` stays at 212 lines; bytes at most 30,636 (spec FR-008, a rise of 593); measured
-draft 30,636
+30,631 after the code review (research R20)
 
 **Scale/Scope**: 3 bullets of one section; 2 lines of one template comment; 1 migration; 1 shape check with tests;
 1 golden fixture; 1 toolkit test changed and 1 added; 5 documents
@@ -54,8 +54,8 @@ draft 30,636
 |---|---|---|
 | Core 1. Consistency | New state named: the "no, but" canon line in `story/canon.md`; goals in the Arc plan's Character arcs in `story/dm-notes.md`, which every campaign now has | Pass |
 | Core 2. Fun | The player gains choices that matter, a way toward what they wanted when the world says no, and no flat refusals (spec User Stories 1 to 3) | Pass |
-| Core 3. Low context and token cost | About 180 tokens per turn and 21 per resume, counted as Development 1 says | Pass, a cost the clarifications accepted |
-| Development 1. Count the cost | `kit/dm-rules.md`: 0 lines, +719 bytes; no skill changes; the template comment +82 bytes, read on resume (research R14); the migration adds a few lines to `dm-notes.md`, and says in its What changes that a moved arc may be flagged by `dmc size` | Pass |
+| Core 3. Low context and token cost | About 179 tokens per turn and 27 per resume, counted as Development 1 says | Pass, a cost the clarifications accepted |
+| Development 1. Count the cost | `kit/dm-rules.md`: 0 lines, +714 bytes; no skill changes; the template comment and line +110 bytes, read on resume (research R14); the migration adds a few lines to `dm-notes.md`, and says in its What changes that a moved arc may be flagged by `dmc size` | Pass |
 | Development 2. No change breaks a campaign | The template changes what `dm-notes.md` holds, so migration 007 ships with it (contract [migration-007.md](contracts/migration-007.md)); it removes nothing | Pass |
 | Development 3. One step to install, one to upgrade | No install or update change; the migration is offered at resume as before | Pass |
 | Development 4. Grounded in the code | Every claim cites a file and line or a command; unverified items marked (research R9, R17, R18) | Pass |
@@ -101,7 +101,7 @@ src/Dmc.Cli/Campaign/
 └── MigrationChecks.cs                           # new check dm-notes-have-arc-plan
 
 tests/Dmc.Tests/
-├── Toolkit/ToolkitTests.cs                      # byte cap 30,602 → 30,636 and its comment
+├── Toolkit/ToolkitTests.cs                      # byte cap 30,602 → 30,631 and its comment
 ├── Campaign/MigrationChecksTests.cs             # the new check's tests
 └── Fixtures/migrations/007/                     # new: before/, after/, accounting.tsv
 

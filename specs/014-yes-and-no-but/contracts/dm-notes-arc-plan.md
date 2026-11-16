@@ -1,8 +1,8 @@
 # Contract: the Arc plan comment of `kit/templates/campaign/story/dm-notes.md`
 
 The template is what a new campaign's `story/dm-notes.md` starts from, and what migration 007 copies the section from
-(research R14, R15). Two lines of the `## Arc plan` comment change; nothing else in the template does. +82 bytes,
-about 21 tokens per resume in a campaign that holds the comment.
+(research R14, R15). Two lines of the `## Arc plan` comment change, and a line follows the comment (added after the code review, research
+R20); nothing else in the template does. +110 bytes, about 27 tokens per resume in a campaign that holds them.
 
 ## Comment line 1 (template line 14)
 
@@ -27,6 +27,12 @@ After:
 
 > - Character arcs: for the PC and each companion, what they want or must face in this arc, how the main plot meets
 >   it, and a moment that tests it.
+
+## After the comment (added after the code review)
+
+> - Character arcs: none yet
+
+So a new campaign, module or homebrew, starts with the line the check `dm-notes-have-arc-plan` looks for.
 
 Meets FR-005a, and gives line 165 of `kit/dm-rules.md` its place in every campaign (FR-005).
 

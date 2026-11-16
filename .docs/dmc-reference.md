@@ -464,8 +464,8 @@ not checked); `people-entries-named` (each list item under `## People` in `story
 `dm-notes-have-arc-plan` (`story/dm-notes.md` has a section headed exactly `## Arc plan`, with a line or subheading in
 it, outside comments, that starts with Character arcs); `arc-plan-guidance-current` (`story/dm-notes.md`'s Arc plan,
 when it has one, holds a comment naming the Five Commandments, and it has an `## Antagonists` section whose comment asks
-for the next move; text outside comments does not count, and a comment that opens with an older template comment's
-words and lacks those, left beside the current one, fails it).
+for the next move; text outside comments does not count, and a template comment without those words (one opening "The
+current arc of a homebrew campaign" or "For each: what they want") left beside the current one fails it).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

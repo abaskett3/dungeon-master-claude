@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Implemented in PR #228; SC-002 to SC-004 not met
+**Status**: Implemented in PR #228; SC-002 not met; SC-003 and SC-004 not run
 
 **Input**: User description: "#217 and #181 (causes 2 to 6), one spec, because both change the Arc plan in
 `kit/templates/campaign/story/dm-notes.md`." From #217: arc guidance in `dmc-new-campaign` built on at least the Five

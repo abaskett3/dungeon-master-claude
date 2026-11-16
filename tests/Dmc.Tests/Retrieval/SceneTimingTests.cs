@@ -7,7 +7,8 @@ namespace Dmc.Tests.Retrieval;
 
 /// <summary>
 /// Spec 013 SC-007 and plan § Performance: the scene read and the hook's canon reminder each take under half a second on
-/// a canon the size of Rorn's Landing's (about 74 KB) with its archive, process start included, on the release build CI
+/// a canon just past the size read whole (about 79 KB, a little more than Rorn's Landing's 74 KB, since the canon
+/// rollback reads a canon under 19,000 tokens whole) with its archive, process start included, on the release build CI
 /// makes with Native AOT. A local default build starts slower, so the local bound is looser.
 /// </summary>
 [TestClass]
@@ -44,7 +45,7 @@ public sealed class SceneTimingTests
         }
         Write(root, "story/canon.md", "# Canon\n\n## Rulings\n\n" + Lines(11_000) + "\n## People\n\n"
             + "- **Oswin Reed** (also: the ferryman): keeps the ferry (s3).\n- **Captain Emmajeen Kole** (also: Em): the captain (s1).\n"
-            + "\n## Prices, debts and promises\n\n" + Lines(10_000) + "\n## Timeline\n\n" + Lines(52_000));
+            + "\n## Prices, debts and promises\n\n" + Lines(10_000) + "\n## Timeline\n\n" + Lines(57_000));
         Write(root, "story/canon-archive.md", "# Canon archive\n\n## Timeline\n\n" + Lines(140_000));
         Write(root, "game-state.md", GameState(["Kibil"], present: "Oswin, Kole and Bruni").Replace("a road", "the ferry at the ford"));
         return root;

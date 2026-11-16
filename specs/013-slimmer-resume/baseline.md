@@ -86,3 +86,30 @@ s10, s32), and the player's retcons (s40.43, s46.26).
 | s53 | 28 | conduct | a roll made before asking about Warding Flare; damage lines left out |
 
 Not slips: s1.39, s1.42, s9.36, s13.27, s41.75, s44.26 (characters slipping in the fiction), and the agreed retcon s7.25.
+
+## After (Rorn's Landing, from 2026-11-15)
+
+Counted with `review-transcript` § 7 on 2026-11-16 from the session logs' `Slip:` lines, each checked against its
+transcript (`dmc digest show`). Session 54 is not in the set: it began on 2026-11-13, and migration 006 ran inside it.
+
+| Session | Claude Code session | Category | What |
+|---|---|---|---|
+| s55 | 12984916 | canon | Kole took the night watch at the Landing and knocked at the door; canon's "Kole's house (s38.5)" (Timeline) has her own house. Her attunement of an item, decided unasked, was in the same slip |
+| s55 | 12984916 | other | the stew placed at Marta's and the lantern lit by someone else; `game-state.md` had Pip lighting it at dusk |
+| s56 | 4b15066a | canon | Nell said the pair "fell back to the third lamp, a hundred yards"; canon's "The north posts' places" (Timeline) puts the third lamp a quarter hour from the gate |
+| s56 | 4b15066a | other | Dessa said "July" and "January"; the calendar is Flamerule and Hammer |
+| s56 | 4b15066a | other | Tam said the table was set and Peg waiting, straight after the party had eaten; nothing was arranged |
+
+Not counted: Kibil's bite at +9 (s56; the player's roll, DMC had asked for +5 and corrected it), Menacing Attack's die
+added after the roll (s56, a ruling on the player's late choice), and an invented measure of Hala's growth (s56, recorded
+only in feedback, not in the session log).
+
+| Category | Baseline slips / sessions | After slips / sessions | Baseline average | After average |
+|---|---|---|---|---|
+| canon | 4 / 100 | 2 / 2 | 0.04 | 1.0, risen |
+| companion | 4 / 100 | 0 / 2 | 0.04 | 0 |
+| hook | 0 / 100 | 0 / 2 | 0 | 0 |
+| other | 23 / 100 | 3 / 2 | 0.23 | 1.5 |
+
+Canon rises whatever session 57 holds (at least 2 in 3, 0.67), so it rolls back now (FR-026, tasks T049 to T051).
+Companion and hook wait for session 57.

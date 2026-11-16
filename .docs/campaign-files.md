@@ -92,7 +92,7 @@ Every file the resume reads that the full save trims has a size budget, in estim
 | a PC's sheet, down to its history | 6,000 |
 | any other sheet, down to its history | 4,000 |
 | a companion's sheet, through its play card | 1,000 |
-| `story/canon.md`: read whole below | 6,000 |
+| `story/canon.md`: read whole below | 19,000 |
 | `story/canon.md`: the scene's matches, at most (bytes) | 12,000 |
 | `story/canon.md`: a full save archives above | 19,000 |
 | `story/canon.md`: a full save archives down to | 16,000 |

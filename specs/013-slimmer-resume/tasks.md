@@ -205,3 +205,10 @@ committed.
 
 - [x] T047 Mark issue #179 Phase D shipped in `.docs/roadmap.md` (PR #213 merged; the gate checked after release, pending) per FR-030 (partial)
 - [x] T048 Give a People entry's shape where DMC adds a canon line in play (`kit/dm-rules.md` line 58: a person's line starts with their bold name, then `(also: …)`), within FR-028's 400 bytes and no new line, per FR-019 (partial)
+
+## Phase 10: The gate's canon rollback
+
+- [x] T049 Read canon whole under its 19,000 limit again: `Budgets.CanonWholeBelow` equals `Budgets.CanonLimit` in `src/Dmc.Cli/Size/Budgets.cs`, so `dmc size`, `dmc recall --scene` and the hook's canon reminder follow; the tests that assumed 6,000 move past the new mark, per FR-026 (canon rose, `baseline.md` § After)
+- [x] T050 Record the after set's first two sessions and the canon result in `baseline.md` § After, `.docs/decisions.md` and `.docs/roadmap.md`, per FR-025
+- [x] T051 Update the documents that state the 6,000 mark (`.docs/campaign-files.md` budgets table, `.docs/dmc-reference.md` size, `--scene` and the canon reminder), per FR-026
+- [x] T052 Count session 57, the third of the after set, and record the gate's final table and verdict (canon rolled back; companion and hook kept) in `baseline.md` § After, `.docs/decisions.md`, `.docs/roadmap.md` and a comment on issue #179, per FR-024 and FR-025

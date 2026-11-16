@@ -333,7 +333,7 @@ public sealed class SizeLibraryTests
         return fixedPart + Filler(bytes - Encoding.UTF8.GetByteCount(fixedPart), lineLength);
     }
 
-    /// <summary>Canon under the whole mark is read whole; at it, its always-read sections and what the scene read prints, which is what the resume reads (spec 013 FR-007, FR-009, SC-004).</summary>
+    /// <summary>Canon under the whole mark is read whole; at it, its always-read sections and what the scene read prints, which is what the resume reads (spec 013 FR-007, FR-009, SC-004). Since the canon rollback (FR-026) the mark is the archive limit, so canon at it is also flagged for the full save.</summary>
     [TestMethod]
     public void CanonUnderTheWholeMarkIsReadWholeAndAtItByItsAlwaysReadSectionsAndTheScene()
     {
@@ -348,7 +348,7 @@ public sealed class SizeLibraryTests
         long scene = global::Dmc.Retrieval.SceneRead.Run(_root, Name).Sum(l => (long)global::Dmc.Retrieval.Recall.Bytes(l));
         Assert.IsGreaterThan(0L, scene);
         Assert.AreEqual(canon.Lines.Sum(l => (long)l.Bytes) + scene, canon.Bytes, "the sections plus the bytes the scene read prints");
-        Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit), "the archive limit is still 19k");
+        Assert.HasCount(1, FlagsOf(FlagKind.CanonOverLimit), "the mark is the archive limit (FR-026)");
     }
 
     /// <summary>The scene read's bytes are its real output: a scene that matches Timeline lines adds them (spec 013 SC-004).</summary>
@@ -362,23 +362,24 @@ public sealed class SizeLibraryTests
         Assert.IsGreaterThan(before, PartOf("story/canon.md").Bytes, "the matching line is read and counted");
     }
 
+    /// <summary>Two canons of about the same line count are read by their size, not their lines: short lines whole, long lines past the mark by scene.</summary>
     [TestMethod]
     public void TwoCanonsOfTheSameLineCountAreTreatedByTheirSize()
     {
         Write(_root, "story/canon.md", CanonOf(20000, lineLength: 160));
         Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind, "5k of short lines");
-        Write(_root, "story/canon.md", CanonOf(60000, lineLength: 480));
-        Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind, "15k of long lines");
+        Write(_root, "story/canon.md", CanonOf(80000, lineLength: 640));
+        Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind, "20k of long lines");
     }
 
-    /// <summary>The long campaign's canon (15.5k, about 17k once fight stories reach it), read whole before spec 013, is now read by scene.</summary>
+    /// <summary>The long campaign's canon (15.5k, about 17k once fight stories reach it), read whole before spec 013 and by scene in it, is read whole again since the canon rollback (FR-026).</summary>
     [TestMethod]
-    public void TheLongCampaignsCanonIsReadBySceneNowAndAfterTheReviewsAdditions()
+    public void TheLongCampaignsCanonIsReadWholeAgainSinceTheCanonRollback()
     {
         foreach (int tokens in new[] { 15500, 17000 })
         {
             Write(_root, "story/canon.md", CanonOf(tokens * 4));
-            Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind, $"{tokens} tokens");
+            Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind, $"{tokens} tokens");
             Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit), $"{tokens} tokens is under the archive limit");
         }
     }

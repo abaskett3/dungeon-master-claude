@@ -154,6 +154,7 @@ Releases up to 0.1.4 were pinned by a pull request in `tools/dmc-release.json` a
 | 0.3.0 | `36296ff`, the merge of PR #177 | never published | not pinned | Its tag workflow failed on all four platforms, a re-run included; see below. Its changes shipped as 0.3.1. |
 | 0.3.1 | `4a58c46`, the merge of PR #184 | 2026-11-10 | not pinned | `dmc size` (PR #175) and the campaign migrations (PR #176), the changes 0.3.0 was to ship. |
 | 0.4.0 | `adb0e07`, the merge of PR #220 | 2026-11-15 | not pinned | Image prompts (PRs #185, #186); closing a campaign (PR #190); retrieval over markdown, issue #179, Phases A to D: `dmc lookup` and `dmc recall` (PRs #187, #188), linked campaigns, the sequel import and legacy files (PRs #195 to #197, #199, #200), how `recall` ranks a digest's spine (PR #203) and the fix for issue #202, that a legacy never flows back from a later campaign (PR #204), large modules (PRs #209 to #211), and a slimmer resume with migration 006 (PRs #213, #220). |
+| 0.4.1 | `079e059`, the merge of PR #223 | 2026-11-16 | not pinned | "Yes, and" and "no, but" with migration 007 (PR #221); spec 013's gate rolls canon back to a whole read under its 19,000-token limit (PR #223). |
 
 Every published release was built, installed and checked on all platforms by its tag's workflow first (`release.yml`, [How `dmc` reaches players](#how-dmc-reaches-players)). `dmc-v0.3.0` failed it twice, a re-run included, and was never published (below).
 

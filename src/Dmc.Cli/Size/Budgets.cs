@@ -43,10 +43,11 @@ internal static class Budgets
 
     /// <summary>
     /// Canon under this size is read whole at resume; at or over it, the resume reads its always-read sections and the
-    /// scene's best matches (<c>dmc recall --scene</c>, spec 013 FR-007, research R3). At about this size the always-read
-    /// sections and the cut cost what reading the whole file does.
+    /// scene's best matches (<c>dmc recall --scene</c>, spec 013 FR-007, research R3). Spec 013 set it at 6,000; its gate
+    /// found canon slips rise (2 in Rorn's Landing's sessions 55 and 56 against a baseline of 0.04 a session), so
+    /// FR-026's rollback puts it back at <see cref="CanonLimit"/>: canon is read whole until a full save archives it.
     /// </summary>
-    public const int CanonWholeBelow = 6000;
+    public const int CanonWholeBelow = CanonLimit;
 
     /// <summary>
     /// The most bytes <c>dmc recall --scene</c> prints: about 3,000 estimated tokens of canon lines ranked for the scene,
@@ -55,7 +56,7 @@ internal static class Budgets
     /// </summary>
     public const int SceneReadBytes = 12000;
 
-    /// <summary>A full save archives canon over this size (it replaced "about 230 lines"). Since spec 013 it no longer decides how the resume reads canon (<see cref="CanonWholeBelow"/> does).</summary>
+    /// <summary>A full save archives canon over this size (it replaced "about 230 lines"). Since spec 013's canon rollback it is also <see cref="CanonWholeBelow"/>, under which the resume reads canon whole.</summary>
     public const int CanonLimit = 19000;
 
     /// <summary>A full save that finds canon over <see cref="CanonLimit"/> archives it down below this, so the next session's additions do not push it straight back over (it replaced "about 200 lines").</summary>

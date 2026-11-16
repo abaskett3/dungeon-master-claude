@@ -5,7 +5,7 @@ namespace Dmc.Size;
 /// <summary>The kinds of flag, in the order their lines are printed: canon over its limit first.</summary>
 internal enum FlagKind
 {
-    /// <summary>Canon is at or over <see cref="Budgets.CanonLimit"/>, so the full save archives it (since spec 013 it no longer decides how the resume reads canon).</summary>
+    /// <summary>Canon is at or over <see cref="Budgets.CanonLimit"/>, so the full save archives it; since the canon rollback it is also where the resume stops reading canon whole (<see cref="Budgets.CanonWholeBelow"/>).</summary>
     CanonOverLimit,
 
     /// <summary>The part read is near the Read tool's cap for one call.</summary>

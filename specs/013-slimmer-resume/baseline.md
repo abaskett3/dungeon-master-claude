@@ -86,3 +86,38 @@ s10, s32), and the player's retcons (s40.43, s46.26).
 | s53 | 28 | conduct | a roll made before asking about Warding Flare; damage lines left out |
 
 Not slips: s1.39, s1.42, s9.36, s13.27, s41.75, s44.26 (characters slipping in the fiction), and the agreed retcon s7.25.
+
+## After (Rorn's Landing, from 2026-11-15)
+
+Counted with `review-transcript` § 7 on 2026-11-15, sessions 55 and 56 first and session 57 once it was played, from the
+session logs' `Slip:` lines, each checked against its transcript (`dmc digest show`). A `Slip:` line the transcript shows
+was not DMC's error is not counted (FR-020), and is listed under Not counted. Session 54 is not in the set: it began on
+2026-11-13, and migration 006 ran inside it.
+
+| Session | Claude Code session | Category | What |
+|---|---|---|---|
+| s55 | 12984916 | canon | Kole took the night watch at the Landing and knocked at the door; canon's "Kole's house (s38.5)" (Timeline) has her own house. Her attunement of an item, decided unasked, was in the same slip |
+| s55 | 12984916 | other | the stew placed at Marta's and the lantern lit by someone else; `game-state.md` had Pip lighting it at dusk |
+| s56 | 4b15066a | canon | Nell said the pair "fell back to the third lamp, a hundred yards"; canon's "The north posts' places" (Timeline) puts the third lamp a quarter hour from the gate |
+| s56 | 4b15066a | other | Dessa said "July" and "January"; the calendar is Flamerule and Hammer |
+| s56 | 4b15066a | other | Tam said the table was set and Peg waiting, straight after the party had eaten; nothing was arranged |
+| s57 | 2b0deb61 | canon | DMC said Kole must draw the Ember to pin a stone; canon's "The Ember (s48.3)" (Timeline) has it glow through a leather pocket, and it had pinned two stones from her pocket in s56. DMC then wrote the ruling "The Ember pinned from a pocket" |
+
+Not counted: Kibil's bite at +9 (s56; the player's roll, DMC had asked for +5 and corrected it), Menacing Attack's die
+added after the roll (s56, a ruling on the player's late choice), an invented measure of Hala's growth (s56, recorded
+only in feedback, not in the session log), and Shale's "bonus action attack" (s57; the player asked for it, and DMC
+refused it correctly and offered Action Surge, though the log lists it under Slips).
+
+Session 57 was played in Claude Code session `2b0deb61` on dmc 0.4.0, before 0.4.1 shipped the canon rollback, so all
+three sessions read canon by scene. Session 58 (`919e6e15`, after migration 007, on 0.4.1) is outside the set.
+
+| Category | Baseline slips / sessions | After slips / sessions | Baseline average (Rorn's Landing alone) | After average |
+|---|---|---|---|---|
+| canon | 4 / 100 | 3 / 3 | 0.04 (0.037) | 1.0, risen: rolled back |
+| companion | 4 / 100 | 0 / 3 | 0.04 (0.074) | 0, kept |
+| hook | 0 / 100 | 0 / 3 | 0 (0) | 0, kept |
+| other | 23 / 100 | 3 / 3 | 0.23 (0.30) | 1.0 (does not decide) |
+
+The verdict (FR-024, FR-026): canon rose. Its rollback, decided after sessions 55 and 56, shipped in PR #223 (0.4.1)
+after session 57 was played. The play cards and the hook's canon lines stay. All three canon slips were canon lines outside the always-read sections
+that a whole read holds.

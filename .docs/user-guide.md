@@ -114,6 +114,8 @@ DMC will not act or speak for your character, end your turn, or spend a limited 
 
 When you try something bold, DMC lets it happen and often adds something you can use. When the world rules an idea out, DMC turns it aside inside the story and offers a way toward what you wanted; it never tells you the story does not allow it. If your idea rests on something DMC knows is wrong (where something is, or what you carry), it tells you out of character first. The first time your party attacks someone the main story needs, that person stops the attack and no one dies; after that, the fight is real. When your character says what they want, DMC works it into the main story. These rules are in `CLAUDE.md` § Fun first.
 
+When a scene has done what it was for and nothing is left hanging, DMC may offer to skip ahead in one line ("Skip to the morning?"). Say no and play goes on where it is; DMC asks again only after the next scene. Behind the scenes, DMC plans each original campaign's story in stages with a beginning, a turning point, a hard choice for you, a climax and an ending, and changes the plan when your choices overtake it.
+
 ### Dice
 
 By default you roll for your own character and for party checks, and DMC rolls for everyone else. DMC asks in dice notation with your modifiers already in it and the target stated, and asks for rolls that go together in one message:

@@ -18,7 +18,11 @@ internal static class Budgets
     /// <summary>The <b>About this player</b> section of <c>dm-notes.md</c> (it replaced "about 40 lines").</summary>
     public const int DmNotesAboutThePlayer = 2000;
 
-    /// <summary>The <b>Arc plan</b> section of <c>dm-notes.md</c> (it replaced "about 25 lines"); a finished stage kept in full shows as this section over budget.</summary>
+    /// <summary>
+    /// The <b>Arc plan</b> section of <c>dm-notes.md</c> (it replaced "about 25 lines"), its content only: the template's
+    /// comment is left out (spec 015), so the full save never deletes the guidance to fit. A finished stage kept in full
+    /// shows as this section over budget.
+    /// </summary>
     public const int DmNotesArcPlan = 1500;
 
     /// <summary><c>story/summary.md</c>, a briefing for a new DM (it replaced "about 600 words"; the review chose 3k against a summary of 5k).</summary>

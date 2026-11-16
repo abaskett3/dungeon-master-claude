@@ -43,6 +43,7 @@ internal static partial class MigrationChecks
         ["companions-have-play-card"] = CompanionsHavePlayCard,
         ["people-entries-named"] = PeopleEntriesNamed,
         ["dm-notes-have-arc-plan"] = DmNotesHaveArcPlan,
+        ["arc-plan-guidance-current"] = ArcPlanGuidanceCurrent,
     };
 
     /// <summary>The game state, whose Party status names the companions.</summary>
@@ -130,6 +131,50 @@ internal static partial class MigrationChecks
             lines?.Add(line);
         }
         return lines;
+    }
+
+    /// <summary>
+    /// The text of one <c>## </c> section with its HTML comments kept, without its heading; null when the file has no
+    /// such section. A heading inside a comment does not start or end a section. <see cref="Section"/> strips the
+    /// comments, which is right for content and wrong for a check of the template's guidance.
+    /// </summary>
+    /// <param name="text">The file's text.</param>
+    /// <param name="heading">The heading, compared ignoring case.</param>
+    static string? RawSection(string text, string heading)
+    {
+        string[] raw = text.Replace("\r\n", "\n").Split('\n');
+        string[] stripped = Lines(text);
+        System.Text.StringBuilder? section = null;
+        for (int i = 0; i < raw.Length; i++)
+        {
+            if (stripped[i].StartsWith("## ", StringComparison.Ordinal))
+            {
+                if (section is not null)
+                    break;
+                if (stripped[i][3..].Trim().Equals(heading, StringComparison.OrdinalIgnoreCase))
+                    section = new();
+                continue;
+            }
+            section?.Append(raw[i]).Append('\n');
+        }
+        return section?.ToString();
+    }
+
+
+    /// <summary>
+    /// Whether a section's template guidance is current: some comment in it names <paramref name="marker"/>, and no comment
+    /// that opens with <paramref name="opening"/>, the words every version of the template's comment opens with, lacks
+    /// it. An older template comment left beside the new one is not current.
+    /// </summary>
+    /// <param name="text">A section's raw text.</param>
+    /// <param name="opening">The opening words of the template's comment, in every version.</param>
+    /// <param name="marker">Words only the current version holds.</param>
+    static bool GuidanceCurrent(string text, string opening, string marker)
+    {
+        var comments = Comment.Matches(text).Select(m => m.Value).ToList();
+        bool Opens(string c) => c[4..].TrimStart().StartsWith(opening, StringComparison.OrdinalIgnoreCase);
+        bool Names(string c) => c.Contains(marker, StringComparison.OrdinalIgnoreCase);
+        return comments.Any(Names) && !comments.Any(c => Opens(c) && !Names(c));
     }
 
     /// <summary>The rows of the first table in some lines, after its header and separator; null when there is no table.</summary>
@@ -323,5 +368,29 @@ internal static partial class MigrationChecks
             yield return $"{DmNotes} has no ## {Flags.ArcPlan} section";
         else if (!plan.Any(l => CharacterArcs.IsMatch(l)))
             yield return $"{DmNotes}'s {Flags.ArcPlan} has no Character arcs line";
+    }
+
+    /// <summary>The <c>## Antagonists</c> heading of <c>story/dm-notes.md</c>.</summary>
+    const string Antagonists = "Antagonists";
+
+    /// <summary>
+    /// <c>arc-plan-guidance-current</c> (migration 008, spec 015 FR-011): the template's guidance in
+    /// <c>story/dm-notes.md</c> is the current one. Its Arc plan section, when there is one, holds a comment naming the
+    /// Five Commandments, and it has a <c>## Antagonists</c> section whose comment asks for each antagonist's next move.
+    /// Only comments count, so an arc that names its structure in a line of its own does not pass for the guidance. A
+    /// campaign with no <c>dm-notes.md</c> is not checked, and one with no Arc plan is left to
+    /// <c>dm-notes-have-arc-plan</c>.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> ArcPlanGuidanceCurrent(CheckInput input)
+    {
+        if (!input.New.TryGetValue(DmNotes, out string? text))
+            yield break;
+        if (RawSection(text, Flags.ArcPlan) is { } plan && !GuidanceCurrent(plan, "The current arc of a homebrew campaign", "Five Commandments"))
+            yield return $"{DmNotes}'s {Flags.ArcPlan} has an older template comment";
+        if (RawSection(text, Antagonists) is not { } antagonists)
+            yield return $"{DmNotes} has no ## {Antagonists} section";
+        else if (!GuidanceCurrent(antagonists, "For each: what they want", "next move"))
+            yield return $"{DmNotes}'s {Antagonists} has an older template comment";
     }
 }

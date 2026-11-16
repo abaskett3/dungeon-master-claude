@@ -462,7 +462,9 @@ a `## Continuity` section holding its three lines); `companions-have-play-card` 
 `game-state.md`'s Party status as `dmc size` finds it, has `## Play card` as its first `## ` section; a PC's sheet is
 not checked); `people-entries-named` (each list item under `## People` in `story/canon.md` starts with a bold name);
 `dm-notes-have-arc-plan` (`story/dm-notes.md` has a section headed exactly `## Arc plan`, with a line or subheading in
-it, outside comments, that starts with Character arcs).
+it, outside comments, that starts with Character arcs); `arc-plan-guidance-current` (`story/dm-notes.md`'s Arc plan,
+when it has one, holds a comment naming the Five Commandments, and it has an `## Antagonists` section whose comment asks
+for the next move; text outside comments does not count).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

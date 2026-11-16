@@ -325,4 +325,76 @@ public sealed class MigrationChecksTests
         Assert.IsEmpty(RunArcPlan($"# DM notes\n\n## Arc plan\n\n{ArcPlanComment}\n### The three acts\n\n#### Act 1\n\n{line}\n\n## Antagonists\n"),
             "a ### subsection stays inside the Arc plan");
     }
+
+    // ---------- arc-plan-guidance-current (migration 008, spec 015) ----------
+
+    /// <summary>The Arc plan comment of standard 8, as far as the check reads it.</summary>
+    const string CurrentArcComment = "<!--\nThe current arc of a homebrew campaign.\n\n- Shape: the structure (Five Commandments: inciting incident; …).\n-->\n";
+
+    /// <summary>The Antagonists comment of standard 8, as far as the check reads it.</summary>
+    const string CurrentAntagonistsComment = "<!-- For each: what they want, their next move and the session by which it happens (`by s14`). -->\n";
+
+    /// <summary>Runs <c>arc-plan-guidance-current</c> over one <c>story/dm-notes.md</c>.</summary>
+    /// <param name="notes">The file's text.</param>
+    static string[] RunGuidance(string notes) =>
+        Run("arc-plan-guidance-current", now: new() { ["story/dm-notes.md"] = notes });
+
+    /// <summary>A campaign with no <c>story/dm-notes.md</c> is not checked.</summary>
+    [TestMethod]
+    public void ACampaignWithoutDmNotesIsNotCheckedForTheArcGuidance() =>
+        Assert.IsEmpty(Run("arc-plan-guidance-current", now: new() { ["game-state.md"] = "# Game state\n" }));
+
+    /// <summary>DM notes with no Arc plan pass this check: <c>dm-notes-have-arc-plan</c> reports that.</summary>
+    [TestMethod]
+    public void DmNotesWithoutAnArcPlanPassTheGuidanceCheck() =>
+        Assert.IsEmpty(RunGuidance($"# DM notes\n\n## The central conflict\n\n## Antagonists\n\n{CurrentAntagonistsComment}"));
+
+    /// <summary>An Arc plan whose comment does not name the Five Commandments holds an older template comment.</summary>
+    [TestMethod]
+    public void AnArcPlanWithAnOlderCommentFails() =>
+        CollectionAssert.AreEqual(new[] { "arc-plan-guidance-current: story/dm-notes.md's Arc plan has an older template comment" },
+            RunGuidance($"# DM notes\n\n## Arc plan\n\n{ArcPlanComment}\n- Character arcs: none yet\n\n## Antagonists\n\n{CurrentAntagonistsComment}"));
+
+    /// <summary>
+    /// "Five Commandments" outside a comment does not count: the check looks for the template's guidance, not for an arc
+    /// that names its structure.
+    /// </summary>
+    [TestMethod]
+    public void TheFiveCommandmentsOutsideACommentDoNotCount() =>
+        CollectionAssert.AreEqual(new[] { "arc-plan-guidance-current: story/dm-notes.md's Arc plan has an older template comment" },
+            RunGuidance($"# DM notes\n\n## Arc plan\n\nStructure: the Five Commandments.\n\n## Antagonists\n\n{CurrentAntagonistsComment}"));
+
+    /// <summary>DM notes with an Arc plan and no <c>## Antagonists</c> section fail.</summary>
+    [TestMethod]
+    public void DmNotesWithoutAnAntagonistsSectionFail() =>
+        CollectionAssert.AreEqual(new[] { "arc-plan-guidance-current: story/dm-notes.md has no ## Antagonists section" },
+            RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}\n## Opposition\n"));
+
+    /// <summary>An Antagonists comment that does not ask for the next move is an older template comment.</summary>
+    [TestMethod]
+    public void AnAntagonistsSectionWithAnOlderCommentFails() =>
+        CollectionAssert.AreEqual(new[] { "arc-plan-guidance-current: story/dm-notes.md's Antagonists has an older template comment" },
+            RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}\n## Antagonists\n\n<!-- For each: what they want, what they know about the PC. -->\n\n- Mara: next move, the bell, by s7.\n"));
+
+    /// <summary>Both comments current pass, the headings compared ignoring case, a <c>### </c> subsection kept inside.</summary>
+    [TestMethod]
+    public void DmNotesWithBothCommentsCurrentPass() =>
+        Assert.IsEmpty(RunGuidance($"# DM notes\n\n## arc plan\n\n### Stages\n\n{CurrentArcComment}\n## ANTAGONISTS\n\n{CurrentAntagonistsComment}\n- Mara.\n"));
+
+    /// <summary>
+    /// An older template comment left beside the current one fails (the code review of PR #228): migration 008 replaces
+    /// the old comment, never adds the new one beside it.
+    /// </summary>
+    [TestMethod]
+    public void AnOlderCommentBesideTheCurrentOneFails() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "arc-plan-guidance-current: story/dm-notes.md's Arc plan has an older template comment",
+            "arc-plan-guidance-current: story/dm-notes.md's Antagonists has an older template comment",
+        }, RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}{ArcPlanComment}\n## Antagonists\n\n{CurrentAntagonistsComment}<!-- For each: what they want, what they know about the PC. -->\n"));
+
+    /// <summary>A comment of the DM's own beside the current template comment passes: only the template's openings count.</summary>
+    [TestMethod]
+    public void TheDmsOwnCommentBesideTheCurrentOnePasses() =>
+        Assert.IsEmpty(RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}<!-- My note: acts 2 and 3 can swap. -->\n\n## Antagonists\n\n{CurrentAntagonistsComment}<!-- Mara lies about the bell. -->\n"));
 }

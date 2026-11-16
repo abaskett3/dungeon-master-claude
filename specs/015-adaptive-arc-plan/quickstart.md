@@ -62,4 +62,24 @@ milestone held back by a stage put off, no feedback entry about a jump offer.
 
 ## Results
 
-(Filled in at implementation.)
+### T001, T002: baseline and backups (2026-11-15)
+
+- `kit/dm-rules.md` 212 lines, 30,631 bytes; `dmc-new-campaign` 105 lines, 12,920 bytes; `dmc-campaign-full-save`
+  78 lines, 11,438 bytes; the template 3,697 bytes. The toolkit tests pass (101 of 101) once `artifacts/bin` is
+  republished; before that, 3 fail only because the binary is older than the source.
+- The test folder's `CLAUDE.md`, `adventures/.active-campaign` (`rorns-landing`), the two skills, the template,
+  `migrations/` (002 to 006) and `adventures/rorns-landing/` (131 files) are backed up in the scratchpad folder
+  `backup-015`.
+
+### T003 to T010: template, check, migration 008, fixture, live run
+
+- The template's Arc plan heading and comment measure 1,911 bytes and its Antagonists comment 239, as the contract
+  says; the file is 4,130 bytes.
+- The check's and the template's tests pass (51 of 51 in the filtered run); the migration tests pass on fixture 008
+  (98 of 98); the Campaign tests pass (693, 4 skipped). A standard-7 campaign is reported `behind: standard 7, kit 8:
+  008-arc-plan-structure.md`.
+- **Live run** in `D:\Claude\test-campaign` with the dev `dmc` first on `PATH`: fixture 008's `before/` as
+  `arc-mig-test` at standard 7, migrations 007 and 008 and the new template copied in. `/dmc-migrate-campaign` on
+  `--model sonnet --effort high` showed What changes and "Declared drops: none", backed up on "yes", replaced both
+  template comments and kept the player's own note. `dmc campaign verify` passed (78 of 78 units matched), the standard
+  is current, and all four files are byte for byte the fixture's `after/`. Pass (SC-006, first half).

@@ -43,6 +43,7 @@ internal static partial class MigrationChecks
         ["companions-have-play-card"] = CompanionsHavePlayCard,
         ["people-entries-named"] = PeopleEntriesNamed,
         ["dm-notes-have-arc-plan"] = DmNotesHaveArcPlan,
+        ["arc-plan-guidance-current"] = ArcPlanGuidanceCurrent,
     };
 
     /// <summary>The game state, whose Party status names the companions.</summary>
@@ -131,6 +132,39 @@ internal static partial class MigrationChecks
         }
         return lines;
     }
+
+    /// <summary>
+    /// The text of one <c>## </c> section with its HTML comments kept, without its heading; null when the file has no
+    /// such section. A heading inside a comment does not start or end a section. <see cref="Section"/> strips the
+    /// comments, which is right for content and wrong for a check of the template's guidance.
+    /// </summary>
+    /// <param name="text">The file's text.</param>
+    /// <param name="heading">The heading, compared ignoring case.</param>
+    static string? RawSection(string text, string heading)
+    {
+        string[] raw = text.Replace("\r\n", "\n").Split('\n');
+        string[] stripped = Lines(text);
+        System.Text.StringBuilder? section = null;
+        for (int i = 0; i < raw.Length; i++)
+        {
+            if (stripped[i].StartsWith("## ", StringComparison.Ordinal))
+            {
+                if (section is not null)
+                    break;
+                if (stripped[i][3..].Trim().Equals(heading, StringComparison.OrdinalIgnoreCase))
+                    section = new();
+                continue;
+            }
+            section?.Append(raw[i]).Append('\n');
+        }
+        return section?.ToString();
+    }
+
+    /// <summary>Whether some text holds an HTML comment that contains the given words, compared ignoring case.</summary>
+    /// <param name="text">A section's raw text.</param>
+    /// <param name="words">The words the comment must contain.</param>
+    static bool HasCommentWith(string text, string words) =>
+        Comment.Matches(text).Any(m => m.Value.Contains(words, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The rows of the first table in some lines, after its header and separator; null when there is no table.</summary>
     /// <param name="lines">A section's lines.</param>
@@ -323,5 +357,29 @@ internal static partial class MigrationChecks
             yield return $"{DmNotes} has no ## {Flags.ArcPlan} section";
         else if (!plan.Any(l => CharacterArcs.IsMatch(l)))
             yield return $"{DmNotes}'s {Flags.ArcPlan} has no Character arcs line";
+    }
+
+    /// <summary>The <c>## Antagonists</c> heading of <c>story/dm-notes.md</c>.</summary>
+    const string Antagonists = "Antagonists";
+
+    /// <summary>
+    /// <c>arc-plan-guidance-current</c> (migration 008, spec 015 FR-011): the template's guidance in
+    /// <c>story/dm-notes.md</c> is the current one. Its Arc plan section, when there is one, holds a comment naming the
+    /// Five Commandments, and it has a <c>## Antagonists</c> section whose comment asks for each antagonist's next move.
+    /// Only comments count, so an arc that names its structure in a line of its own does not pass for the guidance. A
+    /// campaign with no <c>dm-notes.md</c> is not checked, and one with no Arc plan is left to
+    /// <c>dm-notes-have-arc-plan</c>.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> ArcPlanGuidanceCurrent(CheckInput input)
+    {
+        if (!input.New.TryGetValue(DmNotes, out string? text))
+            yield break;
+        if (RawSection(text, Flags.ArcPlan) is { } plan && !HasCommentWith(plan, "Five Commandments"))
+            yield return $"{DmNotes}'s {Flags.ArcPlan} has an older template comment";
+        if (RawSection(text, Antagonists) is not { } antagonists)
+            yield return $"{DmNotes} has no ## {Antagonists} section";
+        else if (!HasCommentWith(antagonists, "next move"))
+            yield return $"{DmNotes}'s {Antagonists} has an older template comment";
     }
 }

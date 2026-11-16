@@ -26,12 +26,12 @@ up first. The edits to `kit/skills/dmc-campaign-full-save/SKILL.md` (US2 to US5)
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the baseline on the branch: `kit/dm-rules.md` (expected 212 lines, 30,631 bytes),
+- [X] T001 Record the baseline on the branch: `kit/dm-rules.md` (expected 212 lines, 30,631 bytes),
   `kit/skills/dmc-new-campaign/SKILL.md` (105 lines, 12,920 bytes), `kit/skills/dmc-campaign-full-save/SKILL.md` (78
   lines, 11,438 bytes), `kit/templates/campaign/story/dm-notes.md` (3,697 bytes); run
   `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Toolkit"` and note any test that already fails locally on
   `main`
-- [ ] T002 Back up `D:\Claude\test-campaign` to the scratchpad: its `CLAUDE.md`, `adventures/.active-campaign`,
+- [X] T002 Back up `D:\Claude\test-campaign` to the scratchpad: its `CLAUDE.md`, `adventures/.active-campaign`,
   `.claude/skills/dmc-new-campaign/`, `.claude/skills/dmc-campaign-full-save/`, `templates/campaign/story/dm-notes.md`,
   `migrations/`, and `adventures/rorns-landing/` whole; record the paths in `specs/015-adaptive-arc-plan/quickstart.md`
   § Results
@@ -43,29 +43,29 @@ up first. The edits to `kit/skills/dmc-campaign-full-save/SKILL.md` (US2 to US5)
 **Purpose**: the template's new comments, which every story reads, and the migration that brings existing campaigns
 to them (Development 2).
 
-- [ ] T003 [P] Add toolkit tests in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, each with an XML doc comment naming
+- [X] T003 [P] Add toolkit tests in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, each with an XML doc comment naming
   spec 015: the template's Arc plan comment names "Five Commandments" and "`dmc-new-campaign` step 4a" and asks for
   "about 4 sessions" and "or a victory of the same weight"; its Antagonists comment names "next move"; run them and
   see them fail
-- [ ] T004 [P] Write the tests of the check `arc-plan-guidance-current` in
+- [X] T004 [P] Write the tests of the check `arc-plan-guidance-current` in
   `tests/Dmc.Tests/Campaign/MigrationChecksTests.cs`, one per row of [contracts/migration-008.md](contracts/migration-008.md)
   § The check, in the style of the `dm-notes-have-arc-plan` tests, each with an XML doc comment: no
   `story/dm-notes.md` passes; no `## Arc plan` passes; an Arc plan with no comment naming "Five Commandments" fails
   with "story/dm-notes.md's Arc plan has an older template comment"; no `## Antagonists` fails with
   "story/dm-notes.md has no ## Antagonists section"; an Antagonists comment without "next move" fails with
   "story/dm-notes.md's Antagonists has an older template comment"; both current passes; run them and see them fail
-- [ ] T005 In `kit/templates/campaign/story/dm-notes.md`, replace the Arc plan comment and the Antagonists comment
+- [X] T005 In `kit/templates/campaign/story/dm-notes.md`, replace the Arc plan comment and the Antagonists comment
   exactly as [contracts/dm-notes-template.md](contracts/dm-notes-template.md) says; nothing else in the template
   changes; measure: the Arc plan heading and comment 1,911 bytes, the Antagonists comment 239; T003's tests pass
-- [ ] T006 Add `ArcPlanGuidanceCurrent` to `src/Dmc.Cli/Campaign/MigrationChecks.cs`, registered as
+- [X] T006 Add `ArcPlanGuidanceCurrent` to `src/Dmc.Cli/Campaign/MigrationChecks.cs`, registered as
   `["arc-plan-guidance-current"]` after `dm-notes-have-arc-plan`; it reads the `## Arc plan` and `## Antagonists`
   sections raw, comments included (a small helper beside `Section`, which strips them), heading compared as `Section`
   does; an XML doc comment naming migration 008 and spec 015 FR-011, and one on the helper; T004's tests pass
-- [ ] T007 Write `kit/migrations/008-arc-plan-structure.md` as [contracts/migration-008.md](contracts/migration-008.md)
+- [X] T007 Write `kit/migrations/008-arc-plan-structure.md` as [contracts/migration-008.md](contracts/migration-008.md)
   says: front matter `standard: 8`, the title, `shipped: issues #217, #181` (set to the PR in T033),
   `touches: [story/dm-notes.md]`, `drops: []`, `checks: [arc-plan-guidance-current]`; the five headings in order, each
   step first checking whether it is needed, in the style of `kit/migrations/007-arc-plan-everywhere.md`
-- [ ] T008 Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/008/` as the contract's § The fixture says:
+- [X] T008 Build the golden fixture `tests/Dmc.Tests/Fixtures/migrations/008/` as the contract's § The fixture says:
   `before/` (standard 7 from the templates, `story/dm-notes.md` with PR #221's Arc plan comment, copied from
   `git show 9dbb9d6:kit/templates/campaign/story/dm-notes.md`, a filled stage line, Character arcs, a comment of the
   player's own in the Arc plan, the first kit's Antagonists comment from `git show d4523c6:kit/templates/campaign/story/dm-notes.md`
@@ -73,10 +73,10 @@ to them (Development 2).
   line unchanged); `accounting.tsv` made as `.docs/development.md` § Changing a campaign-file standard step 4 says;
   run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~Migration"` until `MigrationGoldenTests`,
   `MigrationFilesTests` and T004's tests pass
-- [ ] T009 Publish (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`) and check the standard: a standard-7
+- [X] T009 Publish (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`) and check the standard: a standard-7
   campaign is reported `behind: standard 7, kit 8: 008-arc-plan-structure.md` by `artifacts/bin/dmc campaign
   standard`; run the tests in `tests/Dmc.Tests/Campaign/` and fix any that assume the kit is at standard 7
-- [ ] T010 Live run, [quickstart.md](quickstart.md) § 2: copy fixture 008's `before/` to
+- [X] T010 Live run, [quickstart.md](quickstart.md) § 2: copy fixture 008's `before/` to
   `D:\Claude\test-campaign\adventures\arc-mig-test\` with its standard at 7, `kit/migrations/007-arc-plan-everywhere.md`
   and `008-arc-plan-structure.md` into the folder's `migrations/`, and T005's template into its
   `templates/campaign/story/`; make `arc-mig-test` active; with `artifacts\bin` first on `PATH`, ask DMC headless to

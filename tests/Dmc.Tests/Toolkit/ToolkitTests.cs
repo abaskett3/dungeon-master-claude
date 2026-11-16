@@ -1236,6 +1236,37 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section, "\"no, but\"", "spec 014 FR-002");
     }
 
+    /// <summary>
+    /// The text of one <c>## </c> section of a markdown file, from its heading to the next <c>## </c> heading, comments
+    /// included; fails the test when the file has no such section.
+    /// </summary>
+    /// <param name="text">The file's text.</param>
+    /// <param name="heading">The heading's words, without the <c>## </c>.</param>
+    static string SectionOf(string text, string heading)
+    {
+        int start = text.IndexOf($"\n## {heading}\n", StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(0, start, $"a ## {heading} section");
+        int end = text.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        return end < 0 ? text[start..] : text[start..end];
+    }
+
+    /// <summary>
+    /// Spec 015 (FR-002, FR-004 to FR-006): the template's Arc plan comment names the Five Commandments and points at
+    /// <c>dmc-new-campaign</c> step 4a, and asks for a session budget per stage and milestones with an equivalent; its
+    /// Antagonists comment asks for each next move, timed in sessions.
+    /// </summary>
+    [TestMethod]
+    public void TheDmNotesTemplatePlansArcsOnAStructureAndTimesAntagonistsInSessions()
+    {
+        string template = Read("kit/templates/campaign/story/dm-notes.md");
+        string arc = SectionOf(template, "Arc plan");
+        StringAssert.Contains(arc, "Five Commandments", "spec 015 FR-002");
+        StringAssert.Contains(arc, "`dmc-new-campaign` step 4a", "spec 015 FR-002");
+        StringAssert.Contains(arc, "about 4 sessions", "spec 015 FR-006");
+        StringAssert.Contains(arc, "or a victory of the same weight", "spec 015 FR-005");
+        StringAssert.Contains(SectionOf(template, "Antagonists"), "next move", "spec 015 FR-004");
+    }
+
     [TestMethod]
     public void ThePlayRulesNameRecallAndLookupAndKeepTheFallback()
     {

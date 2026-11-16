@@ -11,14 +11,14 @@ DMC's private plans. Nothing here is true in the game until it appears in play; 
 ## Arc plan
 
 <!--
-The current arc of a homebrew campaign, or the stretch after a module ends; in a module campaign, only Character arcs until then. Plan it when one starts; the full save checks it. A plan, not a script: change it when the player surprises you.
+The current arc of a homebrew campaign, or the stretch after a module ends; in a module campaign, only Character arcs until then. Plan it when one starts, on a story structure as `dmc-new-campaign` step 4a says; the full save checks it and revises it when play makes it untrue. A plan, not a script: play decides what happens, the plan keeps the shape, and the arc still ends.
 
-- Shape: the stages (for example exposition, rising action, climax, falling action, resolution), each with what changes in the story.
+- Shape: the structure, then its stages, each naming its beat (Five Commandments: inciting incident; progressive complication, over one to three stages; crisis; climax; resolution), what changes in the story, and a rough budget in sessions (`about 4 sessions`). The current stage says the session it began (`current since s9`).
 - Mix: for each stage, the fights, exploration, puzzles and roleplay it holds. A stage of talk alone is not a stage.
 - Character arcs: for the PC and each companion, what they want or must face in this arc, how the main plot meets it, and a moment that tests it.
 - Side quests: two or three short ones tied to the main story, with a reward.
 - The party's gaps: what it cannot do (no healing, no answer to magic) and how the story offers it (an ally, items, a trainer, a place to buy), or which threats are chosen so it need not.
-- Progression: under milestone leveling, the level each milestone gives and where it falls; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
+- Progression: under milestone leveling, each milestone as an achievement and the level it gives, "or a victory of the same weight"; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
 - Wonder: other peoples, magic, monsters and marvels that appear in each stage.
 
 Mark a stage done when it ends, cut to one line (what changed), and a milestone awarded when it is given; delete finished beats. The full save's check of what was last played is one "Last played" line at the end of this section, overwritten each save, never a log. Keep the section short: the full save checks its size with `dmc size`.
@@ -28,7 +28,7 @@ Mark a stage done when it ends, cut to one line (what changed), and a milestone 
 
 ## Antagonists
 
-<!-- For each: what they want, what they are doing right now offscreen, what they know about the PC, and the names the party knows them by. Speak only those to the player. -->
+<!-- For each: what they want, what they are doing right now offscreen, their next move and the session by which it happens (`by s14`), what they know about the PC, and the names the party knows them by. Speak only those to the player. -->
 
 ## Opposition
 

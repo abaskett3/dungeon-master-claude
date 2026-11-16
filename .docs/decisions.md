@@ -756,3 +756,11 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Reason:** Decided by the maintainer after the code review of PR #222 (the roadmap and release history brought up to 0.4.0) found it had no spec, which the rule required. A spec, plan and task list for a status fix describe nothing that the diff does not, and the rule's one earlier exception (feedback tuning, "Feedback tuning of prompts and context does not go through Spec Kit") was made for the same reason: Spec Kit is for changes to what the toolkit does.
 - **Limits:** The PR's code review and the documentation check still run, as for any PR. The line between a correction and a change is the author's to draw; when in doubt, it is a change.
 - **Source:** The code review of PR #222; the maintainer's answer in that session.
+
+## The feedback round after issue #181 raises the rules' byte cap to 31,089
+
+- **Date:** 2026-11-15
+- **Decision:** `kit/dm-rules.md` may grow by 458 bytes, from 30,631 to 31,089 (about 115 more tokens per turn), still in 212 lines. The additions are clauses on existing lines: a companion the player directs does only what was declared, and "can he" or "if he can" is a question; a die for the player's own reaction or feature is the player's to roll; a break is offered once per band, and playing on without taking it is a no (the `dmc context-check` line says the same); no real-world words in the fiction, and a slip is redone, never annotated; a correction changes only what was wrong, never rewords the player's text, and calls a line the player's words only after quoting it.
+- **Reason:** Each failure happens in play, in an exchange where no skill is loaded, so the rule has to be in the always-loaded rules. The player raised each one in play between 2026-11-10 and 2026-11-15 (the entries are cited in the PR). The maintainer chose to raise the cap over the alternatives.
+- **Alternatives considered:** Cutting the install commands on line 139 (about 280 bytes), which the SessionStart hook already prints when `dmc` is missing, but which a session that loses `dmc` mid-play would then not have. Dropping the clauses on real-world words (two occurrences) and the player's wording (one).
+- **Source:** The `review-feedback` round of 2026-11-15; the maintainer's answer in that session.

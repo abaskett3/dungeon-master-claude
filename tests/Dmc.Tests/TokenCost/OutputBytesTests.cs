@@ -63,7 +63,7 @@ public sealed class OutputBytesTests
             var result = DmcRunner.BlackBox(["context-check"], new JsonObject { ["transcript_path"] = log }.ToJsonString());
             AssertNoBom(result.StdoutBytes, "context-check stdout");
             Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save and a fresh "
-                            + "session, unless the player has declined since 150k.\n", Encoding.UTF8.GetString(result.StdoutBytes!));
+                            + "session, unless you have offered one since 150k: playing on without taking it is a no.\n", Encoding.UTF8.GetString(result.StdoutBytes!));
             Assert.AreEqual(0, result.StderrBytes!.Length);
         }
         finally

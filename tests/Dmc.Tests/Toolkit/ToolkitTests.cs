@@ -1203,12 +1203,15 @@ public sealed partial class ToolkitTests
 
     /// <summary>
     /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043, and spec 014 (FR-008, at most 593)
-    /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn).
+    /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn). The
+    /// feedback round after issue #181 raised it by 458 to 31,089, with the maintainer's approval, for the companion's
+    /// undeclared turn, the player's reaction die, the break offered once per band, real-world words and the player's
+    /// own wording (about 115 more tokens per turn; <c>.docs/decisions.md</c>).
     /// </summary>
-    const int DmRulesBytesAllowed = 30_631;
+    const int DmRulesBytesAllowed = 31_089;
 
     /// <summary>
-    /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
+    /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set and the feedback round after issue #181 raised.
     /// </summary>
     [TestMethod]
     public void TheAlwaysLoadedRulesStayAtTheirLineAndByteCaps()
@@ -1217,7 +1220,7 @@ public sealed partial class ToolkitTests
         int lines = rules.TrimEnd('\n').Split('\n').Length;
         Assert.IsLessThanOrEqualTo(DmRulesLines, lines, $"kit/dm-rules.md has {lines} lines; spec 013 FR-028 allows at most {DmRulesLines}");
         int bytes = System.Text.Encoding.UTF8.GetByteCount(rules);
-        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 014 FR-008 allows at most {DmRulesBytesAllowed}");
+        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; the cap allows at most {DmRulesBytesAllowed}");
     }
 
     /// <summary>

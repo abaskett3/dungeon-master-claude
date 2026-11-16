@@ -96,7 +96,7 @@ public abstract class ContextCheckContract
     {
         string line = Check(Log(Assistant(90000), User("go on"), Assistant(163400), User("I attack")));
         Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save "
-                        + "and a fresh session, unless the player has declined since 150k.", line);
+                        + "and a fresh session, unless you have offered one since 150k: playing on without taking it is a no.", line);
     }
 
     [TestMethod]
@@ -104,7 +104,7 @@ public abstract class ContextCheckContract
     {
         string line = Check(Log(Assistant(90000), User("go on"), Assistant(195000)));
         StringAssert.StartsWith(line, "Context 195k is large, break due since 190k:");
-        StringAssert.EndsWith(line, "declined since 190k.");
+        StringAssert.EndsWith(line, "offered one since 190k: playing on without taking it is a no.");
     }
 
     [TestMethod]

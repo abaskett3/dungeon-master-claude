@@ -62,7 +62,7 @@ public sealed class ContextCheckEdgeTests
     {
         Assert.AreEqual("", BreakReminder.For(149999));
         Assert.AreEqual("Context 150k is large, break due since 150k: at the next break point, offer a full save and a fresh "
-                        + "session, unless the player has declined since 150k.", BreakReminder.For(150000));
+                        + "session, unless you have offered one since 150k: playing on without taking it is a no.", BreakReminder.For(150000));
     }
 
     [TestMethod]
@@ -75,7 +75,7 @@ public sealed class ContextCheckEdgeTests
     }
 
     // The first band is the larger of 150k and the baseline plus 40k; the bands then rise every 40k from there, so
-    // a declined offer is repeated at the next one, as before.
+    // an offer not taken is repeated at the next one, as before.
     [TestMethod]
     public void TheFirstBandIsRelativeToTheBaselineWithA150kFloor()
     {

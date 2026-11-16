@@ -179,7 +179,7 @@ Every message you send re-reads the whole conversation, so a long conversation u
 
 In a DMC folder, DMC is told before each of your messages how large the conversation is. When it is large, DMC offers a break at the next natural pause: the end of a scene, the end of a fight, or the top of a combat round with nothing waiting on you. Never while a roll or decision is pending.
 
-"Large" is measured from where the conversation settled after DMC loaded your campaign. The first offer comes when the conversation has grown by 40,000 tokens beyond that point, and never before 150,000 tokens in all. So a campaign that loads a lot is not offered a break one round in.
+"Large" is measured from where the conversation settled after DMC loaded your campaign. The first offer comes when the conversation has grown by 40,000 tokens beyond that point, and never before 150,000 tokens in all. So a campaign that loads a lot is not offered a break one round in. DMC offers once for every further 40,000 tokens. If you play on without taking the break, that counts as no, and it asks again only after another 40,000.
 
 - Say **yes**: DMC runs a full save and checks it, then tells you it is safe. Type `/clear` and then `/dmc-resume-campaign`. DMC restates where you are without a full recap; a fight resumes on the same round with everyone where they stood.
 - Say **no**: DMC asks again when the conversation has grown by another 40,000 tokens.

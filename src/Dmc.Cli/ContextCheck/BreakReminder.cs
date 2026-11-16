@@ -14,7 +14,7 @@ public static class BreakReminder
     /// <summary>How far above the baseline the context must grow before the first break is due.</summary>
     public const long Margin = 40000;
 
-    /// <summary>The reminder names a band that rises every this many tokens, so a declined offer is repeated at the next band.</summary>
+    /// <summary>The reminder names a band that rises every this many tokens, so an offer not taken is repeated at the next band.</summary>
     public const long Band = 40000;
 
     /// <summary>Where the first band starts for a session whose context settled at <paramref name="baseline"/>.</summary>
@@ -24,8 +24,9 @@ public static class BreakReminder
 
     /// <summary>
     /// The reminder for a context of <paramref name="size"/> tokens; empty below the first band. The band named
-    /// is the latest one reached, counted from the first band, so a declined offer is made again only when the
-    /// context has grown by another <see cref="Band"/>.
+    /// is the latest one reached, counted from the first band, so an offer is made once per band: one the player
+    /// declined, or played on past without taking, is made again only when the context has grown by another
+    /// <see cref="Band"/>.
     /// </summary>
     /// <param name="size">The latest context size, in tokens.</param>
     /// <param name="baseline">The context after loading, in tokens; the default 0 gives the plain <see cref="Threshold"/>.</param>
@@ -37,6 +38,6 @@ public static class BreakReminder
             return "";
         long band = first + (size - first) / Band * Band;
         return $"Context {size / 1000}k is large, break due since {band / 1000}k: at the next break point, offer a full save " +
-               $"and a fresh session, unless the player has declined since {band / 1000}k.";
+               $"and a fresh session, unless you have offered one since {band / 1000}k: playing on without taking it is a no.";
     }
 }

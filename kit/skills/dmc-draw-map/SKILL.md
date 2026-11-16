@@ -59,7 +59,8 @@ In a fight, `"initiative"` is the turn order and `"current"` is whose turn it is
 Rules for the grid:
 
 - One character per cell, no spaces between cells, every row the same length. A space means nothing is there (pad short rows with spaces).
-- Every map is to scale, never squeezed, under about 30 cells wide. A fight uses 5 ft squares (the default), or `"cell_ft": 30` when the place is too large for 5 ft (a battlefield, a wide cavern, a town); draw only the part in play and describe the rest in `"edges"`. Never use a mile scale for a fight: 5280, 31680 and 316800 (1, 6, 60 miles a square) are for overland travel maps. A scene takes its place's scale; it cannot change it.
+- Every map is to scale, never squeezed, under about 30 cells wide. A fight uses 5 ft squares (the default), or `"cell_ft": 30` when the place is too large for 5 ft (a battlefield, a wide cavern, a town); draw only the part in play and describe the rest in `"edges"`. The live page shrinks the whole map to fit the browser window, so a fight map much longer or wider than the fight (a road of 44 rows for a fight on 15) shows the fight tiny. For a fight on a larger saved place, save a trimmed copy (`<place>-fight.json`) and point the scene at it before cells go into the tracker, since trimming later renumbers every cell. Never use a mile scale for a fight: 5280, 31680 and 316800 (1, 6, 60 miles a square) are for overland travel maps. A scene takes its place's scale; it cannot change it.
+- An aura or emanation the fight depends on (a cold ring, a stench, a spirit guardian's field) is drawn as hazard cells around its creature, with a legend name (`"r": {"name": "rime aura (10 ft)", "as": "hazard"}`), in a fight copy of the place (`<place>-fight.json`, as above), never in a place saved for revisiting. When the creature moves, move the cells in the same reply as the token. The tracker and the picture always agree on where it is: never take it off the map and say in the notes that it moves.
 - North is up unless `"north"` says otherwise (`"down"`, `"left"`, `"right"`, or `null` when no direction has been established).
 - Cells are named by column letter and row number, as printed along the edges of the picture: `E4` is the fifth cell of the fourth row. Use the same names in the combat tracker's Position column and when talking to the player, who can answer the same way ("I move to F4").
 
@@ -74,7 +75,7 @@ T  tree            o  pillar/boulder  _  table/low cover
 
 `"legend"` renames a built-in symbol for this place (`"~": "the melt ring: wet slush"`) or defines a new one. A new symbol given only a name is drawn as floor with the symbol on it. To choose how it is drawn, give `{"name": ..., "as": <terrain>, "color": "#rrggbb"}`, where the terrain is one of `wall`, `floor`, `door`, `window`, `water`, `hazard`, `stairs_down`, `stairs_up`, `tree`, `pillar`, `cover`, `difficult`, `unknown`, `feature`. Keep legend names short; longer detail belongs in the place's notes.
 
-Tokens: `id` is one or two characters (`@` for the player character, a letter for each named ally or NPC, a number for each enemy). `kind` is `pc`, `ally`, `enemy` or `neutral`. `at` is the top-left cell; `size` is the width in cells (2 Large, 3 Huge, 4 Gargantuan); above 5 ft it counts as 1, and several tokens may share a cell. `note` is a short status the player can see (prone, on the ledge, 10 ft up). `down` greys out a creature that is dead or unconscious.
+Tokens: `id` is one or two characters (`@` for the player character, a letter for each named ally or NPC, a number for each enemy). `kind` is `pc`, `ally`, `enemy` or `neutral`: `ally` (green) only for a companion the player directs, so the player can tell from the colour whose turns are theirs to call, and `neutral` (grey) for anyone else not hostile, a friendly NPC who acts on their own included (a guide, an escort, a smith holding the rear). `at` is the top-left cell; `size` is the width in cells (2 Large, 3 Huge, 4 Gargantuan); above 5 ft it counts as 1, and several tokens may share a cell. `note` is a short status the player can see (prone, on the ledge, 10 ft up). `down` greys out a creature that is dead or unconscious.
 
 The full format is in `.claude/skills/dmc-draw-map/map-format.md`.
 
@@ -98,6 +99,8 @@ dmc map adventures/<campaign>/maps/live.json --png
 - The first time in a session, for a place map you show by hand, add `--open` (a fight's `live.json` is opened by the hook instead): it opens `maps/live.html` in the player's browser. Tell them once, in a line, that the map is in their browser and updates by itself. After that, do not open it again; each run updates the open tab within a couple of seconds. Just say the map is updated.
 
 Do not also paste a text drawing of the map into the terminal.
+
+If the player says the map is too small or not zoomed, the cause is the map, not the picture: trim it as above, keeping the tracker's cells in step. Ask which they are looking at (the browser page or a sent picture) if it is not clear. Never send a cropped or enlarged copy in its place: the page in their browser does not change.
 
 ## After drawing
 

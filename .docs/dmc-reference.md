@@ -457,7 +457,12 @@ sections after it); `npc-sheets-have-names-line` (each `npc-*.md` has a "Names t
 `0/`); `fights-have-timeline` (each row that was finished in the backup is a row of `story/dm-notes-archive.md`, and a
 line under `## Timeline` in `story/canon.md` has a session reference such as `s3.2` and the row's Who text, ignoring
 case); `one-last-played-line` (`story/dm-notes.md` has at most one line starting Last played and no Mix tracker
-section).
+section); `continuity-section` (the campaign's `player-options.md`, when it has one, has no Predecessor line left and
+a `## Continuity` section holding its three lines); `companions-have-play-card` (each companion's sheet, found from
+`game-state.md`'s Party status as `dmc size` finds it, has `## Play card` as its first `## ` section; a PC's sheet is
+not checked); `people-entries-named` (each list item under `## People` in `story/canon.md` starts with a bold name);
+`dm-notes-have-arc-plan` (`story/dm-notes.md` has a `## Arc plan` section, with a line in it, outside comments, that
+starts with Character arcs).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

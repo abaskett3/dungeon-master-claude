@@ -115,6 +115,10 @@ The headless play test of the first wording (2026-11-15, `quickstart.md` § Resu
   spec says so as an edge case, and SC-002 does not count such ideas.
 - Q: The way-forward wording costs 34 bytes, so the cap rises by 593, over the 560 allowed. Cut, or raise? → A: Raise
   the allowance to 593 bytes.
+- Q: After the second wording, the second play test gave SC-002 4 of 5 (with the first round's attack on Rorn): one
+  ruled-out idea got a hook instead of a way forward, and the byte allowance is spent. Accept, rerun, or reword? → A:
+  Accept 4 of 5 (2026-11-15) and keep the wording; whether "no, but" offers a way forward in real play is left to the
+  after-release review (SC-005).
 
 ## User Scenarios & Testing *(mandatory)*
 

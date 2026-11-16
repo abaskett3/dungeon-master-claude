@@ -217,6 +217,8 @@ item, that item says so.
 
 - **Decision**: in addition to the first round's: `.docs/campaign-files.md` (the `story/dm-notes.md` row, line 73:
   the Arc plan's Character arcs in every campaign), `.docs/decisions.md` (the entry's Limits rewritten, migration 007
-  named), `.docs/roadmap.md` (the row names migration 007). `.docs/dmc-reference.md` § Migrations, the user guide and
-  `dmc-migrate-campaign` list no migrations by number or check (searched for `002` to `006` and their checks), so
-  they do not change; FR-009's mention of the reference is met by checking it.
+  named), `.docs/roadmap.md` (the row names migration 007), and `.docs/dmc-reference.md` § Migrations, whose list
+  of checks (`MigrationChecks`, line 453) gains `dm-notes-have-arc-plan` (and the three checks of migrations 005 and
+  006 it lacked). The user guide and `dmc-migrate-campaign` list no migrations by number or check, so they do not
+  change. (Corrected by the convergence pass: this item first said the reference named no checks; the search had
+  looked for the numbers and missed the list.)

@@ -243,6 +243,6 @@ check, then the documents. One PR at the end.
 
 ## Phase 7: Convergence
 
-- [ ] T036 In `.docs/dmc-reference.md` § Migrations, the list of checks (`MigrationChecks`, line 453): add `dm-notes-have-arc-plan` (`story/dm-notes.md` has a `## Arc plan` section with a line outside comments starting Character arcs), and the three it already lacks, `continuity-section`, `companions-have-play-card` and `people-entries-named`, each as `src/Dmc.Cli/Campaign/MigrationChecks.cs` describes it, per FR-009 (partial)
-- [ ] T037 In `specs/014-yes-and-no-but/spec.md` § Clarifications, "after the play test", record that the maintainer accepted SC-002 at 4 of 5 after the second wording (2026-11-15), leaving the way forward in real play to SC-005, per SC-002 (partial)
-- [ ] T038 In `specs/014-yes-and-no-but/research.md` R19, correct the claim that `.docs/dmc-reference.md` § Migrations names no checks: it lists them at line 453, and T036 updates it, per plan: research R19 (partial)
+- [X] T036 In `.docs/dmc-reference.md` § Migrations, the list of checks (`MigrationChecks`, line 453): add `dm-notes-have-arc-plan` (`story/dm-notes.md` has a `## Arc plan` section with a line outside comments starting Character arcs), and the three it already lacks, `continuity-section`, `companions-have-play-card` and `people-entries-named`, each as `src/Dmc.Cli/Campaign/MigrationChecks.cs` describes it, per FR-009 (partial)
+- [X] T037 In `specs/014-yes-and-no-but/spec.md` § Clarifications, "after the play test", record that the maintainer accepted SC-002 at 4 of 5 after the second wording (2026-11-15), leaving the way forward in real play to SC-005, per SC-002 (partial)
+- [X] T038 In `specs/014-yes-and-no-but/research.md` R19, correct the claim that `.docs/dmc-reference.md` § Migrations names no checks: it lists them at line 453, and T036 updates it, per plan: research R19 (partial)

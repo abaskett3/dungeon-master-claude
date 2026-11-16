@@ -496,7 +496,7 @@ same recovery first.
 
 ### Closing a campaign
 
-Added in spec 010 (issue #180). A finished campaign is closed for good: nothing changes it again and nothing reopens
+Added in release 0.4.0 (spec 010, issue #180). A finished campaign is closed for good: nothing changes it again and nothing reopens
 it; a sequel (`dmc-new-campaign`, with a Continues line) continues its story. DMC runs `close` under the
 `dmc-close-campaign` skill, after the closing save and only on the player's yes.
 
@@ -549,7 +549,7 @@ last line says so.
 
 ### Linked campaigns
 
-Added in spec 011 (issue #179, Phase B). A campaign's links are the three lines of the `## Continuity` section of its
+Added in release 0.4.0 (spec 011, issue #179, Phase B). A campaign's links are the three lines of the `## Continuity` section of its
 `player-options.md` (Continues, Side campaign of, Shares a world with), or, in a file with no such section, its old
 `- **Predecessor**:` line read as Continues; [campaign-files.md](campaign-files.md#linked-campaigns) has the shape.
 The lines are read outside fenced code blocks and HTML comments, a comment over several lines included (migration
@@ -589,7 +589,7 @@ adventures/ (there are: …)`); a usage mistake exits 2.
 
 ### A sequel's import
 
-Added in spec 011 (issue #179, Phase B, PR 2). `sequel` works on a digest of the closed campaign that NAME's Continues
+Added in release 0.4.0 (spec 011, issue #179, Phase B, PR 2). `sequel` works on a digest of the closed campaign that NAME's Continues
 line names, in `adventures/NAME/digests/<closed>/` ([campaign-files.md](campaign-files.md#a-digest) has its shape).
 `dmc-new-campaign` § 1c runs it; the judgments (which subject a line goes under, what is merged or dropped) are DMC's.
 Only `--start` writes, and only under `adventures/NAME/digests/`; nothing is ever written to the closed campaign. Every
@@ -707,7 +707,7 @@ The full report has a header line, one line per file (path, tokens, budget or li
 dmc module check NAME [--folder PATH]
 ```
 
-Added in spec 012 (issue #179, Phase C). Checks an ingested module in `modules/NAME/` for what keeps [`dmc lookup`](#lookup) from printing one area or one entry, and prints one line per problem, at most 12 (the twelfth then says how many more), and nothing when the module is sound. It reads the files lookup searches (`index.md`, the other top-level markdown and `chapters/`, never `source/`), in memory, and never writes, moves or deletes anything. `dmc-ingest-module` runs it before it reports chapters ready, and `dmc size --check` names a failing module in one `module:` line.
+Added in release 0.4.0 (spec 012, issue #179, Phase C). Checks an ingested module in `modules/NAME/` for what keeps [`dmc lookup`](#lookup) from printing one area or one entry, and prints one line per problem, at most 12 (the twelfth then says how many more), and nothing when the module is sound. It reads the files lookup searches (`index.md`, the other top-level markdown and `chapters/`, never `source/`), in memory, and never writes, moves or deletes anything. `dmc-ingest-module` runs it before it reports chapters ready, and `dmc size --check` names a failing module in one `module:` line.
 
 | Problem | Line |
 |---|---|
@@ -726,7 +726,7 @@ modules/the-sunken-keep/chapters/05-the-hub.md:40 "NPCs in this chapter" holds 4
 
 ## lookup
 
-Added in the next release (spec 009, issue #179).
+Added in release 0.4.0 (spec 009, issue #179).
 
 ```
 dmc lookup SOURCE HEADING... [--folder PATH]
@@ -754,7 +754,7 @@ All of these exit 0. A failure is one line and exit 1: `no heading "<heading>" i
 
 ## recall
 
-Added in the next release (spec 009, issue #179).
+Added in release 0.4.0 (spec 009, issue #179).
 
 ```
 dmc recall [NAME] WORDS... [--folder PATH]

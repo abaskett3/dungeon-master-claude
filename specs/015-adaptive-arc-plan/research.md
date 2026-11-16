@@ -222,3 +222,20 @@ Measurements were taken on `015-adaptive-arc-plan` at `5a03569` on 2026-11-15.
 73: structure, budgets, clocks, milestones; migration 008), `.docs/user-guide.md` § Talking to DMC (line 115: DMC may
 offer to skip ahead when a scene is done, and you can say no), and any document that lists the migrations or their
 checks (found by a search for `007-arc-plan-everywhere` and `dm-notes-have-arc-plan` at implementation).
+
+## R15. After the first full save on a migrated campaign
+
+- **What happened** (2026-11-15, `arc-rorns`, a copy of `rorns-landing` migrated 006 to 008): the full save cut the
+  finished stages to a line each, but revised nothing (stages 3 and 4 still have Auntie Hush, dead at s28.1, as their
+  villain), added no budgets, start session, milestone equivalents or clocks, and deleted the Arc plan's template
+  comment to bring the section from 2.6k toward its 1.5k budget, so `arc-plan-guidance-current` failed.
+- **Causes**: Revise read as "an outcome this session", and s54 had no scene; nothing told the full save to bring an
+  older plan up to the template's shape, since Pace and Clocks only compare fields already there; and the section's
+  budget counted the comment (about 480 tokens of 1,500), the obvious thing to cut.
+- **Decision** (the maintainer's): the Arc plan's budget counts its content only (`Flags.ArcPlanContentTokens`,
+  comments and heading left out; `Budgets.DmNotesArcPlan`'s comment says so); the comment still counts in
+  `dm-notes.md`'s total. The full save's Arc plan bullet adds what the plan lacks from what the files say and never
+  deletes a template comment; Revise acts on a stage that is untrue "whenever play made it so". Full save +263 bytes
+  (12,783 in all, +1,345 on 11,438).
+- **Rejected**: keeping the budget and forbidding the deletion (leaves the plan about 1k tokens, too little for a long
+  campaign); raising the budget (the comment still competes with the plan).

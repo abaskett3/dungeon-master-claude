@@ -126,9 +126,10 @@ internal static partial class Flags
             int? budget = section.Heading.StartsWith(AboutThePlayer, StringComparison.OrdinalIgnoreCase) ? Budgets.DmNotesAboutThePlayer
                 : section.Heading.Equals(ArcPlan, StringComparison.OrdinalIgnoreCase) ? Budgets.DmNotesArcPlan
                 : null;
-            if (budget is { } b && section.Tokens > b)
+            long tokens = budget == Budgets.DmNotesArcPlan ? ArcPlanContentTokens(part.Lines) : section.Tokens;
+            if (budget is { } b && tokens > b)
                 yield return new Flag(FlagKind.SectionOverBudget, part.Path,
-                    $"{part.Path} {section.Heading}: {Fmt(section.Tokens)}, over its {Fmt(b)} budget", true);
+                    $"{part.Path} {section.Heading}: {Fmt(tokens)}, over its {Fmt(b)} budget", true);
         }
 
         if (part.Sections.Any(s => s.Heading.Contains("Mix tracker", StringComparison.OrdinalIgnoreCase)))
@@ -147,6 +148,16 @@ internal static partial class Flags
         if (done > 0)
             yield return new Flag(FlagKind.DoneLines, part.Path, $"{part.Path}: {Count(done, "line")} marked DONE or RESOLVED", true);
     }
+
+    /// <summary>
+    /// The estimated tokens of the Arc plan's own content: its lines outside HTML comments, heading left out (spec 015,
+    /// the maintainer's clarification after the first full save on a migrated campaign). The template's comment is fixed
+    /// guidance of about 480 tokens; counted against the section's budget, it was the obvious thing for a full save to
+    /// delete. It is still read at resume and counted in <c>dm-notes.md</c>'s total.
+    /// </summary>
+    /// <param name="lines">The lines of <c>dm-notes.md</c>.</param>
+    static long ArcPlanContentTokens(IReadOnlyList<Line> lines) =>
+        Measurement.ContentLines(Measurement.SectionLines(lines, ArcPlan)).Sum(l => (long)l.Bytes) / 4;
 
     /// <summary>The lines of a file without one <c>## </c> section (its heading included), compared ignoring case.</summary>
     /// <param name="lines">The lines of a file.</param>

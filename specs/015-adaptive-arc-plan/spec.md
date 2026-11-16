@@ -84,6 +84,10 @@ is now at session 54.
 - Q: When does a planned stage count as put off? → A: Either when the player says they will do it later or turns down
   its hook, or when its session budget, counted from when it became the current stage, runs out before it has
   started.
+- Q (from the first full save on the migrated Rorn's Landing copy, which filled in nothing and deleted the Arc plan's
+  comment to come under its 1.5k budget): how should the comment and the budget work? → A: The Arc plan's `dmc size`
+  budget counts its content only, comments left out; the full save never deletes a template comment. The full save
+  also adds what an older plan lacks, and Revise acts on a stage that is untrue whenever play made it so.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -303,7 +307,7 @@ open exchange and a beat mid-scene get none; a declined offer is not repeated in
 - **FR-009**: The plan MUST count every line and byte added to `kit/dm-rules.md`, to `dmc-new-campaign`, to
   `dmc-campaign-full-save` and to the template, and the estimated tokens each costs where it is paid (every turn, at
   campaign creation, at each full save, at each resume). The template's Arc plan section MUST stay within its `dmc size`
-  budget when filled for a seven-stage arc (the most FR-002 allows), and the plan MUST show it with a `dmc size` result on a filled example.
+  budget when filled for a seven-stage arc (the most FR-002 allows), and the plan MUST show it with a `dmc size` result on a filled example. That budget counts the section's content, its comment left out, so the full save never deletes the guidance to fit (clarification after the first full save).
 - **FR-010**: Each rule MUST have one home (Development 6): the plan names it for each of FR-001 to FR-007 (template
   comment for what the plan holds, full save for when it is checked and revised, `dm-rules.md` for the jump offer,
   `dmc-new-campaign` for the structure guidance), and copies none.

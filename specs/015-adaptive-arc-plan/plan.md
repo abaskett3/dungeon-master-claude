@@ -39,9 +39,9 @@ in the rest. See [research.md](research.md) and the exact wording in [contracts/
 | Where | Lines | Bytes | Estimated tokens (bytes / 4) | Paid |
 |---|---|---|---|---|
 | `kit/dm-rules.md` § Narration | 0 | +267 | about 67 | every turn |
-| `dmc-campaign-full-save` step 5 | +3 | +1,082 | about 270 | each full save |
-| `dmc-new-campaign` step 4 and new 4a | +21 | +3,134 | about 784 (767 for 4a alone) | campaign creation; a full save that plans or revises (reads 4a only) |
-| Template: Arc plan and Antagonists comments | 0 | +433 | about 108 | every resume of a campaign holding them |
+| `dmc-campaign-full-save` step 5 | +3 | +1,345 (measured; +1,082 before research R15) | about 336 | each full save |
+| `dmc-new-campaign` step 4 and new 4a | +22 | +3,090 (measured) | about 773 | campaign creation; a full save that plans or revises (reads 4a only) |
+| Template: Arc plan and Antagonists comments | 0 (+1 for Money) | +439 (measured) | about 110 | every resume of a campaign holding them |
 | Migration 008 | new file | | | once, when a campaign is migrated |
 
 **Constraints**: `kit/dm-rules.md` stays at 212 lines and grows by at most 300 bytes (FR-008); the Arc plan section

@@ -567,8 +567,22 @@ public sealed class SizeLibraryTests
         Write(_root, "story/dm-notes.md", Notes(about: Filler(Budgets.DmNotesAboutThePlayer * 4 - 40), arcPlan: Filler(Budgets.DmNotesArcPlan * 4 - 40)));
         Assert.IsEmpty(FlagsOf(FlagKind.SectionOverBudget));
         Write(_root, "story/dm-notes.md", Notes(about: Filler(Budgets.DmNotesAboutThePlayer * 4 + 400), arcPlan: Filler(Budgets.DmNotesArcPlan * 4 + 400)));
-        CollectionAssert.AreEqual(new[] { "story/dm-notes.md Arc plan: 1.7k, over its 1.5k budget", "story/dm-notes.md About this player: 2.2k, over its 2k budget" },
+        CollectionAssert.AreEqual(new[] { "story/dm-notes.md Arc plan: 1.6k, over its 1.5k budget", "story/dm-notes.md About this player: 2.2k, over its 2k budget" },
             FlagsOf(FlagKind.SectionOverBudget).Select(f => f.Line).ToArray());
+    }
+
+    /// <summary>
+    /// Spec 015: the Arc plan's budget counts its own content, not the template's comment, so a full save is never pushed
+    /// to delete the guidance to fit; the comment still counts toward the file's total.
+    /// </summary>
+    [TestMethod]
+    public void TheArcPlansBudgetLeavesItsCommentOut()
+    {
+        string comment = "<!--\n" + Filler(Budgets.DmNotesArcPlan * 4) + "\n-->\n";
+        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(Budgets.DmNotesArcPlan * 4 - 400)));
+        Assert.IsEmpty(FlagsOf(FlagKind.SectionOverBudget), "a large comment and a plan under budget");
+        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(Budgets.DmNotesArcPlan * 4 + 400)));
+        StringAssert.StartsWith(FlagsOf(FlagKind.SectionOverBudget).Single().Line, "story/dm-notes.md Arc plan: 1.6k");
     }
 
     [TestMethod]

@@ -123,13 +123,13 @@ leaves a plan nothing contradicted unchanged.
 
 - [X] T014 [US2] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, change the Arc plan bullet and add the Revise
   bullet after it, exactly as [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md) says
-- [ ] T015 [US2] Make the overtaken-plan copy: copy T002's backup of `rorns-landing` to
+- [X] T015 [US2] Make the overtaken-plan copy: copy T002's backup of `rorns-landing` to
   `D:\Claude\test-campaign\adventures\arc-rorns\`; copy `kit/migrations/006-play-cards-and-names.md` (if the folder
   lacks it), `007-arc-plan-everywhere.md` and `008-arc-plan-structure.md` into the folder's `migrations/`, T014's full
   save into `.claude/skills/dmc-campaign-full-save/`, and `kit/dm-rules.md` over the folder's `CLAUDE.md`; make
   `arc-rorns` active; with `artifacts\bin` first on `PATH`, migrate it headless (006, 007, 008) and check
   `dmc campaign verify arc-rorns` passes; keep a copy of its migrated `story/dm-notes.md` in the scratchpad
-- [ ] T016 [US2] Run one full save on `arc-rorns` headless; diff its Arc plan with T015's copy and check SC-002: no
+- [X] T016 [US2] (Ran twice; SC-002 not met, quickstart § Results; the maintainer chose to stop and report) Run one full save on `arc-rorns` headless; diff its Arc plan with T015's copy and check SC-002: no
   stage still ahead rests on Auntie Hush; every stage, thread and foreshadowing line play did not contradict unchanged
   word for word; every milestone not yet awarded anchored, each saying "or a victory of the same weight"; every stage still ahead
   with "about N sessions" and the current stage with "current since sN" (SC-006: the first full save after the
@@ -151,7 +151,7 @@ after (SC-003, checked in Phase 9).
 - [X] T017 [US3] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, add the Clocks bullet after Revise (T022
   later puts Pace between them), exactly as [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md)
   says
-- [ ] T018 [US3] Copy T017's full save into the test folder; run a full save on `arc-rorns` and check every
+- [ ] T018 [US3] (Not run: stopped by the maintainer after T016) Copy T017's full save into the test folder; run a full save on `arc-rorns` and check every
   antagonist in its `story/dm-notes.md` has a next move "by sN" and none is timed by an in-world date alone; record in
   `specs/015-adaptive-arc-plan/quickstart.md` § Results
 
@@ -206,18 +206,18 @@ written when a stage runs over.
 **Purpose**: SC-003 and SC-004 over at least 5 consecutive sessions, as the maintainer asked ("test in play over
 several sessions").
 
-- [ ] T023 Copy the finished `kit/dm-rules.md` (over `CLAUDE.md`), full save, `dmc-new-campaign` and template into
+- [ ] T023 (Not run: stopped by the maintainer after T016) Copy the finished `kit/dm-rules.md` (over `CLAUDE.md`), full save, `dmc-new-campaign` and template into
   the test folder; on `arc-rorns`, play at least 5 sessions headless, each a scripted player brief of several moves
   with at least one scene played to its end with nothing open and one open exchange left hanging, and in one session
   a declined jump offer; run a full save after each; fill in [quickstart.md](quickstart.md) § 5's table per session in
   `specs/015-adaptive-arc-plan/quickstart.md` § Results
-- [ ] T024 Check the run against SC-003 and SC-004: every scene that ended with nothing open got an offer (at least 3);
+- [ ] T024 (Not run: stopped by the maintainer after T016) Check the run against SC-003 and SC-004: every scene that ended with nothing open got an offer (at least 3);
   0 offers in open exchanges, mid-scene or fights; 0 repeats after a decline; a move that came due had its "Show next session:" sign shown in
   the session after (at least 1; if not, report it on issue #181 as evidence for cause 1, research R5); a milestone reached by an equivalent awarded at the next full save; no plan churned and
   no reply hurried for a budget; `dmc size arc-rorns --check` prints no Arc plan line after the last save; if a
   criterion fails, change the wording in its contract and the kit file, re-measure, and rerun the sessions it
   concerns; record the outcome in `specs/015-adaptive-arc-plan/quickstart.md` § Results
-- [ ] T025 Restore `D:\Claude\test-campaign` from T002's backups: move `arc-rorns` to the scratchpad, put back
+- [X] T025 Restore `D:\Claude\test-campaign` from T002's backups: move `arc-rorns` to the scratchpad, put back
   `CLAUDE.md`, `adventures/.active-campaign`, the two skills, the template and `migrations/`, and check
   `adventures/rorns-landing/` matches its backup file for file
 
@@ -227,28 +227,28 @@ several sessions").
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T026 [P] In `.docs/user-guide.md` § Talking to DMC (line 115), add in plain words that when a scene is done DMC
+- [X] T026 [P] In `.docs/user-guide.md` § Talking to DMC (line 115), add in plain words that when a scene is done DMC
   may offer to skip ahead, and you can say no; read § Bringing a campaign up to date and add a line only if it lists
   what migrations do
-- [ ] T027 [P] In `.docs/campaign-files.md`, the `story/dm-notes.md` row (line 73): the Arc plan names its structure
+- [X] T027 [P] In `.docs/campaign-files.md`, the `story/dm-notes.md` row (line 73): the Arc plan names its structure
   and its stages' beats and rough session budgets, milestones are achievements, antagonists carry a next move with its
   session; migration 008 brings older notes' guidance up to date
-- [ ] T028 [P] In `.docs/dmc-reference.md` § Migrations, the list of checks: add `arc-plan-guidance-current` as
+- [X] T028 [P] In `.docs/dmc-reference.md` § Migrations, the list of checks: add `arc-plan-guidance-current` as
   `src/Dmc.Cli/Campaign/MigrationChecks.cs` describes it; search `.docs/` for `007-arc-plan-everywhere` and
   `dm-notes-have-arc-plan` and add migration 008 wherever the migrations are listed
-- [ ] T029 [P] In `.docs/decisions.md`, add the entry "Arcs are built on a story structure and revised when play
+- [X] T029 [P] In `.docs/decisions.md`, add the entry "Arcs are built on a story structure and revised when play
   overtakes them (issues #217, #181)": the decision (step 4a, the template, the full save's checks, the jump offer,
   migration 008), the reason (Dungeon Master 1; #181's evidence and principle), the clarifications, the measured cost
   (plan § Performance Goals, updated to the measured figures), the play test's results, Limits (causes 1 and 7 wait;
   the unverified items in research R1, R2, R6; fixture 007's `after/` keeps PR #221's comment, which a run of 007 now
   writes as the new one, since a fixture records its own standard), and the sources (research R1 to R14); and in the entry "The
-  constitution states principles of its own (version 3.0.0)", remove the Dungeon Master 1 item from Limits (line 731)
-- [ ] T030 [P] In `.docs/roadmap.md`, add a row for issue #217 and issue #181's causes 2 to 6: changes the binary (the
+  constitution states principles of its own (version 3.0.0)", mark the Dungeon Master 1 item in Limits met (line 731), as spec 014 marked Dungeon Master 4
+- [X] T030 [P] In `.docs/roadmap.md`, add a row for issue #217 and issue #181's causes 2 to 6: changes the binary (the
   check) and the kit; migration 008, standard 8; the play tests; causes 1 and 7 and the review after release (SC-007)
   pending
-- [ ] T031 Update `specs/015-adaptive-arc-plan/plan.md` § Performance Goals and `research.md` R8 to R11 to the
+- [X] T031 Update `specs/015-adaptive-arc-plan/plan.md` § Performance Goals and `research.md` R8 to R11 to the
   measured figures if any differ from the plan's
-- [ ] T032 Run the whole suite, `dotnet test tests/Dmc.Tests`, after a fresh publish: all pass but the known skips
+- [X] T032 Run the whole suite, `dotnet test tests/Dmc.Tests`, after a fresh publish: all pass but the known skips
   from T001; then check each rule has one home (FR-010): search `kit/skills/dmc-campaign-full-save/SKILL.md`,
   `kit/templates/campaign/story/dm-notes.md` and `kit/dm-rules.md` for any copy of step 4a's revision rules ("word for
   word", "never restart") or of § Compaction's break test, and replace a copy with a pointer

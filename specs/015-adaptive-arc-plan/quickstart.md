@@ -104,3 +104,25 @@ milestone held back by a stage put off, no feedback entry about a jump offer.
   before this change. **Pass (SC-001).**
 - The scratchpad was lost during the run; the backups were copied to `D:\Claude\backup-015` first, with both creation
   runs (`arc-new-test-1`, `arc-new-test-2`) and the migration test (`arc-mig-test`).
+
+### T015, T016: the overtaken plan (SC-002, SC-006) — not met
+
+- **Migration** of `arc-rorns` (a copy of `rorns-landing`, standard 5) through 006, 007 and 008, headless: verified
+  (4,593 units, 4,542 matched, 51 reworded, 0 dropped), standard 8. The old "five stages and the hero's journey" moved
+  inside the Arc plan word for word (2.6k, over its 1.5k budget); the Antagonists section, which had no comment, got the
+  template's.
+- **First full save** (after `/dmc-resume-campaign`; session 54 had no scene): finished stages 1 and 2 cut to a line
+  each and the unplayed hooks kept; but stages 3 and 4 still have Auntie Hush (dead at s28.1) as the Siege's attacker
+  and the final boss, the Antagonists section still calls her "the main antagonist", no budget, start session,
+  milestone equivalent or clock was added, and the Arc plan's template comment was deleted to approach the budget
+  (`arc-plan-guidance-current` then failed). **Fail.** Fixes (research R15): the Arc plan's budget counts content only;
+  the full save never deletes a template comment, adds what an older plan lacks, and revises a stage untrue "whenever
+  play made it so".
+- **Second full save**, from the migrated notes again with the fixed full save: the comment kept (the budget fix
+  works), finished stages cut; but Hush still in stages 3 and 4 and in Antagonists, though the plan's own Stage 2 line
+  says "Hush dead", and still no budgets, start session, equivalents or clocks. The report shows a save that treated a
+  session with no scene as "nothing new to record" and trimmed for size only. **Fail.**
+- **The maintainer's decision** (2026-11-15): stop and report. Ship what works (the template's guidance, step 4a,
+  migration 008, the content-only budget, the jump offer) and record the full save's revision as failing in play, to
+  take up under issue #181 with cause 1 (DMC carries notes without acting on them). SC-002, SC-003 (the clocks and
+  milestones in play) and SC-004 (the jump offer in play) are not shown; Phase 9's five sessions were not run.

@@ -159,20 +159,20 @@ campaign lands in Character arcs (US3 scenarios 1 and 3, SC-006).
   fiction (issue #216)"
 - [X] T016 [P] `.docs/roadmap.md`: the row for issue #216
 - [X] T017 Restore `D:\Claude\test-campaign` after the first play test
-- [ ] T030 [P] In `.docs/user-guide.md` § Talking to DMC, change "gives you another way forward" to "offers a way
+- [X] T030 [P] In `.docs/user-guide.md` § Talking to DMC, change "gives you another way forward" to "offers a way
   toward what you wanted"; read § Bringing a campaign up to date and add a line only if it lists what migrations do
-- [ ] T031 [P] In `.docs/campaign-files.md`, the `story/dm-notes.md` row (line 73): the Arc plan's character arcs are
+- [X] T031 [P] In `.docs/campaign-files.md`, the `story/dm-notes.md` row (line 73): the Arc plan's character arcs are
   kept in every campaign, a module campaign included, and the rest of the plan for a homebrew campaign or after the
   module
-- [ ] T032 [P] In `.docs/decisions.md`, revise the entry "A bold idea gets "yes, and", a ruled-out one "no, but" in
+- [X] T032 [P] In `.docs/decisions.md`, revise the entry "A bold idea gets "yes, and", a ruled-out one "no, but" in
   the fiction (issue #216)": line 166's way-forward wording and its reason; the cost (0 lines, 719 bytes, about 180
   tokens per turn; the cap rise of 593; the template comment's 21 tokens per resume); the clarifications after the
   play test; the template change and migration 007 (standard 7, its check, what it moves and why it demotes headings
   instead of renaming, research R15); the wrong-premise rule kept (R13); and Limits rewritten from both play tests
   and the live run
-- [ ] T033 [P] In `.docs/roadmap.md`, the row for issue #216: changes the binary (the check) and the kit; migration
+- [X] T033 [P] In `.docs/roadmap.md`, the row for issue #216: changes the binary (the check) and the kit; migration
   007, standard 7; both play tests and the live run; the review after release (SC-005) pending
-- [ ] T034 Run the whole suite, `dotnet test tests/Dmc.Tests`, after a fresh publish: all pass but the known skips
+- [X] T034 Run the whole suite, `dotnet test tests/Dmc.Tests`, after a fresh publish: all pass but the known skips
 - [ ] T035 Push the branch; open the PR (the user runs `/speckit-converge` first) with `Closes #216`, what changed
   and why, the sources, the measured cost, both play tests and the live run, the documents changed, and that it adds
   migration 007; set `shipped:` in `kit/migrations/007-arc-plan-everywhere.md` to the PR's number and push; check the

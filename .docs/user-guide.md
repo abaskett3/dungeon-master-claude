@@ -112,7 +112,7 @@ A campaign you have closed (see [Closing a campaign](#closing-a-campaign)) is no
 
 DMC will not act or speak for your character, end your turn, or spend a limited resource without asking. Talking in character, to companions or to a pet costs no action by default.
 
-When you try something bold, DMC lets it happen and often adds something you can use. When the world rules an idea out, DMC turns it aside inside the story and gives you another way forward; it never tells you the story does not allow it. If your idea rests on something DMC knows is wrong (where something is, or what you carry), it tells you out of character first. The first time your party attacks someone the main story needs, that person stops the attack and no one dies; after that, the fight is real. When your character says what they want, DMC works it into the main story. These rules are in `CLAUDE.md` § Fun first.
+When you try something bold, DMC lets it happen and often adds something you can use. When the world rules an idea out, DMC turns it aside inside the story and offers a way toward what you wanted; it never tells you the story does not allow it. If your idea rests on something DMC knows is wrong (where something is, or what you carry), it tells you out of character first. The first time your party attacks someone the main story needs, that person stops the attack and no one dies; after that, the fight is real. When your character says what they want, DMC works it into the main story. These rules are in `CLAUDE.md` § Fun first.
 
 ### Dice
 

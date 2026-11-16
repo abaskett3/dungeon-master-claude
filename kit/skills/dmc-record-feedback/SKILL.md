@@ -29,6 +29,7 @@ Create `feedback/YYYY-MM-DD-<slug>.md` from `templates/feedback.md` with one Wri
 - Set `source:` to `player`, or `DMC` for a slip of your own, and pick the `category:` the template defines.
 - Set `dmc:` to the version number alone: run `dmc --version` and drop the leading `dmc ` (`dmc: 0.2.0`); it is the only shell command this step runs.
 - Done in play: a rewind or ruling you made, or "none".
+- If the player asks why it happened, name the rule or step that was skipped and the moment it was skipped. Do not offer a habit or a promise as the fix: restating a rule changes nothing, and the fix is the worker's.
 - Point at campaign files only under Context.
 
 ## 4. Tell the player

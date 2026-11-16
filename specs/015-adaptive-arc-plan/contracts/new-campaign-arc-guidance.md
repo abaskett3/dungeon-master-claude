@@ -33,7 +33,7 @@ A homebrew arc is built on a story structure, named on the Arc plan's first line
 
 **Budgets.** Give each stage a rough number of sessions, from how long this player's stages have run (About this player); a crisis or a resolution is usually one or two. A budget is a measure of pace, never a reason to rush the player.
 
-**Milestones.** Write each as an achievement and the level it gives, "or a victory of the same weight", and place it at a turning point or the climax, not at a place the party must visit. Keep milestones and money on separate lines.
+**Milestones.** Write each as an achievement and the level it gives, "or a victory of the same weight", and place it at a turning point or the climax, not at a place the party must visit.
 
 **Revising.** When play makes a stage still ahead untrue (an antagonist dead, the goal changed, a stage put off), revise; never restart. Keep every stage, thread, secret, foreshadowing line and character arc that play did not contradict, word for word. Change only what is untrue. Grow anything new from what has happened and the threads already planted: a new antagonist or stage comes out of established events. Keep the arc's stakes, its theme and every beat not yet played, through a resolution: the arc still escalates and still ends. Re-anchor each milestone not yet awarded in the revised stages. A revision changes what the world does next, never what the player chose or what is canon.
 ```

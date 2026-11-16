@@ -1202,10 +1202,11 @@ public sealed partial class ToolkitTests
     const int DmRulesLines = 212;
 
     /// <summary>
-    /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043, and spec 014 (FR-008, at most 593)
-    /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn).
+    /// The byte cap of <c>kit/dm-rules.md</c>: spec 013 (FR-028) held it at 30,043; spec 014 (FR-008, at most 593)
+    /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn); and
+    /// spec 015 (FR-008, at most 300) raised it by 267 for the jump offer in § Narration (about 67 more tokens per turn).
     /// </summary>
-    const int DmRulesBytesAllowed = 30_631;
+    const int DmRulesBytesAllowed = 30_898;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
@@ -1217,7 +1218,19 @@ public sealed partial class ToolkitTests
         int lines = rules.TrimEnd('\n').Split('\n').Length;
         Assert.IsLessThanOrEqualTo(DmRulesLines, lines, $"kit/dm-rules.md has {lines} lines; spec 013 FR-028 allows at most {DmRulesLines}");
         int bytes = System.Text.Encoding.UTF8.GetByteCount(rules);
-        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; spec 014 FR-008 allows at most {DmRulesBytesAllowed}");
+        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; specs 014 and 015 FR-008 allow at most {DmRulesBytesAllowed}");
+    }
+
+    /// <summary>
+    /// Spec 015 FR-007: § Narration of <c>kit/dm-rules.md</c> offers the jump once a scene's point has landed, judged by
+    /// the break test of § Compaction and long sessions, which it points at instead of copying.
+    /// </summary>
+    [TestMethod]
+    public void NarrationOffersTheJumpByTheBreakTest()
+    {
+        string narration = SectionOf(Read("kit/dm-rules.md"), "Narration");
+        StringAssert.Contains(narration, "(\"Skip to the morning?\")", "spec 015 FR-007");
+        StringAssert.Contains(narration, "(the break test, § Compaction and long sessions)", "spec 015 FR-007, FR-010");
     }
 
     /// <summary>
@@ -1265,6 +1278,38 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(arc, "about 4 sessions", "spec 015 FR-006");
         StringAssert.Contains(arc, "or a victory of the same weight", "spec 015 FR-005");
         StringAssert.Contains(SectionOf(template, "Antagonists"), "next move", "spec 015 FR-004");
+    }
+
+    /// <summary>
+    /// Spec 015 FR-001: <c>dmc-new-campaign</c> carries the arc guidance in step 4a, on the Five Commandments and the
+    /// Hero's Journey, and step 4 points to it.
+    /// </summary>
+    [TestMethod]
+    public void NewCampaignCarriesTheArcGuidanceInStepFourA()
+    {
+        string skill = Read("kit/skills/dmc-new-campaign/SKILL.md");
+        string guidance = SectionOf(skill, "4a. Designing the arc");
+        StringAssert.Contains(guidance, "Five Commandments", "spec 015 FR-001");
+        StringAssert.Contains(guidance, "Hero's Journey", "spec 015 FR-001");
+        StringAssert.Contains(SectionOf(skill, "4. The world behind the curtain"), "step 4a", "step 4 points at step 4a");
+    }
+
+    /// <summary>
+    /// Spec 015 FR-003 to FR-006, FR-010: the full save's arc check plans and revises by <c>dmc-new-campaign</c> step 4a,
+    /// which it points at instead of copying, and checks pace and the antagonists' clocks, in the contract's order.
+    /// </summary>
+    [TestMethod]
+    public void TheFullSaveRevisesByStepFourAAndChecksPaceAndClocks()
+    {
+        string save = SectionOf(Read("kit/skills/dmc-campaign-full-save/SKILL.md"), "5. DM notes");
+        StringAssert.Contains(save, "`dmc-new-campaign` step 4a", "spec 015 FR-003, FR-010");
+        string[] order = ["**Arc plan.**", "**Revise.**", "**Pace.**", "**Clocks.**", "**Mix.**", "**Progression.**", "**Promises.**"];
+        int[] at = [.. order.Select(b => save.IndexOf(b, StringComparison.Ordinal))];
+        Assert.IsFalse(at.Any(i => i < 0), $"step 5 has every check: {string.Join(", ", order)}");
+        CollectionAssert.AreEqual(at.Order().ToArray(), at, "the checks run in the contract's order");
+        StringAssert.Contains(save, "or a victory of the same weight", "spec 015 FR-005");
+        StringAssert.Contains(save, "`Show next session:`", "spec 015 FR-004");
+        Assert.DoesNotContain("word for word", save, "the rules of a revision live in step 4a only (FR-010)");
     }
 
     [TestMethod]

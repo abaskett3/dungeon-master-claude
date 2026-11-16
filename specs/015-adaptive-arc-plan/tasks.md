@@ -95,14 +95,14 @@ homebrew campaign's Arc plan names its structure, with every beat planned.
 
 **Independent Test**: [quickstart.md](quickstart.md) § 3 (SC-001).
 
-- [ ] T011 [US1] Add a toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, with an XML doc comment naming spec
+- [X] T011 [US1] Add a toolkit test in `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, with an XML doc comment naming spec
   015 FR-001: `kit/skills/dmc-new-campaign/SKILL.md` has a `## 4a. Designing the arc` heading naming "Five
   Commandments" and "Hero's Journey", and step 4 points at step 4a; run it and see it fail
-- [ ] T012 [US1] In `kit/skills/dmc-new-campaign/SKILL.md`, replace step 4's Arc plan sentence (line 96) and insert
+- [X] T012 [US1] In `kit/skills/dmc-new-campaign/SKILL.md`, replace step 4's Arc plan sentence (line 96) and insert
   step 4a after step 4 and before `## 5. Begin`, exactly as
   [contracts/new-campaign-arc-guidance.md](contracts/new-campaign-arc-guidance.md) says; measure (expected +21 lines,
   +3,134 bytes); T011 passes
-- [ ] T013 [US1] Copy T005's template and T012's skill into `D:\Claude\test-campaign` (`templates/campaign/story/`,
+- [X] T013 [US1] Copy T005's template and T012's skill into `D:\Claude\test-campaign` (`templates/campaign/story/`,
   `.claude/skills/dmc-new-campaign/`); create a new homebrew campaign `arc-new-test` headless from a short brief (a
   premise, a PC, one companion, milestone leveling), quickstart § 3; check its `story/dm-notes.md` against SC-001 (a
   Structure line; 5 to 7 stages each naming its beat, what changes and "about N sessions"; "current since s1"; every
@@ -121,7 +121,7 @@ leaves a plan nothing contradicted unchanged.
 
 **Independent Test**: [quickstart.md](quickstart.md) § 4 (SC-002).
 
-- [ ] T014 [US2] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, change the Arc plan bullet and add the Revise
+- [X] T014 [US2] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, change the Arc plan bullet and add the Revise
   bullet after it, exactly as [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md) says
 - [ ] T015 [US2] Make the overtaken-plan copy: copy T002's backup of `rorns-landing` to
   `D:\Claude\test-campaign\adventures\arc-rorns\`; copy `kit/migrations/006-play-cards-and-names.md` (if the folder
@@ -148,7 +148,7 @@ sign of it.
 **Independent Test**: after a full save every antagonist has "by sN"; a due move gets its sign, shown the session
 after (SC-003, checked in Phase 9).
 
-- [ ] T017 [US3] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, add the Clocks bullet after Revise (T022
+- [X] T017 [US3] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, add the Clocks bullet after Revise (T022
   later puts Pace between them), exactly as [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md)
   says
 - [ ] T018 [US3] Copy T017's full save into the test folder; run a full save on `arc-rorns` and check every
@@ -165,7 +165,7 @@ yet awarded.
 **Independent Test**: a milestone reached by an equivalent is awarded at the next full save (SC-003, checked in
 Phase 9); T016 already checks the re-anchoring (SC-002).
 
-- [ ] T019 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, change the Progression bullet exactly as
+- [X] T019 [US4] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, change the Progression bullet exactly as
   [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md) says
 
 ---
@@ -176,10 +176,10 @@ Phase 9); T016 already checks the re-anchoring (SC-002).
 
 **Independent Test**: [quickstart.md](quickstart.md) § 5's jump columns (SC-004).
 
-- [ ] T020 [US6] In `kit/dm-rules.md` § Narration (line 195), insert the sentence of
+- [X] T020 [US6] In `kit/dm-rules.md` § Narration (line 195), insert the sentence of
   [contracts/dm-rules-narration.md](contracts/dm-rules-narration.md) after "(a running clock or threat still acts)."
   and before "A beat with no decision in it"; no other line changes; measure: 212 lines, 30,898 bytes (+267)
-- [ ] T021 [US6] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to the measured size from
+- [X] T021 [US6] In `tests/Dmc.Tests/Toolkit/ToolkitTests.cs`, set `DmRulesBytesAllowed` to the measured size from
   T020 and say in its XML doc comment that spec 015 FR-008 (at most 300) raised it by 267 for the jump offer (about 67
   more tokens per turn); keep the assertion messages naming the specs; add a test, with an XML doc comment naming spec
   015 FR-007, that § Narration contains "Skip to the morning?" and "the break test"; run the toolkit tests
@@ -194,7 +194,7 @@ the player.
 **Independent Test**: [quickstart.md](quickstart.md) § 5's "Hurried for budget" column (SC-004), and a pace note
 written when a stage runs over.
 
-- [ ] T022 [US5] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, add the Pace bullet between Revise and
+- [X] T022 [US5] In `kit/skills/dmc-campaign-full-save/SKILL.md` step 5, add the Pace bullet between Revise and
   Clocks, exactly as [contracts/full-save-arc-check.md](contracts/full-save-arc-check.md) says; check the list now
   reads Arc plan, Revise, Pace, Clocks, Mix, Progression, Promises; measure (expected +3 lines, +1,082 bytes on
   T001's baseline)

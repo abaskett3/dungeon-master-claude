@@ -83,3 +83,24 @@ milestone held back by a stage put off, no feedback entry about a jump offer.
   `--model sonnet --effort high` showed What changes and "Declared drops: none", backed up on "yes", replaced both
   template comments and kept the player's own note. `dmc campaign verify` passed (78 of 78 units matched), the standard
   is current, and all four files are byte for byte the fixture's `after/`. Pass (SC-006, first half).
+
+### T011 to T013: a new campaign (SC-001)
+
+- Step 4a and step 4's sentence added to `dmc-new-campaign`: 127 lines, 16,010 bytes (+22 lines, +3,090; the plan
+  counted 21 lines and +3,134 before step 4a's "Keep milestones and money on separate lines" was dropped, below).
+  The toolkit tests pass (103 of 103, then 105 of 105 with the full save's and § Narration's tests).
+- **First run** (`--model sonnet --effort high`, one headless message giving all of session zero): the Arc plan named
+  the Five Commandments, six stages each naming its beat with "about N sessions", the first "current since s1", every
+  antagonist's next moves "by sN", and the level 4 and 5 milestones "or a victory of the same weight" (level 6 said
+  "however the player does it"). But Progression held milestones and money on one line of 490 characters, despite
+  step 4a, because the template's Progression bullet asked for both. **Fix**: the template's Progression bullet is
+  split into Progression and Money (the Arc plan comment is now 1,917 bytes, +375), and step 4a's sentence about
+  separate lines is dropped, so the rule has one home.
+- **Second run**, the same brief: Structure named; seven stages (progressive complication over three), each naming
+  its beat with a budget, the first "current since s1"; every milestone "or a victory of the same weight"; money on its
+  own line; no Arc plan line over 400 characters; every antagonist a next move "by sN" (the fourth entry, a witness,
+  is marked "not an antagonist"). `dmc size --check` prints no Arc plan line; the section measures 1.5k, at its budget.
+  Lines over 400 characters remain in other sections (the central conflict, Antagonists, Opposition, Secrets), as
+  before this change. **Pass (SC-001).**
+- The scratchpad was lost during the run; the backups were copied to `D:\Claude\backup-015` first, with both creation
+  runs (`arc-new-test-1`, `arc-new-test-2`) and the migration test (`arc-mig-test`).

@@ -18,7 +18,8 @@ The current arc of a homebrew campaign, or the stretch after a module ends; in a
 - Character arcs: for the PC and each companion, what they want or must face in this arc, how the main plot meets it, and a moment that tests it.
 - Side quests: two or three short ones tied to the main story, with a reward.
 - The party's gaps: what it cannot do (no healing, no answer to magic) and how the story offers it (an ally, items, a trainer, a place to buy), or which threats are chosen so it need not.
-- Progression: under milestone leveling, each milestone as an achievement and the level it gives, "or a victory of the same weight"; the ways to earn money (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
+- Progression: under milestone leveling, each milestone as an achievement and the level it gives, "or a victory of the same weight".
+- Money: the ways to earn it (rewards, bounties, treasure, paid work, things to sell) and things worth buying.
 - Wonder: other peoples, magic, monsters and marvels that appear in each stage.
 
 Mark a stage done when it ends, cut to one line (what changed), and a milestone awarded when it is given; delete finished beats. The full save's check of what was last played is one "Last played" line at the end of this section, overwritten each save, never a log. Keep the section short: the full save checks its size with `dmc size`.

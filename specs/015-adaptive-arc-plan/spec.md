@@ -318,7 +318,8 @@ open exchange and a beat mid-scene get none; a declined offer is not repeated in
 - **FR-012**: The documents MUST be updated in the same PR (Documentation 4): at least `.docs/decisions.md`,
   `.docs/roadmap.md`, `.docs/campaign-files.md` for the Arc plan and Antagonists, and any document that names the
   example shape or lists the migrations. `decisions.md`'s Limits under "The constitution states principles of its own
-  (version 3.0.0)" MUST drop the Dungeon Master 1 item this spec closes.
+  (version 3.0.0)" MUST mark the Dungeon Master 1 item met by this change, as its Dungeon Master 4 item is marked by
+  spec 014's entry.
 - **FR-013**: The PR MUST say `Closes #217` and `Part of #181`; #181 stays open for causes 1 and 7.
 
 ### Key Entities

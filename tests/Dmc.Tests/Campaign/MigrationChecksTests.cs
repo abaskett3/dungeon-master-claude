@@ -2,7 +2,7 @@ using Dmc.Campaign;
 
 namespace Dmc.Tests.Campaign;
 
-/// <summary>The five built-in shape checks a migration names (research R7), as unit tests over hand-made campaign files.</summary>
+/// <summary>The built-in shape checks a migration names (spec 005 research R7), as unit tests over hand-made campaign files.</summary>
 [TestClass]
 public sealed class MigrationChecksTests
 {
@@ -279,5 +279,50 @@ public sealed class MigrationChecksTests
         CollectionAssert.AreEqual(new[] { "people-entries-named: story/canon.md People: an entry with no bold name first: - Brenna runs the mill (s1)." },
             Run("people-entries-named", now: new() { ["story/canon.md"] = canon }), "Places is not checked");
         Assert.IsEmpty(Run("people-entries-named", now: new() { ["story/canon.md"] = "# Canon\n\n## Rulings\n" }), "no People section");
+    }
+
+    // ---------- dm-notes-have-arc-plan (migration 007, spec 014) ----------
+
+    /// <summary>The template's Arc plan comment, whose own Character arcs line is guidance, not a plan.</summary>
+    const string ArcPlanComment = "<!--\nThe current arc of a homebrew campaign.\n\n- Character arcs: for the PC and each companion, what they want.\n-->\n";
+
+    /// <summary>Runs <c>dm-notes-have-arc-plan</c> over one <c>story/dm-notes.md</c>.</summary>
+    /// <param name="notes">The file's text.</param>
+    static string[] RunArcPlan(string notes) =>
+        Run("dm-notes-have-arc-plan", now: new() { ["story/dm-notes.md"] = notes });
+
+    /// <summary>A campaign with no <c>story/dm-notes.md</c> is not checked.</summary>
+    [TestMethod]
+    public void ACampaignWithoutDmNotesIsNotCheckedForAnArcPlan() =>
+        Assert.IsEmpty(Run("dm-notes-have-arc-plan", now: new() { ["game-state.md"] = "# Game state\n" }));
+
+    /// <summary>DM notes with no <c>## Arc plan</c> section fail, an arc under another heading included.</summary>
+    [TestMethod]
+    public void DmNotesWithoutAnArcPlanSectionFail() =>
+        CollectionAssert.AreEqual(new[] { "dm-notes-have-arc-plan: story/dm-notes.md has no ## Arc plan section" },
+            RunArcPlan("# DM notes\n\n## The central conflict\n\n## The three acts\n\n### Act 1\n\n- Character arcs: Wren: a boat.\n"));
+
+    /// <summary>An Arc plan whose only Character arcs line is the one inside the template's comment fails.</summary>
+    [TestMethod]
+    public void AnArcPlanWithOnlyTheCommentsCharacterArcsLineFails() =>
+        CollectionAssert.AreEqual(new[] { "dm-notes-have-arc-plan: story/dm-notes.md's Arc plan has no Character arcs line" },
+            RunArcPlan($"# DM notes\n\n## Arc plan\n\n{ArcPlanComment}\n## Antagonists\n\n- Character arcs: not in the Arc plan.\n"));
+
+    /// <summary>
+    /// An Arc plan with a Character arcs line passes, plain or bold, in any case, or as a subheading (one step 2 of
+    /// migration 007 may have demoted), and after a <c>### </c> subsection, which does not end the section.
+    /// </summary>
+    /// <param name="line">The Character arcs line.</param>
+    [TestMethod]
+    [DataRow("- Character arcs: Wren: a boat of her own; the ferry war is how she earns it.")]
+    [DataRow("- **Character arcs**: Wren: a boat of her own.")]
+    [DataRow("- character arcs: none yet")]
+    [DataRow("### Character arcs\n\n- Wren: a boat of her own.")]
+    [DataRow("#### Character arcs\n\n- Wren: a boat of her own.")]
+    public void AnArcPlanWithACharacterArcsLinePasses(string line)
+    {
+        Assert.IsEmpty(RunArcPlan($"# DM notes\n\n## arc plan\n\n{ArcPlanComment}\n{line}\n\n## Antagonists\n"));
+        Assert.IsEmpty(RunArcPlan($"# DM notes\n\n## Arc plan\n\n{ArcPlanComment}\n### The three acts\n\n#### Act 1\n\n{line}\n\n## Antagonists\n"),
+            "a ### subsection stays inside the Arc plan");
     }
 }

@@ -173,7 +173,7 @@ campaign lands in Character arcs (US3 scenarios 1 and 3, SC-006).
 - [X] T033 [P] In `.docs/roadmap.md`, the row for issue #216: changes the binary (the check) and the kit; migration
   007, standard 7; both play tests and the live run; the review after release (SC-005) pending
 - [X] T034 Run the whole suite, `dotnet test tests/Dmc.Tests`, after a fresh publish: all pass but the known skips
-- [ ] T035 Push the branch; open the PR (the user runs `/speckit-converge` first) with `Closes #216`, what changed
+- [X] T035 Push the branch; open the PR (the user runs `/speckit-converge` first) with `Closes #216`, what changed
   and why, the sources, the measured cost, both play tests and the live run, the documents changed, and that it adds
   migration 007; set `shipped:` in `kit/migrations/007-arc-plan-everywhere.md` to the PR's number and push; check the
   description with `gh pr view <n> --json body`

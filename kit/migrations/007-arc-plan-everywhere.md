@@ -1,7 +1,7 @@
 ---
 standard: 7
 title: Every campaign's DM notes have an Arc plan, with the characters' arcs
-shipped: issue #216
+shipped: PR #221
 touches: [story/dm-notes.md]
 drops: []
 checks: [dm-notes-have-arc-plan]

@@ -333,3 +333,14 @@ rules, then the five sessions together, then the documents. One PR at the end.
 - Every type and member added or changed in code gets an XML doc comment, private ones included (`CLAUDE.md`
   § Documentation).
 - Commit after each phase.
+
+---
+
+## Phase 11: Convergence
+
+- [X] T034 In `specs/015-adaptive-arc-plan/spec.md`, set **Status** to "Implemented in PR #228; SC-002 to SC-004 not met", and add under each of SC-002, SC-003 and SC-004 a line saying what the headless tests found (two full saves on the overtaken plan revised nothing and filled in nothing; the five sessions were not played) and that the maintainer chose on 2026-11-15 to stop and leave them to issue #181 with cause 1, per SC-002, SC-003, SC-004 (partial)
+- [X] T035 In `specs/015-adaptive-arc-plan/spec.md`, change the Edge Cases' module-campaign bullet and FR-004 to say Clocks runs in every campaign, a module campaign's next move coming from the module (the code review of PR #228, `kit/skills/dmc-campaign-full-save/SKILL.md` Clocks), per spec Edge Cases, FR-004 (contradicts)
+- [X] T036 In `.docs/roadmap.md`, the row "Arcs on a story structure, issue #217, and issue #181 causes 2 to 6": status "Done (PR #228), for the next release", per FR-012 (partial)
+- [X] T037 In `.docs/dmc-reference.md` § Migrations (line 465), add to `arc-plan-guidance-current` that it also fails when a comment opening with the template's older words is left beside the current one, as `src/Dmc.Cli/Campaign/MigrationChecks.cs` `GuidanceCurrent` describes, per FR-012 (partial)
+- [X] T038 In `specs/015-adaptive-arc-plan/research.md` R12 (line 198), correct "migration 007 has not shipped" to: it shipped in 0.4.1 (`.docs/releases.md`), so campaigns at standard 7 hold PR #221's comment, which 008 replaces, per plan: research R12 (partial)
+- [X] T039 In `specs/015-adaptive-arc-plan/contracts/migration-008.md` § The check, add the row "An older template comment beside the current one → the section's older-template-comment line", per plan: contracts/migration-008.md (partial)

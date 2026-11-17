@@ -54,12 +54,6 @@ made up. Reviewer agents get the same rule.
 Check: every claim in the plan or review has a path, a line or a command, or says "unverified".
 Reason: a plan built on a guess breaks what it promised to fix.
 
-### Development 5. A model and effort for each skill
-Every DMC skill and agent MUST name a recommended model and effort level, tuned over time from test, play and
-historical data.
-Check: each skill and agent file names both, and a plan that changes them says what data it rests on.
-Reason: the smallest model that does a task well keeps play cheap without making it worse.
-
 ### Development 6. Each rule has one home
 A rule MUST be written in the one place it belongs, and other places point to it.
 Check: the plan names the home of each rule it adds or changes, and copies none.
@@ -148,7 +142,8 @@ change to that rule is made in its home file. Each principle keeps to its rule, 
 An amendment goes through a pull request under `CLAUDE.md` § Git and GitHub; its PR description says why the
 constitution changed, and `.docs/decisions.md` records the decision. Its version follows Spec Kit's convention:
 MAJOR for a principle removed or redefined, MINOR for a principle or section added, PATCH for clarifications.
+A removed principle's number is not reused, so the numbers older specs cite keep their meaning.
 `/speckit-plan` and `/speckit-analyze` check each feature against every principle, and a plan that breaks one says
 why. The constitution's origin is described in `.docs/development.md` § Spec-driven changes.
 
-**Version**: 3.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-15
+**Version**: 4.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-17

@@ -211,6 +211,43 @@ public sealed class SequelDigestTests
     }
 
     /// <summary>
+    /// A closed campaign whose CRLF files came back as LF from a git checkout is not "changed since it closed": the
+    /// sequel reads it (spec 018 FR-005).
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignCheckedOutWithOtherLineEndingsIsRead()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: c => SetLineEndings(c, crlf: true));
+        Assert.IsGreaterThan(0, SetLineEndings(root.Campaign(ClosedName), crlf: false));
+        var result = Sequel("--list");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>
+    /// A closed campaign cloned onto a new computer has no map page (git leaves it out), and the sequel still reads it
+    /// (spec 018 FR-005, research R5).
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignWithoutItsMapPageIsRead()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: c =>
+        {
+            foreach (string path in CampaignFiles.DerivedFiles)
+            {
+                string file = Path.Combine(c, path.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                File.WriteAllText(file, "drawn at close\n");
+            }
+        });
+        foreach (string path in CampaignFiles.DerivedFiles)
+            File.Delete(Path.Combine(root.Campaign(ClosedName), path.Replace('/', Path.DirectorySeparatorChar)));
+        var result = Sequel("--list");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>
     /// Only the FR-021 sources count: every line of every sheet; § Secrets of the DM notes and § How it ended of the summary
     /// only; never the game state, the player options or a session log.
     /// </summary>

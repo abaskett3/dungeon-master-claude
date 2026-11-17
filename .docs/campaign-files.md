@@ -13,6 +13,8 @@ Everything below is in a **DMC folder**, the folder a player plays in (written b
 ```
 exports/                     one ZIP per dmc campaign export, and the copy of each closing backup, in the DMC folder (whole campaigns, spoilers included)
 adventures/
+  .gitignore, .gitattributes  only when the player keeps adventures/ in git: their copies of templates/adventures.gitignore and templates/adventures.gitattributes
+  .git/                      only then: git's own folder, which no dmc command reads or writes
   player-options.md          the player's preferences for every campaign
   .active-campaign           the folder name of the campaign being played (one line)
   .reviewed-sessions         session ids already reviewed by /review-transcript
@@ -47,7 +49,7 @@ adventures/
       <place>.json           a saved place: layout, no creatures
       <place>.md             longer notes about a place, beside its map
       live.json              the scene on the player's screen: a place plus who stands where
-      live.html, live-data.js, live.png   written by dmc map
+      live.html, live-data.js, live.png   written by dmc map (derived: drawn again from live.json, left out of git, and not compared by verify or restore)
       live-source.txt        what the page was last drawn from (the map file and its base place), written by dmc map; dmc redraw reads it
     module-progress.md       only for a published module (spoilers)
     import/                  only for a campaign imported from elsewhere (the export, kept as the record) or a sequel: progress.md, where an import stands
@@ -55,7 +57,7 @@ adventures/
     legacy.md                only when linked to an open campaign: what changed in the shared world, for the linked campaigns
 ```
 
-`adventures/` is the player's, and `dmc` never writes it (a DMC folder is not a git checkout). A new campaign is a copy of `templates/campaign/` (generated from `kit/templates/campaign/`); the archives, `import/` and the map outputs are created when first needed.
+`adventures/` is the player's, and `dmc` never writes it outside the `dmc campaign` commands. A DMC folder is not a git checkout, but a player may keep `adventures/` in a git repository of their own (user guide § Keeping your campaigns in git), with the rules from `templates/adventures.gitignore` and `templates/adventures.gitattributes`: they leave out the migration backups (a closing backup is kept), the map page files, `.active-campaign`, `.reviewed-sessions`, `.transcript-review/` and the staging folders, and store text with LF. Every file a resume reads or DMC searches is kept, because the Grep tool skips what git ignores; a toolkit test checks both lists. `dmc` runs no git command, and treats a text file whose only change is its line endings, and the map page files, as unchanged when it compares a campaign with a backup. A new campaign is a copy of `templates/campaign/` (generated from `kit/templates/campaign/`); the archives, `import/` and the map outputs are created when first needed.
 
 ## What each file holds
 
@@ -319,4 +321,4 @@ Every keyed area, NPC, stat block, item, spell, rule, player option and handout 
 
 `feedback/` in the DMC folder holds feedback about how DMC itself runs the game, one file per entry, `feedback/YYYY-MM-DD-<slug>.md`, from [`kit/templates/feedback.md`](../kit/templates/feedback.md) (`templates/feedback.md` in the folder). It is outside `adventures/` and every campaign, and entries quote the player and can hold spoilers, and nothing in play reads it: resume and full save never touch it, and `dmc install`, `refresh` and `play` never write it. The `dmc-record-feedback` skill writes entries in play; `review-transcript` writes them from the session logs; `review-feedback` reads them and updates their status.
 
-The frontmatter has `status` (`open`, `filed #N`, `fixed in PR #N`, `not a toolkit problem: <why>` or `moved to player options`), `category`, `source` (`player`, `DMC` or `transcript review`), `recorded` and `dmc`, the version number of `dmc` when the entry was recorded (`dmc: 0.2.0`, from `dmc --version` without the leading `dmc `), so a worker knows which release's prompts the entry is about. A worker finds the open entries with one search for `^status: open`; there is no index. (A DMC folder is not a git checkout, so the Grep tool, which skips git-ignored files, searches the entries without help.) The sections are What happened, What the player said, What should happen instead, Occurrences (a repeat adds a line, not a file), Done in play (a rewind, a ruling, or a stopgap preference line to remove once the fix ships), Context (optional pointers into a campaign) and Worker notes. An entry is written so that it makes sense if the campaign has been deleted. Entries are never deleted: a closed status is the record.
+The frontmatter has `status` (`open`, `filed #N`, `fixed in PR #N`, `not a toolkit problem: <why>` or `moved to player options`), `category`, `source` (`player`, `DMC` or `transcript review`), `recorded` and `dmc`, the version number of `dmc` when the entry was recorded (`dmc: 0.2.0`, from `dmc --version` without the leading `dmc `), so a worker knows which release's prompts the entry is about. A worker finds the open entries with one search for `^status: open`; there is no index. (A DMC folder is not a git checkout, so the Grep tool, which skips git-ignored files, searches the entries without help; a player's repository at `adventures/` does not reach `feedback/`.) The sections are What happened, What the player said, What should happen instead, Occurrences (a repeat adds a line, not a file), Done in play (a rewind, a ruling, or a stopgap preference line to remove once the fix ships), Context (optional pointers into a campaign) and Worker notes. An entry is written so that it makes sense if the campaign has been deleted. Entries are never deleted: a closed status is the record.

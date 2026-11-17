@@ -1,0 +1,22 @@
+# DMC: copy to adventures/.gitignore. Everything else in adventures/ is a campaign file and belongs in git.
+# DMC's searches skip what git ignores, so never add a campaign file here.
+
+# One computer's state
+/.active-campaign
+/.reviewed-sessions
+/.transcript-review/
+
+# Staging folders of a running or interrupted dmc campaign import or restore
+/.dmc-import-*/
+/.restore-*/
+/.replaced-*/
+
+# Map renders: dmc redraw makes them again from maps/live.json
+/*/maps/live.html
+/*/maps/live-data.js
+/*/maps/live.png
+/*/maps/live-source.txt
+
+# Migration backups (whole copies of a campaign). A closed campaign's closing backup is kept: a sequel reads it.
+/*/backups/*
+!/*/backups/*_closed_*.zip

@@ -314,6 +314,71 @@ dmc campaign import exports/the-silver-egg-202610220605.zip --as silver-egg-copy
 
 An export holds everything in the campaign, including `story/dm-notes.md`, so do not open it before you have played the story, and do not send it to anyone who will play it. To bring in a campaign played elsewhere (a chat export or transcript), use `/dmc-new-campaign` instead. Every message and option is in [dmc-reference.md](dmc-reference.md#campaign).
 
+### Keeping your campaigns in git
+
+Git is a free program that keeps every saved version of a folder, so you can see what changed between two sessions, go back to an older one, and keep a copy on another computer or a site such as GitHub. It is optional: DMC never runs it, and play is the same with or without it. You run git yourself, in a terminal, and one repository holds the whole `adventures/` folder: every campaign and your general options.
+
+**Setting it up, once.** Install git from [git-scm.com](https://git-scm.com/) if you do not have it. If you have never used it, tell it your name and email first (they go into each saved version):
+
+```
+git config --global user.name "Your name"
+git config --global user.email "you@example.com"
+```
+
+Then, in a terminal in your DMC folder, copy DMC's two rules files into `adventures/` and make the first saved version (a *commit*). In PowerShell:
+
+```
+Copy-Item templates\adventures.gitignore adventures\.gitignore
+Copy-Item templates\adventures.gitattributes adventures\.gitattributes
+cd adventures
+git init
+git add -A
+git commit -m "My campaigns"
+```
+
+In bash (Linux, or Git Bash on Windows):
+
+```
+cp templates/adventures.gitignore adventures/.gitignore
+cp templates/adventures.gitattributes adventures/.gitattributes
+cd adventures
+git init
+git add -A
+git commit -m "My campaigns"
+```
+
+**What is left out, and why.** `.gitignore` keeps out what git does not need: the migration backups in each campaign's `backups/` (whole copies of the campaign, which git's own history replaces), the map page files `maps/live.html`, `live-data.js`, `live.png` and `live-source.txt` (DMC draws them again from `maps/live.json` after its first reply), `.active-campaign`, `.reviewed-sessions` and `.transcript-review/` (they describe this computer's play), and the folders a running `dmc campaign import` or `restore` leaves. A closed campaign's closing backup is kept, because a sequel needs it. Nothing is deleted: the left-out files stay on disk. Do not add a campaign file to `.gitignore`, to `.git/info/exclude` or to a global excludes file: DMC's searches skip what git ignores, so it would stop finding that file in play.
+
+`.gitattributes` makes git store every text file with the same line endings on every computer. When you add a file, git may warn `CRLF will be replaced by LF the next time Git touches it`: that is expected and harmless, and `dmc` treats the two as the same file.
+
+**Keep it private.** The repository holds every spoiler of your campaigns (`story/dm-notes.md`, the archives, the NPC sheets) and, for a published module, text from your book. If you put it on GitHub or another site, make it a *private* repository, and push to it:
+
+```
+git remote add origin <the address the site gives you>
+git branch -M main
+git push -u origin main
+```
+
+**When to commit.** After a full save, when every file is up to date, and both before and after DMC brings a campaign up to date (the migration offered at resume). In `adventures/`:
+
+```
+git add -A
+git commit -m "Rorn's Landing, session 12"
+git push
+```
+
+**Moving to a new computer.** Install `dmc` and make a DMC folder there first (Installing, above). Then, in a terminal in the new DMC folder, before any campaign is made, clone the repository into `adventures/`:
+
+```
+git clone <the address of your repository> adventures
+```
+
+Start a session and DMC asks which campaign to play, since `.active-campaign` is not in git. The map page is drawn again after DMC's first reply. Published modules and the rules reference are not in the repository: ingest them again the way you did the first time (`/dmc-ingest-module`, `/dmc-setup-rules`). The migration backups are not there either; they matter only to undo a migration you just made.
+
+**Play from one computer.** Use the repository as the copy of the computer you play on. Playing the same campaign on two computers in turn is not supported: if you forget to pull before a session, the two computers' saves can clash, in files DMC treats as its memory.
+
+**After an update.** When a release changes the two rules files, its notes say so: copy them into `adventures/` again, then commit.
+
 ### Bringing a campaign up to date
 
 When an update changes what DMC keeps in a campaign's files (for example, finished fights now leave the DM notes for an

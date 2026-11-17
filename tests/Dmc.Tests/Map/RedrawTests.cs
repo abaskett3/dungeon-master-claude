@@ -144,6 +144,22 @@ public sealed class RedrawTests
         Assert.AreEqual(drawn, Data());
     }
 
+    /// <summary>
+    /// The files <c>dmc map</c> writes are LF on every platform, so a campaign's map files are the same bytes on Windows and
+    /// Linux and git sees no line-ending change (spec 018 FR-003).
+    /// </summary>
+    [TestMethod]
+    public void TheMapFilesAreWrittenWithLfOnEveryPlatform()
+    {
+        Draw("live.json");
+        foreach (string name in new[] { "live.html", "live-data.js", "live-source.txt" })
+        {
+            byte[] bytes = File.ReadAllBytes(InMaps(name));
+            Assert.IsNotEmpty(bytes, name);
+            Assert.AreEqual(-1, Array.IndexOf(bytes, (byte)0x0D), name + " holds a CR");
+        }
+    }
+
     [TestMethod]
     public void LiveJsonIsDrawnWhateverThePageShowedBefore()
     {

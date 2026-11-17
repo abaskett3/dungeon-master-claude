@@ -195,12 +195,14 @@ internal static partial class CampaignVerifier
 
     /// <summary>
     /// The byte check of a closed campaign against its closing backup: every file of the campaign but <c>backups/</c>, the mark
-    /// and <c>.standard</c> included, compared by path and SHA-256. <c>dmc campaign verify</c> and <c>dmc campaign sequel</c> both
-    /// use it, so they cannot disagree about whether a closed campaign changed.
+    /// and <c>.standard</c> included, compared by path and content (<see cref="CampaignFiles.SameContent"/>), so a text file
+    /// whose only change is its line endings, as after a git checkout, matches; the map page's derived files
+    /// (<see cref="CampaignFiles.DerivedFiles"/>) are not compared (spec 018 FR-005). <c>dmc campaign verify</c>
+    /// and <c>dmc campaign sequel</c> both use it, so they cannot disagree about whether a closed campaign changed.
     /// </summary>
     /// <param name="campaign">The campaign folder.</param>
     /// <param name="held">Every file the closing backup holds for the campaign, by path.</param>
-    /// <param name="files">How many files the campaign has now.</param>
+    /// <param name="files">How many files the campaign has now, the map page's derived files left out.</param>
     /// <returns>The <c>missing:</c>, <c>added:</c> and <c>changed:</c> lines, by path; empty when the campaign matches.</returns>
     internal static List<string> ClosedDifferences(string campaign, IReadOnlyDictionary<string, byte[]> held, out int files)
     {
@@ -208,16 +210,17 @@ internal static partial class CampaignVerifier
         string standard = Path.Combine(campaign, StandardRecord.FileName);
         if (File.Exists(standard))
             now[StandardRecord.FileName] = File.ReadAllBytes(standard);
-        files = now.Count;
+        files = now.Keys.Count(p => !CampaignFiles.IsDerived(p));
 
         var problems = new List<string>();
-        foreach (string path in held.Keys.Union(now.Keys).Order(StringComparer.Ordinal))
+        // The map page is drawn again from maps/live.json, and git leaves it out, so it is no part of what closed.
+        foreach (string path in held.Keys.Union(now.Keys).Where(p => !CampaignFiles.IsDerived(p)).Order(StringComparer.Ordinal))
         {
             if (!now.TryGetValue(path, out var bytes))
                 problems.Add("missing: " + path);
             else if (!held.TryGetValue(path, out var old))
                 problems.Add("added: " + path);
-            else if (CampaignFiles.Hash(bytes) != CampaignFiles.Hash(old))
+            else if (!CampaignFiles.SameContent(bytes, old))
                 problems.Add("changed: " + path);
         }
         return problems;

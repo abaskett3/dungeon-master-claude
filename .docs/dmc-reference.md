@@ -479,7 +479,10 @@ confirm with --yes
 ```
 
 The warning compares the campaign with `<file>.verified.tsv`, so it names play after the migration, not the
-migration's own changes; with no such record it compares with the backup and says `has changed since the backup`. With
+migration's own changes; with no such record it compares with the backup and says `has changed since the backup`.
+Neither counts a text file whose only change is its line endings (CRLF or LF, as after a git checkout), nor the map
+page files `maps/live.html`, `live-data.js`, `live.png` and `live-source.txt`, which `dmc redraw` draws again; the
+plan line counts every file the restore rewrites. With
 `--yes` it checks the backup whole, extracts it into `adventures/.restore-NAME-<id>/`, moves the campaign's `backups/`
 into it, renames the campaign to `adventures/.replaced-NAME-<id>`, renames the staging into place, deletes the old
 campaign and removes every `.migrating` mark; it prints `restored NAME from <file>: <n> files`. A failure before the
@@ -539,8 +542,10 @@ import of a closing backup), never an `ask:` line; `dmc update` and `dmc refresh
 `export`, `show`, `lookup`, `recall`, `size` and `map --measure` work as for any campaign and write nothing in it.
 
 **verify** on a closed campaign does not check a migration. It compares every file of the campaign but `backups/`
-(`.closed` and `.standard` included) with the closing backup the mark names, or `--backup FILE`, by path and SHA-256,
-and writes nothing, pass or fail. It prints `verified NAME: closed, <n> files match <file>`, or up to 40 of
+(`.closed` and `.standard` included) with the closing backup the mark names, or `--backup FILE`, by path and content,
+and writes nothing, pass or fail. A text file whose only change is its line endings matches, and the map page files
+(`maps/live.html`, `live-data.js`, `live.png`, `live-source.txt`) are neither compared nor counted, so a closed
+campaign cloned from git still verifies. It prints `verified NAME: closed, <n> files match <file>`, or up to 40 of
 `changed: <path>`, `added: <path>` and `missing: <path>` (then `<n> more`; every one with `--all`) and fails with
 `verification failed: <n> files differ from <file>`. `--list` and `--accounting` are refused
 (`NAME is closed: --list and --accounting are for migrations`); a mark that cannot be read needs `--backup`
@@ -610,7 +615,7 @@ Every form first checks, and refuses with one line and exit 1, in this order:
 | `NAME continues OTHER, which is not closed: close it first with dmc-close-campaign` | The campaign it names is open |
 | `OTHER's closing backup is missing: backups/<file> (it cannot be digested without it)` | The closing backup the mark names is not in OTHER's `backups/` |
 | `OTHER's closing backup fails its check: <reason>` | The backup fails the checks an import makes, or is another campaign's |
-| `OTHER has changed since it closed: run dmc campaign verify OTHER` | A file of OTHER differs from its closing backup (`verify`'s check) |
+| `OTHER has changed since it closed: run dmc campaign verify OTHER` | A file of OTHER differs from its closing backup (`verify`'s check; line endings and the map page aside) |
 
 **`--start`** creates `digests/<OTHER>/` with `index.md` and `spine.md`, copies each `digests/<X>/` the closing backup
 holds into NAME's `digests/<X>/` byte for byte, and prints the parts to give DMC's subagents. Part 1 is always

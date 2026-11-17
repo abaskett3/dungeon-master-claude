@@ -20,10 +20,10 @@ finished module (`kit/skills/dmc-campaign-full-save/SKILL.md:44`), so a stage li
 
 | Flag | Fires when | Line (draft) |
 |---|---|---|
-| Dead named ahead | a sheet's `- **Status**:` starts with `dead` (any case), and a line of the Arc plan or Antagonists not marked `DONE` names them (`ReadSet.Mentions`: the title, first or last word) without the word `dead` on that line | `arc: the plan still names Auntie Hush, whose sheet says dead: revise the stages ahead (step 5, Revise)` |
+| Dead named ahead | a sheet's `- **Status**:` starts with `dead` (any case), and a line of the Arc plan or Antagonists not marked `DONE` names them (the whole title, or its first word that is not a title word: "Hush", "Brunna"; never a surname or place name alone, after the code review of PR #230) without the word `dead` on that line | `arc: the plan still names Auntie Hush, whose sheet says dead: revise the stages ahead (step 5, Revise)` |
 | No current stage | the Arc plan has no `current since sN` | `arc: no current stage (current since sN): add it (step 5, Arc plan)` |
 | No budget | the current stage's line has no `about N sessions` | `arc: the current stage has no budget in sessions: add one (step 5, Arc plan)` |
-| Over budget | the current session (`game-state.md`) is past N + the budget | `arc: the current stage began at s12 with a budget of 4 and this is s59: tighten or revise (step 5, Pace)` |
+| Over budget | the current session (`game-state.md`) is at or past N + the budget (a stage of 4 from s12 covers s12 to s15) | `arc: the current stage began at s12 with a budget of 4 and this is s59: tighten or revise (step 5, Pace)` |
 | No clock | an Antagonists entry has no `by sN` | `arc: Gloam's next move has no session (by sN): add one (step 5, Clocks)` |
 
 ## Skill change

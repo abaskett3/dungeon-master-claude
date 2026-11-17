@@ -823,12 +823,12 @@ A resume that settles at 142,000 tokens therefore puts the first band at 182,000
 
 ```
 $ echo '{"transcript_path":"<folder>/session.jsonl"}' | dmc context-check
-Context 213k is large, break due since 200k: at the next break point, offer a full save and a fresh session, unless the player has declined since 200k.
+Context 213k is large, break due since 200k: at the next break point, offer a full save (`/dmc-campaign-full-save`) and a fresh session, unless the player has declined since 200k.
 ```
 
 The bands are counted from the first band, so a break the player declined is offered again after another 50,000 tokens. A compaction, which restarts the search for the baseline, starts the count again.
 
-**One offer per band** (spec 016, after its headless run, where DMC offered twice in one band). Once the text of a reply at or above the band's start names `dmc-campaign-full-save` (every offer names the command), the line is not printed again until the next band, whether the player declined or played on. Only a reply's text counts, not its thinking or a tool call. The log is read back from the end to the first call below the band, or to a compaction boundary. If that read fails, the line prints as before.
+**One offer per band** (spec 016, after its headless run, where DMC offered twice in one band). Once the text of a reply at or above the band's start names `dmc-campaign-full-save` (the break line asks for the offer by that name), the line is not printed again until the next band, whether the player declined or played on. Only a reply's text counts, not its thinking or a tool call. The log is read back from the end to the first call below the band, or to a compaction boundary. If that read fails, the line prints as before.
 
 This changed in release 0.1.3. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
@@ -851,7 +851,7 @@ character-sheets/npc-captain-kole.md | - **Usually found**: the wall, the gate, 
 
 On Rorn's Landing with four companions present it printed 5,490 bytes (about 1,370 tokens).
 
-**The out-of-character line** (spec 016 FR-011). Last, when the message starts (after spaces) with `ooc` in any case followed by a space, a colon or the end, or with `((`, one line: `Out of character: if this says a fact is wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you think, propose one fix, and change no file until the player agrees.` Nothing for any other message.
+**The out-of-character line** (spec 016 FR-011). Last, when the message starts (after spaces) with `ooc` in any case followed by a space, a colon or the end, or holds `((` anywhere (an aside in double brackets, as the player options allow), one line: `Out of character: if this says a fact is wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you think, propose one fix, and change no file until the player agrees.` Nothing for any other message.
 
 It never fails: on any error (input that is not JSON, a missing or unreadable log, a canon or sheet that cannot be read) it prints nothing and exits 0; a failure of one part alone still prints the others.
 

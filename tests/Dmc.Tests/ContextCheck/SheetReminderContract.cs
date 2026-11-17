@@ -97,6 +97,7 @@ public abstract class SheetReminderContract
     static List<string> SheetPart(ProcessResult result) =>
         result.StdoutLines.SkipWhile(l => !l.StartsWith("Sheets of ", StringComparison.Ordinal)).TakeWhile(l => !l.StartsWith("Out of character", StringComparison.Ordinal)).ToList();
 
+    /// <summary>Everyone present with a sheet gets their field lines, in the order the Present line names them.</summary>
     [TestMethod]
     public void ThePeoplePresentGetTheirFieldLinesInThePresentLinesOrder()
     {
@@ -116,6 +117,7 @@ public abstract class SheetReminderContract
         }, SheetPart(result));
     }
 
+    /// <summary>A combatant in the tracker counts as present; a crowd or a name with no sheet prints nothing.</summary>
     [TestMethod]
     public void TheCombatTrackerCountsAndACrowdOrANameWithNoSheetPrintsNothing()
     {
@@ -125,6 +127,7 @@ public abstract class SheetReminderContract
         Assert.HasCount(0, SheetPart(ContextCheck(Input("I look around"))));
     }
 
+    /// <summary>A present person whose sheet holds none of the fields is handed to the canon reminder.</summary>
     [TestMethod]
     public void ASheetWithNoneOfTheFieldsFallsBackToItsCanonLines()
     {
@@ -137,6 +140,7 @@ public abstract class SheetReminderContract
         Assert.IsFalse(lines.Any(l => l.StartsWith("Sheets of ", StringComparison.Ordinal)));
     }
 
+    /// <summary>The lines stay within 10,000 bytes; a person who does not fit is left out whole, header included.</summary>
     [TestMethod]
     public void TheLinesStayWithinTheCapAndAPersonWhoDoesNotFitIsLeftOutOfTheHeader()
     {
@@ -159,6 +163,7 @@ public abstract class SheetReminderContract
         Assert.IsFalse(part.Any(l => l.Contains("npc-person7.md", StringComparison.Ordinal)), "and none of its lines are printed");
     }
 
+    /// <summary>A person shown within the last 100,000 tokens is skipped, and shown again once that has passed.</summary>
     [TestMethod]
     public void APersonShownWithinTheLast100000TokensIsSkippedThenShownAgain()
     {
@@ -169,6 +174,7 @@ public abstract class SheetReminderContract
         Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"), SheetPart(ContextCheck(Input("I look around", log)))[0]);
     }
 
+    /// <summary>A person whose sheet the session read within the last 100,000 tokens is skipped.</summary>
     [TestMethod]
     public void ASheetTheSessionReadWithinTheLast100000TokensIsSkipped()
     {
@@ -179,6 +185,7 @@ public abstract class SheetReminderContract
         Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"), SheetPart(ContextCheck(Input("I look around", log)))[0]);
     }
 
+    /// <summary>After a compaction boundary, nothing shown or read before it counts.</summary>
     [TestMethod]
     public void ACompactionStartsAfresh()
     {
@@ -186,6 +193,7 @@ public abstract class SheetReminderContract
         Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"), SheetPart(ContextCheck(Input("I look around", log)))[0]);
     }
 
+    /// <summary>A slash command, input that is not usable, or a closed campaign gets no sheet lines.</summary>
     [TestMethod]
     public void NothingIsPrintedForACommandBadInputOrAClosedCampaign()
     {

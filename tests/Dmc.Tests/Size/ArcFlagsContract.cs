@@ -50,9 +50,11 @@ public abstract class ArcFlagsContract
         return [.. result.StdoutLines];
     }
 
+    /// <summary>The fixture's plan, current and with a clock, prints nothing.</summary>
     [TestMethod]
     public void AWellKeptPlanPrintsNothing() => Assert.HasCount(0, Arc());
 
+    /// <summary>A plan of only Character arcs and Last played, a module campaign's before its end, prints nothing.</summary>
     [TestMethod]
     public void APlanOfOnlyCharacterArcsPrintsNothing()
     {
@@ -62,6 +64,7 @@ public abstract class ArcFlagsContract
         Assert.HasCount(0, Arc(), "the template as it is");
     }
 
+    /// <summary>A dead person named on a live line fires; a line that says dead or DONE does not.</summary>
     [TestMethod]
     public void ADeadPersonNamedAheadFiresAndALineSayingDeadOrDoneDoesNot()
     {
@@ -69,12 +72,13 @@ public abstract class ArcFlagsContract
         Assert.HasCount(0, Arc());
         Notes(Current + "\n- The raising: Hush prepares the quench.", Gloam);
         CollectionAssert.AreEqual(new[] { "arc: the plan still names Auntie Hush, whose sheet says dead: revise the stages ahead (step 5, Revise)" }, Arc(),
-            "named by her last word only");
+            "named by her own name only");
         Notes(Current, Gloam + "### Auntie Hush (green hag)\n\n- **Next move**: sing Kibil away.\n");
         CollectionAssert.AreEqual(new[] { "arc: the plan still names Auntie Hush, whose sheet says dead: revise the stages ahead (step 5, Revise)" }, Arc(),
             "still in Antagonists, and a dead antagonist gets no clock line");
     }
 
+    /// <summary>A plan with no current stage fires, then one whose current stage has no budget.</summary>
     [TestMethod]
     public void NoCurrentStageAndNoBudgetFire()
     {
@@ -84,15 +88,37 @@ public abstract class ArcFlagsContract
         CollectionAssert.AreEqual(new[] { "arc: the current stage has no budget in sessions: add one (step 5, Arc plan)" }, Arc());
     }
 
+    /// <summary>A stage of N sessions from sK covers sK to sK+N-1: at sK+N it is past its budget.</summary>
     [TestMethod]
     public void AStagePastItsBudgetFires()
     {
-        Notes("- Stage 2 (current since s1, about 1 session): the tower.", Gloam);
-        CollectionAssert.AreEqual(new[] { "arc: the current stage began at s1 with a budget of 1 and this is s3: tighten or revise (step 5, Pace)" }, Arc());
         Notes("- Stage 2 (current since s1, about 2 sessions): the tower.", Gloam);
+        CollectionAssert.AreEqual(new[] { "arc: the current stage began at s1 with a budget of 2 and this is s3: tighten or revise (step 5, Pace)" }, Arc(),
+            "s1 and s2 were its two sessions");
+        Notes("- Stage 2 (current since s1, about 3 sessions): the tower.", Gloam);
         Assert.HasCount(0, Arc(), "s3 is the budget's last session, not past it");
     }
 
+    /// <summary>A dead person's surname or place name alone, or a living relative who shares it, does not fire; their own name does.</summary>
+    [TestMethod]
+    public void ASurnameOrPlaceAloneDoesNotNameTheDead()
+    {
+        Write(_root, "character-sheets/npc-brunna-kelderak.md", "# Warden Brunna Kelderak\n\n- **Status**: dead (a ghost, bound to her post)\n");
+        Notes(Current + "\n- The climb: a coal from a Kelderak hearth lights the waystone; Hala Kelderak carries it.", Gloam);
+        Assert.HasCount(0, Arc(), "Kelderak Deep and a living Kelderak are not Brunna");
+        Notes(Current + "\n- The climb: Brunna's counsel on the 15th.", Gloam);
+        CollectionAssert.AreEqual(new[] { "arc: the plan still names Warden Brunna Kelderak, whose sheet says dead: revise the stages ahead (step 5, Revise)" }, Arc());
+    }
+
+    /// <summary>A next move's session is read in any case: <c>By s5</c> is a clock.</summary>
+    [TestMethod]
+    public void AClockInCapitalsIsAClock()
+    {
+        Notes(Current, "### Gloam\n\n- **Next move**: By S5, a lure at the north ridge.\n");
+        Assert.HasCount(0, Arc());
+    }
+
+    /// <summary>An antagonist whose next move has no session fires, in either form of the section.</summary>
     [TestMethod]
     public void AnAntagonistWithNoSessionFires()
     {
@@ -102,6 +128,7 @@ public abstract class ArcFlagsContract
         CollectionAssert.AreEqual(new[] { "arc: Gloam's next move has no session (by sN): add one (step 5, Clocks)" }, Arc(), "entries as list items");
     }
 
+    /// <summary><c>--check</c> prints no arc line, and <c>--check</c> with <c>--arc</c> is refused.</summary>
     [TestMethod]
     public void CheckPrintsNoArcLineAndTheTwoFormsDoNotMix()
     {

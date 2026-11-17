@@ -39,8 +39,7 @@ Line numbers are `origin/main` at `0cfdfa1` (PR #228 merged) unless a line says 
   play ("dead (a ghost, bound to her post…)"), so the flag asks for a revision or a reason, never deletes.
 - **What the code can tell (decided 2026-11-16, /speckit-analyze U1 and U2):** a line naming the dead that also says
   `dead` counts as known. Today's `dm-notes.md:75` ("Hush is dead (s28.1), so these need Gloam behind them") passes;
-  `:79` and `:84` ("Hush prepares", "Hush's last illusions") fire, matched by last word as `ReadSet.Mentions` does
-  (`src/Dmc.Cli/Size/ReadSet.cs:319`). Missed: a stale line that says `dead` for another reason. No file records that a
+  `:79` and `:84` ("Hush prepares", "Hush's last illusions") fire, matched by her own name (first planned as `ReadSet.Mentions`, title, first or last word; narrowed after the code review of PR #230, because a surname also matched "Kelderak Deep"). Missed: a stale line that says `dead` for another reason. No file records that a
   module is finished, so the flags run only when the Arc plan holds a stage line, which the full save writes only for a
   homebrew campaign or a finished module (`kit/skills/dmc-campaign-full-save/SKILL.md:44`). Unverified: whether any
   module campaign holds stages mid-module. The campaign's
@@ -86,7 +85,7 @@ Line numbers are `origin/main` at `0cfdfa1` (PR #228 merged) unless a line says 
 ## R5. The out-of-character line (B-hook, FR-011)
 
 - **Decision:** printed by `dmc context-check` when the prompt starts with `ooc` (any case, then a space, colon or end)
-  or `((`, not by a separate `grep` hook as the issue drafted.
+  or holds `((` anywhere, not by a separate `grep` hook as the issue drafted.
 - **Rationale:** `context-check` already reads the prompt from the hook's JSON (`HookInput.Field`, `CanonReminder.cs:41`)
   and has unit tests; a shell `grep` of raw JSON breaks on escaped quotes and has none. The play settings keep one
   `UserPromptSubmit` hook (`kit/settings.json`).

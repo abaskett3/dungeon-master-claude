@@ -27,7 +27,7 @@ internal static partial class ArcFlags
     private static partial Regex Budget();
 
     /// <summary>A next move's session: <c>by s14</c>.</summary>
-    [GeneratedRegex(@"\bby s\d+")]
+    [GeneratedRegex(@"\bby s\d+", RegexOptions.IgnoreCase)]
     private static partial Regex BySession();
 
     /// <summary>DONE or RESOLVED as a whole word, in capitals, as <see cref="Flags"/> reads a finished line.</summary>
@@ -78,7 +78,7 @@ internal static partial class ArcFlags
         var dead = DeadTitles(root);
         foreach (string title in dead)
         {
-            bool named = plan.Concat(antagonists).Any(l => !DoneWord().IsMatch(l) && !DeadWord().IsMatch(l) && ReadSet.Mentions(l, title));
+            bool named = plan.Concat(antagonists).Any(l => !DoneWord().IsMatch(l) && !DeadWord().IsMatch(l) && NamesDead(l, title));
             if (named)
                 lines.Add($"{Prefix}the plan still names {title}, whose sheet says dead: revise the stages ahead (step 5, Revise)");
         }
@@ -92,13 +92,13 @@ internal static partial class ArcFlags
         {
             int since = int.Parse(CurrentSince().Match(current).Groups[1].ValueSpan);
             int sessions = int.Parse(budget.Groups[1].ValueSpan);
-            if (SessionNow(root) is { } now && now > since + sessions)
+            if (SessionNow(root) is { } now && now >= since + sessions)
                 lines.Add($"{Prefix}the current stage began at s{since} with a budget of {sessions} and this is s{now}: tighten or revise (step 5, Pace)");
         }
 
         // A dead antagonist has no next move: the first flag already asks for the plan to drop them.
         foreach (var (name, block) in Entries(antagonists))
-            if (!dead.Any(t => ReadSet.Mentions(name, t)) && !block.Any(l => BySession().IsMatch(l)))
+            if (!dead.Any(t => NamesDead(name, t)) && !block.Any(l => BySession().IsMatch(l)))
                 lines.Add($"{Prefix}{name}'s next move has no session (by sN): add one (step 5, Clocks)");
         return lines;
     }
@@ -131,6 +131,33 @@ internal static partial class ArcFlags
             }
         }
         return false;
+    }
+
+    /// <summary>Words that may come before a person's own name in a sheet's title, besides the read set's common words.</summary>
+    static readonly HashSet<string> TitleWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "auntie", "aunt", "uncle", "granny", "gran", "grandmother", "grandfather", "mother", "father", "brother", "sister",
+        "goodwife", "goodman", "widow", "master", "mistress", "lady", "lord", "sir", "dame", "elder", "warden", "priest",
+        "priestess", "healer", "scout", "sheriff", "mayor", "king", "queen", "prince", "princess", "baron", "baroness",
+    };
+
+    /// <summary>
+    /// Whether a text names a dead person: their whole title, or the first word of it that is not a title word, their
+    /// own name ("Hush" in "Auntie Hush", "Brunna" in "Warden Brunna Kelderak"). A family or place name alone does not
+    /// count, as it would under <see cref="ReadSet.Mentions"/>: "Kelderak Deep" does not name Brunna, and a living
+    /// relative who shares a surname gets no flag that only a false "dead" could clear (the code review of PR #230).
+    /// A dead person called only by their surname is missed.
+    /// </summary>
+    /// <param name="text">A line of the plan, or an antagonist's name.</param>
+    /// <param name="title">The dead person's sheet title.</param>
+    internal static bool NamesDead(string text, string title)
+    {
+        if (ReadSet.WholeWordAt(text, title) >= 0)
+            return true;
+        string? own = title.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => w.Trim(',', '.', ';', ':', '(', ')', '"', '\''))
+            .FirstOrDefault(w => w.Length >= 3 && !ReadSet.IsCommonNameWord(w) && !TitleWords.Contains(w));
+        return own is not null && !own.Equals(title, StringComparison.OrdinalIgnoreCase) && ReadSet.WholeWordAt(text, own) >= 0;
     }
 
     /// <summary>The titles of the campaign's sheets whose Status says dead; <c>minor-npcs.md</c> and the history files are not sheets.</summary>

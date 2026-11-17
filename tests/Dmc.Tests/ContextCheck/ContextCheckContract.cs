@@ -91,14 +91,16 @@ public abstract class ContextCheckContract
     public void NothingBelowTheThreshold() =>
         Assert.AreEqual("", Check(Log(User("hi"), Assistant(149999), User("go on"))));
 
+    /// <summary>A context past 150,000 gets the break line for the first band, word for word, with the command to offer.</summary>
     [TestMethod]
     public void TheFirstBandFrom150k()
     {
         string line = Check(Log(Assistant(90000), User("go on"), Assistant(163400), User("I attack")));
-        Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save "
+        Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save (`/dmc-campaign-full-save`) "
                         + "and a fresh session, unless the player has declined since 150k.", line);
     }
 
+    /// <summary>The band named rises every 50,000 tokens: 195k is still the 150k band, 205k the 200k band.</summary>
     [TestMethod]
     public void TheBandRisesEvery50k()
     {
@@ -123,22 +125,26 @@ public abstract class ContextCheckContract
     /// <summary>A reply that offers the break, as DMC words one.</summary>
     const string Offer = "(OOC: this is a break point. I can run `/dmc-campaign-full-save` now. Playing on counts as declining.)";
 
+    /// <summary>A reply in the band that offered the break spends its line: no line again until the next band.</summary>
     [TestMethod]
     public void AnOfferInTheBandSpendsItsLine() =>
         Assert.AreEqual("", Check(Log(Assistant(90000), User("go on"), Saying(212000, Offer), User("I look around"),
             Assistant(222000))));
 
+    /// <summary>An offer in an earlier band does not silence the next band's line.</summary>
     [TestMethod]
     public void AnOfferInAnEarlierBandDoesNotSpendTheNext() =>
         StringAssert.StartsWith(Check(Log(Assistant(90000), User("go on"), Saying(205000, Offer), User("on"),
             Assistant(255000))), "Context 255k is large, break due since 250k:");
 
+    /// <summary>Thinking that names the full save is not an offer: the line still prints.</summary>
     [TestMethod]
     public void OnlyTheReplysTextIsAnOffer() =>
         StringAssert.StartsWith(Check(Log(Assistant(90000), User("go on"),
             Saying(212000, "I should offer /dmc-campaign-full-save soon.", "thinking"), User("on"), Assistant(222000))),
             "Context 222k is large, break due since 200k:");
 
+    /// <summary>Only the latest call's context counts, not a larger one before it.</summary>
     [TestMethod]
     public void OnlyTheLastCallCounts() =>
         Assert.AreEqual("", Check(Log(Assistant(200000), Assistant(80000), User("go on"))));

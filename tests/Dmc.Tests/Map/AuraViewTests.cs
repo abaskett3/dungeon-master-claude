@@ -24,6 +24,7 @@ public sealed class AuraViewTests
     static XElement AuraRect(string svg) =>
         XElement.Parse(svg).Descendants().Single(e => e.Name.LocalName == "rect" && e.Value == "Grey stone: rime, 5 ft");
 
+    /// <summary>An aura moves with its creature, in the picture and in the distance list, and the key names it.</summary>
     [TestMethod]
     public void AnAuraMovesWithItsCreatureInThePictureAndTheDistanceList()
     {
@@ -39,6 +40,7 @@ public sealed class AuraViewTests
         StringAssert.Contains(SvgText(SvgDrawing.Render(after)), "rime, 5 ft", "the key names it");
     }
 
+    /// <summary>A view draws only its cells, under the place's own names, and names the creatures outside it.</summary>
     [TestMethod]
     public void AViewDrawsOnlyItsCellsUnderTheirOwnNamesAndNamesTheCreaturesOutside()
     {
@@ -54,6 +56,20 @@ public sealed class AuraViewTests
             "distances still cover every creature");
     }
 
+    /// <summary>Under a view, an edge's caption is drawn only when the view reaches that edge of the place.</summary>
+    [TestMethod]
+    public void AnEdgeCaptionIsDrawnOnlyWhereTheViewReachesThatEdge()
+    {
+        var edges = ("edges", Obj(("left", "WEST: the mill yard"), ("bottom", "SOUTH: the road")));
+        string inner = SvgText(SvgDrawing.Render(Checked(("tokens", Creatures("E2")), edges, ("view", Obj(("cols", "C-F"), ("rows", "2-4"))))));
+        Assert.DoesNotContain("WEST: the mill yard", inner);
+        Assert.DoesNotContain("SOUTH: the road", inner);
+        string reaching = SvgText(SvgDrawing.Render(Checked(("tokens", Creatures("E2")), edges, ("view", Obj(("cols", "A-F"), ("rows", "2-5"))))));
+        StringAssert.Contains(reaching, "WEST: the mill yard");
+        StringAssert.Contains(reaching, "SOUTH: the road");
+    }
+
+    /// <summary>A view of the whole map draws byte for byte what no view draws, and a map with no aura lists none.</summary>
     [TestMethod]
     public void AViewOfTheWholeMapDrawsWhatNoViewDraws()
     {
@@ -62,6 +78,7 @@ public sealed class AuraViewTests
         Assert.HasCount(0, Distances.AuraLines(Checked(("tokens", SceneTokens()))), "no aura, no lines");
     }
 
+    /// <summary>Each bad aura or view is refused with a one-line message.</summary>
     [TestMethod]
     public void BadAurasAndViewsAreRefusedInOneLine()
     {

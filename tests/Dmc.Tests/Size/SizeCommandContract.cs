@@ -370,6 +370,7 @@ public abstract class SizeCommandContract
         Assert.IsLessThanOrEqualTo(40, lines.Length, string.Join("\n", lines));
     }
 
+    /// <summary><c>--help</c> prints the usage line, <c>--arc</c> included, and exits 0.</summary>
     [TestMethod]
     public void HelpPrintsTheUsage()
     {

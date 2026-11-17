@@ -381,7 +381,16 @@ public static class SvgDrawing
         var view = m.View ?? new MapView(0, 0, m.Cols - 1, m.Rows - 1);
         int cols = view.Col1 - view.Col0 + 1, rows = view.Row1 - view.Row0 + 1;
         int mapW = cols * Cell, mapH = rows * Cell;
-        var edges = m.Edges;
+        // An edge's caption describes that edge of the whole place: under a view it is drawn only where the view reaches
+        // that edge, never at a border in the middle of the place (the code review of PR #230).
+        var edges = m.Edges.Where(e => e.Key switch
+        {
+            "left" => view.Col0 == 0,
+            "right" => view.Col1 == m.Cols - 1,
+            "top" => view.Row0 == 0,
+            "bottom" => view.Row1 == m.Rows - 1,
+            _ => true,
+        }).ToDictionary(e => e.Key, e => e.Value);
         int sideL = edges.ContainsKey("left") ? 150 : 0;
         int sideR = edges.ContainsKey("right") ? 150 : 0;
 

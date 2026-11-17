@@ -5,7 +5,7 @@ namespace Dmc.Tests.ContextCheck;
 
 /// <summary>
 /// The out-of-character line <c>dmc context-check</c> prints last (spec 016 FR-011, contracts/context-check-sheets.md), in
-/// this process and through the published binary: one line for a message that starts with <c>ooc</c> or <c>((</c>, and
+/// this process and through the published binary: one line for a message that starts with <c>ooc</c> or holds <c>((</c> anywhere, and
 /// nothing for any other.
 /// </summary>
 public abstract class OocReminderContract
@@ -19,10 +19,12 @@ public abstract class OocReminderContract
     /// <summary>The hook's JSON for a prompt, with no folder or log, so no other part prints.</summary>
     static string Input(string prompt) => new JsonObject { ["prompt"] = prompt }.ToJsonString();
 
+    /// <summary>A message that starts with <c>ooc</c>, or puts anything in double brackets, gets the line once.</summary>
     [TestMethod]
     public void AMessageThatStartsOutOfCharacterGetsTheLine()
     {
-        foreach (string prompt in new[] { "ooc that's wrong, she can't fly", "OOC: how did she know?", "ooc", "  ((she can't fly))", "\tOoc\nwhy?" })
+        foreach (string prompt in new[] { "ooc that's wrong, she can't fly", "OOC: how did she know?", "ooc", "  ((she can't fly))", "\tOoc\nwhy?",
+                     "I draw my sword. ((wait, how did she know my name?))" })
         {
             var result = ContextCheck(Input(prompt));
             Assert.AreEqual(0, result.ExitCode, prompt);
@@ -30,6 +32,7 @@ public abstract class OocReminderContract
         }
     }
 
+    /// <summary>Any other message, a single bracket or a later <c>ooc</c> included, gets nothing.</summary>
     [TestMethod]
     public void AnyOtherMessageGetsNothing()
     {

@@ -118,7 +118,8 @@ moves with it. The distance list adds a line for each aura naming the creatures 
 
 A map's `"view"` draws only those columns and rows (each a first and last, joined by a dash), at the size they fit,
 under the place's own cell names, so the tracker's cells still hold. A creature not wholly inside it is not drawn and
-is named under the map; distances still cover every creature. A scene inherits its place's view and may set its own.
+is named under the map; distances still cover every creature. An edge's caption shows only when the view reaches
+that edge. A scene inherits its place's view and may set its own.
 
 A mistake is one line, and nothing is drawn: an aura whose `ft` is not a positive multiple of `"cell_ft"` or that has
 no `name`, and a view range that is off the grid, reversed, or not like `"C-R"` and `"3-17"`.

@@ -41,8 +41,8 @@ out of the header, so a later message tries again.
 
 ## Out-of-character line (FR-011, research R5)
 
-**When:** the prompt, after leading spaces, starts with `ooc` (any case) followed by a space, `:`, or the end; or with
-`((`.
+**When:** the prompt, after leading spaces, starts with `ooc` (any case) followed by a space, `:`, or the end; or holds
+`((` anywhere (the player options allow an aside in double brackets mid-message; widened after the code review of PR #230).
 
 **Output:** one line, about 230 bytes, the wording of FR-010 as approved: "Out of character: if this says a fact is
 wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you

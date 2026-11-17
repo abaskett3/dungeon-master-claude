@@ -57,14 +57,16 @@ public sealed class ContextCheckEdgeTests
     /// <summary>A user record's JSON line.</summary>
     static string User(string text = "go on") => ContextCheckContract.User(text).ToJsonString();
 
+    /// <summary>The line starts at exactly 150,000 tokens and not one token before.</summary>
     [TestMethod]
     public void TheReminderStartsExactlyAtTheThreshold()
     {
         Assert.AreEqual("", BreakReminder.For(149999));
-        Assert.AreEqual("Context 150k is large, break due since 150k: at the next break point, offer a full save and a fresh "
+        Assert.AreEqual("Context 150k is large, break due since 150k: at the next break point, offer a full save (`/dmc-campaign-full-save`) and a fresh "
                         + "session, unless the player has declined since 150k.", BreakReminder.For(150000));
     }
 
+    /// <summary>The band named changes exactly at each 50,000-token step from the first band.</summary>
     [TestMethod]
     public void TheBandChangesExactlyEvery50k()
     {
@@ -76,6 +78,7 @@ public sealed class ContextCheckEdgeTests
 
     // The first band is the larger of 150k and the baseline plus 40k (the margin stays 40k, spec 016 FR-020); the bands
     // then rise every 50k from there, so a declined offer is repeated at the next one, as before.
+    /// <summary>The first band is the baseline plus 40,000, never below 150,000.</summary>
     [TestMethod]
     public void TheFirstBandIsRelativeToTheBaselineWithA150kFloor()
     {
@@ -239,6 +242,7 @@ public sealed class ContextCheckEdgeTests
     }
 
     // The reminder end to end: a resume that settles above 150k moves the first band up with it.
+    /// <summary>A resume that settles above 150,000 moves the first band and every band after it up.</summary>
     [TestMethod]
     public void ABaselineAbove150kMovesTheFirstBandUp()
     {

@@ -357,7 +357,7 @@ internal static partial class ReadSet
     /// <summary>The index of the first whole-word match of a word or phrase in a text, ignoring case; -1 for none.</summary>
     /// <param name="text">The text to search.</param>
     /// <param name="word">The word or phrase.</param>
-    static int WholeWordAt(string text, string word)
+    internal static int WholeWordAt(string text, string word)
     {
         if (word.Length == 0)
             return -1;

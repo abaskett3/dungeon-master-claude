@@ -77,7 +77,7 @@ public static class TranscriptReader
     /// <summary>
     /// True when a reply since the context reached <paramref name="band"/> tokens already offered the break: the text
     /// (not the thinking or a tool call) of an assistant call of the main conversation at or above the band names
-    /// <see cref="OfferMarker"/> (spec 016, the headless run: the rule said one offer per band and DMC made two). Reads
+    /// <see cref="OfferMarker"/>, which the break line asks the offer to name (spec 016, the headless run: the rule said one offer per band and DMC made two). Reads
     /// the log from the end and stops at the first call below the band or a compaction boundary, so it costs about one
     /// band of the log.
     /// </summary>
@@ -251,7 +251,7 @@ public static class TranscriptReader
     /// </summary>
     /// <param name="path">The session log. It may be growing while it is read.</param>
     /// <param name="visit">Takes one line (without its newline) and returns true to stop.</param>
-    static void ScanBackwards(string path, Func<ReadOnlyMemory<byte>, bool> visit)
+    internal static void ScanBackwards(string path, Func<ReadOnlyMemory<byte>, bool> visit)
     {
         // The log is being written by Claude Code while it is read: share it fully.
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -328,7 +328,7 @@ public static class TranscriptReader
     /// <returns>The classification; a default value (<see cref="RecordKind.Skipped"/>) for a line that does not matter.</returns>
     /// <exception cref="InvalidDataException">An assistant record has a shape the old script would also trip over.</exception>
     /// <exception cref="FormatException">An assistant record's token count is a number too large to read.</exception>
-    static Classified Classify(ReadOnlyMemory<byte> line)
+    internal static Classified Classify(ReadOnlyMemory<byte> line)
     {
         // Python decodes a line as UTF-8-with-BOM before parsing it, so a BOM is dropped...
         if (line.Span.StartsWith(Utf8Bom))

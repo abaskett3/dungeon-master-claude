@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Dmc.ContextCheck;
 using Dmc.Size;
 
 namespace Dmc.Retrieval;
@@ -49,10 +50,6 @@ internal static partial class SheetReminder
     /// <summary>An HTML comment on one line.</summary>
     [GeneratedRegex(@"<!--.*?-->")]
     private static partial Regex InlineComment();
-
-    /// <summary>A token count in an assistant record's usage, by its key.</summary>
-    [GeneratedRegex(@"""(input_tokens|cache_read_input_tokens|cache_creation_input_tokens)"":(\d+)")]
-    private static partial Regex UsageCount();
 
     /// <summary>What the sheet part found: the lines to print, and the people present whose sheets hold none of the fields.</summary>
     /// <param name="Lines">The header and the lines; empty for none.</param>
@@ -103,7 +100,7 @@ internal static partial class SheetReminder
             var (_, log) = HookInput.Field(input, "transcript_path");
             if (!string.IsNullOrEmpty(log))
             {
-                var seen = Seen(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()));
+                var seen = Seen(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()), contextNow);
                 due = due.Where(p => !Recent(seen, p, contextNow)).ToList();
             }
         }
@@ -210,76 +207,68 @@ internal static partial class SheetReminder
     }
 
     /// <summary>
-    /// What the log holds after its latest compaction boundary: each sheet-lines header this hook printed, at the context
-    /// of the last call before it, and each Read tool call of a <c>character-sheets/</c> file, at the context of the call
-    /// that made it. A missing or unreadable log holds nothing. Only lines that could be a boundary, an assistant call or
-    /// a header are looked at, and only a call that reads a sheet, a header or a boundary is parsed; a call's context is
-    /// taken from its usage without parsing it.
+    /// What the log holds of the last <see cref="Refresh"/> tokens after its latest compaction boundary: each sheet-lines
+    /// header this hook printed, at the context of the last call before it, and each Read tool call of a
+    /// <c>character-sheets/</c> file, at the context of the call that made it. The log is read from the end, with the
+    /// break line's reader (<see cref="TranscriptReader"/>), and the read stops at the first call more than
+    /// <see cref="Refresh"/> below <paramref name="contextNow"/>, since nothing older can be recent, or at a compaction
+    /// boundary: about 100,000 tokens of log, not the whole of it (the code review of PR #230 measured the whole-log scan
+    /// at 214 ms on a 6.8 MB log). Only lines that could be a call, a boundary or a header are classified, and only a call
+    /// that reads a sheet, or a header, is parsed further. A missing log holds nothing. Should the context fall and rise
+    /// again within one part, the read stops early and a person is shown sooner, never later.
     /// </summary>
     /// <param name="log">The session's log, a JSON-lines file.</param>
-    internal static SeenInLog Seen(string log)
+    /// <param name="contextNow">The latest context, in tokens; 0 when not known, and then the whole part is read.</param>
+    internal static SeenInLog Seen(string log, long contextNow)
     {
         var seen = new SeenInLog(new Dictionary<string, long>(StringComparer.Ordinal), new Dictionary<string, long>(StringComparer.Ordinal));
         if (!File.Exists(log))
             return seen;
-        long context = 0;
-        using var stream = new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var reader = new StreamReader(stream);
-        while (reader.ReadLine() is { } line)
-        {
-            if (line.Contains("compact_boundary", StringComparison.Ordinal) && IsBoundary(line))
-            {
-                seen.Shown.Clear();
-                seen.Read.Clear();
-                context = 0;
-                continue;
-            }
-            if (line.Contains("\"type\":\"assistant\"", StringComparison.Ordinal) && !line.Contains("\"isSidechain\":true", StringComparison.Ordinal))
-            {
-                long at = ContextOf(line);
-                if (at > 0)
-                    context = at;
-                if (line.Contains(SheetsFolder, StringComparison.Ordinal) && line.Contains("\"name\":\"Read\"", StringComparison.Ordinal))
-                    foreach (string file in SheetsRead(line))
-                        seen.Read[file] = context;
-                continue;
-            }
-            if (line.Contains(HeaderStart, StringComparison.Ordinal))
-                foreach (string title in HeaderNames(line))
-                    seen.Shown[title] = context;
-        }
-        return seen;
-    }
+        long limit = contextNow - Refresh;
+        var pending = new List<string>(); // header names waiting for the call before them, which comes later in this read
 
-    /// <summary>The context of an assistant record, from its usage's three input counts, read without parsing the record; 0 when it has none.</summary>
-    /// <param name="line">One log line.</param>
-    static long ContextOf(string line)
-    {
-        int usage = line.LastIndexOf("\"usage\":{", StringComparison.Ordinal);
-        if (usage < 0)
-            return 0;
-        long total = 0;
-        var keys = new HashSet<string>(StringComparer.Ordinal);
-        for (var match = UsageCount().Match(line, usage); match.Success; match = match.NextMatch())
-            if (keys.Add(match.Groups[1].Value) && long.TryParse(match.Groups[2].ValueSpan, out long count))
-                total += count;
-        return total;
-    }
-
-    /// <summary>Whether a log line is a compaction boundary record.</summary>
-    /// <param name="line">One log line.</param>
-    static bool IsBoundary(string line)
-    {
-        try
+        // The latest of each is kept: read from the end, that is the first one met.
+        void Settle(long at)
         {
-            using var record = JsonDocument.Parse(line);
-            var root = record.RootElement;
-            return root.ValueKind == JsonValueKind.Object && String(root, "type") == "system" && String(root, "subtype") == "compact_boundary";
+            foreach (string title in pending)
+                seen.Shown.TryAdd(title, at);
+            pending.Clear();
         }
-        catch (JsonException)
+
+        TranscriptReader.ScanBackwards(log, line =>
         {
+            var span = line.Span;
+            bool header = span.IndexOf("Sheets of "u8) >= 0;
+            if (!header && span.IndexOf("\"type\":\"assistant\""u8) < 0 && span.IndexOf("compact_boundary"u8) < 0)
+                return false;
+            Classified found;
+            try
+            {
+                found = TranscriptReader.Classify(line);
+            }
+            catch (Exception e) when (e is InvalidDataException or FormatException or InvalidOperationException)
+            {
+                return false; // a record of a shape the reader does not know: skipped, as before
+            }
+            if (found.Kind == RecordKind.Compaction)
+            {
+                Settle(0);
+                return true;
+            }
+            if (found.Kind == RecordKind.Assistant)
+            {
+                Settle(found.Context);
+                if (span.IndexOf("character-sheets"u8) >= 0 && span.IndexOf("\"name\":\"Read\""u8) >= 0)
+                    foreach (string file in SheetsRead(Encoding.UTF8.GetString(span)))
+                        seen.Read.TryAdd(file, found.Context);
+                return contextNow > 0 && found.Context < limit;
+            }
+            if (header)
+                pending.AddRange(HeaderNames(Encoding.UTF8.GetString(span)));
             return false;
-        }
+        });
+        Settle(0); // headers with no call before them in the log
+        return seen;
     }
 
     /// <summary>The file names (lower case) of the <c>character-sheets/</c> files an assistant record's Read tool calls open.</summary>

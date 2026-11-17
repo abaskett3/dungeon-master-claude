@@ -8,6 +8,7 @@ namespace Dmc.Tests.Toolkit;
 /// </summary>
 public sealed partial class ToolkitTests
 {
+    /// <summary>The session log template has the Present line and quotes replies (A3, A7).</summary>
     [TestMethod]
     public void TheSessionLogRecordsWhoWasPresentAndQuotesReplies()
     {
@@ -17,6 +18,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("kit/dm-rules.md"), "check the scene's Present line in the session log");
     }
 
+    /// <summary>The game-state template counts anyone the player directs in a fight as a companion (FR-032).</summary>
     [TestMethod]
     public void ACompanionIsAnyoneThePlayerDirectsInAFight()
     {
@@ -24,6 +26,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read("kit/skills/dmc-campaign-full-save/SKILL.md"), "whom the player directed in a fight this session is a companion");
     }
 
+    /// <summary>The full save fixes a sheet line this session overturned and runs the arc check without telling the player.</summary>
     [TestMethod]
     public void TheFullSaveFixesOverturnedLinesAndRunsTheArcCheckSilently()
     {
@@ -33,6 +36,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(save, "Never mention these lines to the player");
     }
 
+    /// <summary>The rules carry the clauses of A and B, the correction rule's approved wording included.</summary>
     [TestMethod]
     public void TheRulesCarryTheClausesOfAAndB()
     {

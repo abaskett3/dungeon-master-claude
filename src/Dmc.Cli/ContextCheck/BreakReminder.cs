@@ -48,7 +48,7 @@ public static class BreakReminder
         long band = BandOf(size, baseline);
         if (band == 0)
             return "";
-        return $"Context {size / 1000}k is large, break due since {band / 1000}k: at the next break point, offer a full save " +
+        return $"Context {size / 1000}k is large, break due since {band / 1000}k: at the next break point, offer a full save (`/dmc-campaign-full-save`) " +
                $"and a fresh session, unless the player has declined since {band / 1000}k.";
     }
 }

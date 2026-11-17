@@ -41,8 +41,8 @@ are lettered A, B, C from the left and rows numbered 1, 2, 3 from the top, so `E
 A creature cannot stand in a wall or in empty space.
 
 A token needs `id` (one or two characters, unique) and `at` (its top-left cell). Optional: `name`, `kind` (`pc`,
-`ally`, `enemy` or `neutral`, the default), `size`, `note` (a short status the player can see) and `down` (greys the
-creature out). `size` is the width in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan). Above 5 ft every
+`ally`, `enemy` or `neutral`, the default), `size`, `note` (a short status the player can see), `down` (greys the
+creature out) and `aura` (see Auras and views). `size` is the width in cells (1 Medium or smaller, 2 Large, 3 Huge, 4 Gargantuan). Above 5 ft every
 creature fits in one square, so `size` counts as 1 for footprint, blocking and distance, and the legend panel only
 shows it (as 2×2).
 
@@ -101,6 +101,27 @@ A mistake is one line, and nothing is drawn: `"initiative"` must be a list of id
 a token on the map (a creature that is not on the map is not in the order), and `"current"` must be in it. An entry
 that is the name of several tokens (two goblins both called "Goblin") is refused, and the error lists their ids to
 use instead. `--measure` does not check the turn order, so a stale one never blocks a distance.
+
+## Auras and views
+
+Two optional keys; a map with neither is drawn exactly as before.
+
+```json
+{"id": "3", "name": "Grey stone", "kind": "enemy", "at": "H7", "aura": {"ft": 10, "name": "rime"}}
+"view": {"cols": "C-R", "rows": "3-17"}
+```
+
+A token's `"aura"` is an area that moves with it (cold, a stench, a silence): `ft` is its reach from the creature's
+edge, a positive multiple of `"cell_ft"`, and `name` says what it is. It is shaded in the creature's colour over every
+cell within reach, counted the 5e way, and named in the panel; terrain is not changed. Move the creature and the aura
+moves with it. The distance list adds a line for each aura naming the creatures inside it.
+
+A map's `"view"` draws only those columns and rows (each a first and last, joined by a dash), at the size they fit,
+under the place's own cell names, so the tracker's cells still hold. A creature not wholly inside it is not drawn and
+is named under the map; distances still cover every creature. A scene inherits its place's view and may set its own.
+
+A mistake is one line, and nothing is drawn: an aura whose `ft` is not a positive multiple of `"cell_ft"` or that has
+no `name`, and a view range that is off the grid, reversed, or not like `"C-R"` and `"3-17"`.
 
 ## Distances
 

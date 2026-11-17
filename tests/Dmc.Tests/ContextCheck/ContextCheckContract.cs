@@ -100,12 +100,44 @@ public abstract class ContextCheckContract
     }
 
     [TestMethod]
-    public void TheBandRisesEvery40k()
+    public void TheBandRisesEvery50k()
     {
-        string line = Check(Log(Assistant(90000), User("go on"), Assistant(195000)));
-        StringAssert.StartsWith(line, "Context 195k is large, break due since 190k:");
-        StringAssert.EndsWith(line, "declined since 190k.");
+        StringAssert.StartsWith(Check(Log(Assistant(90000), User("go on"), Assistant(195000))), "Context 195k is large, break due since 150k:");
+        string line = Check(Log(Assistant(90000), User("go on"), Assistant(205000)));
+        StringAssert.StartsWith(line, "Context 205k is large, break due since 200k:");
+        StringAssert.EndsWith(line, "declined since 200k.");
     }
+
+    /// <summary>An assistant record whose one content block, of <paramref name="type"/>, holds <paramref name="text"/>.</summary>
+    /// <param name="context">The context size, as <see cref="Assistant"/> takes it.</param>
+    /// <param name="text">The block's text.</param>
+    /// <param name="type"><c>text</c> for the reply, <c>thinking</c> for its thinking.</param>
+    static JsonObject Saying(int context, string text, string type = "text")
+    {
+        var record = Assistant(context);
+        var block = new JsonObject { ["type"] = type, [type == "thinking" ? "thinking" : "text"] = text };
+        record["message"]!["content"] = new JsonArray(block);
+        return record;
+    }
+
+    /// <summary>A reply that offers the break, as DMC words one.</summary>
+    const string Offer = "(OOC: this is a break point. I can run `/dmc-campaign-full-save` now. Playing on counts as declining.)";
+
+    [TestMethod]
+    public void AnOfferInTheBandSpendsItsLine() =>
+        Assert.AreEqual("", Check(Log(Assistant(90000), User("go on"), Saying(212000, Offer), User("I look around"),
+            Assistant(222000))));
+
+    [TestMethod]
+    public void AnOfferInAnEarlierBandDoesNotSpendTheNext() =>
+        StringAssert.StartsWith(Check(Log(Assistant(90000), User("go on"), Saying(205000, Offer), User("on"),
+            Assistant(255000))), "Context 255k is large, break due since 250k:");
+
+    [TestMethod]
+    public void OnlyTheReplysTextIsAnOffer() =>
+        StringAssert.StartsWith(Check(Log(Assistant(90000), User("go on"),
+            Saying(212000, "I should offer /dmc-campaign-full-save soon.", "thinking"), User("on"), Assistant(222000))),
+            "Context 222k is large, break due since 200k:");
 
     [TestMethod]
     public void OnlyTheLastCallCounts() =>

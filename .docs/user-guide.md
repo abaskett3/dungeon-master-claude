@@ -184,7 +184,7 @@ In a DMC folder, DMC is told before each of your messages how large the conversa
 "Large" is measured from where the conversation settled after DMC loaded your campaign. The first offer comes when the conversation has grown by 40,000 tokens beyond that point, and never before 150,000 tokens in all. So a campaign that loads a lot is not offered a break one round in.
 
 - Say **yes**: DMC runs a full save and checks it, then tells you it is safe. Type `/clear` and then `/dmc-resume-campaign`. DMC restates where you are without a full recap; a fight resumes on the same round with everyone where they stood.
-- Say **no**: DMC asks again when the conversation has grown by another 40,000 tokens.
+- Say **no**, or simply play on: DMC asks again when the conversation has grown by another 50,000 tokens.
 
 A fresh session starts smaller than it used to, because the resume reads less (see Resuming), so a break gives back more room.
 

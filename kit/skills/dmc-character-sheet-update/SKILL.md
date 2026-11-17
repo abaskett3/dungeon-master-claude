@@ -30,7 +30,9 @@ A sheet must let a DM who has never met the character play them correctly: the n
 
 Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md`'s People for the character's first appearance, starting with their bold name, then `(also: …)` with any other names and role words the player may use for them alone.
 
-A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history, and use species or class defaults only where it says nothing. Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason when the history gives one, so no later reader puts the default back. Their voice, the names they use and their appearance go on the sheet itself.
+A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history. Their voice, the names they use and their appearance go on the sheet itself.
+
+For every character, linked or not, use species or class defaults only where the files and play say nothing. Where they contradict a default (a trait lost or never had), the field says so in their words, with the reason when they give one, so no later reader puts the default back.
 
 ## Check
 

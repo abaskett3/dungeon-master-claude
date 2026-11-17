@@ -66,16 +66,16 @@ public sealed class ContextCheckEdgeTests
     }
 
     [TestMethod]
-    public void TheBandChangesExactlyEvery40k()
+    public void TheBandChangesExactlyEvery50k()
     {
-        StringAssert.Contains(BreakReminder.For(189999), "break due since 150k");
-        StringAssert.Contains(BreakReminder.For(190000), "break due since 190k");
-        StringAssert.Contains(BreakReminder.For(230000), "break due since 230k");
-        StringAssert.Contains(BreakReminder.For(1000000), "Context 1000k is large, break due since 990k");
+        StringAssert.Contains(BreakReminder.For(199999), "break due since 150k");
+        StringAssert.Contains(BreakReminder.For(200000), "break due since 200k");
+        StringAssert.Contains(BreakReminder.For(250000), "break due since 250k");
+        StringAssert.Contains(BreakReminder.For(1000000), "Context 1000k is large, break due since 1000k");
     }
 
-    // The first band is the larger of 150k and the baseline plus 40k; the bands then rise every 40k from there, so
-    // a declined offer is repeated at the next one, as before.
+    // The first band is the larger of 150k and the baseline plus 40k (the margin stays 40k, spec 016 FR-020); the bands
+    // then rise every 50k from there, so a declined offer is repeated at the next one, as before.
     [TestMethod]
     public void TheFirstBandIsRelativeToTheBaselineWithA150kFloor()
     {
@@ -86,8 +86,8 @@ public sealed class ContextCheckEdgeTests
 
         Assert.AreEqual("", BreakReminder.For(181999, baseline: 142000));
         StringAssert.Contains(BreakReminder.For(182000, baseline: 142000), "break due since 182k");
-        StringAssert.Contains(BreakReminder.For(221999, baseline: 142000), "break due since 182k");
-        StringAssert.Contains(BreakReminder.For(222000, baseline: 142000), "break due since 222k");
+        StringAssert.Contains(BreakReminder.For(231999, baseline: 142000), "break due since 182k");
+        StringAssert.Contains(BreakReminder.For(232000, baseline: 142000), "break due since 232k");
         StringAssert.Contains(BreakReminder.For(230000, baseline: 142000), "Context 230k is large");
     }
 
@@ -248,7 +248,8 @@ public sealed class ContextCheckEdgeTests
         string[] loaded = [Command("resume-campaign"), Assistant(165000), User()];
         Assert.AreEqual("", Run([.. loaded, Assistant(204999)]), "165k + 40k = 205k is where the first band starts");
         StringAssert.StartsWith(Run([.. loaded, Assistant(205000)]), "Context 205k is large, break due since 205k:");
-        StringAssert.StartsWith(Run([.. loaded, Assistant(250000)]), "Context 250k is large, break due since 245k:");
+        StringAssert.StartsWith(Run([.. loaded, Assistant(250000)]), "Context 250k is large, break due since 205k:");
+        StringAssert.StartsWith(Run([.. loaded, Assistant(255000)]), "Context 255k is large, break due since 255k:");
 
         // A resume that settles low keeps the 150k floor.
         StringAssert.StartsWith(Run(Command("resume-campaign"), Assistant(60000), User(), Assistant(150000)),

@@ -272,9 +272,13 @@ internal static partial class ReadSet
             .Where(name => name.Length > 0 && !name.Contains(NotCompanions, StringComparison.OrdinalIgnoreCase)
                            && !(name.StartsWith('(') && name.EndsWith(')'))); // the template's "(character name)" placeholder
 
-    /// <summary>The text that names who is in the scene: the Scene block's Present line and the Combat tracker section, comments left out.</summary>
+    /// <summary>
+    /// The text that names who is in the scene: the Scene block's Present line and the Combat tracker section, comments
+    /// left out. Shared by the resume's read set (<see cref="Sheets"/>) and the hook's sheet lines
+    /// (<see cref="Retrieval.SheetReminder"/>, spec 016 FR-008), so the two agree on who is present.
+    /// </summary>
     /// <param name="gameState">The lines of <c>game-state.md</c>.</param>
-    static string PresentText(IReadOnlyList<Line> gameState)
+    internal static string PresentText(IReadOnlyList<Line> gameState)
     {
         var present = OutsideComments(Measurement.SectionLines(gameState, "Scene"))
             .Where(t => t.Contains("**Present**", StringComparison.Ordinal));
@@ -316,28 +320,50 @@ internal static partial class ReadSet
     /// </summary>
     /// <param name="text">The text to search.</param>
     /// <param name="title">The sheet's title.</param>
-    internal static bool Mentions(string text, string title)
+    internal static bool Mentions(string text, string title) => MentionAt(text, title) >= 0;
+
+    /// <summary>
+    /// Where a text first names a sheet's character, by the same tries as <see cref="Mentions"/>: the index of the
+    /// earliest match, or -1 for none. The hook's sheet lines use it to keep the Present line's order (spec 016 FR-008).
+    /// </summary>
+    /// <param name="text">The text to search.</param>
+    /// <param name="title">The sheet's title.</param>
+    internal static int MentionAt(string text, string title)
     {
         if (text.Length == 0 || title.Length == 0)
-            return false;
+            return -1;
         string[] words = title.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         var tries = new List<string> { title };
         if (words.Length > 1)
         {
-            tries.Add(words[0]);
-            tries.Add(words[^1]);
+            tries.AddRange(new[] { words[0], words[^1] }.Select(w => w.Trim(',', '.', ';', ':', '(', ')', '"', '\''))
+                .Where(w => w.Length >= 3 && !CommonWords.Contains(w)));
         }
-        return IsWholeWord(text, title)
-               || tries.Skip(1).Select(w => w.Trim(',', '.', ';', ':', '(', ')', '"', '\''))
-                   .Where(w => w.Length >= 3 && !CommonWords.Contains(w))
-                   .Any(w => IsWholeWord(text, w));
+        int first = -1;
+        foreach (string word in tries)
+        {
+            int at = WholeWordAt(text, word);
+            if (at >= 0 && (first < 0 || at < first))
+                first = at;
+        }
+        return first;
     }
 
     /// <summary>Whether a text holds a word or phrase as a whole word (not inside a longer one), ignoring case.</summary>
     /// <param name="text">The text to search.</param>
     /// <param name="word">The word or phrase.</param>
-    static bool IsWholeWord(string text, string word) =>
-        word.Length > 0 && Regex.IsMatch(text, $@"(?<!\w){Regex.Escape(word)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    static bool IsWholeWord(string text, string word) => WholeWordAt(text, word) >= 0;
+
+    /// <summary>The index of the first whole-word match of a word or phrase in a text, ignoring case; -1 for none.</summary>
+    /// <param name="text">The text to search.</param>
+    /// <param name="word">The word or phrase.</param>
+    static int WholeWordAt(string text, string word)
+    {
+        if (word.Length == 0)
+            return -1;
+        var match = Regex.Match(text, $@"(?<!\w){Regex.Escape(word)}(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return match.Success ? match.Index : -1;
+    }
 
     /// <summary>
     /// A sheet as the resume reads it. A companion's with a <see cref="PlayCardHeading"/> section: from the top through

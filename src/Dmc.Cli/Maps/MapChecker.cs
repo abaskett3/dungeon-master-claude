@@ -331,7 +331,7 @@ public static class MapChecker
                 taken[(c, r)] = id;
             }
             tokens.Add(new Token(id, name, kind, size, Py.Str(sizeValue), span, col, row, cells,
-                Py.Str(Get(token, "note", "")), Py.Truthy(Get(token, "down", false))));
+                Py.Str(Get(token, "note", "")), Py.Truthy(Get(token, "down", false)), CheckAura(token, id, name, cellFt)));
         }
 
         var labels = new List<Label>();
@@ -356,7 +356,79 @@ public static class MapChecker
         var (initiative, current) = turnOrder ? CheckTurnOrder(data, tokens) : ([], null);
 
         return new MapModel(Py.Str(Get(data, "title", "Map")), Py.Str(Get(data, "notes", "")), grid, cols, rows, legend,
-            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText, initiative, current);
+            cellFt, Py.Str(Get(data, "scale_note", "")), north, tokens, labels, edgeText, initiative, current,
+            CheckView(Get(data, "view", null), cols, rows));
+    }
+
+    /// <summary>
+    /// A token's optional <c>"aura"</c> (spec 016 FR-025, contracts/map-aura-view.md): an object with <c>ft</c>, its reach
+    /// from the creature's edge as a positive multiple of the map's <c>cell_ft</c>, and <c>name</c>. Null or absent means none.
+    /// </summary>
+    /// <param name="token">The token's object.</param>
+    /// <param name="id">Its id, for the error.</param>
+    /// <param name="name">Its name, for the error.</param>
+    /// <param name="cellFt">Feet in one square.</param>
+    /// <exception cref="DmcException">The aura is not an object, its reach is not a positive multiple of the cell, or it has no name.</exception>
+    static Aura? CheckAura(PyDict token, string id, string name, int cellFt)
+    {
+        object? value = Get(token, "aura", null);
+        if (value is null)
+            return null;
+        if (value is not PyDict aura)
+            throw Fail($"token {id} ({name}): \"aura\" must be an object with \"ft\" and \"name\".");
+        if (!Py.TryExactInt(Get(aura, "ft", null), out var ft) || ft <= 0 || ft % cellFt != 0 || ft > int.MaxValue)
+            throw Fail($"token {id} ({name}): aura \"ft\" must be a positive multiple of the map's {cellFt} ft squares.");
+        if (Get(aura, "name", null) is not string { Length: > 0 } auraName || auraName.Trim().Length == 0)
+            throw Fail($"token {id} ({name}): the aura needs a \"name\".");
+        return new Aura((int)ft, auraName);
+    }
+
+    /// <summary>
+    /// The map's optional <c>"view"</c> (spec 016 FR-025, contracts/map-aura-view.md): <c>{"cols": "C-R", "rows": "3-17"}</c>,
+    /// the columns and rows drawn, each a first and last that are on the grid and in order. Null or absent means the whole map.
+    /// </summary>
+    /// <param name="value">The value of <c>"view"</c>.</param>
+    /// <param name="cols">The map's width in cells.</param>
+    /// <param name="rows">The map's height in cells.</param>
+    /// <exception cref="DmcException">The view is not an object of two ranges, or a range is off the grid or reversed.</exception>
+    static MapView? CheckView(object? value, int cols, int rows)
+    {
+        if (value is null)
+            return null;
+        if (value is not PyDict view || view.Keys.Any(k => k is not ("cols" or "rows")))
+            throw Fail("\"view\" must be an object with \"cols\" (like \"C-R\") and \"rows\" (like \"3-17\").");
+        var (col0, col1) = Range(Get(view, "cols", $"A-{Cells.ColName(cols - 1)}"), "cols", cols, true);
+        var (row0, row1) = Range(Get(view, "rows", $"1-{rows}"), "rows", rows, false);
+        return new MapView(col0, row0, col1, row1);
+    }
+
+    /// <summary>One range of a view, 0-based: two column letters or two row numbers joined by a dash.</summary>
+    /// <param name="value">The range as the file gives it.</param>
+    /// <param name="what">"cols" or "rows", for the error.</param>
+    /// <param name="count">How many columns or rows the grid has.</param>
+    /// <param name="letters">True for columns (letters), false for rows (numbers from 1).</param>
+    /// <exception cref="DmcException">The range is not two names joined by a dash, is off the grid, or is reversed.</exception>
+    static (int First, int Last) Range(object? value, string what, int count, bool letters)
+    {
+        string example = letters ? "C-R" : "3-17";
+        string[] ends = value is string text ? text.Split('-', StringSplitOptions.TrimEntries) : [];
+        if (ends.Length != 2)
+            throw Fail($"view \"{what}\" must be a range like \"{example}\".");
+        int Index(string end)
+        {
+            bool ok = letters ? end.Length > 0 && end.All(char.IsAsciiLetter) : end.Length > 0 && end.All(char.IsAsciiDigit);
+            if (!ok)
+                throw Fail($"view \"{what}\" must be a range like \"{example}\".");
+            long index = letters ? end.ToUpperInvariant().Aggregate(0L, (n, c) => Math.Min(n * 26 + (c - 'A' + 1), int.MaxValue)) - 1
+                                 : (end.Length > 9 ? int.MaxValue : long.Parse(end)) - 1;
+            if (index < 0 || index >= count)
+                throw Fail($"view \"{what}\" {Py.Str(value)} is off the grid, which has {(letters ? $"columns A to {Cells.ColName(count - 1)}" : $"rows 1 to {count}")}.");
+            return (int)index;
+        }
+        int first = Index(ends[0]), last = Index(ends[1]);
+        if (first > last)
+            throw Fail($"view \"{what}\" {Py.Str(value)} is reversed: give the first {(letters ? "column" : "row")} first.");
+        return (first, last);
     }
 
     /// <summary>

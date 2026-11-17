@@ -78,8 +78,41 @@ public static class Distances
         return $"{span}{far} (straight line, walls ignored)";
     }
 
-    /// <summary>The heading and one line for each pair of creatures; nothing for fewer than two.</summary>
+    /// <summary>
+    /// The heading and one line for each pair of creatures, nothing for fewer than two; then, when a creature has an aura
+    /// (spec 016 FR-025), a heading and one line for each aura naming the creatures inside it (<see cref="AuraLines"/>).
+    /// </summary>
     public static List<string> DistanceLines(MapModel m)
+    {
+        var lines = PairLines(m);
+        lines.AddRange(AuraLines(m));
+        return lines;
+    }
+
+    /// <summary>
+    /// One line for each aura: the creatures with a cell inside it, the aura's own creature left out, or "nobody"; with a
+    /// heading first. Nothing when no creature has an aura, so a map without one prints exactly what it did before.
+    /// </summary>
+    /// <param name="m">The map.</param>
+    public static List<string> AuraLines(MapModel m)
+    {
+        var lines = new List<string>();
+        foreach (var source in m.Tokens.Where(t => t.Aura is not null))
+        {
+            var (c0, r0, c1, r1) = source.AuraArea(m.Cols, m.Rows, m.CellFt)!.Value;
+            var inside = m.Tokens.Where(t => t != source && t.Cells.Any(p => p.Col >= c0 && p.Col <= c1 && p.Row >= r0 && p.Row <= r1))
+                .Select(t => $"{t.Id} {t.Name}").ToList();
+            if (lines.Count == 0)
+                lines.Add("Inside auras (reach from the creature's edge):");
+            lines.Add($"  {source.Id} {source.Name}'s {source.Aura!.Name} ({Py.G((long)source.Aura.Ft)} ft):  "
+                      + (inside.Count > 0 ? string.Join(", ", inside) : "nobody"));
+        }
+        return lines;
+    }
+
+    /// <summary>The heading and one line for each pair of creatures; nothing for fewer than two.</summary>
+    /// <param name="m">The map.</param>
+    static List<string> PairLines(MapModel m)
     {
         var tokens = m.Tokens;
         var lines = new List<string>();

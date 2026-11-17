@@ -3,11 +3,13 @@ using Dmc.Size;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc size [NAME] [--check] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
+/// <c>dmc size [NAME] [--check | --arc] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
 /// with what to trim. It lists the files <c>dmc-resume-campaign</c> step 2 reads, by that step's rules, and the part of
 /// each; the full report adds the total, the largest sections and the flags, and <c>--check</c>, the form DMC runs in
 /// play, prints only the flags, a <c>module:</c> line when its module fails <c>dmc module check</c> (spec 012), any
-/// problem with the campaign's link lines and its legacy lines (spec 011), or nothing when all is well.
+/// problem with the campaign's link lines and its legacy lines (spec 011), or nothing when all is well. <c>--arc</c>, the
+/// form the full save runs, prints only the Arc plan's flags (<see cref="ArcFlags"/>, spec 016 FR-026), kept out of
+/// <c>--check</c> so they never reach the player.
 /// </summary>
 /// <remarks>
 /// It never writes, moves or deletes a file. A measured campaign exits 0 whatever the flags, because DMC acts on what it
@@ -21,12 +23,12 @@ public sealed class SizeCommand : ICommand
     public string Name => "size";
 
     /// <inheritdoc />
-    public string Summary => "what a resume reads, in estimated tokens, with what to trim: dmc size [NAME] [--check] [--folder PATH]";
+    public string Summary => "what a resume reads, in estimated tokens, with what to trim: dmc size [NAME] [--check | --arc] [--folder PATH]";
 
     /// <summary>The text <c>--help</c> prints: usage, the two forms and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
     static readonly string Help = """
-usage: dmc size [NAME] [--check] [--folder PATH]
+usage: dmc size [NAME] [--check | --arc] [--folder PATH]
 
 Measures what a resume of a campaign reads: each file dmc-resume-campaign reads, the part of it the resume reads, and
 its size in estimated tokens (bytes / 4), with the total, the largest sections and anything to trim (a file near the
@@ -39,6 +41,9 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
             line each, at most three), then a "legacy:" line for each linked campaign's legacy.md this one
             has not folded in (never one after this campaign's story, such as its sequel), and "legacy due:"
             when a linked campaign is open whose story this one does not come after, with the lines to keep
+  --arc     print only the Arc plan's flags, one "arc:" line each, and nothing when all is well (the form
+            the full save runs; never shown to the player): a dead person the plan still names, no current
+            stage, no budget on it or over it, an antagonist's next move with no session
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 
@@ -57,6 +62,12 @@ Read tool's cap, over its budget, canon over its limit, leftovers the full save 
 
         string folder = DmcFolder.FromOption(request.Folder);
         string campaign = SizeReport.Target(folder, request.Name);
+        if (request.Arc)
+        {
+            foreach (string arcLine in ArcFlags.Find(folder, campaign))
+                io.Out.WriteLine(arcLine);
+            return 0;
+        }
         var result = SizeReport.Measure(folder, campaign);
         var lines = request.Check ? Flags.CheckLines(result.Flags, campaign) : SizeReport.FullReport(result);
         if (request.Check && result.ModuleLine is { } module)

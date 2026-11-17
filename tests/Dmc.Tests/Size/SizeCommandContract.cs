@@ -375,7 +375,7 @@ public abstract class SizeCommandContract
     {
         var result = Size("--help");
         Assert.AreEqual(0, result.ExitCode);
-        StringAssert.StartsWith(result.Stdout, "usage: dmc size [NAME] [--check] [--folder PATH]");
+        StringAssert.StartsWith(result.Stdout, "usage: dmc size [NAME] [--check | --arc] [--folder PATH]");
     }
 
     [TestMethod]

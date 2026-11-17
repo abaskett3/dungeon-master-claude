@@ -370,12 +370,16 @@ public static class SvgDrawing
     /// labels and creatures, the scale bar and compass, and, to the right, the panel that lists, in this order, the
     /// turn order (only when the map has an <c>"initiative"</c>, the current turn on a highlighted plate), the
     /// creatures and the key to the symbols. Its size is worked out from the contents, in the units the PNG uses as
-    /// pixels.
+    /// pixels. With a <see cref="MapModel.View"/>, only those columns and rows are drawn, under their own names, and the
+    /// creatures outside it are named under the map; each creature's <see cref="Aura"/> is shaded under it (spec 016
+    /// FR-025). A map with neither draws exactly as before.
     /// </summary>
     /// <param name="m">A map that passed <see cref="MapChecker.Check"/>.</param>
     public static string Render(MapModel m)
     {
-        int cols = m.Cols, rows = m.Rows;
+        // The part drawn (spec 016 FR-025): the view, or the whole map. Cells keep their names on the whole map.
+        var view = m.View ?? new MapView(0, 0, m.Cols - 1, m.Rows - 1);
+        int cols = view.Col1 - view.Col0 + 1, rows = view.Row1 - view.Row0 + 1;
         int mapW = cols * Cell, mapH = rows * Cell;
         var edges = m.Edges;
         int sideL = edges.ContainsKey("left") ? 150 : 0;
@@ -411,17 +415,18 @@ public static class SvgDrawing
         }
 
         int y0 = y + Gutter; // top edge of the grid
+        int gx = x0 - view.Col0 * Cell, gy = y0 - view.Row0 * Cell; // where cell A1 would be, so every cell keeps its place
 
         // tiles
-        for (int r = 0; r < m.Grid.Length; r++)
+        for (int r = view.Row0; r <= view.Row1; r++)
         {
-            for (int c = 0; c < m.Grid[r].Length; c++)
+            for (int c = view.Col0; c <= view.Col1; c++)
             {
                 int symbol = m.Grid[r][c];
                 if (symbol == ' ')
                     continue;
                 var entry = m.Legend[symbol];
-                @out.Add(Tile(entry.Terrain, symbol, x0 + c * Cell, y0 + r * Cell, Cell, entry.Color));
+                @out.Add(Tile(entry.Terrain, symbol, gx + c * Cell, gy + r * Cell, Cell, entry.Color));
             }
         }
 
@@ -429,14 +434,14 @@ public static class SvgDrawing
         for (int c = 0; c < cols; c++)
         {
             double cx = x0 + c * Cell + Cell / 2.0;
-            @out.Add(Text(cx, y0 - 8, Cells.ColName(c), 12, Muted, "middle"));
-            @out.Add(Text(cx, y0 + mapH + 17, Cells.ColName(c), 12, Muted, "middle"));
+            @out.Add(Text(cx, y0 - 8, Cells.ColName(view.Col0 + c), 12, Muted, "middle"));
+            @out.Add(Text(cx, y0 + mapH + 17, Cells.ColName(view.Col0 + c), 12, Muted, "middle"));
         }
         for (int r = 0; r < rows; r++)
         {
             double cy = y0 + r * Cell + Cell / 2.0 + 4;
-            @out.Add(Text(x0 - 8, cy, Num(r + 1), 12, Muted, "end"));
-            @out.Add(Text(x0 + mapW + 8, cy, Num(r + 1), 12, Muted, "start"));
+            @out.Add(Text(x0 - 8, cy, Num(view.Row0 + r + 1), 12, Muted, "end"));
+            @out.Add(Text(x0 + mapW + 8, cy, Num(view.Row0 + r + 1), 12, Muted, "start"));
         }
 
         // side captions
@@ -455,27 +460,41 @@ public static class SvgDrawing
         }
 
         // labels: text on a pale plate, centred on the cell
-        foreach (var label in m.Labels)
+        foreach (var label in m.Labels.Where(l => view.Holds(l.Col, l.Row)))
         {
-            double lx = x0 + label.Col * Cell + Cell / 2.0;
-            double ly = y0 + label.Row * Cell + Cell / 2.0;
+            double lx = gx + label.Col * Cell + Cell / 2.0;
+            double ly = gy + label.Row * Cell + Cell / 2.0;
             double w = Py.Len(label.Text) * 6.4 + 10;
             @out.Add($"<rect x=\"{F(lx - w / 2)}\" y=\"{F(ly - 9)}\" width=\"{F(w)}\" height=\"18\" rx=\"4\" "
                      + "fill=\"#fffdf5\" fill-opacity=\"0.88\" stroke=\"#8a8371\" stroke-width=\"0.8\"/>");
             @out.Add(Text(lx, ly + 4, label.Text, 11, "#2b2f36", "middle"));
         }
 
-        // creatures
-        var (slots, badges) = SharedSlots(m.Tokens);
-        foreach (var token in m.Tokens)
+        // auras, under the creatures: every cell within reach, clipped to the part drawn (spec 016 FR-025)
+        foreach (var token in m.Tokens.Where(t => t.Aura is not null))
+        {
+            var (c0, r0, c1, r1) = token.AuraArea(m.Cols, m.Rows, m.CellFt)!.Value;
+            (c0, r0, c1, r1) = (Math.Max(c0, view.Col0), Math.Max(r0, view.Row0), Math.Min(c1, view.Col1), Math.Min(r1, view.Row1));
+            if (c0 > c1 || r0 > r1)
+                continue;
+            string color = Kinded(token.Kind);
+            @out.Add($"<rect x=\"{gx + c0 * Cell}\" y=\"{gy + r0 * Cell}\" width=\"{(c1 - c0 + 1) * Cell}\" height=\"{(r1 - r0 + 1) * Cell}\" "
+                     + $"fill=\"{color}\" fill-opacity=\"0.18\" stroke=\"{color}\" stroke-width=\"2\" stroke-dasharray=\"6 4\">"
+                     + $"<title>{Py.HtmlEscape($"{token.Name}: {token.Aura!.Name}, {token.Aura.Ft} ft")}</title></rect>");
+        }
+
+        // creatures: only those wholly inside the part drawn; the rest are named under the map
+        var drawn = m.Tokens.Where(t => t.Cells.All(p => view.Holds(p.Col, p.Row))).ToList();
+        var (slots, badges) = SharedSlots(drawn);
+        foreach (var token in drawn)
         {
             if (!slots.TryGetValue(token.Id, out var slot))
-                @out.Add(DrawToken(token, x0, y0));
+                @out.Add(DrawToken(token, gx, gy));
             else if (slot is not null) // null: too many in one cell, shown as +N
-                @out.Add(DrawToken(token, x0, y0, slot: slot));
+                @out.Add(DrawToken(token, gx, gy, slot: slot));
         }
         foreach (var (col, row, dx, dy, hidden) in badges)
-            @out.Add(DrawBadge(col, row, dx, dy, hidden, x0, y0));
+            @out.Add(DrawBadge(col, row, dx, dy, hidden, gx, gy));
 
         y = y0 + mapH + Gutter;
         if (edges.TryGetValue("bottom", out string? bottomText))
@@ -506,7 +525,18 @@ public static class SvgDrawing
                      + $"fill=\"{Ink}\"/></g>");
             @out.Add(Text(nx - 16, y, "N", 13, Ink, "end", "bold"));
         }
-        int mapBottom = y + (scaleLines.Count - 1) * 17 + Pad;
+        int last = y + (scaleLines.Count - 1) * 17;
+        var outside = m.Tokens.Except(drawn).ToList();
+        if (outside.Count > 0)
+        {
+            string text = "Not drawn, outside the view: " + string.Join(", ", outside.Select(t => $"{t.Id} {t.Name} ({Cells.CellName(t.Col, t.Row)})"));
+            foreach (string line in Wrap(text, Math.Max((int)((leftW - Pad) / 7.0), 16)))
+            {
+                last += 19;
+                @out.Add(Text(Pad, last, line, 13, Muted));
+            }
+        }
+        int mapBottom = last + Pad;
 
         // legend panel: creatures first, then terrain
         int chars = (int)((Panel - 34) / 6.8);
@@ -560,6 +590,8 @@ public static class SvgDrawing
                     label += $" ({token.SizeText}×{token.SizeText})";
                 if (token.Note.Length > 0)
                     label += $"  ·  {token.Note}";
+                if (token.Aura is { } aura)
+                    label += $"  ·  {aura.Name}, {aura.Ft} ft";
                 @out.Add(DrawToken(token, panelX + 12, py + 12, legendScale: 11));
                 EntryText(Wrap(label, chars));
             }

@@ -71,6 +71,61 @@ public static class TranscriptReader
         return size == 0 ? default : new ContextReading(size, BaselineOf(path, size));
     }
 
+    /// <summary>The words every offer of a break holds: the full save's command (<c>kit/dm-rules.md</c> § Context).</summary>
+    public const string OfferMarker = "dmc-campaign-full-save";
+
+    /// <summary>
+    /// True when a reply since the context reached <paramref name="band"/> tokens already offered the break: the text
+    /// (not the thinking or a tool call) of an assistant call of the main conversation at or above the band names
+    /// <see cref="OfferMarker"/> (spec 016, the headless run: the rule said one offer per band and DMC made two). Reads
+    /// the log from the end and stops at the first call below the band or a compaction boundary, so it costs about one
+    /// band of the log.
+    /// </summary>
+    /// <param name="path">The session log.</param>
+    /// <param name="band">The band's start, in tokens, as <see cref="BreakReminder.BandOf"/> gives it.</param>
+    /// <returns>True when that band's offer has been made.</returns>
+    /// <exception cref="InvalidDataException">An assistant record has a shape the reader does not know; the caller prints the line as before.</exception>
+    public static bool OfferedSince(string path, long band)
+    {
+        bool offered = false;
+        ScanBackwards(path, line =>
+        {
+            var found = Classify(line);
+            if (found.Kind == RecordKind.Compaction)
+                return true;
+            if (found.Kind != RecordKind.Assistant)
+                return false;
+            if (found.Context < band)
+                return true;
+            offered = line.Span.IndexOf("dmc-campaign-full-save"u8) >= 0 && TextNames(line, OfferMarker);
+            return offered;
+        });
+        return offered;
+    }
+
+    /// <summary>True when a text block of an assistant record holds <paramref name="words"/>.</summary>
+    /// <param name="line">One log line, an assistant record.</param>
+    /// <param name="words">The words looked for.</param>
+    /// <returns>False for a record with no such text block, or one that does not parse.</returns>
+    static bool TextNames(ReadOnlyMemory<byte> line, string words)
+    {
+        if (line.Span.StartsWith(Utf8Bom))
+            line = line[3..];
+        using var document = Parse(line);
+        if (document is null || document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object
+            || !message.TryGetProperty("content", out var content))
+            return false;
+        return content.ValueKind switch
+        {
+            JsonValueKind.String => content.GetString()!.Contains(words, StringComparison.Ordinal),
+            JsonValueKind.Array => content.EnumerateArray().Any(block =>
+                block.ValueKind == JsonValueKind.Object && Text(block, "type") == "text"
+                && Text(block, "text") is { } text && text.Contains(words, StringComparison.Ordinal)),
+            _ => false,
+        };
+    }
+
     /// <summary>Context of the last call in the log; 0 if a compaction came after it or there is none.</summary>
     /// <param name="path">The session log.</param>
     /// <returns>The size in tokens, or 0.</returns>

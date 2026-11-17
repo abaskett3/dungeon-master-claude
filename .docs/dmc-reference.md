@@ -157,6 +157,8 @@ dmc map: "initiative" names "Goblin", the name of 2 tokens: use their ids (1, 2)
 dmc map: "current" is "Pip", who is not in "initiative".
 ```
 
+**Auras and views** (spec 016 FR-025). A token's optional `"aura": {"ft": 10, "name": "rime"}` is shaded in its colour over every cell within `ft` of its own cells (the 5e count; `ft` a positive multiple of `cell_ft`), moves with it, is named in the panel, and adds a heading `Inside auras (reach from the creature's edge):` and a line per aura to the distances, `  3 Grey stone's rime (10 ft):  1 Kibil` or `nobody`. A map's optional `"view": {"cols": "C-R", "rows": "3-17"}` draws only those columns and rows, under the place's own cell names, and names the creatures not wholly inside it under the map (`Not drawn, outside the view: …`); the distances still cover everyone, and a scene inherits its base place's view. A map with neither draws exactly as before. Refused in one line: `token 3 (Grey stone): aura "ft" must be a positive multiple of the map's 5 ft squares.`, `token 3 (Grey stone): the aura needs a "name".`, `view "cols" C-Z is off the grid, which has columns A to P.`, `view "cols" F-C is reversed: give the first column first.`
+
 Distances are measured between the nearest cells of two creatures, in a straight line that ignores walls. At 5 ft and 30 ft they count squares the 5e way, a diagonal step costing the same as a straight one; at 30 ft they read "about N ft", and two creatures in one cell read "same square (within 30 ft)". On a mile-scale map they are the true straight-line distance between cell centres, "about N miles".
 
 A map with a mistake in it is refused with one line and exit code 1, and nothing is drawn:
@@ -679,7 +681,7 @@ person 2: character-sheets/minor-npcs.md:9 | Old Hesketh
 Added in release 0.3.1.
 
 ```
-dmc size [NAME] [--check] [--folder PATH]
+dmc size [NAME] [--check | --arc] [--folder PATH]
 ```
 
 Measures what a resume of a campaign reads, in estimated tokens (bytes ÷ 4): each file `dmc-resume-campaign` step 2 reads, chosen by that step's rules, and the part of it the resume reads. It never writes, moves or deletes anything.
@@ -688,6 +690,7 @@ Measures what a resume of a campaign reads, in estimated tokens (bytes ÷ 4): ea
 |---|---|
 | `NAME` | A campaign folder under `adventures/`. Default: the active campaign (`adventures/.active-campaign`). A name starting with a dot is a staging folder and is refused. |
 | `--check` | The form DMC runs in play: print only what to act on, one line each, at most 12 (the twelfth then says how many more), and nothing when all is well. After the flags comes, for a module campaign that is not finished, one line when its module fails [`dmc module check`](#module): `module: modules/<name> has N problems: run dmc module check <name> (not the full save's to trim)`; none for a sound module, a finished one or one not ingested. Then come the notices of the campaign's linked set ([Linked campaigns](#linked-campaigns)) about the lines of campaigns that are not closed, at most three then `(+N more)`, each ending `(not the full save's to trim)`, the `(+N more)` line too, so play hears of a broken link with no command of its own. Then the legacy lines ([Legacy files](campaign-files.md#legacy-files)), not capped, each ending the same way: `legacy: read adventures/<campaign>/legacy.md (written session N; record <campaign> sN)` for each linked campaign, open or closed, whose `legacy.md` was written in a later session than this campaign's `game-state.md` Legacies folded line records for it, or none is recorded (`written unknown` when its Written line cannot be read), except one whose digest a campaign nearer this one holds, which the digest carries, and never a campaign that comes after this one's story (a campaign whose chain of Continues lines (or old Predecessor lines) leads back to this one or a campaign played alongside it, however else it is linked, and any campaign reached only through such a campaign: its sequel and beyond, and for a side campaign the sequel of the campaign it is played alongside), since this one's canon is what that sequel's digest copies; and, while its set holds an open campaign whose story this one does not come after, `legacy due: at the full save, update this campaign's legacy.md for open linked campaigns <names>: add this save's changes and drop the lines from session N and earlier`, where N is the lowest session the open linked campaigns record for this one, or `keep every line the budget allows` when any records none. A campaign alone, or a closed one, gets neither. |
+| `--arc` | The form the full save runs in step 5 (spec 016 FR-026), never shown to the player: print only the Arc plan's flags, one `arc:` line each, and nothing when all is well; see [The arc check](#the-arc-check). Not with `--check`. |
 | `--folder` | The DMC folder. Default: the one `dmc folder` prints. `review-transcript` passes it, since it runs in this repository. |
 
 **What it reads.** Both player-options files, `game-state.md`, `story/summary.md`, `story/dm-notes.md`; every PC's sheet, each companion's (a `###` block under Party status other than "With the party, not companions", matched to the sheet by its title, or by a first or last word of the title that is the block name's first or last word, so `The Kelderak treasure` names no Kelderak) and each NPC's whose title, first or last word is in the Present line or the Combat tracker, each down to its history when that is its last section (not `minor-npcs.md` or a `-history.md` file), except a companion's sheet with a `## Play card` section, which is measured from its top to the next `## ` heading after the card, against its own 1,000 budget (spec 013); the latest `story/sessions/session-NNN.md` from its third-last scene, or whole when it has fewer than three or the last full save does not cover it; `story/canon.md`, whole under 19,000 (its archive limit, since the gate's canon rollback) and otherwise its always-read sections plus the bytes `dmc recall NAME --scene` prints, which is what the resume reads (shown `read in sections and by scene`); and for a module campaign `module-progress.md`, the module's `index.md` and each digest section its "Digest to read before continuing" line names. That line names a chapter file and then one or more headings, each after `§` and separated by `;` (`chapters/05-hub.md § 12. The Well; § The Bell Tolls`), or, in the older forms, one section (`chapters/05-hub.md, section The Well`), a file alone (read whole) or `none` (any line that starts with the word `none`, in any case, prose after it included, names no digest even when the prose names a file; `nonesuch.md` is a file). When several headings are named and any of them misses, the chapter is measured whole once and one flag names every miss. Each heading is found by `dmc lookup`'s own matcher on that file (an exact heading, then one holding every word), so the part measured is the section the resume's lookup prints; several headings are one part each, `<file> § <heading>`, and a section named twice counts once. A heading that matches none or several measures the chapter whole and adds a flag that holds the save: `module-progress.md: no heading "<heading>" in <file> (nearest: …): name one`, or `… matches N headings in <file>: name one`. A missing file is listed and counts nothing. A toolkit test keeps these rules in step with the skill.
@@ -702,7 +705,19 @@ story/dm-notes.md 20.5k is over its 10k budget
 story/dm-notes.md Opposition: 4 rows with none left alive
 ```
 
-The full report has a header line, one line per file (path, tokens, budget or limit, what is read), a `total` line, `largest sections:` (at most four per file read whole, `(+N more)`), and `flags:` with the same lines as `--check` or `nothing to flag`; about 40 lines for a long campaign. Tokens are shown below 1,000 as a whole number and above as thousands with one decimal, rounded up. A line about a file the full save never trims (a session log near the cap) ends `(not the full save's to trim)`, and the full save leaves it. The largest sections of canon are those of the whole file, even when it is read in sections. A sheet's name is matched on its whole title, or on its first or last word unless that is an article, a preposition or a title such as Captain or Sister. The name and the `--check` lines are relied on by issue #172's migration, which runs `dmc size NAME --check` after migrating: a change to them is a change to that contract too. A measured campaign exits 0 whatever it flags; a failure is one line and exit 1 (`no active campaign: name one (dmc size NAME)`, `no campaign <NAME> in adventures/`, `<path> is not a DMC folder`, `cannot read <path>: <reason>`), a usage mistake exit 2.
+The full report has a header line, one line per file (path, tokens, budget or limit, what is read), a `total` line, `largest sections:` (at most four per file read whole, `(+N more)`), and `flags:` with the same lines as `--check` or `nothing to flag`; about 40 lines for a long campaign. Tokens are shown below 1,000 as a whole number and above as thousands with one decimal, rounded up. A line about a file the full save never trims (a session log near the cap) ends `(not the full save's to trim)`, and the full save leaves it. The largest sections of canon are those of the whole file, even when it is read in sections. A sheet's name is matched on its whole title, or on its first or last word unless that is an article, a preposition or a title such as Captain or Sister. The name and the `--check` lines are relied on by issue #172's migration, which runs `dmc size NAME --check` after migrating: a change to them is a change to that contract too. A measured campaign exits 0 whatever it flags; a failure is one line and exit 1 (`no active campaign: name one (dmc size NAME)`, `no campaign <NAME> in adventures/`, `<path> is not a DMC folder`, `cannot read <path>: <reason>`), a usage mistake exit 2 (`argument --arc: not allowed with argument --check`).
+
+### The arc check
+
+`dmc size NAME --arc` (spec 016) reads `story/dm-notes.md`, the sheets and `game-state.md`'s Current session, and prints, in this order:
+
+- `arc: the plan still names <title>, whose sheet says dead: revise the stages ahead (step 5, Revise)`: a sheet whose `- **Status**:` starts with `dead` (any case), and a line of the Arc plan or Antagonists, outside comments, without DONE or RESOLVED and without the word `dead`, that names them (whole title, or its first or last word). A ghost who still acts is kept by writing `dead` and why on that line.
+- `arc: no current stage (current since sN): add it (step 5, Arc plan)`.
+- `arc: the current stage has no budget in sessions: add one (step 5, Arc plan)`: the line with `current since sN` has no `about N sessions`.
+- `arc: the current stage began at sN with a budget of B and this is sC: tighten or revise (step 5, Pace)`: C is past N + B.
+- `arc: <name>'s next move has no session (by sN): add one (step 5, Clocks)`: an Antagonists entry (a `###` block, or a top-level list item where there are none) with no `by sN`, unless the entry names someone dead.
+
+It prints nothing when the Arc plan holds only Character arcs and a Last played line, as a module campaign's does until its module is finished, or when `dm-notes.md` is missing. The full save fixes each line in `dm-notes.md` and runs it again; it never names them to the player, so they are not part of `--check`, whose leftover lines the resume and the save's report do name.
 
 ## module
 
@@ -796,7 +811,7 @@ A failure is one line and exit 1: `nothing to search for in "<words>": every wor
 dmc context-check < hook-input.json
 ```
 
-The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. A break is due when the context is large, and "large" is relative to what the session loaded: the first band starts at the larger of 150,000 tokens and the **baseline** plus 40,000, and a band follows every 40,000 tokens after that. Below the first band it prints nothing. From it on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 40,000 tokens, so a declined break is offered again at the next band.
+The play settings' `UserPromptSubmit` hook runs this before each player message. Claude Code passes a JSON object on stdin whose `transcript_path` names the session's log. `dmc` reads the log from the end and finds the context size of the latest call. A break is due when the context is large, and "large" is relative to what the session loaded: the first band starts at the larger of 150,000 tokens and the **baseline** plus 40,000, and a band follows every 50,000 tokens after that (40,000 before spec 016). Below the first band it prints nothing. From it on it prints one line, which Claude Code adds to DMC's context; the band it names rises every 50,000 tokens, so a declined break is offered again at the next band.
 
 **The baseline** is where the context settled after the session loaded its files. `dmc` finds it from the log alone, in the part after the latest compaction boundary (`/clear` starts a new log, so it needs no rule). It is the context of the last assistant call before the first player message in that part: after `/clear` and `/resume-campaign`, the end of the recap; after a compaction, the end of the reload that follows it, if that comes before the player's next message. If no call comes before that message, it is the context of the first reply to it. If no player message has come yet, it is the latest context.
 
@@ -808,10 +823,12 @@ A resume that settles at 142,000 tokens therefore puts the first band at 182,000
 
 ```
 $ echo '{"transcript_path":"<folder>/session.jsonl"}' | dmc context-check
-Context 197k is large, break due since 190k: at the next break point, offer a full save and a fresh session, unless the player has declined since 190k.
+Context 213k is large, break due since 200k: at the next break point, offer a full save and a fresh session, unless the player has declined since 200k.
 ```
 
-The bands are counted from the first band, so a break the player declined is offered again after another 40,000 tokens. A compaction, which restarts the search for the baseline, starts the count again.
+The bands are counted from the first band, so a break the player declined is offered again after another 50,000 tokens. A compaction, which restarts the search for the baseline, starts the count again.
+
+**One offer per band** (spec 016, after its headless run, where DMC offered twice in one band). Once the text of a reply at or above the band's start names `dmc-campaign-full-save` (every offer names the command), the line is not printed again until the next band, whether the player declined or played on. Only a reply's text counts, not its thinking or a tool call. The log is read back from the end to the first call below the band, or to a compaction boundary. If that read fails, the line prints as before.
 
 This changed in release 0.1.3. Release 0.1.2 and earlier use a flat 150,000 and word the line `Context 197k, break due since 190k: ...`.
 
@@ -824,7 +841,19 @@ rorns-landing story/canon.md:73 | - **Captain Emmajeen Kole**: captain of the Pi
 
 At most 4,000 bytes in all. Nothing for a message that names no one new, starts with `/`, has no active campaign or a closed one, or no canon. On Rorn's Landing it took about 250 ms with the default build.
 
-It never fails: on any error (input that is not JSON, a missing or unreadable log, a canon that cannot be read) it prints nothing and exits 0; a failure of the canon reminder alone still prints the break line. 
+**The sheet lines** (spec 016 FR-008). After the canon reminder, for everyone named on `game-state.md`'s Present line or in its Combat tracker who has a sheet in `character-sheets/` (not `minor-npcs.md`, a `-history.md` file or a PC's), matched as `dmc size` matches the resume's NPCs (whole title, or its first or last word unless that is a title or small word), it prints what their sheet says of them now: the first of `- **Looks**:` or `- **Appearance**:`, `- **Usually found**:`, the first of `- **AC, max HP, speed, saves, senses**:` or `- **Speed**:`, the first of `- **Standing traits that change play**` or `- **Traits**:`, and `- **Items used in play**:`, each whole, outside comments, and only with text after the label. The people come in the order the Present text names them, within 10,000 bytes; one whose lines do not all fit is left out of the header, so a later message tries again. A person is skipped while their lines were printed, or their sheet opened by a Read tool call, less than 100,000 tokens of context ago in the part of the log after the latest compaction boundary (read from the `Sheets of …` headers and the assistant calls' usage). A person whose sheet has none of these lines is handed to the canon reminder as if the message named them.
+
+```
+Sheets of Captain Emmajeen Kole; Pip Vance (what their sheets say now; read the sheet for more):
+character-sheets/npc-captain-kole.md | - **Looks**: tired but sharp; dark hair tied back…
+character-sheets/npc-captain-kole.md | - **Usually found**: the wall, the gate, the barracks…
+```
+
+On Rorn's Landing with four companions present it printed 5,490 bytes (about 1,370 tokens).
+
+**The out-of-character line** (spec 016 FR-011). Last, when the message starts (after spaces) with `ooc` in any case followed by a space, a colon or the end, or with `((`, one line: `Out of character: if this says a fact is wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you think, propose one fix, and change no file until the player agrees.` Nothing for any other message.
+
+It never fails: on any error (input that is not JSON, a missing or unreadable log, a canon or sheet that cannot be read) it prints nothing and exits 0; a failure of one part alone still prints the others.
 
 ## play
 

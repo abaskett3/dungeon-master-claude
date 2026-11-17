@@ -14,13 +14,26 @@ public static class BreakReminder
     /// <summary>How far above the baseline the context must grow before the first break is due.</summary>
     public const long Margin = 40000;
 
-    /// <summary>The reminder names a band that rises every this many tokens, so a declined offer is repeated at the next band.</summary>
-    public const long Band = 40000;
+    /// <summary>
+    /// The reminder names a band that rises every this many tokens, so a declined offer is repeated at the next band:
+    /// 50,000 since spec 016 FR-020 (40,000 before), about 11 to 14 player turns in the play the feedback came from.
+    /// </summary>
+    public const long Band = 50000;
 
     /// <summary>Where the first band starts for a session whose context settled at <paramref name="baseline"/>.</summary>
     /// <param name="baseline">The context after loading, in tokens; 0 or less when unknown.</param>
     /// <returns>The larger of <see cref="Threshold"/> and the baseline plus <see cref="Margin"/>.</returns>
     public static long FirstBand(long baseline) => Math.Max(Threshold, baseline + Margin);
+
+    /// <summary>The start of the latest band a context of <paramref name="size"/> tokens has reached, counted from the first band.</summary>
+    /// <param name="size">The latest context size, in tokens.</param>
+    /// <param name="baseline">The context after loading, in tokens; 0 or less when unknown.</param>
+    /// <returns>The band's start in tokens, or 0 below the first band.</returns>
+    public static long BandOf(long size, long baseline = 0)
+    {
+        long first = FirstBand(baseline);
+        return size < first ? 0 : first + (size - first) / Band * Band;
+    }
 
     /// <summary>
     /// The reminder for a context of <paramref name="size"/> tokens; empty below the first band. The band named
@@ -32,10 +45,9 @@ public static class BreakReminder
     /// <returns>One line for DMC, or an empty string when no break is due.</returns>
     public static string For(long size, long baseline = 0)
     {
-        long first = FirstBand(baseline);
-        if (size < first)
+        long band = BandOf(size, baseline);
+        if (band == 0)
             return "";
-        long band = first + (size - first) / Band * Band;
         return $"Context {size / 1000}k is large, break due since {band / 1000}k: at the next break point, offer a full save " +
                $"and a fresh session, unless the player has declined since {band / 1000}k.";
     }

@@ -34,9 +34,13 @@ internal static class CanonReminder
     /// </summary>
     /// <param name="input">The hook's JSON (<c>prompt</c>, <c>cwd</c>, <c>transcript_path</c>).</param>
     /// <param name="projectFolder">The <c>CLAUDE_PROJECT_DIR</c> the hook runs with, used when <c>cwd</c> is not a DMC folder; null for none.</param>
+    /// <param name="alsoNamed">
+    /// People counted as named although the message does not name them: those present whose sheets hold none of the
+    /// lines the sheet part prints (<see cref="SheetReminder"/>, spec 016 FR-008), so canon covers them instead. Null for none.
+    /// </param>
     /// <returns>The lines to print, the header first; empty for none.</returns>
     /// <exception cref="JsonException">The input is not JSON; the caller turns any failure into silence.</exception>
-    public static List<string> For(string input, string? projectFolder)
+    public static List<string> For(string input, string? projectFolder, IReadOnlyList<string>? alsoNamed = null)
     {
         var (_, prompt) = HookInput.Field(input, "prompt");
         if (string.IsNullOrWhiteSpace(prompt) || prompt.TrimStart().StartsWith('/'))
@@ -51,7 +55,8 @@ internal static class CanonReminder
             return [];
 
         var canon = Measurement.ReadLines(canonPath);
-        var named = Register.Named(prompt, Register.Of(canon));
+        string namedText = alsoNamed is { Count: > 0 } ? prompt + "\n" + string.Join("; ", alsoNamed) : prompt;
+        var named = Register.Named(namedText, Register.Of(canon));
         if (named.Count == 0)
             return [];
         var (_, log) = HookInput.Field(input, "transcript_path");
@@ -124,7 +129,7 @@ internal static class CanonReminder
     /// its first line), when it is a plain folder name that exists; null otherwise.
     /// </summary>
     /// <param name="folder">The DMC folder.</param>
-    static string? ActiveCampaign(string folder)
+    internal static string? ActiveCampaign(string folder)
     {
         if (SizeReport.ActiveName(Path.Combine(folder, "adventures")) is not { } name)
             return null;

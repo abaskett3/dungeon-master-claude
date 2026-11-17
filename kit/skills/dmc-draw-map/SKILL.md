@@ -111,6 +111,6 @@ When the player options say the player is remote (`Maps are shown as: remote`), 
 
 ## When there is no picture
 
-If `dmc` is unavailable, or the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
+If the player options ask for text maps, draw the same grid in a fenced code block instead: plain ASCII, a space between cells, the legend underneath, 30 cells wide at most. Keep the same scale and state it under the legend ("1 square = 5 ft").
 
 For relationships that are not spatial (a faction web, a family tree, a timeline), a simple indented list or box-and-arrow diagram in a code block is still the right tool.

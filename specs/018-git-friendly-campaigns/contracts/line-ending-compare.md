@@ -5,7 +5,7 @@ file with a backup or a verified record.
 
 ## Text or not
 
-A file is text when its first 8,000 bytes hold no NUL byte. This is git's test for `text=auto`.
+A file is text when its first 8,000 bytes hold no NUL byte. This is the first of git's tests for `text=auto`; git also reads the whole file and takes a lone CR or many control bytes as binary, so `dmc` treats some files as text that git would not convert. That is safe: two files that differ only in line endings hold the same content either way, and a file with a NUL is compared byte for byte.
 
 ## Same content (two byte arrays)
 

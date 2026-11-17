@@ -362,6 +362,21 @@ public sealed class SequelDigestTests
         CollectionAssert.AreEqual(new[] { "copy differs: digests/old-tale/people.md" }, result.StdoutLines);
     }
 
+    /// <summary>
+    /// A chain copy whose only difference is its line endings, as after a git checkout of a sequel whose closing backup
+    /// holds CRLF, is not named (spec 018 FR-005).
+    /// </summary>
+    [TestMethod]
+    public void AChainCopyWithOtherLineEndingsIsNotNamed()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: campaign => Write(campaign, "digests/old-tale/people.md", Encoding.UTF8.GetBytes("# People\r\n\r\n## Mara\r\n")));
+        string copy = Path.Combine(root.Campaign(SequelName), "digests", "old-tale", "people.md");
+        File.WriteAllText(copy, "# People\n\n## Mara\n");
+        var result = Sequel("--check");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
     /// <summary>An index line missing, or a checksum that is not the closing backup's, is named.</summary>
     [TestMethod]
     public void TheIndexMustBeWholeAndItsChecksumTheBackups()

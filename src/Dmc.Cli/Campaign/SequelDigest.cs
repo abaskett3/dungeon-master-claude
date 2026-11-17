@@ -571,7 +571,10 @@ internal static partial class SequelDigest
         return lines;
     }
 
-    /// <summary>The <c>copy differs:</c> lines: each file of a held digest that the sequel's copy lacks, changes or adds to.</summary>
+    /// <summary>
+    /// The <c>copy differs:</c> lines: each file of a held digest that the sequel's copy lacks, changes or adds to. A copy
+    /// whose only difference is its line endings, as after a git checkout, matches (spec 018 FR-005).
+    /// </summary>
     /// <param name="source">The closed campaign.</param>
     static IEnumerable<string> ChainProblems(ClosedSource source)
     {
@@ -585,7 +588,7 @@ internal static partial class SequelDigest
                 : [];
             foreach (string path in want.Keys.Union(have.Keys).Order(StringComparer.Ordinal))
             {
-                if (!want.TryGetValue(path, out var a) || !have.TryGetValue(path, out var b) || !a.AsSpan().SequenceEqual(b))
+                if (!want.TryGetValue(path, out var a) || !have.TryGetValue(path, out var b) || !CampaignFiles.SameContent(a, b))
                     yield return $"copy differs: {FolderName}/{held}/{path}";
             }
         }

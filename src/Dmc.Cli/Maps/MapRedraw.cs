@@ -30,6 +30,15 @@ public static class MapRedraw
     /// <summary>The file, next to <c>live.html</c>, that records what the page was last drawn from: the map file's name, then its base place's path.</summary>
     public const string SourceFile = "live-source.txt";
 
+    /// <summary>The page the player's browser shows, which loads <see cref="DataFile"/>.</summary>
+    public const string PageFile = "live.html";
+
+    /// <summary>The picture the page shows, rewritten on every drawing; the page polls it.</summary>
+    public const string DataFile = "live-data.js";
+
+    /// <summary>The picture as a PNG, written with <c>--png</c> and kept up by later redraws.</summary>
+    public const string PictureFile = "live.png";
+
     /// <summary>The scene file a fight is kept in, the one a redraw always checks.</summary>
     public const string LiveFile = "live.json";
 
@@ -49,7 +58,7 @@ public static class MapRedraw
         if (campaign is null || Campaign.ClosedCampaign.IsClosed(Path.Combine(root, "adventures", campaign)))
             return null;
         string maps = Path.Combine(root, "adventures", campaign, "maps");
-        string data = Path.Combine(maps, "live-data.js");
+        string data = Path.Combine(maps, DataFile);
         string live = Path.Combine(maps, LiveFile);
         if (!File.Exists(data))
             return File.Exists(live) ? live : null;
@@ -84,7 +93,7 @@ public static class MapRedraw
         if (Path.GetFileName(mapPath) != LiveFile)
             return false;
         string folder = Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "";
-        if (!File.Exists(Path.Combine(folder, "live-data.js")))
+        if (!File.Exists(Path.Combine(folder, DataFile)))
             return true;
         string? name = PlainName(ReadLines(Path.Combine(folder, SourceFile)).FirstOrDefault());
         return name is not null && name != LiveFile;
@@ -106,13 +115,13 @@ public static class MapRedraw
         string folder = Path.GetDirectoryName(Path.GetFullPath(mapPath)) ?? "";
         string basePlace = MapChecker.BaseFile(mapPath) is { } b ? Path.GetRelativePath(folder, b).Replace('\\', '/') : "";
         MapPage.WriteText(Path.Combine(folder, SourceFile), Path.GetFileName(mapPath) + "\n" + basePlace + "\n");
-        MapPage.WriteText(Path.Combine(folder, "live-data.js"), MapPage.Data(DateTime.Now, model.Title, svg));
-        string page = Path.Combine(folder, "live.html");
+        MapPage.WriteText(Path.Combine(folder, DataFile), MapPage.Data(DateTime.Now, model.Title, svg));
+        string page = Path.Combine(folder, PageFile);
         MapPage.WriteText(page, MapPage.Html);
         string? picture = null;
         if (png)
         {
-            picture = Path.Combine(folder, "live.png");
+            picture = Path.Combine(folder, PictureFile);
             MapPng.Write(svg, picture);
         }
         return (model, page, picture);

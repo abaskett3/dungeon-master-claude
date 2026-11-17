@@ -35,13 +35,14 @@ public sealed class AdventuresGitRulesTests
     ];
 
     /// <summary>
-    /// Paths relative to <c>adventures/</c> that git must leave out: one computer's state, staging folders, the map renders
-    /// and a migration backup with its records.
+    /// Paths relative to <c>adventures/</c> that git must leave out: one computer's state, staging folders, the leftovers
+    /// of a cut-off write of <c>.standard</c> or <c>.closed</c>, the map renders and a migration backup with its records.
     /// </summary>
     static readonly string[] Ignored =
     [
         ".active-campaign", ".reviewed-sessions", ".transcript-review/x.md",
         ".dmc-import-ab12/x", $".restore-{C}-ab12/x", $".replaced-{C}-ab12/x",
+        $"{C}/.standard.partial-ab12cd34", $"{C}/.closed.partial-ab12cd34",
         $"{C}/maps/live.html", $"{C}/maps/live-data.js", $"{C}/maps/live.png", $"{C}/maps/live-source.txt",
         $"{C}/backups/{C}_backup_20261115113646.zip", $"{C}/backups/{C}_backup_20261115113646.zip.migrating",
         $"{C}/backups/{C}_backup_20261115113646.zip.accounting.tsv",

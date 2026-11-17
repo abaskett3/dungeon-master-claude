@@ -12,7 +12,7 @@ No new campaign file and no change to any file's shape. This model sorts the fil
 | Migration backup | `<c>/backups/<c>_backup_<stamp>.zip` and its `.migrating`, `.accounting.tsv`, `.verified.tsv` | Ignored | Whole copies; git's history does their job |
 | Derived file | `<c>/maps/live.html`, `live-data.js`, `live.png`, `live-source.txt` | Ignored | `dmc redraw` makes them again from `live.json`; `dmc` does not compare them (`CampaignFiles.DerivedFiles`, research R13) |
 | Per-machine state | `.active-campaign`, `.reviewed-sessions`, `.transcript-review/` | Ignored | It describes one computer's play |
-| Staging | `.dmc-import-<id>/`, `.restore-<c>-<id>/`, `.replaced-<c>-<id>/` | Ignored | A running or interrupted command's leftovers |
+| Staging | `.dmc-import-<id>/`, `.restore-<c>-<id>/`, `.replaced-<c>-<id>/`, `<c>/.standard.partial-<id>`, `<c>/.closed.partial-<id>` | Ignored | A running or interrupted command's leftovers |
 | Repository rules | `.gitignore`, `.gitattributes` | Kept | Copied from `templates/adventures.gitignore` and `templates/adventures.gitattributes` |
 
 ## Rules

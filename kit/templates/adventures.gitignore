@@ -11,6 +11,10 @@
 /.restore-*/
 /.replaced-*/
 
+# Leftovers of a dmc write that was cut off (the record is written to a temporary file, then renamed)
+/*/.standard.partial-*
+/*/.closed.partial-*
+
 # Map renders: dmc redraw makes them again from maps/live.json
 /*/maps/live.html
 /*/maps/live-data.js

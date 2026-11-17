@@ -27,6 +27,10 @@ copies them into `adventures/` as `.gitignore` and `.gitattributes`.
 /.restore-*/
 /.replaced-*/
 
+# Leftovers of a dmc write that was cut off (the record is written to a temporary file, then renamed)
+/*/.standard.partial-*
+/*/.closed.partial-*
+
 # Map renders: dmc redraw makes them again from maps/live.json
 /*/maps/live.html
 /*/maps/live-data.js
@@ -56,7 +60,7 @@ the patterns may not without changing this contract.
      `live.json`, `<c>/import/progress.md`, `<c>/digests/<other>/index.md`, `<c>/backups/<c>_closed_20261113212205.zip`,
      `.gitignore`, `.gitattributes`.
    - **Ignored:** `.active-campaign`, `.reviewed-sessions`, `.transcript-review/x.md`, `.dmc-import-ab12/x`,
-     `.restore-<c>-ab12/x`, `.replaced-<c>-ab12/x`, `<c>/maps/live.html`, `live-data.js`, `live.png`,
+     `.restore-<c>-ab12/x`, `.replaced-<c>-ab12/x`, `<c>/.standard.partial-ab12cd34`, `<c>/.closed.partial-ab12cd34`, `<c>/maps/live.html`, `live-data.js`, `live.png`,
      `live-source.txt`, `<c>/backups/<c>_backup_20261115113646.zip` with its `.migrating`, `.accounting.tsv` and
      `.verified.tsv`.
 4. Checks, with `git check-attr eol`, that a `.md` file gets `eol: lf` and that a `.zip` is binary.

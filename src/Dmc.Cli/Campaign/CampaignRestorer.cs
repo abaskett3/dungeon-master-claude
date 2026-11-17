@@ -88,11 +88,7 @@ internal static class CampaignRestorer
         var verified = CampaignVerifier.ReadVerified(BackupFolder.Companion(backup, BackupFolder.VerifiedSuffix));
         // The plan line counts every file the restore rewrites; the warning counts only play that would be lost, so a file
         // whose only difference is its line endings, and the map page dmc draws again, are not in it (spec 018 FR-005).
-        int changed = verified is null
-            ? backupFiles.Count(f => !CampaignFiles.IsDerived(f.Key) && current.TryGetValue(f.Key, out var now) && !CampaignFiles.SameContent(now, f.Value))
-              + current.Keys.Count(p => !CampaignFiles.IsDerived(p) && !backupFiles.ContainsKey(p))
-              + backupFiles.Keys.Count(p => !CampaignFiles.IsDerived(p) && !current.ContainsKey(p))
-            : Changed(current, verified);
+        int changed = verified is null ? CampaignFiles.Differences(backupFiles, current).Count : Changed(current, verified);
         if (changed > 0)
         {
             string since = verified is null ? "the backup" : "the migration was verified";

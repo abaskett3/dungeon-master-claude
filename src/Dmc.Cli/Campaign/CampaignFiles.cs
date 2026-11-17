@@ -58,7 +58,8 @@ internal static class CampaignFiles
     /// leave them out (<c>kit/templates/adventures.gitignore</c>, which a test keeps in step with this list).
     /// </summary>
     public static IReadOnlyList<string> DerivedFiles { get; } =
-        ["maps/live.html", "maps/live-data.js", "maps/live.png", "maps/" + Maps.MapRedraw.SourceFile];
+        ["maps/" + Maps.MapRedraw.PageFile, "maps/" + Maps.MapRedraw.DataFile, "maps/" + Maps.MapRedraw.PictureFile,
+         "maps/" + Maps.MapRedraw.SourceFile];
 
     /// <summary>
     /// True for a derived file (<see cref="DerivedFiles"/>). The checks that look for play since a backup or a close skip
@@ -68,12 +69,37 @@ internal static class CampaignFiles
     /// <param name="path">A path inside the campaign, with <c>/</c> separators.</param>
     public static bool IsDerived(string path) => DerivedFiles.Contains(path, StringComparer.Ordinal);
 
+    /// <summary>
+    /// How a campaign now differs from an earlier copy of it (a closing backup, or a backup with no verified record): one
+    /// <c>missing: </c>, <c>added: </c> or <c>changed: </c> line per path, in ordinal order. Derived files are skipped and
+    /// files are compared with <see cref="SameContent"/>, so line endings alone are no change (spec 018 FR-005). The one
+    /// comparison the closed-campaign check and the restore's warning share, so they cannot disagree.
+    /// </summary>
+    /// <param name="held">The earlier copy's files, by path.</param>
+    /// <param name="now">The campaign's files now, by path.</param>
+    public static List<string> Differences(IReadOnlyDictionary<string, byte[]> held, IReadOnlyDictionary<string, byte[]> now)
+    {
+        var lines = new List<string>();
+        foreach (string path in held.Keys.Union(now.Keys).Where(p => !IsDerived(p)).Order(StringComparer.Ordinal))
+        {
+            if (!now.TryGetValue(path, out var bytes))
+                lines.Add("missing: " + path);
+            else if (!held.TryGetValue(path, out var old))
+                lines.Add("added: " + path);
+            else if (!SameContent(bytes, old))
+                lines.Add("changed: " + path);
+        }
+        return lines;
+    }
+
     /// <summary>How many leading bytes <see cref="IsText"/> looks at: git's own limit for <c>text=auto</c>.</summary>
     const int TextProbe = 8000;
 
     /// <summary>
-    /// True when bytes are text: no NUL byte in the first 8,000, the test git uses for <c>text=auto</c> (spec 018 contract
-    /// line-ending-compare.md). Only text has line endings that git may rewrite.
+    /// True when bytes are text: no NUL byte in the first 8,000 (spec 018 contract line-ending-compare.md). This is only the
+    /// first of git's tests for <c>text=auto</c>, which also reads the whole file and takes a lone CR or many control bytes as
+    /// binary, so it passes some files git would not convert. That is safe: two files that differ only in line endings hold
+    /// the same content whichever test is used, and a file with a NUL is still compared byte for byte.
     /// </summary>
     /// <param name="bytes">A file's bytes.</param>
     public static bool IsText(byte[] bytes) => bytes.AsSpan(0, Math.Min(bytes.Length, TextProbe)).IndexOf((byte)0) < 0;

@@ -347,7 +347,7 @@ git add -A
 git commit -m "My campaigns"
 ```
 
-**What is left out, and why.** `.gitignore` keeps out what git does not need: the migration backups in each campaign's `backups/` (whole copies of the campaign, which git's own history replaces), the map page files `maps/live.html`, `live-data.js`, `live.png` and `live-source.txt` (DMC draws them again from `maps/live.json` after its first reply), `.active-campaign`, `.reviewed-sessions` and `.transcript-review/` (they describe this computer's play), and the folders a running `dmc campaign import` or `restore` leaves. A closed campaign's closing backup is kept, because a sequel needs it. Nothing is deleted: the left-out files stay on disk. Do not add a campaign file to `.gitignore`, to `.git/info/exclude` or to a global excludes file: DMC's searches skip what git ignores, so it would stop finding that file in play.
+**What is left out, and why.** `.gitignore` keeps out what git does not need: the migration backups in each campaign's `backups/` (whole copies of the campaign, which git's own history replaces), the map page files `maps/live.html`, `live-data.js`, `live.png` and `live-source.txt` (DMC draws them again from `maps/live.json` after its first reply), `.active-campaign`, `.reviewed-sessions` and `.transcript-review/` (they describe this computer's play), and the folders a running `dmc campaign import` or `restore` leaves, and a `.standard.partial-` or `.closed.partial-` file a cut-off `dmc` command can leave. A closed campaign's closing backup is kept, because a sequel needs it. Nothing is deleted: the left-out files stay on disk. Do not add a campaign file to `.gitignore`, to `.git/info/exclude` or to a global excludes file: DMC's searches skip what git ignores, so it would stop finding that file in play.
 
 `.gitattributes` makes git store every text file with the same line endings on every computer. When you add a file, git may warn `CRLF will be replaced by LF the next time Git touches it`: that is expected and harmless, and `dmc` treats the two as the same file.
 
@@ -359,7 +359,7 @@ git branch -M main
 git push -u origin main
 ```
 
-**When to commit.** After a full save, when every file is up to date, and both before and after DMC brings a campaign up to date (the migration offered at resume). In `adventures/`:
+**When to commit.** After a full save, when every file is up to date, and both before and after DMC brings a campaign up to date (the migration offered at resume). Never commit in the middle of a migration: its backup and the mark that says it is under way stay out of git, so a copy made from that commit would not know the migration was unfinished. In `adventures/`:
 
 ```
 git add -A

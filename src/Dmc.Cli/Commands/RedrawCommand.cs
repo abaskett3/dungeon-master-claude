@@ -64,7 +64,7 @@ public sealed class RedrawCommand(string? root = null, Action<string>? open = nu
             return 0;
         try
         {
-            bool png = File.Exists(Path.Combine(Path.GetDirectoryName(path) ?? "", "live.png"));
+            bool png = File.Exists(Path.Combine(Path.GetDirectoryName(path) ?? "", MapRedraw.PictureFile));
             bool open = MapRedraw.NeedsOpening(path);
             var (_, page, _) = MapRedraw.Draw(path, png);
             if (open)

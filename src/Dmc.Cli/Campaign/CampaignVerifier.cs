@@ -212,18 +212,7 @@ internal static partial class CampaignVerifier
             now[StandardRecord.FileName] = File.ReadAllBytes(standard);
         files = now.Keys.Count(p => !CampaignFiles.IsDerived(p));
 
-        var problems = new List<string>();
-        // The map page is drawn again from maps/live.json, and git leaves it out, so it is no part of what closed.
-        foreach (string path in held.Keys.Union(now.Keys).Where(p => !CampaignFiles.IsDerived(p)).Order(StringComparer.Ordinal))
-        {
-            if (!now.TryGetValue(path, out var bytes))
-                problems.Add("missing: " + path);
-            else if (!held.TryGetValue(path, out var old))
-                problems.Add("added: " + path);
-            else if (!CampaignFiles.SameContent(bytes, old))
-                problems.Add("changed: " + path);
-        }
-        return problems;
+        return CampaignFiles.Differences(held, now);
     }
 
     /// <summary>Opens a backup, checks it whole and returns its campaign files and the standard it records.</summary>

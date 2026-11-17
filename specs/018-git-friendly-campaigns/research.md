@@ -56,8 +56,8 @@ sequel import with "has changed since it closed". A restore would warn that file
 **Decision.** Add one comparison, used in place of the two raw hash comparisons. Two contents count as the same when
 they match byte for byte, or when both are text and match after every CRLF is turned into LF. Against a stored hash,
 the current bytes match if any of these hash to it: the bytes as they are, the bytes with CRLF turned into LF, or that
-LF form with every LF turned into CRLF. A file is text when its first 8,000 bytes hold no NUL byte, the test git uses
-for `text=auto`.
+LF form with every LF turned into CRLF. A file is text when its first 8,000 bytes hold no NUL byte, the first of git's
+tests for `text=auto` (see the contract for why the rest are not needed).
 
 **Why.**
 - It covers records already written: a `verified.tsv` hash of a CRLF file still matches the LF file a checkout gives.

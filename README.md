@@ -8,7 +8,7 @@ This repository is the source of DMC. You play in a **DMC folder** that `dmc ins
 
 - [Claude Code](https://claude.com/claude-code), signed in.
 - Windows (x64 or Arm) or Linux (x64 or Arm, with glibc 2.34 or later, as in Ubuntu 22.04). macOS is not supported.
-- `dmc`, the toolkit's small program: the dice roller, the maps, PDF reading, the break reminder, the session review, and the installer that writes your DMC folder. Without `dmc`, play and saving still work, but DMC cannot roll its own dice, draw maps or read PDFs.
+- `dmc`, the toolkit's small program: the dice roller, the maps, PDF reading, the break reminder, the session review, and the installer that writes your DMC folder. DMC needs it to play: if `dmc` goes missing, DMC tells you how to reinstall it and plays nothing until it runs again.
 
 Install `dmc` with one line, in a terminal. It downloads the latest release, checks it, installs it and writes your DMC folder (it asks where; Enter takes `~/dmc`):
 

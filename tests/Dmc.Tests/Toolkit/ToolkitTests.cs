@@ -1206,9 +1206,10 @@ public sealed partial class ToolkitTests
     /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn); and
     /// spec 015 (FR-008, at most 300) raised it by 283 for the jump offer in § Narration (about 71 more tokens per turn);
     /// and spec 016 (FR-027, the measured amount) raised it by 1,608 for the clauses of the feedback round of #181, each
-    /// on an existing line (about 402 more tokens per turn).
+    /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 16 when the fallback
+    /// for a missing <c>dmc</c> went.
     /// </summary>
-    const int DmRulesBytesAllowed = 32_522;
+    const int DmRulesBytesAllowed = 32_506;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
@@ -1321,7 +1322,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(rules, "`dmc recall <campaign> <words>`", "the rules say how to recall a fact (FR-020)");
         StringAssert.Contains(rules, "`dmc lookup rules <entry>`", "the rules say how to look a rules entry up (FR-020)");
         StringAssert.Contains(rules, "`dmc lookup <module> <heading>`", "the rules say how to look a module section up (FR-020)");
-        StringAssert.Contains(rules, "If `dmc` fails or the recall does not hold it", "the rules keep the fallback to searching (FR-021)");
+        StringAssert.Contains(rules, "If the recall does not hold it, read its sheet", "a recall that finds nothing is still followed by the sheet and a search (FR-021; spec 017 FR-004)");
         StringAssert.Contains(rules, "a fact not found is not a fact denied", "not found is not untrue (FR-021)");
         StringAssert.Contains(Read("kit/skills/dmc-setup-rules/SKILL.md"), "`dmc lookup rules <entry>`");
     }

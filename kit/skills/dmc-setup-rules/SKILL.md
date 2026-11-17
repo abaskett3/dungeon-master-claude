@@ -14,7 +14,7 @@ List `rules/`. If it holds no rules document (it is empty, or holds only a `.git
 Note the format of each file:
 
 - **Markdown or text**: searchable directly with Grep. An index is still useful for knowing which file covers what.
-- **PDF**: run `dmc pdf text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. (Without `dmc`, skip this step.) To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `dmc pdf render <pdf> --pages N`. A PDF still needs a page index to be usable.
+- **PDF**: run `dmc pdf text <pdf>` first. It writes `rules/extracted/all-text.txt` and one text file per page in `rules/extracted/text/`, so the rules can be searched with Grep and a hit's file name gives its PDF page. To see a page as printed, for a table or stat block whose extracted text is jumbled, read it with the Read tool's `pages` parameter, at most 20 pages per call, or render it with `dmc pdf render <pdf> --pages N`. A PDF still needs a page index to be usable.
 
 ## 2. Build `rules/index.md`
 
@@ -39,4 +39,4 @@ Tell the player the rules reference is ready and which edition it covers. If tha
 
 ## Using it in play
 
-When a rule, spell, item or stat block matters and you are not certain of it, look it up with `dmc lookup rules <entry>`: for a markdown reference it prints the entry's section, and for a PDF the index rows or the pages to read. Otherwise, or when it finds nothing, open the index, read the cited pages (or search `rules/extracted/text/` if the PDF was extracted), and apply what they say. Things the SRD does not include (many subclasses, some spells and monsters) are simply absent: say so and fall back to a web lookup or a recorded ruling.
+When a rule, spell, item or stat block matters and you are not certain of it, look it up with `dmc lookup rules <entry>`: for a markdown reference it prints the entry's section, and for a PDF the index rows or the pages to read. When it finds nothing, open the index, read the cited pages (or search `rules/extracted/text/` if the PDF was extracted), and apply what they say. Things the SRD does not include (many subclasses, some spells and monsters) are simply absent: say so and fall back to a web lookup or a recorded ruling.

@@ -23,7 +23,6 @@ Reading the source:
   1. `dmc pdf info <pdf>` lists every page with its amount of text and number of images, and names the pages that have little or no text (scans, maps, full-page art).
   2. `dmc pdf all <pdf>` writes `source/extracted/all-text.txt` (every page, split by `===== PDF PAGE N =====` lines), `source/extracted/text/page-NNN.txt` and `source/extracted/pages/page-NNN.jpg` (a picture of each page). For a long book, do a chapter at a time with `--pages 1-40`. Use `--dpi 160` for a page whose small print or map labels are hard to read at the default.
   3. Read the text files for the words. **Look at the page images too**, with the Read tool, one page per call: see "Pictures" below.
-  - If `dmc` is unavailable, fall back to the Read tool's `pages` parameter (at most 20 pages per call; it shows pages as images as well as text) and tell the player that a PDF over 100 MB needs `dmc`.
 - **Markdown, text, HTML**: read directly, in sections. Open any image files they link to.
 - **EPUB**: it is a zip archive; extract it into `source/` and read the XHTML files in spine order.
 - **Anything else** (a website, an app): ask the player to export or paste it into a file.

@@ -49,6 +49,7 @@ public sealed class OutputBytesTests
         }
     }
 
+    /// <summary>The break line is plain UTF-8 with no byte-order mark and ends in one LF.</summary>
     [TestMethod]
     public void TheHookReminderIsPlainUtf8WithAnLfLineEnd()
     {
@@ -62,7 +63,7 @@ public sealed class OutputBytesTests
                                    + ContextCheck.ContextCheckContract.Assistant(163400).ToJsonString() + "\n");
             var result = DmcRunner.BlackBox(["context-check"], new JsonObject { ["transcript_path"] = log }.ToJsonString());
             AssertNoBom(result.StdoutBytes, "context-check stdout");
-            Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save and a fresh "
+            Assert.AreEqual("Context 163k is large, break due since 150k: at the next break point, offer a full save (`/dmc-campaign-full-save`) and a fresh "
                             + "session, unless the player has declined since 150k.\n", Encoding.UTF8.GetString(result.StdoutBytes!));
             Assert.AreEqual(0, result.StderrBytes!.Length);
         }

@@ -25,6 +25,7 @@ Create `feedback/YYYY-MM-DD-<slug>.md` from `templates/feedback.md` with one Wri
 
 - The title and What happened state the behaviour generally. The in-game details are an example. A worker must understand the entry if the campaign has been deleted.
 - Quote the player exactly under What the player said. For a slip of your own, write "none".
+- Asked why a slip happened, name the step you skipped and the moment ("I did not read her sheet when she joined the scene"), never "a habit" or a promise to do better.
 - Occurrences: date, campaign folder, story session number, the in-game moment, and the quote to search for in the session log.
 - Set `source:` to `player`, or `DMC` for a slip of your own, and pick the `category:` the template defines.
 - Set `dmc:` to the version number alone: run `dmc --version` and drop the leading `dmc ` (`dmc: 0.2.0`); it is the only shell command this step runs.

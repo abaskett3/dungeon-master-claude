@@ -370,12 +370,13 @@ public abstract class SizeCommandContract
         Assert.IsLessThanOrEqualTo(40, lines.Length, string.Join("\n", lines));
     }
 
+    /// <summary><c>--help</c> prints the usage line, <c>--arc</c> included, and exits 0.</summary>
     [TestMethod]
     public void HelpPrintsTheUsage()
     {
         var result = Size("--help");
         Assert.AreEqual(0, result.ExitCode);
-        StringAssert.StartsWith(result.Stdout, "usage: dmc size [NAME] [--check] [--folder PATH]");
+        StringAssert.StartsWith(result.Stdout, "usage: dmc size [NAME] [--check | --arc] [--folder PATH]");
     }
 
     [TestMethod]

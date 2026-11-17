@@ -64,7 +64,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(section, "dice bookkeeping in the logs, maps, `import/`, `exports/`, `backups/`, module text, or whatever the closing save named as not canon");
         StringAssert.Contains(section, "Without subagents, do one part per session yourself, as § 1b says");
         StringAssert.Contains(section, "Without subagents, answer them yourself in a new session (after `/clear`), reading only the digest");
-        StringAssert.Contains(Read(SheetSkill), "Where the history contradicts a default (a trait lost or never had), the field says so in the history's words, with the reason");
+        StringAssert.Contains(Read(SheetSkill), "Where they contradict a default (a trait lost or never had), the field says so in their words, with the reason");
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(sheet, "A character from a linked campaign");
         StringAssert.Contains(sheet, "digests/");
         Assert.IsTrue(sheet.Contains("dmc recall", StringComparison.Ordinal) || sheet.Contains("dmc lookup", StringComparison.Ordinal), SheetSkill);
-        StringAssert.Contains(sheet, "species or class defaults only where it says nothing");
+        StringAssert.Contains(sheet, "For every character, linked or not, use species or class defaults only where the files and play say nothing"); // widened to every character, spec 016 FR-006
 
         string section = SequelSection();
         StringAssert.Contains(section, "dmc-character-sheet-update");

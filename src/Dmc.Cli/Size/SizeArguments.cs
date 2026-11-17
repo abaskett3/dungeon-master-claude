@@ -1,10 +1,11 @@
 namespace Dmc.Size;
 
-/// <summary><c>dmc size [NAME] [--check] [--folder PATH]</c>.</summary>
+/// <summary><c>dmc size [NAME] [--check | --arc] [--folder PATH]</c>.</summary>
 /// <param name="Name">A campaign folder in <c>adventures/</c>; null for the active campaign.</param>
 /// <param name="Check">True for the play form, which prints only what to act on.</param>
 /// <param name="Folder">The DMC folder; null for the one <see cref="DmcFolder.Require"/> finds.</param>
-internal sealed record SizeRequest(string? Name, bool Check, string? Folder);
+/// <param name="Arc">True for the full save's form, which prints only the Arc plan flags (<see cref="ArcFlags"/>, spec 016 FR-026).</param>
+internal sealed record SizeRequest(string? Name, bool Check, string? Folder, bool Arc = false);
 
 /// <summary>
 /// Reads the command line of <c>dmc size</c> the way <c>dmc campaign</c> reads its own (see <see cref="Argparse"/>): an
@@ -14,19 +15,19 @@ internal sealed record SizeRequest(string? Name, bool Check, string? Folder);
 internal static class SizeArguments
 {
     /// <summary>The options <c>dmc size</c> accepts.</summary>
-    static readonly string[] Options = ["--help", "--check", "--folder"];
+    static readonly string[] Options = ["--help", "--check", "--arc", "--folder"];
 
     /// <summary>Reads the arguments after <c>dmc size</c>. Null means <c>--help</c>.</summary>
     /// <param name="args">The arguments after <c>size</c>.</param>
     /// <exception cref="DmcException">
     /// A usage mistake, exit code 2: an unknown option, a second name, <c>--folder</c> with no value, or a value given to
-    /// <c>--help</c> or <c>--check</c>.
+    /// <c>--help</c>, <c>--check</c> or <c>--arc</c>, or <c>--check</c> and <c>--arc</c> together.
     /// </exception>
     public static SizeRequest? Parse(string[] args)
     {
         var kinds = Argparse.ClassifyAll(args, Options);
         string? name = null, folder = null;
-        bool check = false;
+        bool check = false, arc = false;
         var extra = new List<string>();
 
         for (int i = 0; i < args.Length; i++)
@@ -60,6 +61,13 @@ internal static class SizeArguments
                 check = true;
                 continue;
             }
+            if (kind.Option == "--arc")
+            {
+                if (kind.Explicit is not null)
+                    throw Argparse.Usage($"argument --arc: ignored explicit argument {Maps.Py.Repr(kind.Explicit)}");
+                arc = true;
+                continue;
+            }
 
             // --folder takes one value: written after "=", or the next argument if that is not an option.
             if (kind.Explicit is not null)
@@ -72,6 +80,8 @@ internal static class SizeArguments
 
         if (extra.Count > 0)
             throw Argparse.Usage("unrecognized arguments: " + string.Join(' ', extra));
-        return new SizeRequest(name, check, folder);
+        if (check && arc)
+            throw Argparse.Usage("argument --arc: not allowed with argument --check");
+        return new SizeRequest(name, check, folder, arc);
     }
 }

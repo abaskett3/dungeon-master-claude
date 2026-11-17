@@ -17,7 +17,7 @@ The present moment only. History goes in `story/sessions/`. Resume reads this wh
 
 ## Party status
 
-<!-- One block per PC and companion: everyone travelling with the party as one of its own. Full sheets are in character-sheets/. Resume reads a sheet for each block here. Someone with the party who is not a companion (a rescued NPC, a prisoner, a guest) goes under "With the party, not companions" below instead. -->
+<!-- One block per PC and companion: everyone travelling with the party as one of its own, or directed by the player in a fight. Full sheets are in character-sheets/. Resume reads a sheet for each block here. Someone with the party who is not a companion (a rescued NPC, a prisoner, a guest) goes under "With the party, not companions" below instead. -->
 
 ### (character name)
 

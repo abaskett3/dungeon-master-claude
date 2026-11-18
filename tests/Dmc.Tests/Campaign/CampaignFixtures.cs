@@ -373,4 +373,35 @@ internal static class CampaignFixtures
         mutate?.Invoke(parts);
         BuildArchive(zipPath, parts);
     }
+
+    /// <summary>
+    /// Rewrites every text file of a campaign, <c>backups/</c> left out, with one line ending, as a git checkout or a
+    /// Windows editor would (spec 018): CRLF when <paramref name="crlf"/>, else LF. A file with a NUL byte is binary and
+    /// is left as it is.
+    /// </summary>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="crlf">True for CRLF, false for LF.</param>
+    /// <returns>How many files changed.</returns>
+    public static int SetLineEndings(string campaign, bool crlf)
+    {
+        string backups = Path.Combine(campaign, "backups") + Path.DirectorySeparatorChar;
+        int changed = 0;
+        foreach (string file in Directory.EnumerateFiles(campaign, "*", SearchOption.AllDirectories))
+        {
+            if (file.StartsWith(backups, StringComparison.Ordinal))
+                continue;
+            byte[] bytes = File.ReadAllBytes(file);
+            if (Array.IndexOf(bytes, (byte)0) >= 0)
+                continue;
+            string text = Encoding.UTF8.GetString(bytes).Replace("\r\n", "\n");
+            if (crlf)
+                text = text.Replace("\n", "\r\n");
+            byte[] after = new UTF8Encoding(false).GetBytes(text);
+            if (after.AsSpan().SequenceEqual(bytes))
+                continue;
+            File.WriteAllBytes(file, after);
+            changed++;
+        }
+        return changed;
+    }
 }

@@ -211,6 +211,43 @@ public sealed class SequelDigestTests
     }
 
     /// <summary>
+    /// A closed campaign whose CRLF files came back as LF from a git checkout is not "changed since it closed": the
+    /// sequel reads it (spec 018 FR-005).
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignCheckedOutWithOtherLineEndingsIsRead()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: c => SetLineEndings(c, crlf: true));
+        Assert.IsGreaterThan(0, SetLineEndings(root.Campaign(ClosedName), crlf: false));
+        var result = Sequel("--list");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>
+    /// A closed campaign cloned onto a new computer has no map page (git leaves it out), and the sequel still reads it
+    /// (spec 018 FR-005, research R5).
+    /// </summary>
+    [TestMethod]
+    public void AClosedCampaignWithoutItsMapPageIsRead()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: c =>
+        {
+            foreach (string path in CampaignFiles.DerivedFiles)
+            {
+                string file = Path.Combine(c, path.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                File.WriteAllText(file, "drawn at close\n");
+            }
+        });
+        foreach (string path in CampaignFiles.DerivedFiles)
+            File.Delete(Path.Combine(root.Campaign(ClosedName), path.Replace('/', Path.DirectorySeparatorChar)));
+        var result = Sequel("--list");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>
     /// Only the FR-021 sources count: every line of every sheet; § Secrets of the DM notes and § How it ended of the summary
     /// only; never the game state, the player options or a session log.
     /// </summary>
@@ -323,6 +360,21 @@ public sealed class SequelDigestTests
         var result = Sequel("--check");
         Assert.AreEqual(1, result.ExitCode, result.ToString());
         CollectionAssert.AreEqual(new[] { "copy differs: digests/old-tale/people.md" }, result.StdoutLines);
+    }
+
+    /// <summary>
+    /// A chain copy whose only difference is its line endings, as after a git checkout of a sequel whose closing backup
+    /// holds CRLF, is not named (spec 018 FR-005).
+    /// </summary>
+    [TestMethod]
+    public void AChainCopyWithOtherLineEndingsIsNotNamed()
+    {
+        using var root = new MigrationRoot();
+        WriteSequel(root, digest: true, beforeClose: campaign => Write(campaign, "digests/old-tale/people.md", Encoding.UTF8.GetBytes("# People\r\n\r\n## Mara\r\n")));
+        string copy = Path.Combine(root.Campaign(SequelName), "digests", "old-tale", "people.md");
+        File.WriteAllText(copy, "# People\n\n## Mara\n");
+        var result = Sequel("--check");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
     }
 
     /// <summary>An index line missing, or a checksum that is not the closing backup's, is named.</summary>

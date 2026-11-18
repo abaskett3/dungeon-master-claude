@@ -814,3 +814,28 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** a line of its own in `dmc-resume-campaign` for a missing `dmc` (the rule has one home, `kit/dm-rules.md`, which is always loaded); a general rule sorting `dmc` errors into five kinds (about 470 bytes, some 120 tokens a turn, and no feedback entry shows a `dmc` error handled badly).
 - **Limits:** The start-of-session notice runs under `claude -p` too (checked in the headless run), so DMC knows before its first command; without it, the first command's "command not found" leads to the same stop. A `dmc` that goes missing mid-session is caught only at the next command that fails.
 - **Source:** Issue #208; `specs/017-dmc-required/` (spec, research R1 to R9, the headless runs in quickstart.md § Results); the maintainer's answers of 2026-11-17.
+
+## Campaigns are git-ready, with one repository at `adventures/` that the player runs (spec 018)
+
+- **Date:** 2026-11-17
+- **Decision:** A player may keep `adventures/` in git: one repository for every campaign and the general options, and only player data. DMC makes the files safe to keep there and the user guide shows how; DMC and `dmc` run no git command and make no commit, and playing one campaign from two computers is not supported.
+- **Reason:** A history of the campaign and a copy off the computer, at no cost to play (0 lines in `kit/dm-rules.md` and the skills). The whole DMC folder holds copyrighted modules and files `dmc` writes; one repository per campaign would split the general options from the campaigns.
+- **Rejected:** a repository for the whole DMC folder, or one per campaign (spec Q1); commits by DMC, or play from two computers (spec Q2, and FR-011).
+- **Source:** `specs/018-git-friendly-campaigns/` (spec Q1 B and Q2 A, research R9 and R10).
+
+## LF in git, and `dmc` ignoring line endings and the map page, instead of a line-ending migration (spec 018)
+
+- **Date:** 2026-11-17
+- **Decision:** `templates/adventures.gitattributes` stores text with LF (`* text=auto eol=lf`), whatever the player's `core.autocrlf`. The checks that compare a campaign with a backup (the restore's warning, the closed-campaign check of `verify` and the sequel) treat a text file whose only change is CRLF against LF as unchanged (`CampaignFiles.SameContent` and `MatchesHash`), and skip the map page files (`CampaignFiles.DerivedFiles`). `dmc map` writes LF on every platform. No migration changes line endings.
+- **Reason:** The CRLF files in a campaign come from DMC's own shell writes in play (Python's text mode on Windows), which `kit/dm-rules.md:63` already forbids; a migration would be undone by the next one. With the rules, git stores one style and checks out LF, so without the comparison a clone would fail the closed check and a sequel could not start. The map page is left out of git and drawn again by `dmc redraw`, so on a clone it is missing; the plan missed this, and quickstart Q3 found it on a clone of the maintainer's campaigns. The gitignore's map lines and `DerivedFiles` are kept equal by a test.
+- **Rejected:** `* -text` (bytes kept as they are, but a file flipping between CRLF and LF shows as changed in full); no attributes (the player's setting would decide); normalized hashes in `verified.tsv` (old records would still need the raw form); a migration to LF.
+- **Limits:** A file whose endings were mixed when a `verified.tsv` was written matches its hash only as it was; the closed check, which compares bytes with bytes, is not affected.
+- **Source:** `specs/018-git-friendly-campaigns/` (research R1 to R4 and R7, contract line-ending-compare.md, quickstart Q3).
+
+## Closing backups are kept in git; migration backups are left out (spec 018)
+
+- **Date:** 2026-11-17
+- **Decision:** `templates/adventures.gitignore` leaves out `*/backups/*` except `*_closed_*.zip`.
+- **Reason:** A closing backup is the record of a closed campaign, written once and never pruned, and a sequel reads it, so without it in git a sequel could not start on a new computer; it adds one binary per closed campaign. Migration backups are whole copies (2.2 of Rorn's Landing's 4.2 MB) whose job git's history does.
+- **Rejected:** leaving out all of `backups/`.
+- **Source:** `specs/018-git-friendly-campaigns/` research R5; quickstart Q1 (Rorn's Landing alone: `.git` 0.71 MB against 4.02 MB on disk).

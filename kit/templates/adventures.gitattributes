@@ -1,0 +1,5 @@
+# DMC: copy to adventures/.gitattributes. Text is stored and checked out with LF on every computer, whatever
+# git's core.autocrlf says, and dmc treats a CRLF file and its LF copy as the same.
+* text=auto eol=lf
+*.zip binary
+*.png binary

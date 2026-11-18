@@ -24,6 +24,23 @@ public sealed class GeneratedFilesTests
         Assert.AreEqual("migrations/004-lean-notes-and-state.md", GeneratedFiles.TargetOf("kit/migrations/004-lean-notes-and-state.md"));
     }
 
+    /// <summary>
+    /// The git rules for <c>adventures/</c> (spec 018) reach a DMC folder's <c>templates/</c> under their own names, byte
+    /// for byte, so the player can copy them; they are not named <c>.gitignore</c> in the kit, where git would apply them
+    /// to this repository.
+    /// </summary>
+    [TestMethod]
+    public void TheGitRulesForAdventuresAreWrittenToTemplates()
+    {
+        foreach (string name in new[] { "adventures.gitignore", "adventures.gitattributes" })
+        {
+            Assert.AreEqual("templates/" + name, GeneratedFiles.TargetOf("kit/templates/" + name));
+            var file = GeneratedFiles.All.SingleOrDefault(f => f.Path == "templates/" + name);
+            Assert.IsNotNull(file, name + " is embedded");
+            CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(TestEnv.Root, "kit", "templates", name)), file.Bytes, name);
+        }
+    }
+
     [TestMethod]
     public void AFileOfKitThatIsNotInTheTableIsAProgramError()
     {

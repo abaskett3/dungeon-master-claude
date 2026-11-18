@@ -63,7 +63,11 @@ internal static class CampaignRestorer
         return lines;
     }
 
-    /// <summary>The plan a restore without <c>--yes</c> prints: what would change, and a warning when play since would be lost.</summary>
+    /// <summary>
+    /// The plan a restore without <c>--yes</c> prints: what would change, and a warning when play since would be lost. The
+    /// warning ignores line endings and the map page's derived files (spec 018 FR-005); the plan line does not, since the
+    /// restore rewrites them.
+    /// </summary>
     /// <param name="name">The campaign's name.</param>
     /// <param name="campaign">The campaign folder.</param>
     /// <param name="backup">The backup's path.</param>
@@ -82,7 +86,9 @@ internal static class CampaignRestorer
                 $"restore {name} from {Path.GetFileName(backup)}: {replaced} files replaced, {removed} removed, {added} added"),
         };
         var verified = CampaignVerifier.ReadVerified(BackupFolder.Companion(backup, BackupFolder.VerifiedSuffix));
-        int changed = verified is null ? replaced + removed + added : Changed(current, verified);
+        // The plan line counts every file the restore rewrites; the warning counts only play that would be lost, so a file
+        // whose only difference is its line endings, and the map page dmc draws again, are not in it (spec 018 FR-005).
+        int changed = verified is null ? CampaignFiles.Differences(backupFiles, current).Count : Changed(current, verified);
         if (changed > 0)
         {
             string since = verified is null ? "the backup" : "the migration was verified";
@@ -93,12 +99,15 @@ internal static class CampaignRestorer
         return lines;
     }
 
-    /// <summary>How many campaign files differ from a verified record: changed, added or removed.</summary>
+    /// <summary>
+    /// How many campaign files differ from a verified record: changed, added or removed. A file whose only change is its
+    /// line endings, as after a git checkout, and the map page's derived files are not counted (spec 018 FR-005).
+    /// </summary>
     /// <param name="current">The campaign's files.</param>
     /// <param name="verified">The SHA-256 of each file when the migration was verified.</param>
     static int Changed(SortedDictionary<string, byte[]> current, Dictionary<string, string> verified) =>
-        current.Count(f => !verified.TryGetValue(f.Key, out string? hash) || hash != CampaignFiles.Hash(f.Value))
-        + verified.Keys.Count(p => !current.ContainsKey(p));
+        current.Count(f => !CampaignFiles.IsDerived(f.Key) && (!verified.TryGetValue(f.Key, out string? hash) || !CampaignFiles.MatchesHash(f.Value, hash)))
+        + verified.Keys.Count(p => !CampaignFiles.IsDerived(p) && !current.ContainsKey(p));
 
     /// <summary>Replaces the campaign with the backup's files, keeping its <c>backups/</c> folder.</summary>
     /// <param name="adventures">The <c>adventures/</c> folder.</param>

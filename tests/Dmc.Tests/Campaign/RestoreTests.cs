@@ -71,6 +71,87 @@ public sealed class RestoreTests
         CollectionAssert.Contains(Restore().StdoutLines, "warning: rorn has changed since the migration was verified (1 files): those changes will be lost");
     }
 
+    /// <summary>
+    /// After a passing verify, turning every file to CRLF (or a git checkout turning them back to LF) is not play since
+    /// the migration: no warning (spec 018 FR-005).
+    /// </summary>
+    /// <param name="verifiedAsCrlf">Whether the files were CRLF when verified (and LF after), or the reverse.</param>
+    [TestMethod]
+    [DataRow(false, DisplayName = "verified as LF, now CRLF")]
+    [DataRow(true, DisplayName = "verified as CRLF, now LF")]
+    public void LineEndingsAloneAfterTheVerifyAreNotWarnedAbout(bool verifiedAsCrlf)
+    {
+        var (root, _) = Migrated();
+        using var __ = root;
+        if (verifiedAsCrlf)
+            SetLineEndings(root.Campaign(), crlf: true);
+        Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name).ExitCode);
+        Assert.IsGreaterThan(0, SetLineEndings(root.Campaign(), crlf: !verifiedAsCrlf));
+        var lines = Restore().StdoutLines;
+        Assert.IsFalse(lines.Any(l => l.StartsWith("warning:", StringComparison.Ordinal)), string.Join("\n", lines));
+    }
+
+    /// <summary>Among line-ending changes, one real edit after the verify is still warned about, as one file.</summary>
+    [TestMethod]
+    public void AnEditAmongLineEndingChangesIsStillWarnedAbout()
+    {
+        var (root, _) = Migrated();
+        using var __ = root;
+        Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name).ExitCode);
+        SetLineEndings(root.Campaign(), crlf: true);
+        root.Write("game-state.md", root.Read("game-state.md") + "- **Gold**: 12 gp\r\n");
+        CollectionAssert.Contains(Restore().StdoutLines, "warning: rorn has changed since the migration was verified (1 files): those changes will be lost");
+    }
+
+    /// <summary>With no verified record, the warning counts the files that differ from the backup, line endings aside.</summary>
+    [TestMethod]
+    public void WithoutAVerifiedRecordLineEndingsAloneAreNotCounted()
+    {
+        var (root, _) = Migrated();
+        using var __ = root;
+        SetLineEndings(root.Campaign(), crlf: true);
+        CollectionAssert.Contains(Restore().StdoutLines, "warning: rorn has changed since the backup (2 files): those changes will be lost");
+    }
+
+    /// <summary>A binary file (it holds a NUL) that loses a CR after the verify is a change.</summary>
+    [TestMethod]
+    public void ABinaryFileDifferingByACrIsStillWarnedAbout()
+    {
+        var (root, _) = Migrated();
+        using var __ = root;
+        string bin = Path.Combine(root.Campaign(), "maps", "picture.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(bin)!);
+        File.WriteAllBytes(bin, [0x00, 0x41, 0x0D, 0x0A, 0x42]);
+        Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name).ExitCode);
+        File.WriteAllBytes(bin, [0x00, 0x41, 0x0A, 0x42]);
+        CollectionAssert.Contains(Restore().StdoutLines, "warning: rorn has changed since the migration was verified (1 files): those changes will be lost");
+    }
+
+    /// <summary>
+    /// The map page is derived: after a passing verify, a missing or redrawn page is not play since the migration, so it
+    /// is not warned about (spec 018 FR-005); with no verified record it is not counted against the backup either.
+    /// </summary>
+    /// <param name="verify">Whether the migration was verified, so the warning compares with the verified record.</param>
+    [TestMethod]
+    [DataRow(true, DisplayName = "against the verified record")]
+    [DataRow(false, DisplayName = "against the backup")]
+    public void TheMapPageIsNotWarnedAbout(bool verify)
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        foreach (string path in CampaignFiles.DerivedFiles)
+            root.Write(path, "drawn before the backup\n");
+        root.SetStandard("1\n");
+        root.WriteMigrations(2, ["mix-tracker"]);
+        root.Backup();
+        if (verify)
+            Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name).ExitCode);
+        File.Delete(Path.Combine(root.Campaign(), "maps", "live.png"));
+        root.Write("maps/live-data.js", "drawn again\n");
+        var lines = Restore().StdoutLines;
+        Assert.IsFalse(lines.Any(l => l.StartsWith("warning:", StringComparison.Ordinal)), string.Join("\n", lines));
+    }
+
     [TestMethod]
     public void WithYesTheCampaignEqualsTheBackupAndBackupsIsKept()
     {

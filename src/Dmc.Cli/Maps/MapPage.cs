@@ -36,13 +36,13 @@ public static class MapPage
     }
 
     /// <summary>
-    /// Write a text file the way Python's text mode does: UTF-8 with no byte-order mark, and the platform's line
-    /// ending for each "\n".
+    /// Write a text file: UTF-8 with no byte-order mark, and LF line endings on every platform, so the map files are the
+    /// same on Windows and Linux and a campaign kept in git shows no line-ending change (spec 018 FR-003).
     /// </summary>
     /// <param name="path">The file to write, replacing it if it exists.</param>
-    /// <param name="text">The text, with "\n" line breaks.</param>
+    /// <param name="text">The text, with "\n" line breaks, written as they are.</param>
     public static void WriteText(string path, string text) =>
-        File.WriteAllBytes(path, new UTF8Encoding(false).GetBytes(text.Replace("\n", Environment.NewLine)));
+        File.WriteAllBytes(path, new UTF8Encoding(false).GetBytes(text));
 
     /// <summary>The page before <see cref="Html"/> fills in its colours and font: the <c>@BG@</c>, <c>@INK@</c>, <c>@MUTED@</c> and <c>@FONT@</c> markers stand for the values in <see cref="SvgDrawing"/>.</summary>
     const string Shell = """

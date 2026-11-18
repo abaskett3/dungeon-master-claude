@@ -66,6 +66,89 @@ public sealed class CampaignVerifyClosedTests
         StringAssert.Contains(result.Stderr, "1 file differs from");
     }
 
+    /// <summary>
+    /// A closed campaign whose files lost their CRLF in a git checkout still matches its closing backup: line endings
+    /// alone are not a change (spec 018 FR-005).
+    /// </summary>
+    [TestMethod]
+    public void ACrlfCampaignCheckedOutAsLfStillVerifies()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        Assert.IsGreaterThan(0, CampaignFixtures.SetLineEndings(root.Campaign(), crlf: true));
+        root.SetStandard("1\r\n");
+        var closed = MigrationRoot.Run("close", MigrationRoot.Name, "--yes");
+        Assert.AreEqual(0, closed.ExitCode, closed.ToString());
+        Assert.IsGreaterThan(0, CampaignFixtures.SetLineEndings(root.Campaign(), crlf: false));
+        var result = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        StringAssert.StartsWith(result.Stdout, "verified rorn: closed, 6 files match ");
+    }
+
+    /// <summary>The reverse: a campaign closed with LF, then turned to CRLF by an editor or git on Windows, still verifies.</summary>
+    [TestMethod]
+    public void AnLfCampaignTurnedToCrlfStillVerifies()
+    {
+        var (root, backup) = Closed();
+        using var _ = root;
+        Assert.IsGreaterThan(0, CampaignFixtures.SetLineEndings(root.Campaign(), crlf: true));
+        var result = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { $"verified rorn: closed, 6 files match {backup}" }, result.StdoutLines);
+    }
+
+    /// <summary>With every line ending changed, a real edit is still the one file named.</summary>
+    [TestMethod]
+    public void AnEditIsStillNamedAmongLineEndingChanges()
+    {
+        var (root, _) = Closed();
+        using var __ = root;
+        CampaignFixtures.SetLineEndings(root.Campaign(), crlf: true);
+        root.Write("story/canon.md", root.Read("story/canon.md") + "- An edit by hand.\r\n");
+        var result = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(1, result.ExitCode);
+        CollectionAssert.AreEqual(new[] { "changed: story/canon.md" }, result.StdoutLines);
+    }
+
+    /// <summary>A binary file (it holds a NUL) is compared byte for byte: a CR taken out of it is a change.</summary>
+    [TestMethod]
+    public void ABinaryFileDifferingByACrIsStillChanged()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        string bin = Path.Combine(root.Campaign(), "maps", "picture.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(bin)!);
+        File.WriteAllBytes(bin, [0x00, 0x41, 0x0D, 0x0A, 0x42]);
+        root.SetStandard("1\n");
+        Assert.AreEqual(0, MigrationRoot.Run("close", MigrationRoot.Name, "--yes").ExitCode);
+        File.WriteAllBytes(bin, [0x00, 0x41, 0x0A, 0x42]);
+        var result = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(1, result.ExitCode);
+        CollectionAssert.AreEqual(new[] { "changed: maps/picture.bin" }, result.StdoutLines);
+    }
+
+    /// <summary>
+    /// The map page is derived: a closed campaign checked out from git without it, or with it drawn again, still verifies
+    /// (spec 018 FR-005), and it is not in the count of files that match.
+    /// </summary>
+    [TestMethod]
+    public void TheMapPageIsNotComparedSoACheckoutWithoutItVerifies()
+    {
+        using var root = new MigrationRoot();
+        root.WriteCampaign();
+        foreach (string path in CampaignFiles.DerivedFiles)
+            root.Write(path, "drawn at close\n");
+        root.SetStandard("1\n");
+        Assert.AreEqual(0, MigrationRoot.Run("close", MigrationRoot.Name, "--yes").ExitCode);
+        string backup = ClosedCampaign.Read(root.Campaign())!.Backup;
+        File.Delete(Path.Combine(root.Campaign(), "maps", "live.html"));
+        File.Delete(Path.Combine(root.Campaign(), "maps", "live-data.js"));
+        root.Write("maps/live-source.txt", "drawn again\n");
+        var result = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { $"verified rorn: closed, 6 files match {backup}" }, result.StdoutLines);
+    }
+
     [TestMethod]
     public void FortyLinesThenACountUnlessAll()
     {

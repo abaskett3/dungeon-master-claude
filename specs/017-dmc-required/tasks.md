@@ -136,3 +136,14 @@ Polish: T019 (skill sizes) and T020 (greps)
 One PR. Write the test (T004) and see it fail, then make the kit edits in priority order (US1, then US2), and the
 documents (US3). The byte cap and the full test run follow, then the maintainer's refresh and the two headless runs,
 before `/speckit-converge` and the PR.
+
+---
+
+## Phase 7: Review fixes (PR #233's code review)
+
+The three findings of the review of PR #233 the maintainer approved, on branch `017-review-fixes`.
+
+- [X] T025 In kit/dm-rules.md:139, replace "If `dmc` is missing or does not run" with "If `dmc` is not found or will not start", so an error exit from a working `dmc` is not read as a missing one (FR-003, FR-010). Set `DmRulesBytesAllowed` in tests/Dmc.Tests/Toolkit/ToolkitTests.cs to the measured 32,510 (−12 against 32,522, FR-009) and update its `<summary>`, .docs/decisions.md (the spec 017 entry's Cost), .docs/roadmap.md and research.md R5
+- [X] T026 In kit/settings.json:105, replace the notice's "dmc is missing or does not run, so dice, maps and PDF reading will not work" with "dmc is not found or will not start, so DMC cannot play until it does" (FR-002, FR-003), and its assertion at tests/Dmc.Tests/Toolkit/ToolkitTests.cs:348. Update .docs/user-guide.md (lines 65 and 515), .docs/decisions.md (§ Keep the missing-`dmc` notice at session start, a "Reworded 2026-11-17" note; the spec 017 entry), .docs/roadmap.md and research.md R2, which had rejected the rewording
+- [X] T027 In .docs/decisions.md, the Limits of § The constitution drops a model and effort for each skill (issue #219): add "Whether Claude Code honours a model and effort in a skill's frontmatter is not verified."
+- [X] T028 Republish `artifacts/bin`, run `dotnet test`, and re-run quickstart.md § 3 (the missing `dmc`) in the scratch copy with this branch's kit written in. Record the results in quickstart.md § Results

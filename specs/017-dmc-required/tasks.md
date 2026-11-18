@@ -105,7 +105,7 @@ decision entries marked "Partly superseded".
 - [X] T021 (Done instead in a scratch copy of the test folder with this branch's kit written in, as quickstart.md § Results says: the maintainer works remotely.) Ask the maintainer to run, from a terminal outside Claude Code, `artifacts/bin/dmc refresh D:\Claude\test-campaign` once this branch has been rebuilt after the kit edits (`dotnet publish src/Dmc.Cli -r win-x64 -o artifacts/bin`, so the binary embeds the edited kit), and wait for them to confirm
 - [X] T022 Run quickstart.md § 3 in D:\Claude\test-campaign with neither `artifacts/bin` nor `C:\Users\webhe\AppData\Local\Programs\dmc` on `PATH`: `claude -p --model sonnet "Let's continue the campaign east-hills."`. Pass: the reply gives the install line and plays nothing (no scene, no roll, no map). Record the reply, whether the start-of-session notice appeared, and pass or fail in quickstart.md § Results (SC-003). Then, with `artifacts/bin` back first on `PATH`, run `claude -p --continue --model sonnet "I've reinstalled dmc."` in the same folder. Pass: DMC runs `dmc --version` and resumes (FR-003, US2 scenario 2). Record it too
 - [X] T023 Run quickstart.md § 4 in a scratch copy of a test campaign with `artifacts/bin` first on `PATH` (set `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`): a roll, a recall of a returning NPC and a map, all by `dmc`. Record pass or fail in quickstart.md § Results (SC-004)
-- [ ] T024 (Roadmap: PR #233 filled in. Issue #208's description: waits for the maintainer's word.) After the PR is open, fill in its number in .docs/roadmap.md (T015), and, with the maintainer's word, edit issue #208's description to link `specs/017-dmc-required/` and summarise the spec in two or three lines (`.docs/development.md` § Spec-driven changes). The PR description also names the corrections from PR #232's code review that this branch carries (`.docs/decisions.md`: the 4.0.0 entry's Reason and Limits, and the 3.0.0 entry's stale Development 5 to-do; `.docs/development.md:170`: the 3.0.0 list restored)
+- [X] T024 (Roadmap: PR #233 filled in. Issue #208's description: a Spec section added, with the maintainer's word, 2026-11-17.) After the PR is open, fill in its number in .docs/roadmap.md (T015), and, with the maintainer's word, edit issue #208's description to link `specs/017-dmc-required/` and summarise the spec in two or three lines (`.docs/development.md` § Spec-driven changes). The PR description also names the corrections from PR #232's code review that this branch carries (`.docs/decisions.md`: the 4.0.0 entry's Reason and Limits, and the 3.0.0 entry's stale Development 5 to-do; `.docs/development.md:170`: the 3.0.0 list restored)
 
 ---
 
@@ -136,3 +136,14 @@ Polish: T019 (skill sizes) and T020 (greps)
 One PR. Write the test (T004) and see it fail, then make the kit edits in priority order (US1, then US2), and the
 documents (US3). The byte cap and the full test run follow, then the maintainer's refresh and the two headless runs,
 before `/speckit-converge` and the PR.
+
+---
+
+## Phase 7: Review fixes (PR #233's code review)
+
+The three findings of the review of PR #233 the maintainer approved, on branch `017-review-fixes`.
+
+- [X] T025 In kit/dm-rules.md:139, replace "If `dmc` is missing or does not run" with "If `dmc` is not found or will not start", so an error exit from a working `dmc` is not read as a missing one (FR-003, FR-010). Set `DmRulesBytesAllowed` in tests/Dmc.Tests/Toolkit/ToolkitTests.cs to the measured 32,510 (−12 against 32,522, FR-009) and update its `<summary>`, .docs/decisions.md (the spec 017 entry's Cost), .docs/roadmap.md and research.md R5
+- [X] T026 In kit/settings.json:105, replace the notice's "dmc is missing or does not run, so dice, maps and PDF reading will not work" with "dmc is not found or will not start, so DMC cannot play until it does" (FR-002, FR-003), and its assertion at tests/Dmc.Tests/Toolkit/ToolkitTests.cs:348. Update .docs/user-guide.md (lines 65 and 515), .docs/decisions.md (§ Keep the missing-`dmc` notice at session start, a "Reworded 2026-11-17" note; the spec 017 entry), .docs/roadmap.md and research.md R2, which had rejected the rewording
+- [X] T027 In .docs/decisions.md, the Limits of § The constitution drops a model and effort for each skill (issue #219): add "Whether Claude Code honours a model and effort in a skill's frontmatter is not verified."
+- [X] T028 Republish `artifacts/bin`, run `dotnet test`, and re-run quickstart.md § 3 (the missing `dmc`) in the scratch copy with this branch's kit written in. Record the results in quickstart.md § Results

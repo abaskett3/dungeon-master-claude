@@ -345,7 +345,7 @@ public sealed partial class ToolkitTests
             var told = RunHook(commands[0], dmc);
             Assert.AreEqual(0, told.ExitCode, told.ToString());
             Assert.HasCount(1, told.StdoutLines, $"{dmc}: {told}");
-            StringAssert.Contains(told.Stdout, "dmc is missing or does not run, so dice, maps and PDF reading will not work: reinstall it in a terminal with the install line (Windows PowerShell: irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex; Linux: curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh)");
+            StringAssert.Contains(told.Stdout, "dmc is not found or will not start, so DMC cannot play until it does: reinstall it in a terminal with the install line (Windows PowerShell: irm https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.ps1 | iex; Linux: curl -fsSL https://github.com/abaskett3/dungeon-master-claude/releases/latest/download/install.sh | sh)");
             Assert.AreEqual("", told.Stderr, dmc.ToString());
         }
         var working = RunHook(commands[0], BinDmc.Published);
@@ -1206,10 +1206,11 @@ public sealed partial class ToolkitTests
     /// raised it by 588 to the file's size once "yes, and" and "no, but" landed (about 179 more tokens per turn); and
     /// spec 015 (FR-008, at most 300) raised it by 283 for the jump offer in § Narration (about 71 more tokens per turn);
     /// and spec 016 (FR-027, the measured amount) raised it by 1,608 for the clauses of the feedback round of #181, each
-    /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 16 when the fallback
-    /// for a missing <c>dmc</c> went.
+    /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 12: 16 when the fallback
+    /// for a missing <c>dmc</c> went, less 4 when its review named a missing <c>dmc</c> as one not found or that will
+    /// not start.
     /// </summary>
-    const int DmRulesBytesAllowed = 32_506;
+    const int DmRulesBytesAllowed = 32_510;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.

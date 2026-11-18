@@ -39,7 +39,9 @@ Every finding cites a file on `017-dmc-required` (branched from `origin/main` at
   and the search follow as before. No kit change is needed for it.
 - **Alternatives considered:** a line in `dmc-resume-campaign` for a missing `dmc` (rejected: the rule has one home,
   constitution Development 6, and `CLAUDE.md` is always loaded); rewording the start-of-session notice (rejected: FR-002
-  keeps it, and `tests/Dmc.Tests/Toolkit/ToolkitTests.cs:348` asserts its text).
+  keeps it, and `tests/Dmc.Tests/Toolkit/ToolkitTests.cs:348` asserts its text). Reversed after PR #233's code review: "so dice, maps and PDF reading will not work" implied the
+  rest of play goes on, so the notice now says `dmc` is not found or will not start and DMC cannot play until it does;
+  the test asserts the new text.
 
 ## R3. What stays
 
@@ -75,6 +77,9 @@ Every finding cites a file on `017-dmc-required` (branched from `origin/main` at
   `dmc-draw-map` one clause), paid only when they load. Measured: `dmc-draw-map` 11,377 → 11,352 bytes (−25),
   `dmc-ingest-module` 9,827 → 9,625 (−202), `dmc-setup-rules` 3,671 → 3,624 (−47); −274 in all.
 - **Rationale:** `printf '%s' '<text>' | wc -c` on each clause; the final figures are taken from the edited files.
+- **After PR #233's code review:** line 139's "If `dmc` is missing or does not run" became "If `dmc` is not found or
+  will not start", so an error exit from a working `dmc` (for example `dmc recall`'s "nothing to search for") is not
+  read as a missing one. It adds 4 bytes: 32,510, −12 against 32,522; the cap is 32,510.
 
 ## R6. Tests
 

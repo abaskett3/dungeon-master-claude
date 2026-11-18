@@ -62,7 +62,7 @@ Run `dmc play` in a terminal, from any folder. It does these things:
 
 DMC never deletes or moves your campaign files unless you ask for that file to go. When you do, it cannot run the delete or move itself in a play session (`rm`, `mv`, `Remove-Item`, `Move-Item`, `git clean` and `find -delete` are blocked): it tells you the command to run in your own terminal. The block is not complete (see [decisions.md](decisions.md)), so the rule in `CLAUDE.md` is the first line of defence. DMC also cannot edit `CLAUDE.md`, `.claude/`, `templates/` or `.dmc/`, or run `dmc install`, `dmc refresh` or `dmc update`.
 
-Starting plain `claude` in the DMC folder also works: the same rules, skills and hooks load. It starts on your account's default model, and `dmc` must be on your `PATH`. If `dmc` is missing or does not run, Claude Code shows DMC a one-line notice at the start of the session and DMC tells you to reinstall, and plays nothing until `dmc` runs again.
+Starting plain `claude` in the DMC folder also works: the same rules, skills and hooks load. It starts on your account's default model, and `dmc` must be on your `PATH`. If `dmc` is not found or will not start, Claude Code shows DMC a one-line notice at the start of the session and DMC tells you to reinstall, and plays nothing until `dmc` runs again.
 
 ### Your first campaign
 
@@ -512,7 +512,7 @@ Your old session logs stay where Claude Code put them: under the checkout's Clau
 | `dmc install: could not add <folder> to your PATH: ...` | The DMC folder was written, but your `Path` could not be changed. Add the folder shown to your `Path` yourself. |
 | `dmc refresh: <folder>: <n> edited files kept in .dmc/replaced/<stamp>/` | You (or a tool) had changed a file `dmc` writes. It was put back, and your copy is in the folder named. Move anything you want to keep into a file of your own. |
 | `dmc: unknown command "campaign" (try roll, ...)` | Your `dmc` is older than 0.1.4, which added `campaign`. Install a newer one. |
-| DMC says `dmc` is missing or does not run | The start-of-session check found no working `dmc` on the `PATH`. Reinstall: run `dmc install` again, or the install line from the [README](../README.md) (at <https://github.com/abaskett3/dungeon-master-claude>). DMC does not play until `dmc` runs again. |
+| DMC says `dmc` is not found or will not start | The start-of-session check found no working `dmc` on the `PATH`. Reinstall: run `dmc install` again, or the install line from the [README](../README.md) (at <https://github.com/abaskett3/dungeon-master-claude>). DMC does not play until `dmc` runs again. |
 | `dmc play: Claude Code (claude) is not on the PATH: ...` | Install Claude Code, or open a new terminal after installing it. `dmc play` exits with code 127 in this case. |
 | `dmc play: only ...claude.cmd was found, ...` (Windows) | Only npm's command shim was found, without its PowerShell script. Install Claude Code's own `claude.exe`. |
 | The map tab did not open, or stopped updating | Open `adventures/<campaign>/maps/live.html` in your browser yourself. It refreshes itself while DMC redraws. |

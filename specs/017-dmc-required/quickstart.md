@@ -83,3 +83,10 @@ Run 2026-11-17 on `017-dmc-required` (base `fbe3ede`).
   exercised: asked about steward Corwin, DMC answered from canon, which the resume had read whole because `dmc recall
   east-hills --scene` said "story/canon.md is small: read it whole"; it did not run `dmc recall` for him. The answer
   matched canon. Line 78's "recall it first" is unchanged by this spec.
+- **After PR #233's code review (branch `017-review-fixes`):** three fixes the maintainer approved. Line 139 says
+  "If `dmc` is not found or will not start"; the start-of-session notice says "dmc is not found or will not start, so
+  DMC cannot play until it does"; `.docs/decisions.md` labels a skill's frontmatter model and effort as not verified.
+  `kit/dm-rules.md` 32,510 bytes (−12), 212 lines; the cap is 32,510. Full run: 2,177 passed, 8 skipped, 0 failed (the
+  count includes spec 018's tests, merged since). § 3 re-run in the scratch copy with this branch's kit written in and
+  `dmc` off the `PATH`: the new notice appeared; DMC ran `dmc --version` in Bash and PowerShell, gave both install lines,
+  said it would narrate nothing until `dmc` runs, and played no scene, rolled nothing and drew no map. Pass.

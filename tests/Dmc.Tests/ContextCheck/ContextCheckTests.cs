@@ -57,6 +57,33 @@ public sealed class ContextCheckEdgeTests
     /// <summary>A user record's JSON line.</summary>
     static string User(string text = "go on") => ContextCheckContract.User(text).ToJsonString();
 
+    /// <summary>
+    /// An assistant record's JSON line that calls a skill with the <c>Skill</c> tool, in the shape of log <c>082db04e</c>
+    /// line 38 (spec 019 research R1).
+    /// </summary>
+    /// <param name="context">The context size of the call.</param>
+    /// <param name="skill">The skill named in the call's input.</param>
+    /// <param name="sidechain">True for a call of a sub-agent's conversation.</param>
+    /// <param name="usage">False to leave out the record's usage, so the call has no context size.</param>
+    static string SkillCall(int context, string skill = "dmc-resume-campaign", bool sidechain = false, bool usage = true)
+    {
+        var record = ContextCheckContract.Assistant(context, sidechain);
+        var message = record["message"]!.AsObject();
+        message["content"] = new JsonArray(new JsonObject
+        {
+            ["type"] = "tool_use",
+            ["id"] = "s1",
+            ["name"] = "Skill",
+            ["input"] = new JsonObject { ["skill"] = skill },
+        });
+        if (!usage)
+            message.Remove("usage");
+        return record.ToJsonString();
+    }
+
+    /// <summary>The player's words that ask for a resume instead of the slash command.</summary>
+    static string TypedResume => User("Resume campaign.");
+
     /// <summary>The line starts at exactly 150,000 tokens and not one token before.</summary>
     [TestMethod]
     public void TheReminderStartsExactlyAtTheThreshold()
@@ -160,6 +187,93 @@ public sealed class ContextCheckEdgeTests
         Assert.AreEqual(new ContextReading(142000, 142000),
             Reading(Write(Assistant(20000), Command("resume-campaign"), Assistant(142000))));
 
+    // Spec 019 (issue #244): the player types the resume instead of the slash command, so the first player message
+    // comes before it. The end of the turn that calls the resume skill is the baseline, not the call before it.
+    [TestMethod]
+    public void ATypedResumeSetsTheBaselineAtTheEndOfItsTurn() =>
+        Assert.AreEqual(new ContextReading(154000, 146000), Reading(Write(
+            TypedResume, SkillCall(37000), ToolResult, Assistant(120000), Assistant(146000), User(), Assistant(150000),
+            User(), Assistant(154000))));
+
+    // The resume may come in any of the first three turns: here the player says something first.
+    [TestMethod]
+    public void AResumeInTheSecondTurnSetsTheBaseline() =>
+        Assert.AreEqual(new ContextReading(150000, 140000), Reading(Write(
+            User("hi"), Assistant(30000), TypedResume, SkillCall(32000), ToolResult, Assistant(140000), User(), Assistant(150000))));
+
+    // Log 082db04e calls the skill twice in one turn: the baseline is the end of the turn, after both.
+    [TestMethod]
+    public void TwoResumeCallsInOneTurnGiveItsLastCall() =>
+        Assert.AreEqual(new ContextReading(150000, 146000), Reading(Write(
+            TypedResume, SkillCall(37000), SkillCall(38000), ToolResult, Assistant(146000), User(), Assistant(150000))));
+
+    // A resume turn the player has not answered yet ends at the latest call.
+    [TestMethod]
+    public void AResumeTurnStillRunningIsItsOwnBaseline() =>
+        Assert.AreEqual(new ContextReading(146000, 146000), Reading(Write(TypedResume, SkillCall(37000), ToolResult, Assistant(146000))));
+
+    // The skill's name before the rename counts too, as it does for the slash command.
+    [TestMethod]
+    public void TheOldResumeNameCountsToo() =>
+        Assert.AreEqual(new ContextReading(154000, 146000), Reading(Write(
+            TypedResume, SkillCall(37000, "resume-campaign"), ToolResult, Assistant(120000), Assistant(146000), User(),
+            Assistant(150000), User(), Assistant(154000))));
+
+    // The call marks its turn even when its record carries no usage, which the classifier skips as a call.
+    [TestMethod]
+    public void AResumeCallWithNoUsageStillMarksItsTurn() =>
+        Assert.AreEqual(new ContextReading(150000, 146000), Reading(Write(
+            TypedResume, Assistant(37000), SkillCall(0, usage: false), ToolResult, Assistant(146000), User(), Assistant(150000))));
+
+    // A resume after the third player message is a resume mid-session: it cannot move the baseline.
+    [TestMethod]
+    public void AResumeInTheFourthTurnDoesNotMoveTheBaseline() =>
+        Assert.AreEqual(new ContextReading(150000, 30000), Reading(Write(
+            User(), Assistant(30000), User(), Assistant(31000), User(), Assistant(32000), TypedResume, SkillCall(33000),
+            ToolResult, Assistant(140000), User(), Assistant(150000))));
+
+    // Only the main conversation's calls count; another skill is not a resume.
+    [TestMethod]
+    public void ASubAgentsResumeCallOrAnotherSkillDoesNotCount()
+    {
+        Assert.AreEqual(new ContextReading(50000, 40000), Reading(Write(
+            TypedResume, SkillCall(37000, sidechain: true), Assistant(40000), User(), Assistant(50000))));
+        Assert.AreEqual(new ContextReading(150000, 37000), Reading(Write(
+            User(), SkillCall(37000, "dmc-record-feedback"), Assistant(146000), User(), Assistant(150000))));
+    }
+
+    // The resume check parses a line with a \u escape, since JSON may spell the skill's name with one; and a record of
+    // a shape it does not know, in the resume turn or out of it, is skipped, never an error and never a resume.
+    [TestMethod]
+    public void AnEscapedOrBadResumeRecordIsHandled()
+    {
+        string escaped = SkillCall(38000).Replace("dmc-resume-campaign", "dmc-resume-\\u0063ampaign");
+        Assert.AreEqual(new ContextReading(150000, 146000), Reading(Write(
+            TypedResume, Assistant(37000), escaped, ToolResult, Assistant(146000), User(), Assistant(150000))), "an escaped name");
+
+        string[] bad =
+        [
+            "{\"type\": \"assistant\", \"message\": \"resume-campaign\"}",
+            "{\"type\": \"assistant\", \"message\": {\"content\": \"resume-campaign\"}}",
+            "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": \"resume-campaign\"}]}}",
+            "{\"type\": \"assistant\", \"message\": {\"content\": [5, {\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": 7}}]}} resume-campaign",
+        ];
+        foreach (string record in bad)
+        {
+            Assert.AreEqual(new ContextReading(150000, 146000), Reading(Write(
+                TypedResume, SkillCall(37000), record, ToolResult, Assistant(146000), User(), Assistant(150000))), record);
+            Assert.AreEqual(new ContextReading(150000, 30000), Reading(Write(
+                User(), Assistant(30000), record, Assistant(140000), User(), Assistant(150000))), record);
+        }
+    }
+
+    // The first three turns are counted from the latest compaction boundary.
+    [TestMethod]
+    public void TurnsAreCountedFromTheLatestCompaction() =>
+        Assert.AreEqual(new ContextReading(130000, 120000), Reading(Write(
+            User(), Assistant(250000), Boundary, CompactSummary, Assistant(30000), TypedResume, SkillCall(31000), ToolResult,
+            Assistant(120000), User(), Assistant(130000))));
+
     // A compaction restarts the search: only the part after the latest boundary counts, whether the reload comes
     // before the player's next message or the first reply does.
     [TestMethod]
@@ -258,6 +372,20 @@ public sealed class ContextCheckEdgeTests
         // A resume that settles low keeps the 150k floor.
         StringAssert.StartsWith(Run(Command("resume-campaign"), Assistant(60000), User(), Assistant(150000)),
             "Context 150k is large, break due since 150k:");
+    }
+
+    // Spec 019 SC-001, the case of log 082db04e: the break line came at 154k after a typed resume that ended at about
+    // 146k. Measured from the end of the resume, the first band is 186k.
+    /// <summary>After a typed resume, the first band is the end of the resume turn plus 40,000.</summary>
+    [TestMethod]
+    public void ATypedResumeGetsNoBreakLineAt154k()
+    {
+        string Run(params string[] lines) => DmcRunner.InProcess(["context-check"],
+            new JsonObject { ["transcript_path"] = Write(lines) }.ToJsonString()).Stdout.Trim();
+
+        string[] resumed = [TypedResume, SkillCall(37000), ToolResult, Assistant(120000), Assistant(146000), User()];
+        Assert.AreEqual("", Run([.. resumed, Assistant(154000)]));
+        StringAssert.StartsWith(Run([.. resumed, Assistant(186000)]), "Context 186k is large, break due since 186k:");
     }
 
     [TestMethod]

@@ -12,7 +12,8 @@ namespace Dmc.Commands;
 /// <see cref="TranscriptReader.OfferedSince"/>). After it, the canon reminder (spec 013): the best canon lines for the
 /// people of the register the player's message names, once per person per session part (<see cref="CanonReminder"/>).
 /// Then the sheet lines (spec 016 FR-008): what the sheets of the people present say of them now, again once 100,000
-/// tokens have passed (<see cref="SheetReminder"/>). Last, for a message that starts out of character, the rule for a
+/// tokens have passed, and none before DMC's first reply after a <c>/clear</c> or a compaction (<see cref="SheetReminder"/>,
+/// spec 019). Last, for a message that starts out of character, the rule for a
 /// correction in one line (spec 016 FR-011, <see cref="OocReminder"/>).
 /// <para>
 /// It never gets in the way of a prompt: on any error (bad input, a missing or unreadable log) it prints nothing

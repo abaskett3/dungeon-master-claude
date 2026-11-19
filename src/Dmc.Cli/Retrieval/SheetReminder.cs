@@ -68,18 +68,23 @@ internal static partial class SheetReminder
     internal sealed record Person(string File, string Title, int At, List<string> Lines);
 
     /// <summary>
-    /// The sheet lines for a hook's input: nothing when the input has no prompt or folder, the prompt is a command, there
-    /// is no active open campaign with a <c>game-state.md</c>, or no one present with a sheet is due.
+    /// The sheet lines for a hook's input: nothing when the input has no prompt or folder, the prompt is a command, the
+    /// named log has no reply since its latest compaction boundary (the first message after a <c>/clear</c>, whose resume
+    /// reads the sheets next; spec 019 FR-005), there is no active open campaign with a <c>game-state.md</c>, or no one
+    /// present with a sheet is due.
     /// </summary>
     /// <param name="input">The hook's JSON (<c>prompt</c>, <c>cwd</c>, <c>transcript_path</c>).</param>
     /// <param name="projectFolder">The <c>CLAUDE_PROJECT_DIR</c> the hook runs with, used when <c>cwd</c> is not a DMC folder; null for none.</param>
-    /// <param name="contextNow">The session's latest context size, in tokens; 0 when it is not known, and then anyone shown or read since the latest compaction is skipped.</param>
+    /// <param name="contextNow">The session's latest context size, in tokens. 0 with a log named means the log has no reply since its latest compaction boundary, and nothing is printed; 0 with no log named means it is not known.</param>
     /// <returns>The lines to print and the people to hand on to the canon reminder.</returns>
     /// <exception cref="JsonException">The input is not JSON; the caller turns any failure into silence.</exception>
     public static Found For(string input, string? projectFolder, long contextNow)
     {
         var (_, prompt) = HookInput.Field(input, "prompt");
         if (string.IsNullOrWhiteSpace(prompt) || prompt.TrimStart().StartsWith('/'))
+            return Found.None;
+        var (_, log) = HookInput.Field(input, "transcript_path");
+        if (!string.IsNullOrEmpty(log) && contextNow == 0)
             return Found.None;
         var (_, cwd) = HookInput.Field(input, "cwd");
         string? folder = new[] { cwd, projectFolder }.FirstOrDefault(f => !string.IsNullOrEmpty(f) && DmcFolder.IsDmcFolder(f));
@@ -95,14 +100,10 @@ internal static partial class SheetReminder
             return Found.None;
         var without = present.Where(p => p.Lines.Count == 0).Select(p => p.Title).ToList();
         var due = present.Where(p => p.Lines.Count > 0).ToList();
-        if (due.Count > 0)
+        if (due.Count > 0 && !string.IsNullOrEmpty(log))
         {
-            var (_, log) = HookInput.Field(input, "transcript_path");
-            if (!string.IsNullOrEmpty(log))
-            {
-                var seen = Seen(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()), contextNow);
-                due = due.Where(p => !Recent(seen, p, contextNow)).ToList();
-            }
+            var seen = Seen(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()), contextNow);
+            due = due.Where(p => !Recent(seen, p, contextNow)).ToList();
         }
         return new Found(Lines(due), without);
     }
@@ -198,7 +199,7 @@ internal static partial class SheetReminder
     /// <summary>Whether a person was shown, or their sheet read, within <see cref="Refresh"/> tokens of now.</summary>
     /// <param name="seen">What the log holds.</param>
     /// <param name="person">The person.</param>
-    /// <param name="contextNow">The latest context; 0 when not known, which counts anything seen as recent.</param>
+    /// <param name="contextNow">The latest context; 0 when not known, which counts anything seen as recent. <see cref="For"/> never passes 0, since it prints nothing then (spec 019).</param>
     static bool Recent(SeenInLog seen, Person person, long contextNow)
     {
         bool Near(long at) => contextNow == 0 || contextNow - at < Refresh;
@@ -218,7 +219,7 @@ internal static partial class SheetReminder
     /// again within one part, the read stops early and a person is shown sooner, never later.
     /// </summary>
     /// <param name="log">The session's log, a JSON-lines file.</param>
-    /// <param name="contextNow">The latest context, in tokens; 0 when not known, and then the whole part is read.</param>
+    /// <param name="contextNow">The latest context, in tokens; 0 when not known, and then the whole part is read. <see cref="For"/> never passes 0, since it prints nothing then (spec 019).</param>
     internal static SeenInLog Seen(string log, long contextNow)
     {
         var seen = new SeenInLog(new Dictionary<string, long>(StringComparer.Ordinal), new Dictionary<string, long>(StringComparer.Ordinal));

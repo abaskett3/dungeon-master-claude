@@ -234,7 +234,7 @@ with an empty `transcript_path` still gives the lines.
 - [X] T023 Run `/speckit-converge` on the branch until it adds no tasks, and fold its tasks into this PR
   (`.docs/development.md` § Spec-driven changes).
   *Done 2026-11-19:* the first run added T026 and T027 (Phase 7); the second run, after T026, added nothing.
-- [ ] T024 Commit, push and open the PR from `019-typed-resume-baseline`. The description says `Closes #244` on its
+- [X] T024 Commit, push and open the PR from `019-typed-resume-baseline`. The description says `Closes #244` on its
   own line. It also gives:
   - what changed, and why;
   - the sources: `082db04e`, #237 and #238;
@@ -243,6 +243,7 @@ with an empty `transcript_path` still gives the lines.
   - that no migration is needed, because no campaign file, template or skill changes.
 
   Check it with `gh pr view <n> --json body`.
+  *Done 2026-11-19:* PR #271; `gh pr view 271 --json body` shows the full description.
 - [ ] T025 Run the code-review command once on the PR. Present its fixes to the maintainer and get approval before
   committing them. Check the documents are current whether or not the review found anything. Wait for CI to pass
   before asking the maintainer to merge.
@@ -300,4 +301,5 @@ Task: "T021 .docs/roadmap.md row"
 ## Phase 7: Convergence
 
 - [X] T026 In `tests/Dmc.Tests/ContextCheck/ContextCheckTests.cs`, next to `ASubAgentsResumeCallOrAnotherSkillDoesNotCount`, add `AnEscapedOrBadResumeRecordIsHandled`: (a) a resume call whose skill name is written with a `\u` escape (`dmc-resume-campaign` in the raw JSON line) still marks its turn, so `TypedResume, Assistant(37000), <escaped call at 38000>, ToolResult, Assistant(146000), User(), Assistant(150000)` reads `(150000, 146000)`; (b) a record of an unexpected shape in the resume turn (`{"type": "assistant", "message": "text"}` and `{"type": "assistant", "message": {"content": 5}}`) is skipped and the reading is the same as without it. Run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~ContextCheckEdgeTests"` per Edge Cases and research R2 (partial)
-- [ ] T027 After T024 opens the PR, replace "PR #N" in the spec 019 row of `.docs/roadmap.md` (:55) with the PR's number, and push the change to the same PR per FR-009 and T021 (partial)
+- [X] T027 After T024 opens the PR, replace "PR #N" in the spec 019 row of `.docs/roadmap.md` (:55) with the PR's number, and push the change to the same PR per FR-009 and T021 (partial)
+  *Done 2026-11-19:* the row says PR #271.

@@ -193,6 +193,27 @@ public abstract class SheetReminderContract
         Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"), SheetPart(ContextCheck(Input("I look around", log)))[0]);
     }
 
+    /// <summary>
+    /// The first message after a <c>/clear</c>, before DMC has answered, gets no sheet lines: the resume that comes next
+    /// reads the sheets (spec 019 FR-005). With no log named, the lines print as before.
+    /// </summary>
+    [TestMethod]
+    public void NoSheetLinesBeforeTheFirstReplyAfterAClear()
+    {
+        string log = Log(ContextCheckContract.User("<command-name>/clear</command-name>"));
+        Assert.HasCount(0, SheetPart(ContextCheck(Input("Resume campaign.", log))));
+        Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"), SheetPart(ContextCheck(Input("Resume campaign.")))[0]);
+    }
+
+    /// <summary>
+    /// Right after a compaction the log is not fresh, so the sheet lines print as before: nothing shows that DMC reloads
+    /// the sheets there (the code review of PR #271).
+    /// </summary>
+    [TestMethod]
+    public void TheSheetLinesStillPrintRightAfterACompaction() =>
+        Assert.AreEqual(Header("Tam Birch", "Hala Rornsdottir"),
+            SheetPart(ContextCheck(Input("I look around", Log(Call(50_000), Printed(Header("Tam Birch")), Boundary()))))[0]);
+
     /// <summary>A slash command, input that is not usable, or a closed campaign gets no sheet lines.</summary>
     [TestMethod]
     public void NothingIsPrintedForACommandBadInputOrAClosedCampaign()

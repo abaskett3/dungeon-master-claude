@@ -12,7 +12,8 @@ namespace Dmc.Commands;
 /// <see cref="TranscriptReader.OfferedSince"/>). After it, the canon reminder (spec 013): the best canon lines for the
 /// people of the register the player's message names, once per person per session part (<see cref="CanonReminder"/>).
 /// Then the sheet lines (spec 016 FR-008): what the sheets of the people present say of them now, again once 100,000
-/// tokens have passed (<see cref="SheetReminder"/>). Last, for a message that starts out of character, the rule for a
+/// tokens have passed, and none in a fresh log, before DMC's first reply after a <c>/clear</c> (<see cref="SheetReminder"/>,
+/// spec 019). Last, for a message that starts out of character, the rule for a
 /// correction in one line (spec 016 FR-011, <see cref="OocReminder"/>).
 /// <para>
 /// It never gets in the way of a prompt: on any error (bad input, a missing or unreadable log) it prints nothing
@@ -54,7 +55,10 @@ public sealed class ContextCheckCommand : ICommand
                 BreakReminder.BandOf(reading.Size, reading.Baseline)), false))
             line = "";
         string? project = Environment.GetEnvironmentVariable(DmcFolder.ProjectVariable);
-        var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size), SheetReminder.Found.None);
+        // A fresh log (spec 019 FR-005): no call yet and no compaction, so the resume that follows reads the sheets.
+        // A log whose latest thing is a compaction is not fresh: the sheet lines print there as before.
+        bool fresh = reading.Size == 0 && TranscriptPath(input) is { } log && Quietly(() => TranscriptReader.IsFresh(log), false);
+        var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh), SheetReminder.Found.None);
         var reminder = Quietly(() => CanonReminder.For(input, project, sheets.WithoutFields), new List<string>());
         string ooc = Quietly(() => OocReminder.For(input), "");
         if (line.Length > 0)

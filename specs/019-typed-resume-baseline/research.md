@@ -119,6 +119,22 @@ band from the same baseline, so one offer per band holds at the new bands. `Cano
 `sheets.WithoutFields`, which is empty on a message that gets no sheet lines. On that message it therefore covers
 only the people the message names. This matches the spec's FR-005.
 
+## R10. The code review of PR #271 (approved 2026-11-19)
+
+- **Only the first resume counts.** With "the latest resume turn", a typed resume in turn 2 after a slash resume
+  moved the baseline from 100,000 to 200,000, which hid the growth that the old rule guarded against. The first resume
+  of the part now decides: a `Skill` call in turns 1 to 3 sets the baseline, and a resume before the first message or a
+  slash command keeps the present rule. A wrong answer can now only bring the offer earlier, never later.
+- **A fresh log, not "a context of 0".** The sheet lines stop only when the log has no call and no compaction boundary
+  (`TranscriptReader.IsFresh`), which `ContextCheckCommand` passes to `SheetReminder.For` as a flag. After a compaction
+  they print as before, because no log shows a reload there (R6). The `contextNow == 0` branches of `Recent` and
+  `Seen` are reachable again in that case.
+- **Cost.** The resume helper parses a line only when it holds `resume-campaign` with `"assistant"` or `command-name`,
+  or a `\u` escape, so a file's text in a tool result is rarely parsed twice. The pass settles once the first resume
+  turn closes. Timed on the 18 MB log whose start is the real typed resume of `082db04e`, the branch and `main` stay
+  level (quickstart step 4).
+- **One line parser.** `ParseLine` and `TryContent` are shared by `Classify`, `TextNames` and `ResumeIn`.
+
 ## R9. Tests
 
 The new tests go into `ContextCheckTests.cs`, which holds the baseline tests (`:123-245`), and into

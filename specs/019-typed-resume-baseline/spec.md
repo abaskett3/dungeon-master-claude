@@ -9,6 +9,21 @@
 **Input**: User description: "#238", narrowed by the maintainer to its piece of work 0.1, issue #244: "Slips 0.1:
 take the break baseline after a typed resume". Part of Phase 0 (#239) of the slip plan #238.
 
+## Clarifications
+
+### Session 2026-11-19, the code review of PR #271
+
+The maintainer approved two changes from the code review on 2026-11-19 ("apply all").
+
+- Q: A typed resume in turn 2 or 3, after a slash resume or after a first typed one, moved the baseline up. The rule
+  that a resume later in the session cannot hide the context's growth no longer held. → A: Only the part's first
+  resume can set the baseline. A resume before the first player message (the slash command, or DMC's own `Skill`
+  call), or a slash command sent in turns 1 to 3, is the first resume too, and it leaves the present rule. FR-001 and
+  FR-002 changed.
+- Q: Dropping the sheet lines on the first message after a compaction rested on DMC reloading there, which no log
+  shows. → A: Drop them only in a fresh log, with no reply and no compaction boundary: the first message after a
+  `/clear` or of a session. After a compaction they print as before. FR-005 and User Story 2 changed.
+
 ## Background
 
 The context hook (`dmc context-check`, run before each player message) offers a break when the context has grown a
@@ -63,6 +78,8 @@ baseline: it is the context at the end of the resume turn, not before it.
    no break line.
 3. **Given** a log where the player says "hi" first and asks for the resume in the second message, **When** the hook
    runs after that turn, **Then** the baseline is the context at the end of the second turn.
+6. **Given** a typed resume in turn 1 and another in turn 2, **When** the hook runs, **Then** the baseline is the end
+   of turn 1: only the first resume counts.
 4. **Given** a log where the resume turn holds two resume `Skill` calls (as `082db04e` does), **When** the hook runs,
    **Then** the baseline is the context of the last call of that turn, after both.
 5. **Given** a typed resume whose turn is still running (no later player message yet), **When** the hook runs,
@@ -72,8 +89,9 @@ baseline: it is the context at the end of the resume turn, not before it.
 
 ### User Story 2 - The first typed message after a `/clear` prints no sheet lines (Priority: P2)
 
-On the first message after a `/clear` or a compaction, before DMC has answered anything, the hook prints no sheet
-lines. The resume, which reads the sheets, comes next.
+On the first message of a fresh log, after a `/clear` or at the start of a session, before DMC has answered
+anything, the hook prints no sheet lines. The resume, which reads the sheets, comes next. After a compaction the lines
+print as before.
 
 **Why this priority**: it saves up to about 2,500 estimated tokens once per typed resume. It removes a cost, not a
 slip.
@@ -85,8 +103,10 @@ it prints no sheet lines.
 
 1. **Given** a log with a `/clear` and no assistant call after it, and a Present line naming three people with sheets,
    **When** the player types a message, **Then** the hook prints no sheet lines.
-2. **Given** a log with an assistant call after the latest `/clear` or compaction, **When** the player types a
-   message, **Then** the sheet lines print as they do today.
+2. **Given** a log with an assistant call, **When** the player types a message, **Then** the sheet lines print as
+   they do today.
+3. **Given** a log whose latest record is a compaction boundary, **When** the player types a message, **Then** the
+   sheet lines print as they do today.
 
 ---
 
@@ -110,40 +130,47 @@ must not move the other 112.
    not count.
 4. **Given** a compaction after which the player's first three messages include a typed resume, **When** the hook
    runs, **Then** the new rule applies to the part after the compaction, counting player messages from the boundary.
+5. **Given** `/dmc-resume-campaign` (or DMC's own resume call) before the first player message, and a typed resume in
+   turn 2, **When** the hook runs, **Then** the baseline is the end of the first resume, as today.
 
 ### Edge Cases
 
 - The resume skill under its name from before the rename, `resume-campaign`, in an old log: counts as a resume.
 - A typed resume that DMC answers by reading the files one by one, with no `Skill` call: the present method applies.
   This case is not fixed (see Assumptions).
-- A resume `Skill` call in each of the first three turns: the latest of them sets the baseline.
+- A resume `Skill` call in each of the first three turns: the first of them sets the baseline.
+- A slash resume sent in turns 1 to 3, after a typed message: it is the part's first resume, so the present method
+  applies and no later resume counts.
 - A log record of an unexpected shape in the resume turn: skipped, as the present baseline pass skips one; at worst
   the baseline falls back to the present method.
 - A hook input that names no log, or a log that cannot be read: the sheet lines behave as today; only a log that is
-  read and shows no assistant call after its latest boundary stops them.
+  read and holds no reply and no compaction boundary stops them.
 - The break offer's own check (`TranscriptReader.OfferedSince`) and the out-of-character line are unchanged.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: In the part of a log after its latest compaction boundary (a `/clear` starts a new log), if the turn of
-  one of the first three player messages holds a main-conversation `Skill` call of `dmc-resume-campaign` (or
-  `resume-campaign`), the baseline MUST be the context of the last assistant call of that turn: the last call before
-  the next player message, or the latest call when no next message has come.
-- **FR-002**: When more than one of the first three turns holds such a call, the latest of those turns MUST set the
-  baseline.
+- **FR-001**: In the part of a log after its latest compaction boundary (a `/clear` starts a new log), if the part's
+  first resume is a main-conversation `Skill` call of `dmc-resume-campaign` (or `resume-campaign`) in the turn of one
+  of the first three player messages, the baseline MUST be the context of the last assistant call of that turn: the
+  last call before the next player message, or the latest call when no next message has come. A resume before the
+  first player message (the slash command or a `Skill` call), and the slash command sent in turns 1 to 3, are first
+  resumes too; they leave the baseline to FR-003. (Amended 2026-11-19, see Clarifications.)
+- **FR-002**: A resume after the part's first one MUST NOT move the baseline. (Amended 2026-11-19: it was "the latest
+  of those turns".)
 - **FR-003**: In every other case the baseline MUST be the one the present method gives (`TranscriptReader.cs:16-31`).
 - **FR-004**: The bands, the 150,000 floor, the band step and the one-offer-per-band check MUST stay as they are; only
   the baseline they start from changes.
-- **FR-005**: The hook MUST print no sheet lines when it reads the session's log and finds no assistant call after
-  the latest `/clear` or compaction. On that message the sheet part hands no person on to the canon reminder either.
+- **FR-005**: The hook MUST print no sheet lines when it reads the session's log and finds no assistant call and no
+  compaction boundary in it (a fresh log). On that message the sheet part hands no person on to the canon reminder
+  either. After a compaction the lines print as before. (Amended 2026-11-19, see Clarifications.)
 - **FR-006**: A player message, a turn, a main-conversation call and a compaction boundary MUST be recognised as they
   are today, by the classifier shared with `dmc digest` (`UserText.IsTyped`, `TranscriptReader.Classify` at `TranscriptReader.cs:331`).
 - **FR-007**: The hook MUST stay as fast as the decision records: about 20 ms over process start for an 18 MB log. It
   MUST still read past the point where the baseline is settled only the lines that could be a compaction boundary.
-- **FR-008**: Toolkit tests MUST cover User Story 1 scenarios 1, 3, 4 and 5, User Story 2 both scenarios, and User
-  Story 3 scenarios 2, 3 and 4, with log fixtures; the present tests of the break line and the sheet lines MUST pass
+- **FR-008**: Toolkit tests MUST cover User Story 1 scenarios 1 and 3 to 6, User Story 2 all scenarios, and User
+  Story 3 scenarios 2 to 5, with log fixtures; the present tests of the break line and the sheet lines MUST pass
   unchanged.
 - **FR-009**: The documents MUST describe the new rule in its homes: the decision "The break alert is relative to
   where the resume left the context" in `.docs/decisions.md` gains an amendment with this reason and source, the
@@ -157,8 +184,9 @@ must not move the other 112.
 - **Player message**: a user record that the shared classifier counts as the player's (not a tool result, command
   echo, meta record, sub-agent message or injection).
 - **Turn**: a player message and every record up to the next player message.
-- **Resume turn**: a turn among the first three of a log part that holds a main-conversation `Skill` call of the resume
-  skill.
+- **Resume turn**: a turn among the first three of a log part that holds the part's first resume, a main-conversation
+  `Skill` call of the resume skill.
+- **Fresh log**: a log with no main-conversation call and no compaction boundary.
 - **Baseline**: the context, in tokens, that the break bands are counted from.
 
 ## Success Criteria *(mandatory)*
@@ -182,9 +210,8 @@ must not move the other 112.
 - A typed resume nearly always runs as a `Skill` call. A resume done by reading files one by one, with no call, keeps
   the present method; no log has shown it after typed words, and a marker-free rule for it would bring back the risk
   of a late resume moving the baseline up.
-- After a compaction, `kit/dm-rules.md:202` tells DMC to re-run the resume steps before narrating, so a first message
-  with no assistant call after the boundary is followed by a read of the sheets; skipping the sheet lines there is
-  consistent with the `/clear` case.
+- After a compaction, `kit/dm-rules.md:202` tells DMC to re-run the resume steps before narrating, but no log shows a
+  reload after a compaction, so the sheet lines still print there (Clarifications, 2026-11-19).
 - No campaign file, template or skill changes, so no campaign migration is needed (Development 2), and install and
   `dmc update` gain no step (Development 3).
 - Until this ships the player starts play with `/dmc-resume-campaign` (#239, "Work for the player").

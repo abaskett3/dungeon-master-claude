@@ -17,10 +17,11 @@ namespace Dmc.ContextCheck;
 /// rule of its own):
 /// </para>
 /// <list type="number">
-/// <item>When one of the first three player messages in that part has a turn that calls the resume skill (DMC's
-/// <c>Skill</c> call of <c>dmc-resume-campaign</c>, or <c>resume-campaign</c> from before the rename), the baseline is
-/// the context of the last call of the latest such turn: the player typed the resume instead of running the slash
-/// command (spec 019, issue #244).</item>
+/// <item>When the part's first resume is DMC's <c>Skill</c> call of <c>dmc-resume-campaign</c> (or
+/// <c>resume-campaign</c> from before the rename) in the turn of one of the first three player messages, the baseline
+/// is the context of the last call of that turn: the player typed the resume instead of running the slash command
+/// (spec 019, issue #244). A later resume never moves it, nor does any resume after one that came before the first
+/// player message.</item>
 /// <item>Otherwise it is the context of the last assistant call before the first player message in that part. After
 /// a <c>/clear</c> and a <c>/dmc-resume-campaign</c> (<c>/resume-campaign</c> in a log from before the rename) that is the end of the recap; after a compaction, the end of the
 /// reload that follows it, if it comes before the player's next message.</item>
@@ -57,8 +58,8 @@ public static class TranscriptReader
     /// </para>
     /// <para>
     /// The baseline comes from a pass over the log from the start. Only the records that can settle it are parsed:
-    /// everything up to the fourth player message after the latest compaction boundary, since a resume call in the
-    /// first three turns can set it, and, for the rest of the log, only the lines that could be a boundary (the words <c>compact_boundary</c> or a <c>\u</c> escape). A
+    /// everything up to the part's first resume (to the end of its turn, when it is a <c>Skill</c> call in the first three
+    /// turns), or else up to the fourth player message after the latest compaction boundary, and, for the rest of the log, only the lines that could be a boundary (the words <c>compact_boundary</c> or a <c>\u</c> escape). A
     /// record of an unexpected shape in that pass is skipped, never an error, because it can at most leave the
     /// baseline at the 150,000 floor.
     /// </para>
@@ -113,12 +114,8 @@ public static class TranscriptReader
     /// <returns>False for a record with no such text block, or one that does not parse.</returns>
     static bool TextNames(ReadOnlyMemory<byte> line, string words)
     {
-        if (line.Span.StartsWith(Utf8Bom))
-            line = line[3..];
-        using var document = Parse(line);
-        if (document is null || document.RootElement.ValueKind != JsonValueKind.Object
-            || !document.RootElement.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object
-            || !message.TryGetProperty("content", out var content))
+        using var document = ParseLine(line);
+        if (document is null || !TryContent(document.RootElement, out var content))
             return false;
         return content.ValueKind switch
         {
@@ -150,9 +147,9 @@ public static class TranscriptReader
     }
 
     /// <summary>
-    /// The baseline: the context of the last call of the latest turn among the first three after the latest
-    /// compaction boundary that calls the resume skill (<see cref="CallsResume"/>), else of the last call before the
-    /// first player message, else of the first reply to that message, else (no player message yet)
+    /// The baseline: the context of the last call of the turn, among the first three after the latest compaction
+    /// boundary, whose resume call is the part's first resume (<see cref="ResumeIn"/>), else of the last call before
+    /// the first player message, else of the first reply to that message, else (no player message yet)
     /// <paramref name="latest"/>. Reads forward from the start of the log, so a boundary found later in it restarts
     /// the search. A turn ends at the next player message, or at the end of the log while it is still running.
     /// </summary>
@@ -164,15 +161,17 @@ public static class TranscriptReader
         long before = 0;   // the last call seen before the first player message
         long baseline = 0; // set once the first player message (and the call that settles it) is found
         bool playerSeen = false;
-        int players = 0;          // player messages seen in this part, counted up to ResumeTurns + 1
-        bool resumeInTurn = false; // the current turn holds a resume call (spec 019)
-        long lastInTurn = 0;      // the context of the current turn's last call
-        long resumeBaseline = 0;  // the last call of the latest resume turn, or 0
+        int players = 0;           // player messages seen in this part, counted up to ResumeTurns + 1
+        bool resumeSeen = false;   // a resume has come in this part: only the first one can set the baseline
+        bool resumeInTurn = false; // the current turn holds the part's first resume, a Skill call (spec 019)
+        long lastInTurn = 0;       // the context of the current turn's last call
+        long resumeBaseline = 0;   // the last call of the resume turn, or 0
 
-        // A turn among the first ResumeTurns that called the resume sets the baseline at its last call.
+        // The turn of the part's first resume, when that is a Skill call in turns 1 to ResumeTurns, sets the
+        // baseline at its last call.
         void CloseTurn()
         {
-            if (resumeInTurn && players is >= 1 and <= ResumeTurns && lastInTurn > 0)
+            if (resumeInTurn && lastInTurn > 0)
                 resumeBaseline = lastInTurn;
             resumeInTurn = false;
             lastInTurn = 0;
@@ -180,15 +179,21 @@ public static class TranscriptReader
 
         ScanForwards(path, line =>
         {
-            // Past the point where the baseline is known and the turns that may hold a resume have passed, only a
-            // later boundary matters, and the cheap test for one (a byte search) is all most lines get.
-            bool settled = baseline > 0 && players > ResumeTurns;
+            // Once the baseline is known and no resume can still move it (the first resume has come, or the turns
+            // that may hold one have passed), only a later boundary matters, and the cheap test for one (a byte
+            // search) is all most lines get.
+            bool settled = baseline > 0 && !resumeInTurn && (resumeSeen || players > ResumeTurns);
             if (settled && !CouldBeCompaction(line.Span))
                 return false;
 
-            // Whatever the classifier makes of the line: a resume call whose record has no usage still marks its turn.
-            if (players is >= 1 and <= ResumeTurns && !resumeInTurn && CallsResume(line))
-                resumeInTurn = true;
+            // Whatever the classifier makes of the line: a resume call whose record has no usage still counts. A
+            // resume before the first player message (the slash command, or DMC's call) is the part's first and
+            // leaves the baseline to the rule below; so does a slash command sent in turns 1 to ResumeTurns.
+            if (!resumeSeen && players <= ResumeTurns && ResumeIn(line) is { } kind)
+            {
+                resumeSeen = true;
+                resumeInTurn = players >= 1 && kind == Resume.SkillCall;
+            }
 
             Classified found;
             try
@@ -204,9 +209,8 @@ public static class TranscriptReader
             {
                 case RecordKind.Compaction:
                     before = baseline = 0;
-                    playerSeen = false;
+                    playerSeen = resumeSeen = resumeInTurn = false;
                     players = 0;
-                    resumeInTurn = false;
                     lastInTurn = resumeBaseline = 0;
                     break;
                 case RecordKind.Player:
@@ -224,7 +228,7 @@ public static class TranscriptReader
                         before = found.Context;
                     else if (baseline == 0)
                         baseline = found.Context;
-                    if (players is >= 1 and <= ResumeTurns)
+                    if (resumeInTurn)
                         lastInTurn = found.Context;
                     break;
             }
@@ -235,46 +239,118 @@ public static class TranscriptReader
         return resumeBaseline > 0 ? resumeBaseline : playerSeen ? baseline : latest;
     }
 
-    /// <summary>The number of turns, from the start of a log part, in which a resume call sets the baseline (spec 019 FR-001).</summary>
+    /// <summary>The number of turns, from the start of a log part, in which a resume call can set the baseline (spec 019 FR-001).</summary>
     const int ResumeTurns = 3;
 
     /// <summary>The resume skill's names: today's, and the one from before the rename.</summary>
     static readonly string[] ResumeSkills = ["dmc-resume-campaign", "resume-campaign"];
 
+    /// <summary>The two ways a resume shows in a log.</summary>
+    enum Resume
+    {
+        /// <summary>DMC's <c>Skill</c> call of the resume, in a main-conversation assistant record.</summary>
+        SkillCall,
+
+        /// <summary>The echo of the slash command <c>/dmc-resume-campaign</c> (or <c>/resume-campaign</c>), in a main-conversation user record.</summary>
+        SlashCommand,
+    }
+
     /// <summary>
-    /// True when a log line is a main-conversation assistant record that calls the resume skill: a <c>tool_use</c>
-    /// block named <c>Skill</c> whose <c>input.skill</c> is one of <see cref="ResumeSkills"/> (spec 019 research R1;
-    /// log <c>082db04e</c> line 38). The record's usage does not matter. Only lines that hold the bytes
-    /// <c>resume-campaign</c>, or a <c>\u</c> escape that could spell them, are parsed, so a "no" from the byte test
-    /// never changes the answer. Never throws: a shape it does not know is not a resume call.
+    /// Whether a log line is a resume, and which kind (spec 019 research R1 and the code review of PR #271). A
+    /// <see cref="Resume.SkillCall"/> is an assistant record with a <c>tool_use</c> block named <c>Skill</c> whose
+    /// <c>input.skill</c> is one of <see cref="ResumeSkills"/> (log <c>082db04e</c> line 38); its usage does not matter. A
+    /// <see cref="Resume.SlashCommand"/> is a user record, not a meta record, with a text block that holds
+    /// <c>&lt;command-name&gt;/dmc-resume-campaign&lt;/command-name&gt;</c> (or the old name). Neither kind may be a
+    /// sub-agent's. Only lines that hold the bytes <c>resume-campaign</c> together with <c>"assistant"</c> or
+    /// <c>command-name</c>, or a <c>\u</c> escape that could spell any of them, are parsed, so a "no" from the byte test
+    /// never changes the answer and a file's text in a tool result is rarely parsed twice. Never throws: a shape it
+    /// does not know is not a resume.
     /// </summary>
     /// <param name="line">One log line, without its newline.</param>
-    /// <returns>True for a resume call.</returns>
-    static bool CallsResume(ReadOnlyMemory<byte> line)
+    /// <returns>The kind of resume, or null for none.</returns>
+    static Resume? ResumeIn(ReadOnlyMemory<byte> line)
+    {
+        var span = line.Span;
+        if (span.IndexOf("\\u"u8) < 0
+            && (span.IndexOf("resume-campaign"u8) < 0 || (span.IndexOf("\"assistant\""u8) < 0 && span.IndexOf("command-name"u8) < 0)))
+            return null;
+        using var document = ParseLine(line);
+        if (document is null || document.RootElement.ValueKind != JsonValueKind.Object)
+            return null;
+        var record = document.RootElement;
+        if ((record.TryGetProperty("isSidechain", out var side) && Truthy(side)) || !TryContent(record, out var content))
+            return null;
+        string? type = Text(record, "type");
+        if (type == "assistant" && content.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var block in content.EnumerateArray())
+            {
+                if (block.ValueKind == JsonValueKind.Object && Text(block, "type") == "tool_use" && Text(block, "name") == "Skill"
+                    && block.TryGetProperty("input", out var input) && input.ValueKind == JsonValueKind.Object
+                    && Text(input, "skill") is { } skill && ResumeSkills.Contains(skill, StringComparer.Ordinal))
+                    return Resume.SkillCall;
+            }
+            return null;
+        }
+        if (type == "user" && !(record.TryGetProperty("isMeta", out var meta) && Truthy(meta)))
+        {
+            bool Echoes(string? text) => text is not null
+                && ResumeSkills.Any(name => text.Contains($"<command-name>/{name}</command-name>", StringComparison.Ordinal));
+            return content.ValueKind switch
+            {
+                JsonValueKind.String when Echoes(content.GetString()) => Resume.SlashCommand,
+                JsonValueKind.Array when content.EnumerateArray().Any(block => block.ValueKind == JsonValueKind.Object
+                    && Text(block, "type") == "text" && Echoes(Text(block, "text"))) => Resume.SlashCommand,
+                _ => null,
+            };
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// True when the log holds no compaction boundary and no main-conversation call: a log no one has answered in yet,
+    /// as after a <c>/clear</c> or at the start of a session (spec 019 FR-005, after the code review of PR #271). Reads
+    /// the log from the end and stops at the first boundary or call, so a fresh log, which is short, costs one read. A
+    /// record of an unexpected shape throws, as in <see cref="Read"/>; the hook then prints the sheet lines as before.
+    /// </summary>
+    /// <param name="path">The session log.</param>
+    /// <returns>True for a fresh log.</returns>
+    /// <exception cref="InvalidDataException">An assistant record has a shape the reader does not know.</exception>
+    public static bool IsFresh(string path)
+    {
+        bool fresh = true;
+        ScanBackwards(path, line =>
+        {
+            var kind = Classify(line).Kind;
+            if (kind is RecordKind.Compaction or RecordKind.Assistant)
+                fresh = false;
+            return !fresh;
+        });
+        return fresh;
+    }
+
+    /// <summary>
+    /// Parses one log line as the readers here all do: a UTF-8 byte-order mark is dropped, and a line that is not
+    /// UTF-8 anywhere is junk, as Python decoded it (see <see cref="Parse"/>).
+    /// </summary>
+    /// <param name="line">One log line, without its newline.</param>
+    /// <returns>The document, or null for junk, a blank line or a cut last line. The caller disposes it.</returns>
+    static JsonDocument? ParseLine(ReadOnlyMemory<byte> line)
     {
         if (line.Span.StartsWith(Utf8Bom))
             line = line[3..];
-        if (line.Span.IndexOf("resume-campaign"u8) < 0 && line.Span.IndexOf("\\u"u8) < 0)
-            return false;
-        if (!Utf8.IsValid(line.Span))
-            return false;
-        using var document = Parse(line);
-        if (document is null)
-            return false;
-        var record = document.RootElement;
-        if (record.ValueKind != JsonValueKind.Object || Text(record, "type") != "assistant"
-            || (record.TryGetProperty("isSidechain", out var side) && Truthy(side))
-            || !record.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object
-            || !message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.Array)
-            return false;
-        foreach (var block in content.EnumerateArray())
-        {
-            if (block.ValueKind == JsonValueKind.Object && Text(block, "type") == "tool_use" && Text(block, "name") == "Skill"
-                && block.TryGetProperty("input", out var input) && input.ValueKind == JsonValueKind.Object
-                && Text(input, "skill") is { } skill && ResumeSkills.Contains(skill, StringComparer.Ordinal))
-                return true;
-        }
-        return false;
+        return Utf8.IsValid(line.Span) ? Parse(line) : null;
+    }
+
+    /// <summary>The <c>message.content</c> of a record; false when the record has no message object or the message no content.</summary>
+    /// <param name="record">A parsed log record.</param>
+    /// <param name="content">The content: a string or an array of blocks, or any other kind the log may hold.</param>
+    /// <returns>True when there is content.</returns>
+    static bool TryContent(JsonElement record, out JsonElement content)
+    {
+        content = default;
+        return record.ValueKind == JsonValueKind.Object && record.TryGetProperty("message", out var message)
+            && message.ValueKind == JsonValueKind.Object && message.TryGetProperty("content", out content);
     }
 
     /// <summary>
@@ -407,16 +483,12 @@ public static class TranscriptReader
     /// <exception cref="FormatException">An assistant record's token count is a number too large to read.</exception>
     internal static Classified Classify(ReadOnlyMemory<byte> line)
     {
-        // Python decodes a line as UTF-8-with-BOM before parsing it, so a BOM is dropped...
-        if (line.Span.StartsWith(Utf8Bom))
-            line = line[3..];
-        if (!CouldBeRelevant(line.Span))
-            return default;
-        // ...and bytes that are not UTF-8 anywhere, inside a string or not, make the whole line junk.
-        if (!Utf8.IsValid(line.Span))
+        // Python decodes a line as UTF-8-with-BOM before parsing it, so a BOM is dropped, and bytes that are not UTF-8
+        // anywhere, inside a string or not, make the whole line junk (ParseLine).
+        if (!CouldBeRelevant((line.Span.StartsWith(Utf8Bom) ? line[3..] : line).Span))
             return default;
 
-        using var document = Parse(line);
+        using var document = ParseLine(line);
         if (document is null)
             return default; // a cut last line, a blank line or junk
 

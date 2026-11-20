@@ -25,6 +25,9 @@ For each log below, the reading is `(size, baseline)`. Here `S` is a main `Skill
 | `U S(37000) R A(120000) A(146000) U A(150000) U A(154000)` | (154000, 146000) | Resume in turn 1 |
 | `U A(30000) U S(32000) R A(140000) U A(150000)` | (150000, 140000) | Resume in turn 2 |
 | `U S(37000) S(38000) R A(146000) U A(150000)` | (150000, 146000) | Two resume calls in one turn |
+| `U S(37000) R A(146000) U A(150000) U S(151000) R A(250000) U A(260000)` | (260000, 146000) | Only the first resume counts (review of PR #271) |
+| `U(cmd /dmc-resume-campaign) A(100000) U A(130000) U S(131000) R A(200000) U A(210000)` | (210000, 100000) | A resume before the first message is the first one |
+| `U A(30000) U(cmd /dmc-resume-campaign) A(140000) U S(141000) R A(240000) U A(250000)` | (250000, 30000) | A slash resume in turn 1 is the first one |
 | `U S(37000) R A(146000)` | (146000, 146000) | The resume turn is still running |
 | `U A(30000) U A(31000) U A(32000) U S(33000) R A(140000) U A(150000)` | (150000, 30000) | Turn 4 does not count |
 | `U Ss(37000) A(40000) U A(50000)` (sidechain `S`) | (50000, 40000) | A sub-agent's call does not count |
@@ -35,12 +38,12 @@ For each log below, the reading is `(size, baseline)`. Here `S` is a main `Skill
 With the first row, the first band is 186,000 and no break line prints at 154,000. Today the reading is
 (154000, 37000), so the band is the 150,000 floor and the line prints (SC-001).
 
-### C2. No sheet lines before DMC's first reply in a part
+### C2. No sheet lines in a fresh log (no reply and no compaction boundary)
 
 | `transcript_path` | Log | Present people with sheets | Sheet lines |
 |---|---|---|---|
 | set | `/clear` echo only | 3 | none |
-| set | `… B` (boundary last) | 3 | none |
+| set | `… B` (boundary last) | 3 | as today (review of PR #271) |
 | set | `… B A(60000)` | 3 | as today |
 | empty | — | 3 | as today |
 

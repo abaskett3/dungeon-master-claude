@@ -33,13 +33,15 @@ An assistant record that is not a sidechain and holds a `tool_use` block named `
 
 ## Resume turn
 
-A turn numbered 1, 2 or 3 that holds at least one resume call.
+A turn numbered 1, 2 or 3 that holds the part's first resume, a resume call. The first resume may instead be
+before the first player message (a resume call or the slash command's echo) or a slash command in turns 1 to 3;
+then no turn is a resume turn (the code review of PR #271).
 
 ## Baseline (derived)
 
 | Case | Baseline |
 |---|---|
-| The part has a resume turn | The context of the last main call of the latest resume turn |
+| The part has a resume turn | The context of the last main call of that turn |
 | Otherwise, a call came before the first player message | The context of the last such call (unchanged) |
 | Otherwise, a player message came | The context of the first main call after it (unchanged) |
 | No player message yet | The latest context (unchanged) |
@@ -51,10 +53,11 @@ A turn numbered 1, 2 or 3 that holds at least one resume call.
 | `before` | 0 | each main call before the first player message (unchanged) |
 | `baseline` | 0 | the first player message (set to `before`), or the first main call after it while still 0 (unchanged) |
 | player messages seen | 0 | each player message, counted up to 4 |
-| resume in this turn | false | a resume call in turn 1 to 3 (true); the next player message (false) |
-| last call in this turn | 0 | each main call after the first player message |
+| resume seen | false | the part's first resume: a resume call or a slash echo before the first player message or in turns 1 to 3 (true) |
+| resume in this turn | false | the first resume when it is a resume call in turn 1 to 3 (true); the next player message (false) |
+| last call in this turn | 0 | each main call while the turn is the resume turn |
 | resume baseline | 0 | the close of a resume turn (set to that turn's last call) |
-| settled | false | `baseline` > 0 and four player messages seen. Past this, only possible boundary lines are classified |
+| settled | false | `baseline` > 0, no resume turn open, and a resume seen or four player messages seen. Past this, only possible boundary lines are classified |
 
 A turn closes on the next player message or at the end of the log. A boundary resets every value to its start.
 
@@ -62,7 +65,8 @@ A turn closes on the next player message or at the end of the log. A boundary re
 
 | Hook input | Log has a main call after its latest boundary | Sheet lines |
 |---|---|---|
-| Names a log | No (the latest context is 0) | None (FR-005) |
+| Names a fresh log (no call and no boundary) | No | None (FR-005) |
+| Names a log whose latest record is a boundary | No | As today (review of PR #271) |
 | Names a log | Yes | As today |
 | Names no log | — | As today |
 | Names a log that is missing or cannot be read | — | The whole command prints nothing (unchanged) |

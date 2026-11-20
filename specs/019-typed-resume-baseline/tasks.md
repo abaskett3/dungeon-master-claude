@@ -244,7 +244,7 @@ with an empty `transcript_path` still gives the lines.
 
   Check it with `gh pr view <n> --json body`.
   *Done 2026-11-19:* PR #271; `gh pr view 271 --json body` shows the full description.
-- [ ] T025 Run the code-review command once on the PR. Present its fixes to the maintainer and get approval before
+- [X] T025 Run the code-review command once on the PR. Present its fixes to the maintainer and get approval before
   committing them. Check the documents are current whether or not the review found anything. Wait for CI to pass
   before asking the maintainer to merge.
 
@@ -303,3 +303,23 @@ Task: "T021 .docs/roadmap.md row"
 - [X] T026 In `tests/Dmc.Tests/ContextCheck/ContextCheckTests.cs`, next to `ASubAgentsResumeCallOrAnotherSkillDoesNotCount`, add `AnEscapedOrBadResumeRecordIsHandled`: (a) a resume call whose skill name is written with a `\u` escape (`dmc-resume-campaign` in the raw JSON line) still marks its turn, so `TypedResume, Assistant(37000), <escaped call at 38000>, ToolResult, Assistant(146000), User(), Assistant(150000)` reads `(150000, 146000)`; (b) a record of an unexpected shape in the resume turn (`{"type": "assistant", "message": "text"}` and `{"type": "assistant", "message": {"content": 5}}`) is skipped and the reading is the same as without it. Run `dotnet test tests/Dmc.Tests --filter "FullyQualifiedName~ContextCheckEdgeTests"` per Edge Cases and research R2 (partial)
 - [X] T027 After T024 opens the PR, replace "PR #N" in the spec 019 row of `.docs/roadmap.md` (:55) with the PR's number, and push the change to the same PR per FR-009 and T021 (partial)
   *Done 2026-11-19:* the row says PR #271.
+
+## Phase 8: Code review of PR #271
+
+- [X] T028 Apply the nine points of the code review of PR #271, approved by the maintainer on 2026-11-19 ("apply all"):
+  (1) only the part's first resume can set the baseline, and a resume before the first player message or a slash
+  resume in turns 1 to 3 is the first one (spec FR-001, FR-002; tests `OnlyTheFirstResumeTurnCounts`,
+  `AResumeBeforeTheFirstMessageKeepsTheBaseline`, `ASlashResumeInTheFirstTurnsIsTheFirstResume`); (2) no sheet lines
+  only in a fresh log, so they print right after a compaction (FR-005, User Story 2; `TranscriptReader.IsFresh`; test
+  `TheSheetLinesStillPrintRightAfterACompaction`); (3) the bad records of `AnEscapedOrBadResumeRecordIsHandled` parse and
+  reach the check; (4) the resume helper `ResumeIn` parses only lines with `resume-campaign` and `"assistant"` or
+  `command-name`, or a `\u` escape; (5) the pass settles once the first resume turn closes; (6) the `contextNow == 0`
+  branches of `Recent` and `Seen` are reachable again after (2), and their comments are as before; (7) the fresh log is a
+  `freshLog` flag that `ContextCheckCommand` passes to `SheetReminder.For`, not a meaning of `contextNow`; (8)
+  `ParseLine` and `TryContent` are shared by `Classify`, `TextNames` and `ResumeIn`; (9) XML doc comments on the new test
+  methods. Documents: `.docs/decisions.md`, `.docs/dmc-reference.md`, the spec, research R10, the data model and the
+  contract.
+  *Done 2026-11-19 (commit `c12bea5`):* 2,198 passed, 5 skipped, 0 failed; Debug and Release with 0 warnings. On
+  `082db04e` `main` still prints the break line at 154k and the branch none; a typed first message after `/clear`
+  prints 0 bytes of sheet lines; default build, branch against `main`: no log 96 against 98 ms, 7.1 MB 140 against
+  140 ms, 18.2 MB 126 against 129 ms.

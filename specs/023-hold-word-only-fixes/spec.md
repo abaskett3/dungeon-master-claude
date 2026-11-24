@@ -37,8 +37,8 @@ does not stop a word-only fix.
   grep and their tests to change, for a hold that ends within weeks.
 - Q: How does the skill know the slip test is ready? → A: From `.docs/roadmap.md`, the repository's home of status:
   the hold ends when it shows #249 done.
-- Q: Decision D5 is the player's. → A: Asked on 2026-11-24, with the issue's terms recommended; the spec follows those
-  terms and changes if the player picks another end date.
+- Q: Decision D5 is the player's. → A: Asked on 2026-11-24; the player accepted the hold to 2026-12-31, the issue's
+  terms.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -132,8 +132,7 @@ its slip-test result where the test can run it, and changes only those that pass
 
 ## Assumptions
 
-- The player accepts decision D5 on the issue's terms (asked 2026-11-24). If they pick another end date, the date in
-  FR-003, the skill and the decision changes.
+- The player accepted decision D5 on the issue's terms on 2026-11-24.
 - `review-feedback` is a developer skill (`.claude/skills/`), not part of the kit, so the change reaches no DMC folder
   and needs no migration.
 

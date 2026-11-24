@@ -33,5 +33,5 @@
 
 - The change is to a developer skill, so the requirements quote its text; as in specs 019, 020 and 022, the file is
   the subject of the feature, not a design choice.
-- Decision D5 is the player's; it was asked on 2026-11-24 with the issue's terms recommended.
+- Decision D5 is the player's; they accepted the issue's terms on 2026-11-24.
 - SC-003 is checked by the maintainer at the end of the hold.

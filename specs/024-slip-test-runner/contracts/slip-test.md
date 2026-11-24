@@ -81,7 +81,7 @@ it holds a `.slip-test` marker from an earlier `prepare`); writes `lock.json`.
 Refuses if a locked file changed. For each point, each run number, and the arms in a random order: skips a run that
 `runs.tsv` already holds; restores the copy (fork mode: `adventures/` from the DMC folder, then the restore to the fork
 time; fresh mode: the arm's base `adventures/`); writes the base log into the copy's project folder; runs `claude`;
-copies its log into `runs/`; deletes both logs from the project folder; appends to `runs.tsv`. `--pilot` stops after
+copies its log into `runs/`; deletes both logs from the project folder; appends to `runs.tsv`. The base log holds only the fork message's chain of `parentUuid`s (an abandoned branch after a rewind, or a subagent's records, is left out) and every record with no uuid. A run that Claude Code reports as an error (`is_error`) is not recorded: the runner deletes every log in the copy's project folder and stops, and the next `run` repeats it. `--pilot` stops after
 the first four point-and-arm pairs. Prints one line per run: `point arm run: <seconds>s $<cost>`.
 
 ### `pilot`
@@ -103,11 +103,11 @@ then, for each failure or documented difference, one line `check point arm run: 
 
 Writes `export/replies.md`, `export/scores.tsv` and `export/.map.tsv` from every run in `runs.tsv`. Ids are 6
 random hexadecimal characters; the order is random. A reply is the text blocks of the assistant records after the
-replayed message, joined by a blank line; tool calls, tool results, thinking and attachments are left out.
+replayed message, joined by a blank line; tool calls, tool results, thinking and attachments are left out. A fork log that does not hold the replayed message is refused.
 
 ### `score`
 
-Refuses if a locked file changed, or a row of `scores.tsv` has no `0` or `1`. Writes `result.md`:
+Refuses if a locked file changed, or a row of `scores.tsv` has no `0` or `1`, or an id is unknown, scored twice or not scored. Writes `result.md`:
 
 ```
 arm        runs  points  slips  rate   95% interval

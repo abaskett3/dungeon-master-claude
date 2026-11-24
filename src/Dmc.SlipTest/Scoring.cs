@@ -30,7 +30,7 @@ internal static class Scoring
 
     /// <summary>Reads <c>export/scores.tsv</c> and <c>export/.map.tsv</c> and joins them.</summary>
     /// <param name="work">The work folder.</param>
-    /// <exception cref="SlipTestException">A file is missing, an id is unknown, or a row has no 0 or 1.</exception>
+    /// <exception cref="SlipTestException">A file is missing, an id is unknown, repeated or missing, or a row has no 0 or 1.</exception>
     public static List<Scored> Read(string work)
     {
         string dir = Path.Combine(work, "export");
@@ -39,6 +39,7 @@ internal static class Scoring
             throw new SlipTestException("no export: run slip-test export, then fill in export/scores.tsv");
         var map = File.ReadLines(mapPath).Skip(1).Where(l => l.Length > 0).Select(l => l.Split('\t')).ToDictionary(c => c[0], c => (Point: c[1], Arm: c[2]));
         var scored = new List<Scored>();
+        var seen = new HashSet<string>();
         int n = 1;
         foreach (string line in File.ReadLines(scoresPath).Skip(1))
         {
@@ -48,12 +49,14 @@ internal static class Scoring
             string[] c = line.Split('\t');
             if (!map.TryGetValue(c[0], out var at))
                 throw new SlipTestException($"scores.tsv line {n}: id {c[0]} is not in the export");
+            if (!seen.Add(c[0]))
+                throw new SlipTestException($"scores.tsv line {n}: id {c[0]} is scored twice");
             if (c.Length < 2 || c[1].Trim() is not ("0" or "1"))
                 throw new SlipTestException($"scores.tsv line {n}: slip must be 0 or 1");
             scored.Add(new Scored(at.Point, at.Arm, c[1].Trim() == "1"));
         }
-        if (scored.Count != map.Count)
-            throw new SlipTestException($"scores.tsv scores {scored.Count} of {map.Count} replies");
+        if (map.Keys.FirstOrDefault(id => !seen.Contains(id)) is { } missing)
+            throw new SlipTestException($"scores.tsv has no row for id {missing}");
         return scored;
     }
 

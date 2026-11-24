@@ -152,7 +152,8 @@ run order; the result's intervals and verdict match a worked example.
   create the copy folder from the DMC folder, and write a lock holding the three files' SHA-256 hashes. `run` and
   `score` MUST refuse when a locked file changed, so the number of runs and the pass line are fixed before the run
   (#240 rule 1) and the key is written before the runs (#240 rule 2).
-- **FR-003**: In fork mode, each run MUST: copy the base log up to (not including) the fork message under a new session
+- **FR-003**: In fork mode, each run MUST: copy the base log up to (not including) the fork message, keeping only the
+  fork message's chain of parents and the records with no uuid, under a new session
   id into the copy folder's Claude Code project folder; replace the original folder's path with the copy folder's in
   every string of it; replace the recorded text of the DMC folder's `CLAUDE.md` with the arm's rules file; restore the
   copy folder's campaign files to the fork time; and run `claude -p --resume <id> --fork-session` in the copy folder

@@ -75,6 +75,28 @@ public sealed class RunnerTests
     }
 
     [TestMethod]
+    public void ARunClaudeReportsAsAnErrorIsNotRecordedAndLeavesNoLog()
+    {
+        using var f = new SlipTestFixtures();
+        f.Run(null, "prepare");
+        var (code, _, error) = f.Run(new FakeClaude(f.ClaudeHome) { Fails = true }, "run");
+        Assert.AreEqual(1, code);
+        StringAssert.Contains(error, "claude reported an error");
+        Assert.IsEmpty(RunRow.ReadAll(f.Work));
+        Assert.IsEmpty(Directory.EnumerateFiles(Folders.Project(f.ClaudeHome, f.Copy)));
+    }
+
+    [TestMethod]
+    public void TheDmcFolderInTheOriginalsHookOutputIsReadAsTheCopy()
+    {
+        using var f = new SlipTestFixtures();
+        var original = new[] { SlipTestFixtures.Hook($"Read {f.Folder}/adventures/c/a.md", "s") };
+        var replay = new[] { SlipTestFixtures.Hook($"Read {f.Copy}/adventures/c/a.md", "s") };
+        Assert.AreEqual(Outcome.Pass, PilotCheck.CheckHooks(original, replay, [], f.Folder, f.Copy).Item1);
+        Assert.AreEqual(Outcome.Fail, PilotCheck.CheckHooks(original, replay, []).Item1);
+    }
+
+    [TestMethod]
     public void PrepareRefusesACopyFolderItDidNotMake()
     {
         using var f = new SlipTestFixtures();

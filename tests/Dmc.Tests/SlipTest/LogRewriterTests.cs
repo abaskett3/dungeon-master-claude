@@ -18,6 +18,10 @@ public sealed class LogRewriterTests
         meta["isMeta"] = true;
         Assert.IsFalse(LogFile.IsTyped(meta));
         Assert.IsFalse(LogFile.IsTyped(SlipTestFixtures.Typed("c", "<command-name>/dmc-resume-campaign</command-name>", SlipTestFixtures.T1, f.Folder, "s")));
+        Assert.IsFalse(LogFile.IsTyped(SlipTestFixtures.Typed("i", "[Request interrupted by user]", SlipTestFixtures.T1, f.Folder, "s")));
+        var side = SlipTestFixtures.Typed("sc", "Find the map.", SlipTestFixtures.T1, f.Folder, "s");
+        side["isSidechain"] = true;
+        Assert.IsFalse(LogFile.IsTyped(side));
     }
 
     [TestMethod]
@@ -51,6 +55,26 @@ public sealed class LogRewriterTests
         var instructions = records[0]["attachment"]!["files"]![0]!;
         Assert.AreEqual("# Arm rules", LogFile.Text(instructions.AsObject(), "content"));
         Assert.AreEqual(Path.Combine(f.Copy, "CLAUDE.md"), LogFile.Text(instructions.AsObject(), "path"));
+    }
+
+    [TestMethod]
+    public void ABranchOffTheForkMessagesChainIsLeftOut()
+    {
+        using var f = new SlipTestFixtures();
+        var records = SlipTestFixtures.Linked(f.PlayLog());
+        int at = records.FindIndex(r => LogFile.Text(r, "uuid") == SlipTestFixtures.ForkMessage);
+        var abandoned = SlipTestFixtures.Typed("u-abandoned", "A message the player rewound.", SlipTestFixtures.T2, f.Folder, SlipTestFixtures.Session);
+        abandoned["parentUuid"] = SlipTestFixtures.FirstMessage;
+        records.Insert(at, abandoned);
+        var side = SlipTestFixtures.Assistant(SlipTestFixtures.Session, SlipTestFixtures.TextBlock("a subagent"));
+        side["isSidechain"] = true;
+        side["parentUuid"] = "u-abandoned";
+        records.Insert(at, side);
+        var log = new LogFile(f.LogPath, records);
+        var lines = LogRewriter.Rewrite(log, log.IndexOf(SlipTestFixtures.ForkMessage), "id", f.Folder, f.Copy, "x").Lines;
+        Assert.IsFalse(lines.Any(l => l.Contains("u-abandoned", StringComparison.Ordinal) || l.Contains("a subagent", StringComparison.Ordinal)));
+        Assert.IsTrue(lines.Any(l => l.Contains("The stairs creak.", StringComparison.Ordinal)));
+        Assert.IsTrue(lines.Any(l => l.Contains("file-history-snapshot", StringComparison.Ordinal)), "records with no uuid are kept");
     }
 
     [TestMethod]

@@ -33,8 +33,14 @@ internal static class LogRewriter
         string rulesPath = Path.Combine(copy, "CLAUDE.md");
         int replaced = 0;
         var lines = new List<string>();
+        var chain = Chain(log, forkIndex);
+        bool linked = chain.Count > 0;
         for (int i = 0; i < forkIndex; i++)
         {
+            // A record off the fork message's chain (an abandoned branch after a rewind, a subagent's) is left out, so the
+            // resume continues from the fork message's parent.
+            if (linked && LogFile.Text(log.Records[i], "uuid") is { } uuid && !chain.Contains(uuid))
+                continue;
             var record = (JsonObject)Map(log.Records[i], pairs)!;
             // The record of the last prompt points at a leaf that may be after the fork; the resume needs only the chain.
             if (LogFile.TypeOf(record) == "last-prompt")
@@ -46,6 +52,28 @@ internal static class LogRewriter
             lines.Add(record.ToJsonString(Options));
         }
         return new Result(lines, replaced);
+    }
+
+    /// <summary>
+    /// The uuids of the conversation the fork message continues: its parent, the parent's parent and so on. When the
+    /// fork index is the end of the log (a fresh-mode base), the chain runs back from the last record with a uuid.
+    /// Empty when the log records no parents, and then every record is kept.
+    /// </summary>
+    /// <param name="log">The log.</param>
+    /// <param name="forkIndex">The fork message's index, or the number of records.</param>
+    static HashSet<string> Chain(LogFile log, int forkIndex)
+    {
+        var byUuid = new Dictionary<string, JsonObject>();
+        foreach (var r in log.Records)
+            if (LogFile.Text(r, "uuid") is { } u)
+                byUuid.TryAdd(u, r);
+        string? next = forkIndex < log.Records.Count
+            ? LogFile.Text(log.Records[forkIndex], "parentUuid")
+            : log.Records.Select(r => LogFile.Text(r, "uuid")).LastOrDefault(u => u is not null);
+        var chain = new HashSet<string>();
+        while (next is not null && chain.Add(next) && byUuid.TryGetValue(next, out var record))
+            next = LogFile.Text(record, "parentUuid");
+        return chain;
     }
 
     /// <summary>

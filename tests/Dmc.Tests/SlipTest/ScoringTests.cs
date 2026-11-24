@@ -57,6 +57,11 @@ public sealed class ScoringTests
         StringAssert.Contains(output, "cost: 8 runs, $0.16, 8,440 input tokens (95% from the cache), 800 output tokens");
         Assert.AreEqual(output, File.ReadAllText(Path.Combine(f.Work, "result.md")));
         Assert.AreEqual(1, f.Run(null, "export").Code, "a second export would overwrite the scores");
+
+        var lines = File.ReadAllLines(Path.Combine(f.Work, "export", "scores.tsv")).ToList();
+        lines[2] = lines[1];
+        File.WriteAllLines(Path.Combine(f.Work, "export", "scores.tsv"), lines);
+        StringAssert.Contains(f.Run(null, "score").Error, "is scored twice");
     }
 
     [TestMethod]

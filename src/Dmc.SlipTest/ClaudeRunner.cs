@@ -173,7 +173,8 @@ internal static class ClaudeRunner
     {
         try
         {
-            var info = new ProcessStartInfo(claude, "--version") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+            var info = new ProcessStartInfo(claude, "--version") { UseShellExecute = false, RedirectStandardOutput = true };
+            info.Environment.Remove("CLAUDECODE");
             using var p = Process.Start(info);
             if (p is null)
                 return "unknown";

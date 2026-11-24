@@ -18,6 +18,7 @@ internal static class BlindExport
     internal sealed record Item(string Point, string Arm, int Run, string Reply, string Key);
 
     /// <summary>Reads the reply of every finished run (base sessions left out).</summary>
+    /// <exception cref="SlipTestException">A fork log does not hold its replayed message.</exception>
     /// <param name="trial">The trial.</param>
     /// <param name="points">The resolved points.</param>
     /// <param name="runs">The finished runs.</param>
@@ -29,7 +30,9 @@ internal static class BlindExport
             var point = points.First(p => p.Point.Id == run.Point);
             var fork = LogFile.Read(Path.Combine(trial.Work, "runs", run.Arm, $"{run.Point}-{run.Run}.jsonl"));
             int at = fork.LastTyped(point.Text);
-            items.Add(new Item(run.Point, run.Arm, run.Run, at < 0 ? "" : LogFile.Reply(fork.TurnAfter(at)), trial.Key[run.Point]));
+            if (at < 0)
+                throw new SlipTestException($"{run.Point} {run.Arm} {run.Run}: the replayed message is not in the fork log, so its reply cannot be found");
+            items.Add(new Item(run.Point, run.Arm, run.Run, LogFile.Reply(fork.TurnAfter(at)), trial.Key[run.Point]));
         }
         return items;
     }

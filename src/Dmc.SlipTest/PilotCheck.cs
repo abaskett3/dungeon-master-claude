@@ -108,9 +108,13 @@ internal static class PilotCheck
     /// <param name="original">The original turn.</param>
     /// <param name="replay">The replayed turn.</param>
     /// <param name="allow">The documented differences.</param>
-    public static (Outcome, List<string>) CheckHooks(IEnumerable<JsonObject> original, IEnumerable<JsonObject> replay, IReadOnlyList<Allowed> allow)
+    /// <param name="folder">The DMC folder, whose path in the original's hook output becomes <paramref name="copy"/>; null to compare as is.</param>
+    /// <param name="copy">The copy folder.</param>
+    public static (Outcome, List<string>) CheckHooks(IEnumerable<JsonObject> original, IEnumerable<JsonObject> replay, IReadOnlyList<Allowed> allow, string? folder = null, string? copy = null)
     {
         var a = Hooks(original);
+        if (folder is not null && copy is not null)
+            a = a.Select(h => (h.Type, h.Text.Replace(folder, copy, Folders.PathComparison).Replace(folder.Replace('\\', '/'), copy.Replace('\\', '/'), Folders.PathComparison))).ToList();
         var b = Hooks(replay);
         var differ = new List<string>();
         for (int i = 0; i < Math.Max(a.Count, b.Count); i++)
@@ -218,7 +222,7 @@ internal static class PilotCheck
             results.Add(new CheckResult("notice", id, arm.Name, 1, at < 0 ? Outcome.Fail : n, at < 0 ? ["replayed message not found"] : nn));
             if (trial.Mode == "fork")
             {
-                var (h, hn) = CheckHooks(original, replay, trial.Allow);
+                var (h, hn) = CheckHooks(original, replay, trial.Allow, trial.Folder, trial.Copy);
                 results.Add(new CheckResult("hook", id, arm.Name, 1, h, hn));
                 bool rules = CheckRules(fork, File.ReadAllText(arm.Source));
                 results.Add(new CheckResult("rules", id, arm.Name, 1, rules ? Outcome.Pass : Outcome.Fail, rules ? [] : ["rules text not in the fork log"]));

@@ -249,13 +249,21 @@ internal sealed partial class Trial
     }
 
     /// <summary>Refuses when the trial was never prepared, or a locked file changed since.</summary>
-    /// <exception cref="SlipTestException">No lock, or a file differs from its hash.</exception>
+    /// <exception cref="SlipTestException">No lock, a lock that does not parse, or a file differs from its hash.</exception>
     public void CheckLock()
     {
         string path = Path.Combine(Work, "lock.json");
         if (!File.Exists(path))
             throw new SlipTestException("the trial is not prepared: run slip-test prepare first");
-        var locked = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+        JsonObject? locked;
+        try
+        {
+            locked = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            throw new SlipTestException("lock.json is not valid JSON: start a new work folder");
+        }
         foreach (var (file, hash) in Hashes(Work))
             if (LogFile.Text(locked, file) != hash)
                 throw new SlipTestException($"{file} changed after prepare locked it: start a new work folder");

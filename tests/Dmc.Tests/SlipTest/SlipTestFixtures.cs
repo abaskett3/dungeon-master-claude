@@ -71,7 +71,7 @@ internal sealed class SlipTestFixtures : IDisposable
         File.WriteAllText(Path.Combine(history, "h1@v1"), "start");
         File.WriteAllText(Path.Combine(history, "h1@v2"), "middle");
         Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
-        File.WriteAllLines(LogPath, PlayLog().Select(r => r.ToJsonString()));
+        File.WriteAllLines(LogPath, Linked(PlayLog()).Select(r => r.ToJsonString()));
 
         Directory.CreateDirectory(Path.Combine(Work, "arms"));
         File.WriteAllText(Path.Combine(Work, "arms", "control.md"), "# Control rules\n");
@@ -177,6 +177,19 @@ internal sealed class SlipTestFixtures : IDisposable
         ];
     }
 
+    /// <summary>Gives each record with a uuid the previous one's as its <c>parentUuid</c>, as Claude Code chains a conversation.</summary>
+    /// <param name="records">The records, in order.</param>
+    public static List<JsonObject> Linked(List<JsonObject> records)
+    {
+        string? parent = null;
+        foreach (var r in records.Where(r => r.ContainsKey("uuid")))
+        {
+            r["parentUuid"] = parent;
+            parent = LogFile.Text(r, "uuid");
+        }
+        return records;
+    }
+
     /// <summary>A <c>file-history-snapshot</c> record.</summary>
     /// <param name="tracked">Its <c>trackedFileBackups</c>.</param>
     static JsonObject Snapshot(JsonObject tracked) => new()
@@ -227,6 +240,9 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
     /// <summary>The thinking blocks the fork's first request sent, by the rules text its history holds; null to record none.</summary>
     public Func<string, (long Sent, long Dropped)?> Thinking { get; set; } = _ => (1, 1);
 
+    /// <summary>Whether the fork reports an error result, as Claude Code does after an API error.</summary>
+    public bool Fails { get; set; }
+
     /// <summary>What each call saw: the call, the message, and the copy folder's files under <c>adventures/</c> with their contents.</summary>
     public List<(ClaudeCall Call, string Message, Dictionary<string, string> Files)> Calls { get; } = [];
 
@@ -260,7 +276,7 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
         File.WriteAllLines(Path.Combine(project, id + ".jsonl"), lines);
         raw = new JsonObject
         {
-            ["type"] = "result", ["session_id"] = id, ["total_cost_usd"] = 0.02, ["is_error"] = false,
+            ["type"] = "result", ["session_id"] = id, ["total_cost_usd"] = 0.02, ["is_error"] = Fails,
             ["usage"] = new JsonObject { ["input_tokens"] = 5, ["output_tokens"] = 100, ["cache_read_input_tokens"] = 1000, ["cache_creation_input_tokens"] = 50 },
         }.ToJsonString();
         return ClaudeRunner.Parse(raw);

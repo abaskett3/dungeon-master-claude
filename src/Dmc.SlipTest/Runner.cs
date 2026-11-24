@@ -223,7 +223,19 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         RestoreFresh(arm, withBase: false);
         var call = new ClaudeCall(null, first.Log.ModelBefore(first.Index), first.Log.EffortBefore(first.Index) ?? trial.Effort, first.Log.PermissionAt(first.Index));
         var watch = Stopwatch.StartNew();
-        var result = Launcher.Run(trial.Copy, call, trial.Resume, out string raw);
+        ClaudeResult result;
+        string raw;
+        try
+        {
+            result = Launcher.Run(trial.Copy, call, trial.Resume, out raw);
+            if (result.IsError)
+                throw new SlipTestException($"base {arm.Name}: claude reported an error; the next run repeats it");
+        }
+        catch
+        {
+            ClearCopyLogs();
+            throw;
+        }
         string baseDir = Path.Combine(trial.Work, "base");
         Directory.CreateDirectory(baseDir);
         File.WriteAllText(Path.Combine(baseDir, arm.Name + ".json"), raw);
@@ -276,6 +288,13 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         try
         {
             result = Launcher.Run(trial.Copy, call, message, out raw);
+            if (result.IsError)
+                throw new SlipTestException($"{point} {arm} {run}: claude reported an error; the run is not recorded, and the next run repeats it");
+        }
+        catch
+        {
+            ClearCopyLogs();
+            throw;
         }
         finally
         {
@@ -306,6 +325,24 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         string history = Path.Combine(claudeHome, "file-history", session);
         if (Directory.Exists(history))
             Directory.Delete(history, recursive: true);
+    }
+
+    /// <summary>
+    /// After a failed run: deletes every log in the copy folder's project folder, and each one's file history, so no
+    /// fork of a failed run is left behind (FR-010). Only the runner starts sessions in the copy folder.
+    /// </summary>
+    void ClearCopyLogs()
+    {
+        string project = Folders.Project(claudeHome, trial.Copy);
+        if (!Directory.Exists(project))
+            return;
+        foreach (string log in Directory.EnumerateFiles(project, "*.jsonl"))
+        {
+            File.Delete(log);
+            string history = Path.Combine(claudeHome, "file-history", Path.GetFileNameWithoutExtension(log));
+            if (Directory.Exists(history))
+                Directory.Delete(history, recursive: true);
+        }
     }
 
     /// <summary>Appends a row to <c>runs.tsv</c>, writing the header first when the file is new.</summary>

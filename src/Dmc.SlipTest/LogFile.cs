@@ -77,15 +77,15 @@ internal sealed class LogFile
     }
 
     /// <summary>
-    /// Whether a record is a message the player typed: a <c>user</c> record that is not meta, whose content is text
-    /// only (a string, or <c>text</c> blocks; no tool result, no image), and which is not a slash command or a shell
-    /// command (Claude Code writes those inside <c>&lt;command-name&gt;</c>, <c>&lt;local-command</c> or
-    /// <c>&lt;bash-</c> tags).
+    /// Whether a record is a message the player typed: a <c>user</c> record that is not meta and not a subagent's
+    /// (<c>isSidechain</c>), whose content is text only (a string, or <c>text</c> blocks; no tool result, no image), and
+    /// which is not a slash command or a shell command (Claude Code writes those inside <c>&lt;command-name&gt;</c>,
+    /// <c>&lt;local-command</c> or <c>&lt;bash-</c> tags) or Claude Code's own "[Request interrupted" marker.
     /// </summary>
     /// <param name="record">A record.</param>
     public static bool IsTyped(JsonObject record)
     {
-        if (TypeOf(record) != "user" || record["isMeta"]?.GetValueKind() == JsonValueKind.True)
+        if (TypeOf(record) != "user" || record["isMeta"]?.GetValueKind() == JsonValueKind.True || record["isSidechain"]?.GetValueKind() == JsonValueKind.True)
             return false;
         if (record["isCompactSummary"]?.GetValueKind() == JsonValueKind.True)
             return false;
@@ -94,6 +94,7 @@ internal sealed class LogFile
             return false;
         string start = text.TrimStart();
         return !start.StartsWith("<command-", StringComparison.Ordinal)
+            && !start.StartsWith("[Request interrupted", StringComparison.Ordinal)
             && !start.StartsWith("<local-command", StringComparison.Ordinal)
             && !start.StartsWith("<bash-", StringComparison.Ordinal);
     }

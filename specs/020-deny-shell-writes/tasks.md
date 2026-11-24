@@ -145,7 +145,7 @@ description: "Task list for spec 020, deny the usual shell writes and the SendFe
   the new rules refused anything. One compound Bash command (`cp -r templates/campaign … && dmc campaign … ; cat … ;
   ls …`) was refused, and DMC did the same in PowerShell. A headless replay refuses it under `main`'s kit settings
   too (`subcommandResults`), so the refusal was there before this change.
-- [ ] T018 Run `/speckit-converge` until a pass adds no tasks; then open the PR with `Closes #245` and `Part of #239`
+- [X] T018 Run `/speckit-converge` until a pass adds no tasks; then open the PR with `Closes #245` and `Part of #239`
   on their own lines, and check its body with `gh pr view <n> --json body`.
 
 ---

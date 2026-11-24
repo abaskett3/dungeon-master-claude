@@ -1305,10 +1305,10 @@ public sealed partial class ToolkitTests
     /// and spec 016 (FR-027, the measured amount) raised it by 1,608 for the clauses of the feedback round of #181, each
     /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 12: 16 when the fallback
     /// for a missing <c>dmc</c> went, less 4 when its review named a missing <c>dmc</c> as one not found or that will
-    /// not start; and spec 022 (FR-004) lowered it by 6: the Present-line read of a sheet points at resume step 2.5
-    /// (+4) and " as before" left the recall fallback (-10).
+    /// not start. Spec 022 (FR-004) kept it: the Present-line read of a sheet names the play card (+33), " as before"
+    /// left the recall fallback (-10) and ": it is closed for good" the closed-campaign rule (-23).
     /// </summary>
-    const int DmRulesBytesAllowed = 32_504;
+    const int DmRulesBytesAllowed = 32_510;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
@@ -1324,17 +1324,17 @@ public sealed partial class ToolkitTests
     }
 
     /// <summary>
-    /// Spec 022 (issue #247): the rule for adding someone to the Scene's Present line reads their sheet as the resume
-    /// does, by pointing at resume step 2.5 instead of copying it, so the two can no longer disagree. The step it points
-    /// at is item 5 of the resume skill's § 2, and it still reads a companion's sheet through its play card and anyone
-    /// else's down to its history.
+    /// Spec 022 (issue #247): the rule for adding someone to the Scene's Present line reads their sheet as far as resume
+    /// step 2.5 does: a companion's through its play card, anyone else's down to its history. Both texts carry the
+    /// extent, so this test holds them together: the rule's sentence, the old extent gone, and resume step 2.5 (item 5 of
+    /// the resume skill's § 2) still the sheets step with the same two reads.
     /// </summary>
     [TestMethod]
     public void ThePresentLineReadsASheetAsTheResumeDoes()
     {
         string rules = Read("kit/dm-rules.md");
-        StringAssert.Contains(rules, "Before you add someone to the Scene's Present line, read their sheet as resume step 2.5 does, once per session part.", "spec 022 FR-001");
-        Assert.IsFalse(rules.Contains("read their sheet down to its History", StringComparison.Ordinal), "spec 022 FR-002: the Present-line rule copies the resume's read again");
+        StringAssert.Contains(rules, "Before you add someone to the Scene's Present line, read their sheet through its play card (if none, down to its History), once per session part.", "spec 022 FR-001");
+        Assert.IsFalse(rules.Contains("read their sheet down to its History", StringComparison.Ordinal), "spec 022 FR-002: the Present-line rule reads a companion past its play card again");
         string read = SectionOf(Read("kit/skills/dmc-resume-campaign/SKILL.md"), "2. Read, in this order");
         string step = read.Split('\n').Single(l => l.StartsWith("5. ", StringComparison.Ordinal));
         StringAssert.StartsWith(step, "5. Sheets", "spec 022 FR-003: resume step 2.5 is no longer the sheets");

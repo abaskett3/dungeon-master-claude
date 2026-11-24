@@ -117,8 +117,10 @@ checks that no kit prompt names a command these rules deny.
 - Commands that only start with the same letters (`pytest`, `nodemon`, `teed`, `pyright`, `Set-ContentX`) are not
   denied: each rule has a space before its `*`.
 - A redirect (`> file`), `bash -c '...'`, a full program path (`/usr/bin/python3`), `cmd /c`, `powershell -c`, `cp`,
-  and in PowerShell `Tee-Object`, its alias `tee` and the alias `ac` (of `Add-Content`) are not caught (Clarifications,
-  2026-11-21). The rules take the usual forms, not every form (the limit
+  `awk -i inplace`, `-i` bundled with a flag other than `-E` or `-r` (`sed -ni`), and in PowerShell `Tee-Object`, its
+  alias `tee` and the alias `ac` (of `Add-Content`) are not caught (Clarifications, 2026-11-21). A read that holds
+  ` -i` after the first word (`sed -n '/ -id/p' f`) is refused too, and DMC reads with the Read tool anyway. The rules
+  take the usual forms, not every form (the limit
   recorded for the delete rules at `.docs/decisions.md:175` applies here too).
 - The hooks and `dmc` itself run outside the model's tool calls, so the rules do not apply to them.
 - The player's own typed `!` commands are theirs to run and are not a target of this change.
@@ -128,10 +130,13 @@ checks that no kit prompt names a command these rules deny.
 
 ### Functional Requirements
 
-- **FR-001**: `kit/settings.json` MUST deny these Bash commands: `sed -i*`, `sed * -i*`, `python *`, `python3 *`,
-  `py *`, `node *`, `perl *`, `tee *`.
+- **FR-001**: `kit/settings.json` MUST deny these Bash commands: `sed -i*`, `sed * -i*`, `sed -Ei*`, `sed -ri*`,
+  `sed --in-place*`, `sed * --in-place*`, `python *`, `python3 *`, `py *`, `node *`, `perl *`, `tee *`. (The four
+  bundled and long sed forms were added 2026-11-24 after the code review of PR #272: `sed -Ei` ran live with the
+  first two rules alone.)
 - **FR-002**: `kit/settings.json` MUST deny these PowerShell commands: `Set-Content *`, `Add-Content *`, `Out-File *`,
-  `python *`, `py *`.
+  `python *`, `py *`, `python3 *`, `node *`, `perl *`. (The last three were added 2026-11-24 after the code review
+  of PR #272: `node -e` ran live from PowerShell.)
 - **FR-003**: `kit/settings.json` MUST deny the `SendFeedback` tool by its bare name.
 - **FR-004**: Removed 2026-11-21 (Clarifications): the kit's permission mode is not a requirement of this change.
 - **FR-005**: `kit/skills/dmc-new-campaign/SKILL.md` step 1 MUST name the Write tool for writing

@@ -178,3 +178,25 @@ small and ship with it; nothing is released in parts.
   (spec 020 quickstart Q3)" with the result: on 2026-11-22 an interactive play session, asked directly, said
   `SendFeedback` was not in its tool list (`/context` doesn't list tools one by one), per FR-008, SC-003 and T017
   (partial)
+
+---
+
+## Phase 8: Code review fixes (PR #272)
+
+The built-in code review found 8 possible problems; each was checked by hand, two of them with a live headless
+replay under the kit settings in `auto` mode. Applied with the maintainer's yes (2026-11-24):
+
+- [X] T021 Deny the bundled and long sed forms (`Bash(sed -Ei*)`, `Bash(sed -ri*)`, `Bash(sed --in-place*)`,
+  `Bash(sed * --in-place*)`) in `kit/settings.json`, with test cases, per FR-001: `sed -Ei` ran live with the first
+  two rules alone.
+- [X] T022 Deny `PowerShell(python3 *)`, `PowerShell(node *)` and `PowerShell(perl *)`, with test cases, per FR-002:
+  a PowerShell `node -e` write ran live.
+- [X] T023 Name the forms still not caught (`sed -ni`, `awk -i inplace`) and the one read refused (` -i` after sed's
+  first word) in the spec's Edge Cases, the contract and the `.docs/decisions.md` Limits, per FR-008.
+- [X] T024 Add the shell write rules, `SendFeedback` and the prompt check to the Toolkit row of `.docs/development.md`.
+- [X] T025 Split each code span and code-block line into the commands of its chain or pipeline before matching, in
+  `NoKitPromptNamesACommandTheShellWriteRulesDeny`, per FR-007.
+- Not changed: a pipeline ending in `Set-Content` or `Out-File` was said to get through, but Claude Code refused both
+  live (it checks a pipeline part by part; now in the Limits). A hook in place of rules matched by name belongs to
+  #257. Merging the setup of the new test with `TheKitSettingsDenyShellDeletes` would change a present test (SC-005).
+- After the fixes the live replay refuses `sed -Ei`, the PowerShell `node -e` write and both pipelines.

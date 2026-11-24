@@ -34,7 +34,7 @@ is done or 2026-12-31. Three kinds of change are not held. A toolkit test pins t
 | Core 1 Consistency | New state | Pass. None; the hold is a Worker note in an existing entry |
 | Core 2 Fun | What the player gains | Pass. Rules that grow only when a test shows they help; the cost is fewer small fixes for some weeks |
 | Core 3 Low cost | Cost counted | Pass. 0 in play (R4) |
-| Development 1 Count the cost | Lines added to `kit/dm-rules.md` and each skill | Pass. 0 to `kit/dm-rules.md`; `review-feedback` +8 lines, a developer skill |
+| Development 1 Count the cost | Lines added to `kit/dm-rules.md` and each skill | Pass. 0 to `kit/dm-rules.md`; `review-feedback` +8 lines and one longer line, a developer skill |
 | Development 2 No change breaks a campaign | Migration | Pass. No campaign file changes |
 | Development 3 One step | Install or update | Pass. Nothing reaches a DMC folder |
 | Development 4 Grounded | Claims cite a file | Pass. spec Background, research |
@@ -48,11 +48,13 @@ No violations.
 ## Design
 
 1. **`.claude/skills/review-feedback/SKILL.md`**: in § 6, before "List separately", a paragraph "The hold on
-   word-only fixes (issue #248)" with FR-001 to FR-003; in § 7, after its first sentence, FR-004.
+   word-only fixes (issue #248)" with FR-001 to FR-003; in § 7, after its first sentence, FR-004 (the Worker note is
+   written there, on the user's word, so a report alone changes no entry file).
 2. **`tests/Dmc.Tests/Toolkit/ToolkitTests.cs`**: `ReviewFeedbackHoldsWordOnlyFixesUntilTheSlipTest`, before
    `FeedbackHasOneRoute`, with an XML doc comment.
 3. **Documents**: `.docs/decisions.md` (new entry), `.docs/roadmap.md` (row, date), `.docs/development.md` § Writing
-   prompts (one sentence in the feedback bullet).
+   prompts (one sentence in the feedback bullet), and one sentence each in `.docs/user-guide.md` § the feedback
+   section, `README.md` and `.docs/product-overview.md` where they describe `review-feedback`.
 
 ## Project Structure
 

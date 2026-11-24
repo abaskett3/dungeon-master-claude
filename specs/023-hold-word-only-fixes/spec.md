@@ -45,7 +45,8 @@ does not stop a word-only fix.
 ### User Story 1 - A word-only fix waits for the slip test (Priority: P1)
 
 The maintainer runs `review-feedback`. An entry's best fix is a new sentence in `kit/dm-rules.md`. The report lists it
-under "Held until the slip test", the entry's Worker notes say `held until the slip test`, and no kit file changes.
+under "Held until the slip test" with no change proposed; when the maintainer says which entries to act on, the
+entry's Worker notes get `held until the slip test` (once), and no kit file changes.
 
 **Why this priority**: the sentence would cost every exchange of every session with no evidence it helps.
 
@@ -54,7 +55,10 @@ under "Held until the slip test", the entry's Worker notes say `held until the s
 **Acceptance Scenarios**:
 
 1. **Given** an open entry whose only fix is a new sentence, **When** the skill reports, **Then** it lists the entry as
-   held, writes the Worker note, keeps the status and changes nothing.
+   held and proposes no change; on the user's word it writes the Worker note once, keeps the status and changes
+   nothing.
+3. **Given** an entry that already has the note, **When** a later review runs during the hold, **Then** the note is not
+   written again.
 2. **Given** a held entry, **When** the user asks to act on all entries, **Then** the held one is not acted on unless
    the user lifts the hold for it.
 
@@ -78,16 +82,21 @@ its slip-test result where the test can run it, and changes only those that pass
 
 **Acceptance Scenarios**:
 
-1. **Given** the roadmap shows #249 done, **When** the skill runs, **Then** it proposes the held entries again.
+1. **Given** the roadmap shows #249 done, **When** the skill runs, **Then** it proposes the held entries again, and
+   when it acts on one it replaces the note with the outcome.
 2. **Given** 2026-12-31 has passed and #249 is not done, **When** the skill runs, **Then** it proposes them again with
    no slip-test result.
 
 ### Edge Cases
 
 - A fix that is mostly a mechanism but adds a sentence that points at it (a new `dmc` check and the line that tells
-  DMC to run it) is a mechanism: the sentence is what makes the mechanism run.
+  DMC to run it) is a mechanism: the sentence is what makes the mechanism run. A script counts as a mechanism, as § 6
+  of the skill already prefers it to a paragraph.
+- The date is read with `date`, not guessed (code review).
 - A fix that replaces text and makes the file longer is held: "without making the file longer" is the test.
-- A template field is words in a template, so a new field is held unless it replaces text.
+- A template field is words in a template, so a new field is held unless it replaces text, although
+  `.docs/development.md` § Writing prompts counts a template field as a mechanism in general; the skill and that
+  document say so (code review).
 - The hold covers `review-feedback` only; play and `dmc-record-feedback` do not change.
 
 ## Requirements *(mandatory)*
@@ -95,18 +104,22 @@ its slip-test result where the test can run it, and changes only those that pass
 ### Functional Requirements
 
 - **FR-001**: `review-feedback` § 6 MUST hold a cause whose only fix is words (a new or longer sentence in
-  `kit/dm-rules.md`, a skill or a template): list it under "Held until the slip test", write
-  `held until the slip test` under the entry's Worker notes, leave the status as it is, and change nothing.
+  `kit/dm-rules.md`, a skill or a template, a new template field included): list it under "Held until the slip test"
+  and propose no change for it.
 - **FR-002**: It MUST name the three kinds of change that are not held: one that removes a contradiction or replaces
-  text without making the file longer; a mechanism (a hook, a `dmc` check, a deny rule); one that replaces a kit rule
-  with a shorter one.
-- **FR-003**: It MUST end the hold at the first of: `.docs/roadmap.md` shows the slip test (#249) done, or
-  2026-12-31; then propose the held entries again, each with its slip-test result where the test can run it, and
-  change only those that pass.
-- **FR-004**: § 7 MUST not act on a held entry while the hold lasts, unless the user lifts it for that entry.
+  text without making the file longer; a mechanism (a hook, a script, a `dmc` check, a deny rule, with the sentence
+  that tells DMC to use it); one that replaces a kit rule with a shorter one.
+- **FR-003**: It MUST end the hold at the first of: `.docs/roadmap.md` shows the slip test (#249) done, or today's
+  date (from `date`) is after 2026-12-31; then propose the held entries again, each with its slip-test result where
+  the test can run it, and change only those that pass.
+- **FR-004**: § 7 MUST not act on a held entry while the hold lasts, unless the user lifts it for that entry: on the
+  user's word it writes `held until the slip test` under the entry's Worker notes unless it is there already, leaves
+  the status as it is and changes nothing; once the hold has ended and the entry is proposed again, it replaces that
+  line with the outcome.
 - **FR-005**: A toolkit test MUST check FR-001 to FR-004.
 - **FR-006**: The documents MUST record the change: an entry in `.docs/decisions.md`, a row in `.docs/roadmap.md`,
-  and the "Feedback is recorded first" bullet of `.docs/development.md` § Writing prompts.
+  the "Feedback is recorded first" bullet of `.docs/development.md` § Writing prompts, and the description of
+  `review-feedback` in `.docs/user-guide.md`, `README.md` and `.docs/product-overview.md`.
 
 ## Success Criteria *(mandatory)*
 

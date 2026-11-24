@@ -1062,12 +1062,14 @@ public sealed partial class ToolkitTests
     public void ReviewFeedbackHoldsWordOnlyFixesUntilTheSlipTest()
     {
         string skill = Read(".claude/skills/review-feedback/SKILL.md");
-        StringAssert.Contains(skill, "write `held until the slip test` under the entry's Worker notes, leave its status as it is, and change nothing", "spec 023 FR-001");
+        StringAssert.Contains(skill, "a cause whose only fix is words is held: a new or longer sentence in `kit/dm-rules.md`, a skill or a template, a new template field included", "spec 023 FR-001");
+        StringAssert.Contains(skill, "List it in the report under \"Held until the slip test\" and propose no change for it.", "spec 023 FR-001");
         StringAssert.Contains(skill, "- a change that removes a contradiction or replaces text without making the file longer;", "spec 023 FR-002");
-        StringAssert.Contains(skill, "- a mechanism: a hook, a `dmc` check, a deny rule;", "spec 023 FR-002");
+        StringAssert.Contains(skill, "- a mechanism: a hook, a script, a `dmc` check, a deny rule (with the sentence that tells DMC to use it);", "spec 023 FR-002");
         StringAssert.Contains(skill, "- a change that replaces a kit rule with a shorter one.", "spec 023 FR-002");
-        StringAssert.Contains(skill, "The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or 2026-12-31.", "spec 023 FR-003");
-        StringAssert.Contains(skill, "A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry.", "spec 023 FR-004");
+        StringAssert.Contains(skill, "The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or today's date (run `date`) is after 2026-12-31.", "spec 023 FR-003");
+        StringAssert.Contains(skill, "A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry: write `held until the slip test` under its Worker notes, unless it is there already, leave its status as it is, and change nothing.", "spec 023 FR-004");
+        StringAssert.Contains(skill, "When the hold has ended and the entry is proposed again, replace that line with the outcome.", "spec 023 FR-004");
     }
 
     /// <summary>Feedback has one route: <c>dmc-record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>

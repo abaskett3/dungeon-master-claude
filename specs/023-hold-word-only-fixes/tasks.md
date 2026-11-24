@@ -26,3 +26,8 @@ All three stories are one paragraph and one sentence of the same skill, so they 
 - [X] T004 `.docs/decisions.md`, `.docs/roadmap.md`, `.docs/development.md` (FR-006).
 - [X] T005 Run quickstart Q1; record the result.
 - [X] T006 Converge: spec, plan and tasks against the diff; no task added.
+- [X] T007 Code review: the Worker note moves to § 7 (written once, on the user's word, replaced when the hold ends);
+  scripts count as mechanisms and template fields as words, said in the skill and `.docs/development.md`; the date
+  comes from `date`; the reason no longer says a skill sentence is paid in every exchange; the user guide, README and
+  product overview mention the hold; `.docs/decisions.md` ends in one newline. Test and spec updated.
+- [X] T008 Converge again after T007; no task added.

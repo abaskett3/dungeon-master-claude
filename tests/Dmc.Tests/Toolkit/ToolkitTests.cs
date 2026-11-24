@@ -1305,9 +1305,10 @@ public sealed partial class ToolkitTests
     /// and spec 016 (FR-027, the measured amount) raised it by 1,608 for the clauses of the feedback round of #181, each
     /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 12: 16 when the fallback
     /// for a missing <c>dmc</c> went, less 4 when its review named a missing <c>dmc</c> as one not found or that will
-    /// not start.
+    /// not start; and spec 022 (FR-004) lowered it by 6: the Present-line read of a sheet points at resume step 2.5
+    /// (+4) and " as before" left the recall fallback (-10).
     /// </summary>
-    const int DmRulesBytesAllowed = 32_510;
+    const int DmRulesBytesAllowed = 32_504;
 
     /// <summary>
     /// The always-loaded rules stay within their caps: the line count spec 013 FR-028 set, and the bytes spec 014 FR-008 set.
@@ -1319,7 +1320,26 @@ public sealed partial class ToolkitTests
         int lines = rules.TrimEnd('\n').Split('\n').Length;
         Assert.IsLessThanOrEqualTo(DmRulesLines, lines, $"kit/dm-rules.md has {lines} lines; spec 013 FR-028 allows at most {DmRulesLines}");
         int bytes = System.Text.Encoding.UTF8.GetByteCount(rules);
-        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; specs 014 to 016 (FR-008, FR-027) allow at most {DmRulesBytesAllowed}");
+        Assert.IsLessThanOrEqualTo(DmRulesBytesAllowed, bytes, $"kit/dm-rules.md is {bytes} bytes; specs 014 to 022 allow at most {DmRulesBytesAllowed}");
+    }
+
+    /// <summary>
+    /// Spec 022 (issue #247): the rule for adding someone to the Scene's Present line reads their sheet as the resume
+    /// does, by pointing at resume step 2.5 instead of copying it, so the two can no longer disagree. The step it points
+    /// at is item 5 of the resume skill's § 2, and it still reads a companion's sheet through its play card and anyone
+    /// else's down to its history.
+    /// </summary>
+    [TestMethod]
+    public void ThePresentLineReadsASheetAsTheResumeDoes()
+    {
+        string rules = Read("kit/dm-rules.md");
+        StringAssert.Contains(rules, "Before you add someone to the Scene's Present line, read their sheet as resume step 2.5 does, once per session part.", "spec 022 FR-001");
+        Assert.IsFalse(rules.Contains("read their sheet down to its History", StringComparison.Ordinal), "spec 022 FR-002: the Present-line rule copies the resume's read again");
+        string read = SectionOf(Read("kit/skills/dmc-resume-campaign/SKILL.md"), "2. Read, in this order");
+        string step = read.Split('\n').Single(l => l.StartsWith("5. ", StringComparison.Ordinal));
+        StringAssert.StartsWith(step, "5. Sheets", "spec 022 FR-003: resume step 2.5 is no longer the sheets");
+        StringAssert.Contains(step, "A companion's sheet with a `## Play card` section: Read from the top to the line before the next `## ` heading after the card", "spec 022 FR-003");
+        StringAssert.Contains(step, "Read any other sheet down to its history, not through it", "spec 022 FR-003");
     }
 
     /// <summary>

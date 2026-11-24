@@ -600,6 +600,91 @@ public sealed partial class ToolkitTests
             CollectionAssert.DoesNotContain(shared, rule, $".claude/settings.json applies to toolkit work and must not deny {rule}");
     }
 
+    /// <summary>
+    /// The shell writes Claude Code's <c>auto</c> mode invites ("sed, heredocs, or short scripts"), as deny rules, and
+    /// Claude Code's <c>SendFeedback</c> tool (issue #245, spec 020). They take the usual forms only: not a redirect,
+    /// <c>bash -c</c>, a full program path, <c>cmd /c</c>, <c>powershell -c</c>, <c>cp</c>, or PowerShell's
+    /// <c>Tee-Object</c> and the aliases <c>tee</c> and <c>ac</c> (spec 020 Clarifications, 2026-11-21).
+    /// </summary>
+    static readonly string[] ShellWriteRules =
+    [
+        "Bash(sed -i*)", "Bash(sed * -i*)", "Bash(python *)", "Bash(python3 *)", "Bash(py *)", "Bash(node *)",
+        "Bash(perl *)", "Bash(tee *)",
+        "PowerShell(Set-Content *)", "PowerShell(Add-Content *)", "PowerShell(Out-File *)", "PowerShell(python *)",
+        "PowerShell(py *)",
+        "SendFeedback",
+    ];
+
+    /// <summary>
+    /// The kit's settings deny the usual shell writes and the <c>SendFeedback</c> tool, the commands of the spec's
+    /// contract are refused in their shell and their look-alikes and what play runs are not, and toolkit work keeps them
+    /// all (spec 020 FR-001 to FR-003, FR-006; <c>specs/020-deny-shell-writes/contracts/kit-settings-deny.md</c>).
+    /// </summary>
+    [TestMethod]
+    public void TheKitSettingsDenyShellWritesAndSendFeedback()
+    {
+        string[] denied = Settings(KitSettings)["permissions"]!["deny"]!.AsArray().Select(r => (string)r!).ToArray();
+        foreach (string rule in ShellWriteRules)
+            CollectionAssert.Contains(denied, rule, $"kit/settings.json does not deny {rule}");
+
+        foreach (string command in new[]
+                 {
+                     "sed -i 's/a/b/' f", "sed -i.bak 's/a/b/' f", "sed -i -e x f", "sed -e x -i f", "sed -E -i 's/a/b/' f",
+                     "python fix.py", "python -c \"x\"", "python", "python3 fix.py", "py fix.py", "py -c \"x\"",
+                     "node x.js", "node -e \"x\"", "perl -pi -e 's/a/b/' f", "tee f", "tee -a f",
+                 })
+            Assert.IsTrue(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[]
+                 {
+                     "Set-Content f x", "set-content -Path f -Value x", "Add-Content f x", "Out-File f", "python fix.py", "py fix.py",
+                 })
+            Assert.IsTrue(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // Reads, look-alikes that only start with the same letters, and what play runs are not caught.
+        foreach (string command in new[]
+                 {
+                     "sed -n 1,20p f", "sed 's/a/b/' f", "sed -n 1p f", "pythonw x", "pytest", "python3x", "pyright", "nodemon x",
+                     "perldoc x", "teed x", "cat a.md", "ls adventures", "dmc roll 1d20",
+                 })
+            Assert.IsFalse(Denied("Bash", command), $"Bash: {command}");
+        foreach (string command in new[] { "Get-Content f", "Set-ContentX f", "Out-Host", "pytest", "Get-ChildItem adventures", "dmc roll 1d20" })
+            Assert.IsFalse(Denied("PowerShell", command), $"PowerShell: {command}");
+
+        // Toolkit work is not blocked: none of these rules is in the developer's settings.
+        string[] shared = Settings(DevSettings)["permissions"]?["deny"]?.AsArray().Select(r => (string)r!).ToArray() ?? [];
+        foreach (string rule in ShellWriteRules)
+            CollectionAssert.DoesNotContain(shared, rule, $".claude/settings.json applies to toolkit work and must not deny {rule}");
+    }
+
+    /// <summary>A code span: the text between two single backticks on one line.</summary>
+    [GeneratedRegex(@"(?<!`)`([^`\n]+)`(?!`)")]
+    private static partial Regex CodeSpan();
+
+    /// <summary>
+    /// No kit prompt tells DMC to run a command the shell write rules deny (spec 020 FR-007): every code span and every
+    /// line of a fenced code block in the kit's prompts that starts with a letter is checked against the
+    /// <c>Bash(...)</c> and <c>PowerShell(...)</c> rules of <see cref="ShellWriteRules"/>, so a later step that names
+    /// such a command fails here and not in a play session.
+    /// </summary>
+    [TestMethod]
+    public void NoKitPromptNamesACommandTheShellWriteRulesDeny()
+    {
+        var rules = ShellWriteRules.Select(r => Rule().Match(r)).Where(m => m.Success)
+            .Select(m => (Tool: m.Groups[1].Value, Matches: PatternRegex(m.Groups[1].Value, m.Groups[2].Value))).ToArray();
+        foreach (string file in KitPrompts())
+        {
+            bool fenced = false;
+            foreach (string line in Read(file).Split('\n'))
+            {
+                if (line.TrimStart().StartsWith("```", StringComparison.Ordinal)) { fenced = !fenced; continue; }
+                IEnumerable<string> texts = fenced ? [line.Trim()] : CodeSpan().Matches(line).Select(m => m.Groups[1].Value.Trim());
+                foreach (string text in texts.Where(t => t.Length > 0 && char.IsLetter(t[0])))
+                    foreach (var rule in rules)
+                        Assert.IsFalse(rule.Matches.IsMatch(text), $"{file} names `{text}`, which kit/settings.json denies ({rule.Tool})");
+            }
+        }
+    }
+
     // ---------- the shell scripts ----------
 
     [TestMethod]

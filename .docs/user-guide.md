@@ -55,7 +55,7 @@ An update can change what DMC keeps in a campaign's files. When it does, `dmc up
 Run `dmc play` in a terminal, from any folder. It does these things:
 
 1. If your DMC folder's rules, skills, settings or templates are not what this `dmc` writes (after you installed a newer `dmc`, say, or if a file was deleted or changed), it rewrites them first and prints a line saying how many. A file you edited by hand is put back, and your edited copy is kept under `.dmc/replaced/<date and time>/`. It never touches your adventures, feedback, modules, rules or exports.
-2. It starts Claude Code in the DMC folder on Sonnet at `high` effort. The folder's settings (`.claude/settings.json`) switch off connectors and tools a game does not use, block shell deletes (`rm`, `Remove-Item` and their aliases), stop DMC editing its own rules, add the break reminder and redraw the map after each reply.
+2. It starts Claude Code in the DMC folder on Sonnet at `high` effort. The folder's settings (`.claude/settings.json`) switch off connectors and tools a game does not use, block shell deletes (`rm`, `Remove-Item` and their aliases) and the usual shell writes (`sed -i`, scripts, `Set-Content`), so DMC changes your files in a way you can see, stop DMC editing its own rules, add the break reminder and redraw the map after each reply.
 3. Anything you type after `dmc play` goes on to Claude Code, so `dmc play --continue` works.
 
 `dmc play` plays in the current folder if it is a DMC folder, and otherwise in the first one `dmc install` recorded. `dmc folder` prints the folder it would use.

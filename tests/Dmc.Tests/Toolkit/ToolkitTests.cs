@@ -1053,6 +1053,23 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(Read(".claude/skills/review-feedback/SKILL.md"), "`kit/dm-rules.md`");
     }
 
+    /// <summary>
+    /// Spec 023 (issue #248): <c>review-feedback</c> holds a fix that is only words until the slip test of issue #249 can
+    /// test it, or until 2026-12-31; it names the three kinds of change the hold does not cover, and it does not act on a
+    /// held entry unless the user lifts the hold.
+    /// </summary>
+    [TestMethod]
+    public void ReviewFeedbackHoldsWordOnlyFixesUntilTheSlipTest()
+    {
+        string skill = Read(".claude/skills/review-feedback/SKILL.md");
+        StringAssert.Contains(skill, "write `held until the slip test` under the entry's Worker notes, leave its status as it is, and change nothing", "spec 023 FR-001");
+        StringAssert.Contains(skill, "- a change that removes a contradiction or replaces text without making the file longer;", "spec 023 FR-002");
+        StringAssert.Contains(skill, "- a mechanism: a hook, a `dmc` check, a deny rule;", "spec 023 FR-002");
+        StringAssert.Contains(skill, "- a change that replaces a kit rule with a shorter one.", "spec 023 FR-002");
+        StringAssert.Contains(skill, "The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or 2026-12-31.", "spec 023 FR-003");
+        StringAssert.Contains(skill, "A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry.", "spec 023 FR-004");
+    }
+
     /// <summary>Feedback has one route: <c>dmc-record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>
     [TestMethod]
     public void FeedbackHasOneRoute()

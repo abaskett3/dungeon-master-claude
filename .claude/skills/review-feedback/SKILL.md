@@ -46,11 +46,19 @@ Lead with a short verdict: the two or three changes that would matter most. Grou
 - **Why the prompts allowed it**: the file and passage that caused it, or what is missing.
 - **The change**: which file, and the wording or the mechanism. Prefer the smallest change that would have prevented it. A hook or a script is better than a paragraph when the problem is that DMC forgot. Say what it costs: every line added to `CLAUDE.md` is paid for in every exchange of every session.
 
+**The hold on word-only fixes** (issue #248). Until the slip test can test a change, a cause whose only fix is words (a new or longer sentence in `kit/dm-rules.md`, a skill or a template) is held: list it in the report under "Held until the slip test", write `held until the slip test` under the entry's Worker notes, leave its status as it is, and change nothing. No measurement shows that such sentences decrease slips, and each one is paid for in every exchange. Not held:
+
+- a change that removes a contradiction or replaces text without making the file longer;
+- a mechanism: a hook, a `dmc` check, a deny rule;
+- a change that replaces a kit rule with a shorter one.
+
+The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or 2026-12-31. Then propose the held entries again, each with its slip-test result where the test can run it, and change only those that pass.
+
 List separately, in a line each, anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session). Say what you did not read.
 
 ## 7. Act only when the user says which entries to act on
 
-Then file an issue, or make the change, under CLAUDE.md § Git and GitHub.
+Then file an issue, or make the change, under CLAUDE.md § Git and GitHub. A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry.
 
 - Make each change in the one place it belongs. Do not restate a rule in several files.
 - Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.

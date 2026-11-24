@@ -111,10 +111,29 @@ Then give the user a short report: the verdict on how the sessions went, the ent
 
 Acting on the entries, which means finding the cause in the prompts, proposing changes and making them, is `review-feedback`.
 
-## 7. The slip tally (issue #179's gate)
+## 7. The slip count
 
-When the user asks for the gate, or the review covers sessions played after Phase D (spec 013), also count the slips.
-`specs/013-slimmer-resume/spec.md` FR-020 to FR-027 is the rule; this is the procedure.
+For every story session the review covers, count its slips (issue #251), so a change to the prompts can be compared
+with the sessions before it.
+
+1. **What counts.** A slip is a reply the player had to correct: a statement that contradicted the files or showed DMC
+   did not know a fact they held (**fact**), or a roll, an action or a choice DMC made that was the player's
+   (**conduct**). Count each `Slip:` line in the story session's log, and any older wording ("DMC's slip",
+   "corrected", "wrongly"); check each against the transcript (`<id>-transcript.md`). Not slips: the player's taste,
+   a fact the files never held, and a slip corrected within the same reply. One fault is one slip, however many
+   messages its correction took.
+2. **What the files missed.** A slip the transcript shows with no `Slip:` line is listed on its own and not added to
+   the count, since the count holds only the slips DMC admits; the baseline of issue #250 measures how many it misses.
+3. **The denominator.** From `stats.md`, for the Claude Code session that played the story session: the **Play turns**
+   line (the play turns, the context before the first, the effort and the session kind) and the **Models** line.
+4. **The line.** One per story session, in this shape: `s72: 3 slips in 41 play turns (2 fact, 1 conduct), Sonnet
+   high, ordinary session, 139,000 tokens at the start`. Write "not recorded" for what the log does not hold. Give
+   the lines to the user in the report of section 6, with the total and the rate per play turn.
+
+## 8. Issue #179's gate count
+
+Only when the user asks for the gate. It is counted apart from section 7, under its own rule, so it stays comparable
+with its baseline: `specs/013-slimmer-resume/spec.md` FR-020 to FR-027 is the rule; this is the procedure.
 
 1. **The sessions.** The after set is the first 3 qualifying sessions after the campaign passed migration 006: each
    starts with a resume, has at least 10 player messages, and is mostly play (not an import, sheet building, a backup
@@ -122,8 +141,8 @@ When the user asks for the gate, or the review covers sessions played after Phas
 2. **What counts.** A slip is a statement DMC made in play that contradicted the files, or showed it did not know a
    fact they held. Count the slips the files record: each `Slip:` line in the session logs, and any older wording
    ("DMC's slip", "corrected", "wrongly"). Check each against the transcript (`<id>-transcript.md`) for what happened.
-   Not slips: the player's taste, a fact the files never held, a slip corrected within the same reply, and conduct
-   that is not about a recorded fact (acting early, rolling a die the player rolls).
+   Not slips here: the player's taste, a fact the files never held, a slip corrected within the same reply, and
+   conduct (`Slip:` lines of the `conduct` category), which the baseline did not count.
 3. **Its category.** **canon** when the fact was in `canon.md` or its archive outside the always-read sections;
    **companion** when it was on a companion's sheet; **hook** when a line the prompt hook printed was wrong, out of
    date or misled DMC; **other** for the rest. A slip the transcript shows that the files never recorded is listed but

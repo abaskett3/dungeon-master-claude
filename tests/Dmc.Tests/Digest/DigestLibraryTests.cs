@@ -244,6 +244,30 @@ public sealed class DigestParsingTests
     }
 
     [TestMethod]
+    public void ThePlayLineGivesTheDenominatorOfASlipCount()
+    {
+        using var folder = new TempFolder();
+        var first = Assistant(1, "m1", Blocks(Text("Welcome back.")), 100, 900, 0, 5);
+        first["effort"] = "high";
+        var second = Assistant(3, "m2", Blocks(Text("The door opens.")), 100, 1900, 0, 5);
+        second["effort"] = "high";
+        second["sessionKind"] = "bg";
+        var s = new Session(WriteLog(folder.Path,
+        [
+            User(0, "<command-name>/dmc-resume-campaign</command-name>"),
+            first,
+            User(2, "I open the door."),
+            second,
+            User(4, "[Request interrupted by user]"),
+        ]));
+        Assert.AreEqual("- **Play turns**: 1; context before the first 1000 tokens. **Effort**: high x2. **Session kind**: bg.", Report.Play(s));
+        StringAssert.Contains(Report.Stats(s), "**Play turns**: 1;");
+
+        var bare = new Session(WriteLog(folder.Path, [User(0, "hello")], "eeeeeeee-0000-4000-8000-000000000005"));
+        Assert.AreEqual("- **Play turns**: 1; context before the first 0 tokens. **Effort**: not recorded. **Session kind**: not recorded.", Report.Play(bare));
+    }
+
+    [TestMethod]
     public void AnEmptyLog()
     {
         using var folder = new TempFolder();

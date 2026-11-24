@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- slip-test, the replay runner of spec 024 (issue #249): developer tooling for the maintainer's computer. It is
+       built and tested with the solution, never published or released (release.yml publishes src/Dmc.Cli only), and
+       never run in CI: its runs need Claude Code and the maintainer's play logs. The contract is
+       specs/024-slip-test-runner/contracts/slip-test.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>slip-test</AssemblyName>
+    <RootNamespace>Dmc.SlipTest</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dmc.Tests" />
+  </ItemGroup>
+
+</Project>

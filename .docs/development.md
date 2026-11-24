@@ -18,6 +18,7 @@ This document is for contributors changing `dmc`, the kit (the Dungeon Master ru
 | `.claude/skills/`, `.claude/settings.json` | Developer-only: the `review-feedback` and `review-transcript` skills (they take a DMC folder), Spec Kit's `speckit-*` skills, and the permissions development needs |
 | `tools/` | `install.ps1` and `install.sh`: the install line, attached to every release (tested by `Distribution/BootstrapTests.cs`) |
 | `src/Dmc.Cli/` | `dmc`'s source (C#, .NET 10) |
+| `src/Dmc.SlipTest/` | `slip-test`, the replay runner that measures slips (spec 024): developer tooling, built and tested with the solution, never released or run in CI (see [The slip test](#the-slip-test)) |
 | `tests/Dmc.Tests/` | The tests (MSTest and Playwright) |
 | `.github/workflows/` | `tests.yml` (CI) and `release.yml` (releases); `.github/release/sign.sh` signs a release's checksum list (see [releases.md](releases.md)) |
 | `Directory.Build.props`, `Directory.Packages.props`, `global.json`, `dmc.sln` | Shared build settings, centrally pinned package versions, the SDK pin, the solution |
@@ -98,6 +99,23 @@ The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README
 ### The recall test
 
 `tools/recall-test.ps1` reruns issue #179's recall test (spec 009, SC-002): it runs `dmc recall` for each question of a tab-separated questions file (`id`, `named` or `indirect`, the question, an answer regex) and prints, per style, how often the answer was in the output and in the first hit. The questions quote campaign facts, so the file lives in the maintainer's DMC folder (suggested: `recall-test/questions.tsv`) and is never committed; the script never runs in CI, where `tests/Dmc.Tests/Retrieval/` checks recall on invented fixtures. Run it after a change to the ranking (`src/Dmc.Cli/Retrieval/`) and compare with the figures on the issue. Usage and format: `specs/009-retrieval-lookup-recall/contracts/recall-test.md`.
+
+### The slip test
+
+`slip-test` (`src/Dmc.SlipTest/`, spec 024, issue #249) measures how often DMC's replies slip, so a change to the rules can be tested before it ships (#238, #240). It replays real play: for each fork point (a player message in a Claude Code log) and each arm (the control and a treatment), it writes the log up to that message under a new session id, with the DMC folder's path replaced by a copy folder's and the recorded `CLAUDE.md` replaced by the arm's rules; restores the copy's `adventures/` to that moment from Claude Code's file history; and runs `claude -p --resume <id> --fork-session` with the player's message and the original's model, effort and permission mode. Fresh-resume mode instead lays each arm's files over the copy, starts one base session per arm with the resume, and forks it. The pilot checks that the replays saw what play saw (no new notice, the same hook output, the arm's rules in the log, the same thinking blocks in both arms); `export` writes the replies under random ids for a blind score against a key written before the runs; `score` gives each arm's slip rate with a 95% interval over fork points, the difference, the pass line's verdict and the cost.
+
+```
+dotnet run --project src/Dmc.SlipTest -- prepare --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- run --pilot --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- pilot --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- run --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- export --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- score --work <work folder>
+```
+
+The work folder holds the trial, the fork points, the key and every run; they quote play, so it lives outside the repository (suggested: `slip-test/<trial>/` in the DMC folder) and is never committed. It needs Claude Code signed in, the logs and file history kept (#239), and a trusted copy folder. `tests/Dmc.Tests/SlipTest/` checks the runner on invented logs with a stand-in for Claude Code; nothing in CI runs a model. The file formats, the commands and their output: `specs/024-slip-test-runner/contracts/slip-test.md`; the pilot and the base rate step by step: its `quickstart.md`.
+
+Limits (#249): a fork after a fresh resume measures a session's first slips, not the groups of slips in a long correction or a session above 300,000 tokens. A background session cannot be replayed (Claude Code rejects `--bg` with `-p`), so it runs as an ordinary one. A change made with a shell command left no backup and is not undone. Which billing applies to the runs is not verified. A rewrite before a thinking block makes Claude Code drop that block (research R3), so the control's rules must differ from the recorded text as the treatment's do.
 
 ## CI
 

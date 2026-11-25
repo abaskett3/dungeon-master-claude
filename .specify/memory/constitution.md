@@ -29,11 +29,12 @@ Reason: every token play reads is paid by the player, in every exchange of every
 
 ### Development 1. Count the cost
 Every plan MUST count its token and context cost in bytes: the bytes it adds to or removes from `kit/dm-rules.md`
-(paid every turn) and each skill (paid when it loads), and the tokens where `dmc size` measures them. A count of
-lines is not a cost: a line can grow without being added. Small additions add up.
+(paid every turn) and each skill (paid when it loads), and the tokens where `dmc size` measures them. Small
+additions add up.
 Check: the plan lists the bytes it adds to or removes from `kit/dm-rules.md` and each skill, and, where it changes
 what a resume reads, the `dmc size` result in tokens.
-Reason: what play reads is paid in every exchange of every game. See `.docs/development.md` § Writing prompts.
+Reason: what play reads is paid in every exchange of every game, and a line can grow without being added. See
+`.docs/development.md` § Writing prompts.
 
 ### Development 2. No change breaks a campaign
 A change MUST NOT break a player's campaign, whether it is to `dmc`'s code, the kit or the shape of campaign

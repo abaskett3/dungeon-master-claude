@@ -17,7 +17,7 @@ A player option is a preference about their own game that the player wants chang
 
 ## 2. Look for a duplicate
 
-Grep `^status: (open|filed)` in `feedback/` to list the entries not yet fixed, then Grep `^# ` in `feedback/` and look only at the titles in files from that list. Do not read the entries whole. If one covers the same problem, add a line under Occurrences and the new quote under What the player said (two Edit calls), and go to step 4.
+Grep `^status: (open|filed|released|fixed)` in `feedback/` to list the entries the problem could repeat, then Grep `^# ` in `feedback/` and look only at the titles in files from that list. Do not read the entries whole. If one covers the same problem, add a line under Occurrences and the new quote under What the player said (two Edit calls); if its status says released or fixed in a version no later than `dmc --version` prints, the fix failed: start the line with "came back after <the status>" and set the status to `open` (a third Edit). Go to step 4.
 
 ## 3. Write the entry
 

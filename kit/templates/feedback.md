@@ -8,7 +8,8 @@ dmc: X.Y.Z
 <!--
 One file per piece of feedback about how DMC itself runs the game, saved as feedback/YYYY-MM-DD-<slug>.md. It must make sense without the adventure: a worker has to understand it and act on it even if the campaign has been deleted. It is not for the player's tastes (those are lines in a player-options.md): the test is whether the same behaviour would have been wrong for a different player with different preferences.
 
-status: open | filed #N | fixed in PR #N | not a toolkit problem: <why> | moved to player options
+status: open | filed #N | released in X.Y.Z | fixed in X.Y.Z: no case in N play turns | not a toolkit problem: <why> | moved to player options
+  (an older entry may say fixed in PR #N; review-feedback reads it as released)
 category (pick one; the frontmatter above holds placeholders to replace):
   consistency  a name, number, count, distance, position or time that changed, or a fact the files held and DMC got wrong
   rules        a rule stated wrongly or applied differently the second time

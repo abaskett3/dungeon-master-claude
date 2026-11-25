@@ -1073,6 +1073,31 @@ public sealed partial class ToolkitTests
         Assert.DoesNotContain("The hold ends at the first of", skill, "spec 027 FR-004: the hold of spec 023 is replaced");
     }
 
+    /// <summary>
+    /// Spec 028 (issue #267): "fixed" means the slip stopped. The template has the released and fixed statuses and reads
+    /// the old one; the two skills that record entries search the released and fixed ones too and open an entry again
+    /// when its fault comes back; <c>review-feedback</c> gives the condition for fixed.
+    /// </summary>
+    [TestMethod]
+    public void FixedMeansTheSlipStopped()
+    {
+        string template = Read("kit/templates/feedback.md");
+        StringAssert.Contains(template, "status: open | filed #N | released in X.Y.Z | fixed in X.Y.Z: no case in N play turns |", "spec 028 FR-001");
+        StringAssert.Contains(template, "an older entry may say fixed in PR #N; review-feedback reads it as released", "spec 028 FR-005");
+        foreach (string path in new[] { "kit/skills/dmc-record-feedback/SKILL.md", ".claude/skills/review-transcript/SKILL.md" })
+        {
+            string skill = Read(path);
+            StringAssert.Contains(skill, "Grep `^status: (open|filed|released|fixed)` in `feedback/`", $"{path}: spec 028 FR-004");
+            StringAssert.Contains(skill, "came back after <the status>", $"{path}: spec 028 FR-004");
+            Assert.DoesNotContain("Grep `^status: (open|filed)`", skill, $"{path}: spec 028 FR-004");
+        }
+        string review = Read(".claude/skills/review-feedback/SKILL.md");
+        StringAssert.Contains(review, "Grep `^status: (open|filed|released|fixed in PR)` in `feedback/`", "spec 028 FR-002");
+        StringAssert.Contains(review, "Then set `released in X.Y.Z`, the first such release.", "spec 028 FR-002");
+        StringAssert.Contains(review, "have at least 300 play turns, as `review-transcript` § 7 counts them, and none of them has a case of the entry's fault.", "spec 028 FR-003");
+        Assert.DoesNotContain("set the status to `fixed in PR #N`", review, "spec 028 FR-002");
+    }
+
     /// <summary>Feedback has one route: <c>dmc-record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>
     [TestMethod]
     public void FeedbackHasOneRoute()

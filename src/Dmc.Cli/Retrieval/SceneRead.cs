@@ -44,7 +44,7 @@ internal static partial class SceneRead
         if (!File.Exists(canonPath))
             throw new DmcException($"no story/canon.md in {campaign}");
         var lines = Measurement.ReadLines(canonPath);
-        if (lines.Sum(l => (long)l.Bytes) / 4 < Budgets.CanonWholeBelow)
+        if (Measurement.TokensOf(lines) < Budgets.CanonWholeBelow)
             return [SmallLine];
 
         string gameStatePath = Path.Combine(root, "game-state.md");

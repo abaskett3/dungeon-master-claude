@@ -469,7 +469,7 @@ internal static partial class ReadSet
     /// <summary>
     /// Canon (spec 013 FR-007 to FR-009): whole while it is under <see cref="Budgets.CanonWholeBelow"/>; at or over it,
     /// its always-read sections (<see cref="Rulings"/>, <see cref="Prices"/>, and any section whose first comment says
-    /// <see cref="AlwaysRead"/>) and the bytes <c>dmc recall --scene</c> prints, which <see cref="Retrieval.SceneRead"/>
+    /// <see cref="AlwaysRead"/>) and the characters <c>dmc recall --scene</c> prints, which <see cref="Retrieval.SceneRead"/>
     /// builds, so the measure is what the resume reads.
     /// </summary>
     /// <param name="dmcFolder">The DMC folder.</param>
@@ -482,12 +482,11 @@ internal static partial class ReadSet
         if (!File.Exists(path))
             return Part.Absent(shown, EntryState.Missing, BudgetKind.Canon, "missing");
         var lines = Measurement.ReadLines(path);
-        long tokens = lines.Sum(l => (long)l.Bytes) / 4;
-        if (tokens < Budgets.CanonWholeBelow)
+        if (Measurement.TokensOf(lines) < Budgets.CanonWholeBelow)
             return new Part(shown, PartKind.Whole, EntryState.Measured, BudgetKind.Canon, lines, "read whole", lines);
-        long scene = Retrieval.SceneRead.Run(dmcFolder, campaign).Sum(l => (long)Retrieval.Recall.Bytes(l));
+        long scene = Retrieval.SceneRead.Run(dmcFolder, campaign).Sum(l => (long)Retrieval.Recall.Characters(l));
         return new Part(shown, PartKind.ByScene, EntryState.Measured, BudgetKind.Canon, AlwaysReadSections(lines),
-            "read in sections and by scene", lines, ExtraBytes: scene);
+            "read in sections and by scene", lines, ExtraCharacters: scene);
     }
 
     /// <summary>The lines of canon's always-read sections, in file order.</summary>
@@ -716,7 +715,7 @@ internal static partial class ReadSet
             var heading = file.Headings[matches[0]];
             int last = Retrieval.MarkdownHeadings.SectionEnd(file.Headings, matches[0], file.Lines.Length);
             var sectionLines = Enumerable.Range(heading.Line - 1, last - heading.Line + 1)
-                .Select(i => new Line(file.Lines[i], file.LineBytes[i])).ToList();
+                .Select(i => new Line(file.Lines[i], file.LineBytes[i], file.LineCharacters[i])).ToList();
             return (new Part(shown, PartKind.Section, EntryState.Measured, BudgetKind.None,
                 sectionLines, "the section named", lines), heading.Line);
         }

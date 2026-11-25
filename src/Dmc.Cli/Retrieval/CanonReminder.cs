@@ -15,7 +15,7 @@ internal static class CanonReminder
     /// <summary>The most lines printed for one person.</summary>
     public const int LinesPerPerson = 3;
 
-    /// <summary>The most bytes the reminder may print, its header included: about 1,000 estimated tokens.</summary>
+    /// <summary>The most bytes the reminder may print, its header included: about 1,600 tokens (<c>Measurement.Tokens</c>).</summary>
     public const int CapBytes = 4000;
 
     /// <summary>The start of the reminder's header; the log is searched for it.</summary>
@@ -66,7 +66,7 @@ internal static class CanonReminder
             return [];
 
         // A canon under CanonWholeBelow is read whole at resume (FR-015: only lines the resume did not read whole), so only its archive is left.
-        bool small = canon.Sum(l => (long)l.Bytes) / 4 < Budgets.CanonWholeBelow;
+        bool small = Size.Measurement.TokensOf(canon) < Budgets.CanonWholeBelow;
         List<LineUnit> units = small ? [] : SceneRead.Units(root, campaign, canonPath, canon);
         units.AddRange(ArchiveUnits(root, campaign));
         units = Recall.Merge(units);

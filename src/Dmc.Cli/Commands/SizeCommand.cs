@@ -3,7 +3,7 @@ using Dmc.Size;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc size [NAME] [--check | --arc] [--folder PATH]</c>: what a resume of a campaign reads, in estimated tokens (bytes ÷ 4),
+/// <c>dmc size [NAME] [--check | --arc] [--folder PATH]</c>: what a resume of a campaign reads, in tokens (estimated at 2 for 5 characters),
 /// with what to trim. It lists the files <c>dmc-resume-campaign</c> step 2 reads, by that step's rules, and the part of
 /// each; the full report adds the total, the largest sections and the flags, and <c>--check</c>, the form DMC runs in
 /// play, prints only the flags, a <c>module:</c> line when its module fails <c>dmc module check</c> (spec 012), any
@@ -31,8 +31,9 @@ public sealed class SizeCommand : ICommand
 usage: dmc size [NAME] [--check | --arc] [--folder PATH]
 
 Measures what a resume of a campaign reads: each file dmc-resume-campaign reads, the part of it the resume reads, and
-its size in estimated tokens (bytes / 4), with the total, the largest sections and anything to trim (a file near the
-Read tool's cap, over its budget, canon over its limit, leftovers the full save should clear). It changes nothing.
+its size in tokens (estimated at 2 for 5 characters, which matches what Claude Code counts within a few percent), with
+the total of what reading them costs, the largest sections and anything to trim (a file near the Read tool's cap, over
+its budget, canon over its limit, leftovers the full save should clear). It changes nothing.
 
   NAME      a campaign folder in adventures/ (default: the active campaign)
   --check   print only what to act on, one line each, and nothing when all is well (the form DMC runs in play):

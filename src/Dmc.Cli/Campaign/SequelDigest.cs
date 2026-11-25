@@ -255,7 +255,8 @@ internal static partial class SequelDigest
         long largest = 0;
         foreach (var file in files.Where(f => f.Name.EndsWith(".md", StringComparison.OrdinalIgnoreCase)))
         {
-            long tokens = file.Length / 4;
+            // What one Read of the file costs, in the measure dmc size flags with (spec 021): its characters, not its bytes.
+            long tokens = Measurement.ReadCost(Measurement.ReadLines(file.FullName).Sum(l => (long)l.Characters), 1);
             largest = Math.Max(largest, tokens);
             if (tokens > Budgets.NearCapTokens)
                 problems.Add($"too large: {label}{file.Name} {Measurement.FormatTokens(tokens)} tokens (split it by subject)");

@@ -71,7 +71,8 @@ internal static partial class ModuleCheck
     internal static List<string> FileProblems(MarkdownFile file, string shown)
     {
         var problems = new List<string>();
-        long fileTokens = file.LineBytes.Sum(b => (long)b) / 4;
+        // What one Read of the file costs, compared with the near-cap mark dmc size uses (spec 021 FR-003).
+        long fileTokens = Measurement.ReadCost(file.LineCharacters.Sum(c => (long)c), 1);
         if (fileTokens >= Budgets.NearCapTokens || file.Lines.Length >= Budgets.NearCapLines)
             problems.Add($"{shown} {Measurement.FormatTokens(fileTokens)} tokens, {file.Lines.Length.ToString("N0", CultureInfo.InvariantCulture)} lines: "
                 + $"at the Read cap mark ({Measurement.FormatTokens(Budgets.NearCapTokens)}): split it by heading into smaller files beside it");
@@ -88,7 +89,7 @@ internal static partial class ModuleCheck
 
             int first = heading.Line - 1;
             int end = i + 1 < file.Headings.Count ? file.Headings[i + 1].Line - 1 : file.Lines.Length;
-            long tokens = file.LineBytes[first..end].Sum(b => (long)b) / 4;
+            long tokens = Measurement.Tokens(file.LineCharacters[first..end].Sum(c => (long)c));
             int statBlocks = StatBlocks(file, first, end);
             string where = $"{shown}:{heading.Line.ToString(CultureInfo.InvariantCulture)} \"{heading.Text}\"";
             if (statBlocks >= 2)

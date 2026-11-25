@@ -59,13 +59,16 @@ public sealed class SizeLibraryTests
         CollectionAssert.AreEqual(paths, Paths());
     }
 
+    /// <summary>A part's tokens are 2 for each whole 5 of its characters (spec 021), and one Read of it costs 160 more.</summary>
     [TestMethod]
-    public void TokensAreBytesDividedByFourRoundedDown()
+    public void TokensAreTwoForEachWholeFiveCharacters()
     {
         var lines = Measurement.Split("abcdef\n"u8.ToArray());
         var part = new Part("x", PartKind.Whole, EntryState.Measured, BudgetKind.None, lines, null, lines);
         Assert.AreEqual(7, part.Bytes);
-        Assert.AreEqual(1, part.Tokens);
+        Assert.AreEqual(7, part.Characters);
+        Assert.AreEqual(2, part.Tokens);
+        Assert.AreEqual(162, part.ReadCost);
     }
 
     [TestMethod]
@@ -113,12 +116,18 @@ public sealed class SizeLibraryTests
         Assert.AreEqual("20.5k", Measurement.FormatTokens(20448));
     }
 
+    /// <summary>
+    /// Every budget a full save trims to is under the near-cap mark, so no file inside its budget is cut at resume. Canon
+    /// is the exception by design: within its limit it is read whole, in two reads when it must be, and never flagged near
+    /// the cap (spec 021 research R5).
+    /// </summary>
     [TestMethod]
     public void EveryBudgetSitsWellUnderTheReadCap()
     {
-        int[] budgets = [Budgets.GameState, Budgets.DmNotes, Budgets.Summary, Budgets.PcSheet, Budgets.OtherSheet, Budgets.CanonLimit, Budgets.Legacy];
+        int[] budgets = [Budgets.GameState, Budgets.DmNotes, Budgets.Summary, Budgets.PcSheet, Budgets.OtherSheet, Budgets.Legacy];
         foreach (int budget in budgets)
             Assert.IsLessThan(Budgets.NearCapTokens, budget, "every budget is under the near-cap mark, so no file is paged at resume");
+        Assert.IsGreaterThan(Budgets.NearCapTokens, Budgets.CanonLimit, "canon's limit is past the mark, which is why canon is left out of the flag");
         Assert.IsLessThan(Budgets.CanonLimit, Budgets.CanonArchiveMark);
         Assert.IsLessThan(Budgets.ReadCapTokens, Budgets.NearCapTokens);
     }
@@ -137,13 +146,19 @@ public sealed class SizeLibraryTests
         Assert.IsEmpty(Measure().Flags, "a new campaign has nothing to flag: " + string.Join("; ", Measure().Flags.Select(f => f.Line)));
     }
 
+    /// <summary>
+    /// The total is what the resume pays to read the parts, each one's text and its calls; a part's tokens are 2 for each
+    /// whole 5 of its characters, a CR and a byte-order mark left out (spec 021 FR-002, FR-006).
+    /// </summary>
     [TestMethod]
-    public void TheTotalIsTheSumOfThePartsAndEachIsBytesOverFour()
+    public void TheTotalIsTheReadCostOfThePartsAndEachIsTwoTokensForFiveCharacters()
     {
         var result = Measure();
-        Assert.AreEqual(result.Parts.Sum(p => p.Tokens), result.Total);
+        Assert.AreEqual(result.Parts.Where(p => p.InTotal).Sum(p => p.ReadCost), result.Total);
+        Assert.AreEqual(result.Parts.Where(p => p.InTotal).Sum(p => p.Calls), result.Calls);
         string summary = Path.Combine(CampaignFolder(_root), "story", "summary.md");
-        Assert.AreEqual(new FileInfo(summary).Length / 4, PartOf("story/summary.md").Tokens);
+        int characters = File.ReadAllText(summary).TrimStart('\uFEFF').Replace("\r", "").Length;
+        Assert.AreEqual(2L * (characters / 5), PartOf("story/summary.md").Tokens);
     }
 
     [TestMethod]
@@ -337,17 +352,18 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void CanonUnderTheWholeMarkIsReadWholeAndAtItByItsAlwaysReadSectionsAndTheScene()
     {
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4 - 4));
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonWholeBelow) - 5));
         Assert.AreEqual(PartKind.Whole, PartOf("story/canon.md").Kind);
 
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4));
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonWholeBelow)));
         var canon = PartOf("story/canon.md");
         Assert.AreEqual(PartKind.ByScene, canon.Kind);
         CollectionAssert.AreEqual(new[] { "Rulings", "Prices, debts and promises", "Cast" }, canon.Sections.Select(s => s.Heading).ToArray(),
             "the two always-read sections and the one whose comment says Always read; the Timeline is read by scene");
-        long scene = global::Dmc.Retrieval.SceneRead.Run(_root, Name).Sum(l => (long)global::Dmc.Retrieval.Recall.Bytes(l));
+        long scene = global::Dmc.Retrieval.SceneRead.Run(_root, Name).Sum(l => (long)global::Dmc.Retrieval.Recall.Characters(l));
         Assert.IsGreaterThan(0L, scene);
-        Assert.AreEqual(canon.Lines.Sum(l => (long)l.Bytes) + scene, canon.Bytes, "the sections plus the bytes the scene read prints");
+        Assert.AreEqual(canon.Lines.Sum(l => (long)l.Characters) + scene, canon.Characters, "the sections plus the characters the scene read prints");
+        Assert.AreEqual(2, canon.Calls, "the sections and the scene read's command");
         Assert.HasCount(1, FlagsOf(FlagKind.CanonOverLimit), "the mark is the archive limit (FR-026)");
     }
 
@@ -355,11 +371,11 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void CanonReadByScenePaysForTheLinesTheSceneMatches()
     {
-        string canon = CanonOf(Budgets.CanonWholeBelow * 4) + "- The ferryman Oswin charges three silver a head at the Marrow ford (s3.2).\n";
+        string canon = CanonOf(TokenSizes.Chars(Budgets.CanonWholeBelow)) + "- The ferryman Oswin charges three silver a head at the Marrow ford (s3.2).\n";
         Write(_root, "story/canon.md", canon);
-        long before = PartOf("story/canon.md").Bytes;
+        long before = PartOf("story/canon.md").Characters;
         Write(_root, "game-state.md", GameState([]).Replace("- **Location**: a road", "- **Location**: the Marrow ford, Oswin's hut"));
-        Assert.IsGreaterThan(before, PartOf("story/canon.md").Bytes, "the matching line is read and counted");
+        Assert.IsGreaterThan(before, PartOf("story/canon.md").Characters, "the matching line is read and counted");
     }
 
     /// <summary>Two canons of about the same line count are read by their size, not their lines: short lines whole, long lines past the mark by scene.</summary>
@@ -388,7 +404,7 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void CanonOverItsLimitIsFlaggedForTheArchiveAndStillReadByScene()
     {
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonLimit * 4));
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonLimit)));
         Assert.AreEqual(PartKind.ByScene, PartOf("story/canon.md").Kind);
         Assert.HasCount(1, FlagsOf(FlagKind.CanonOverLimit));
     }
@@ -397,7 +413,7 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void CanonReadBySceneCountsLongLinesInTheWholeFile()
     {
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonWholeBelow * 4) + new string('b', 500) + "\n");
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonWholeBelow)) + new string('b', 500) + "\n");
         StringAssert.Contains(FlagsOf(FlagKind.LongLines).Single().Line, "story/canon.md: 1 line over 400 characters");
     }
 
@@ -424,8 +440,8 @@ public sealed class SizeLibraryTests
         Assert.IsEmpty(FlagsOf(FlagKind.NoPlayCard));
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget));
 
-        Write(_root, "character-sheets/npc-kibil-rornson.md", CardSheet("Kibil Rornson", cardBytes: Budgets.PlayCard * 4));
-        StringAssert.Contains(FlagsOf(FlagKind.OverBudget).Single().Line, "is over its 1k budget");
+        Write(_root, "character-sheets/npc-kibil-rornson.md", CardSheet("Kibil Rornson", cardBytes: TokenSizes.Chars(Budgets.PlayCard)));
+        StringAssert.Contains(FlagsOf(FlagKind.OverBudget).Single().Line, "is over its 1.6k budget");
     }
 
     [TestMethod]
@@ -472,13 +488,14 @@ public sealed class SizeLibraryTests
         return head + Filler((lines - headLines) * 2, lineLength: 2);
     }
 
+    /// <summary>The near-cap flag compares what one Read of the part costs, its text and the call, with the 18,000 mark (spec 021 FR-003).</summary>
     [TestMethod]
-    public void AFileNearTheReadCapIsFlaggedFromTwentyThousandTokensOrSixteenHundredLines()
+    public void AFileNearTheReadCapIsFlaggedFromEighteenThousandTokensOfReadCostOrSixteenHundredLines()
     {
-        Write(_root, "story/dm-notes.md", NotesOfSize(Budgets.NearCapTokens * 4 - 1));
-        Assert.IsEmpty(FlagsOf(FlagKind.NearCap), "19,999 tokens");
-        Write(_root, "story/dm-notes.md", NotesOfSize(Budgets.NearCapTokens * 4));
-        Assert.AreEqual("story/dm-notes.md 20k is near the Read cap (25k): it may be cut short at resume", FlagsOf(FlagKind.NearCap).Single().Line,
+        Write(_root, "story/dm-notes.md", NotesOfSize(TokenSizes.ReadChars(Budgets.NearCapTokens) - 1));
+        Assert.IsEmpty(FlagsOf(FlagKind.NearCap), "17,998 tokens of Read cost");
+        Write(_root, "story/dm-notes.md", NotesOfSize(TokenSizes.ReadChars(Budgets.NearCapTokens)));
+        Assert.AreEqual("story/dm-notes.md 18k is near the Read cap (25k): it may be cut short at resume", FlagsOf(FlagKind.NearCap).Single().Line,
             "a file the save trims carries no 'not the save's' ending");
 
         Write(_root, "story/dm-notes.md", NotesOfLines(Budgets.NearCapLines - 1));
@@ -490,7 +507,7 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void AFileWithoutABudgetNearTheCapIsFlaggedButDoesNotHoldTheSave()
     {
-        Write(_root, "story/sessions/session-001.md", LogOf(1, sceneBytes: Budgets.NearCapTokens * 4 + 100));
+        Write(_root, "story/sessions/session-001.md", LogOf(1, sceneBytes: TokenSizes.ReadChars(Budgets.NearCapTokens) + 100));
         var flag = FlagsOf(FlagKind.NearCap).Single();
         Assert.AreEqual("story/sessions/session-001.md", flag.Path);
         Assert.IsFalse(flag.HoldsTheSave);
@@ -498,32 +515,50 @@ public sealed class SizeLibraryTests
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget), "a session log has no budget");
     }
 
+    /// <summary>
+    /// Canon within its limit is read whole past the near-cap mark, in two reads by line range when the Read tool says it
+    /// is too large, so it is not flagged near the cap: the flag would send the full save to trim canon below its limit
+    /// (spec 021 research R5). The table shows no near-cap note for it either.
+    /// </summary>
+    [TestMethod]
+    public void CanonWithinItsLimitIsNotFlaggedNearTheCap()
+    {
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonLimit) - 5));
+        var canon = PartOf("story/canon.md");
+        Assert.AreEqual(PartKind.Whole, canon.Kind);
+        Assert.IsGreaterThan(Budgets.NearCapTokens, canon.ReadCost, "past the near-cap mark");
+        Assert.IsEmpty(FlagsOf(FlagKind.NearCap));
+        Assert.IsEmpty(FlagsOf(FlagKind.CanonOverLimit));
+        string row = SizeReport.FullReport(Measure()).Single(l => l.TrimStart().StartsWith("story/canon.md ", StringComparison.Ordinal));
+        Assert.DoesNotContain("near the Read cap", row);
+    }
+
     [TestMethod]
     public void AFileOverItsBudgetIsFlaggedAndOneAtItIsNot()
     {
-        Write(_root, "game-state.md", Filler(Budgets.GameState * 4));
+        Write(_root, "game-state.md", Filler(TokenSizes.Chars(Budgets.GameState)));
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget), "exactly at the budget");
-        Write(_root, "game-state.md", Filler(Budgets.GameState * 4 + 4));
-        Assert.AreEqual("game-state.md 4.1k is over its 4k budget", FlagsOf(FlagKind.OverBudget).Single().Line);
+        Write(_root, "game-state.md", Filler(TokenSizes.Chars(Budgets.GameState) + 5));
+        Assert.AreEqual("game-state.md 6.5k is over its 6.4k budget", FlagsOf(FlagKind.OverBudget).Single().Line);
     }
 
     /// <summary>
-    /// A campaign's own <c>legacy.md</c> is measured against its 3k budget and flagged over it, for the full save to trim,
+    /// A campaign's own <c>legacy.md</c> is measured against its 4.8k budget and flagged over it, for the full save to trim,
     /// but its own resume never reads it, so it is never part of the resume total (spec 011 FR-025, FR-020a).
     /// </summary>
     [TestMethod]
     public void ALegacyIsFlaggedOverItsBudgetAndNeverCountsInTheTotal()
     {
         long before = Measure().Total;
-        Write(_root, "legacy.md", Filler(Budgets.Legacy * 4));
+        Write(_root, "legacy.md", Filler(TokenSizes.Chars(Budgets.Legacy)));
         Assert.AreEqual(BudgetKind.Legacy, PartOf("legacy.md").Budget);
         Assert.AreEqual(Budgets.Legacy, PartOf("legacy.md").Tokens);
         Assert.IsFalse(PartOf("legacy.md").InTotal);
         Assert.AreEqual(before, Measure().Total, "the legacy is read by other campaigns, never by this one's resume");
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget), "exactly at the budget");
-        Write(_root, "legacy.md", Filler(Budgets.Legacy * 4 + 4));
+        Write(_root, "legacy.md", Filler(TokenSizes.Chars(Budgets.Legacy) + 5));
         var flag = FlagsOf(FlagKind.OverBudget).Single();
-        Assert.AreEqual("legacy.md 3.1k is over its 3k budget", flag.Line);
+        Assert.AreEqual("legacy.md 4.9k is over its 4.8k budget", flag.Line);
         Assert.IsTrue(flag.HoldsTheSave);
         Assert.AreEqual(before, Measure().Total);
     }
@@ -535,7 +570,7 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void ALegacyIsNeverFlaggedNearTheReadCap()
     {
-        Write(_root, "legacy.md", Filler(Budgets.NearCapTokens * 4 + 4));
+        Write(_root, "legacy.md", Filler(TokenSizes.Chars(Budgets.NearCapTokens) + 5));
         Assert.IsFalse(FlagsOf(FlagKind.NearCap).Any(f => f.Path == "legacy.md"));
         Assert.AreEqual("legacy.md", FlagsOf(FlagKind.OverBudget).Single().Path);
     }
@@ -547,28 +582,28 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void APcSheetHasALargerBudgetThanOtherSheets()
     {
-        Write(_root, "character-sheets/pc-a.md", Sheet("Ada", bodyBytes: Budgets.OtherSheet * 4 + 400));
-        Write(_root, "character-sheets/npc-b.md", Sheet("Bram", bodyBytes: Budgets.OtherSheet * 4 + 400));
+        Write(_root, "character-sheets/pc-a.md", Sheet("Ada", bodyBytes: TokenSizes.Chars(Budgets.OtherSheet) + 400));
+        Write(_root, "character-sheets/npc-b.md", Sheet("Bram", bodyBytes: TokenSizes.Chars(Budgets.OtherSheet) + 400));
         Write(_root, "game-state.md", GameState(["Bram"]));
         CollectionAssert.AreEqual(new[] { "character-sheets/npc-b.md" }, FlagsOf(FlagKind.OverBudget).Select(f => f.Path).ToArray());
-        Write(_root, "character-sheets/pc-a.md", Sheet("Ada", bodyBytes: Budgets.PcSheet * 4 + 400));
+        Write(_root, "character-sheets/pc-a.md", Sheet("Ada", bodyBytes: TokenSizes.Chars(Budgets.PcSheet) + 400));
         CollectionAssert.Contains(FlagsOf(FlagKind.OverBudget).Select(f => f.Path).ToArray(), "character-sheets/pc-a.md");
     }
 
     [TestMethod]
     public void ThePlayerOptionsHaveNoBudget()
     {
-        File.WriteAllText(Path.Combine(_root, "adventures", "player-options.md"), Filler(Budgets.OtherSheet * 4 * 3));
+        File.WriteAllText(Path.Combine(_root, "adventures", "player-options.md"), Filler(TokenSizes.Chars(Budgets.OtherSheet) * 3));
         Assert.IsEmpty(FlagsOf(FlagKind.OverBudget));
     }
 
     [TestMethod]
     public void ASectionOfTheNotesOverItsOwnBudgetIsFlagged()
     {
-        Write(_root, "story/dm-notes.md", Notes(about: Filler(Budgets.DmNotesAboutThePlayer * 4 - 40), arcPlan: Filler(Budgets.DmNotesArcPlan * 4 - 40)));
+        Write(_root, "story/dm-notes.md", Notes(about: Filler(TokenSizes.Chars(Budgets.DmNotesAboutThePlayer) - 40), arcPlan: Filler(TokenSizes.Chars(Budgets.DmNotesArcPlan) - 40)));
         Assert.IsEmpty(FlagsOf(FlagKind.SectionOverBudget));
-        Write(_root, "story/dm-notes.md", Notes(about: Filler(Budgets.DmNotesAboutThePlayer * 4 + 400), arcPlan: Filler(Budgets.DmNotesArcPlan * 4 + 400)));
-        CollectionAssert.AreEqual(new[] { "story/dm-notes.md Arc plan: 1.6k, over its 1.5k budget", "story/dm-notes.md About this player: 2.2k, over its 2k budget" },
+        Write(_root, "story/dm-notes.md", Notes(about: Filler(TokenSizes.Chars(Budgets.DmNotesAboutThePlayer) + 400), arcPlan: Filler(TokenSizes.Chars(Budgets.DmNotesArcPlan) + 400)));
+        CollectionAssert.AreEqual(new[] { "story/dm-notes.md Arc plan: 2.6k, over its 2.4k budget", "story/dm-notes.md About this player: 3.4k, over its 3.2k budget" },
             FlagsOf(FlagKind.SectionOverBudget).Select(f => f.Line).ToArray());
     }
 
@@ -579,11 +614,11 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void TheArcPlansBudgetLeavesItsCommentOut()
     {
-        string comment = "<!--\n" + Filler(Budgets.DmNotesArcPlan * 4) + "\n-->\n";
-        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(Budgets.DmNotesArcPlan * 4 - 400)));
+        string comment = "<!--\n" + Filler(TokenSizes.Chars(Budgets.DmNotesArcPlan)) + "\n-->\n";
+        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(TokenSizes.Chars(Budgets.DmNotesArcPlan) - 400)));
         Assert.IsEmpty(FlagsOf(FlagKind.SectionOverBudget), "a large comment and a plan under budget");
-        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(Budgets.DmNotesArcPlan * 4 + 400)));
-        StringAssert.StartsWith(FlagsOf(FlagKind.SectionOverBudget).Single().Line, "story/dm-notes.md Arc plan: 1.6k");
+        Write(_root, "story/dm-notes.md", Notes(arcPlan: comment + Filler(TokenSizes.Chars(Budgets.DmNotesArcPlan) + 400)));
+        StringAssert.StartsWith(FlagsOf(FlagKind.SectionOverBudget).Single().Line, "story/dm-notes.md Arc plan: 2.6k");
     }
 
     [TestMethod]
@@ -618,9 +653,9 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void ALargePricesSectionOfCanonIsFlagged()
     {
-        Write(_root, "story/canon.md", "# Canon\n\n## Prices, debts and promises\n\n" + Filler(Budgets.CanonPricesSection * 4 - 200));
+        Write(_root, "story/canon.md", "# Canon\n\n## Prices, debts and promises\n\n" + Filler(TokenSizes.Chars(Budgets.CanonPricesSection) - 200));
         Assert.IsEmpty(FlagsOf(FlagKind.PricesSection));
-        Write(_root, "story/canon.md", "# Canon\n\n## Prices, debts and promises\n\n" + Filler(Budgets.CanonPricesSection * 4 + 400));
+        Write(_root, "story/canon.md", "# Canon\n\n## Prices, debts and promises\n\n" + Filler(TokenSizes.Chars(Budgets.CanonPricesSection) + 400));
         StringAssert.Contains(FlagsOf(FlagKind.PricesSection).Single().Line, "which suggests paid debts or kept promises not deleted");
     }
 
@@ -642,8 +677,8 @@ public sealed class SizeLibraryTests
     [TestMethod]
     public void FlagsComeInKindOrderWithCanonFirst()
     {
-        Write(_root, "game-state.md", Filler(Budgets.GameState * 4 + 400));
-        Write(_root, "story/canon.md", CanonOf(Budgets.CanonLimit * 4 + 400));
+        Write(_root, "game-state.md", Filler(TokenSizes.Chars(Budgets.GameState) + 400));
+        Write(_root, "story/canon.md", CanonOf(TokenSizes.Chars(Budgets.CanonLimit) + 400));
         var kinds = Measure().Flags.Select(f => f.Kind).ToArray();
         Assert.AreEqual(FlagKind.CanonOverLimit, kinds[0]);
         CollectionAssert.AreEqual(kinds.Order().ToArray(), kinds);
@@ -790,8 +825,9 @@ public sealed class SizeLibraryTests
     }
 
     /// <summary>
-    /// SC-001: on a module of the measured shape (38 chapters, a hub chapter of about 13.6k with eight areas, a 37k
-    /// monster file), a pointer to one hub area measures that area, about 1.7k, not the hub chapter.
+    /// SC-001: on a module of the measured shape (38 chapters, a hub chapter of six areas, since one of eight is past the
+    /// Read cap mark in spec 021's measure; a 37k monster file), a pointer to one hub area measures that area, about 2.7k,
+    /// not the hub chapter.
     /// </summary>
     [TestMethod]
     public void OnAModuleOfTheMeasuredShapeAResumeReadsTheIndexAndOneAreaNotTheHubChapter()
@@ -804,8 +840,8 @@ public sealed class SizeLibraryTests
         CollectionAssert.AreEqual(new[] { $"modules/{m}/index.md", $"modules/{m}/chapters/05-the-hub.md" }, parts.Select(p => p.Path).ToArray());
         var area = parts[1];
         Assert.AreEqual(PartKind.Section, area.Kind);
-        Assert.IsLessThanOrEqualTo(2_000L, area.Tokens, "one area, about 2k at most");
-        Assert.IsGreaterThan(13_000L, area.FileTokens, "where the hub chapter is over 13k");
+        Assert.IsLessThanOrEqualTo(3_200L, area.Tokens, "one area, about 3k at most");
+        Assert.IsGreaterThan(16_000L, area.FileTokens, "where the hub chapter is over 16k");
         Assert.IsEmpty(FlagsOf(FlagKind.PointerMiss));
     }
 

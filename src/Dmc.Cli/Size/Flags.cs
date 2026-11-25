@@ -8,7 +8,7 @@ internal enum FlagKind
     /// <summary>Canon is at or over <see cref="Budgets.CanonLimit"/>, so the full save archives it; since the canon rollback it is also where the resume stops reading canon whole (<see cref="Budgets.CanonWholeBelow"/>).</summary>
     CanonOverLimit,
 
-    /// <summary>The part read is near the Read tool's cap for one call.</summary>
+    /// <summary>The part read is near the Read tool's cap for one call (<see cref="Flags.IsNearCap"/>; canon is left out, spec 021 research R5).</summary>
     NearCap,
 
     /// <summary>A file the full save trims is over its budget.</summary>
@@ -86,9 +86,9 @@ internal static partial class Flags
                     + $"a full save archives it down to {Fmt(Budgets.CanonArchiveMark)} (move about {Fmt(part.FileTokens - Budgets.CanonArchiveMark)})", true));
 
             // Only a file the resume reads can be cut short at resume; one outside the total (legacy.md) has its budget flag.
-            if (part.InTotal && (part.Tokens >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines))
+            if (part.InTotal && IsNearCap(part))
                 flags.Add(new Flag(FlagKind.NearCap, part.Path,
-                    $"{part.Path} {Fmt(part.Tokens)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume"
+                    $"{part.Path} {Fmt(part.ReadCost)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume"
                     + (trimmed ? "" : $" {NotTheSaves}"), trimmed));
 
             if (Budgets.Of(part.Budget) is { } budget && part.Tokens > budget)
@@ -150,14 +150,26 @@ internal static partial class Flags
     }
 
     /// <summary>
-    /// The estimated tokens of the Arc plan's own content: its lines outside HTML comments, heading left out (spec 015,
+    /// Whether a part read is near the Read tool's cap: its Read cost (<see cref="Part.ReadCost"/>) at or over
+    /// <see cref="Budgets.NearCapTokens"/>, or its lines at or over <see cref="Budgets.NearCapLines"/>. Canon is left
+    /// out: within its limit it is read whole, in two reads by line range when the Read tool says it is too large
+    /// (<c>dmc-resume-campaign</c> step 7), and a flag would send the full save to trim it below its limit; over its limit
+    /// it has the archive flag (spec 021 research R5). The flag and the full report's note both use this.
+    /// </summary>
+    /// <param name="part">A measured part.</param>
+    internal static bool IsNearCap(Part part) =>
+        part.Budget != BudgetKind.Canon
+        && (part.ReadCost >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines);
+
+    /// <summary>
+    /// The tokens of the Arc plan's own content: its lines outside HTML comments, heading left out (spec 015,
     /// the maintainer's clarification after the first full save on a migrated campaign). The template's comment is fixed
     /// guidance of about 480 tokens; counted against the section's budget, it was the obvious thing for a full save to
     /// delete. It is still read at resume and counted in <c>dm-notes.md</c>'s total.
     /// </summary>
     /// <param name="lines">The lines of <c>dm-notes.md</c>.</param>
     static long ArcPlanContentTokens(IReadOnlyList<Line> lines) =>
-        Measurement.ContentLines(Measurement.SectionLines(lines, ArcPlan)).Sum(l => (long)l.Bytes) / 4;
+        Measurement.TokensOf(Measurement.ContentLines(Measurement.SectionLines(lines, ArcPlan)));
 
     /// <summary>
     /// The estimated tokens of one section of a part, as <c>dmc size</c> both flags and lists it: the Arc plan of

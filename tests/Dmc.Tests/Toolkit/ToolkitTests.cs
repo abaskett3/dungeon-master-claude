@@ -1604,10 +1604,28 @@ public sealed partial class ToolkitTests
         foreach (string doc in new[] { ".docs/campaign-files.md", ".docs/dmc-reference.md" })
         {
             string text = Read(doc);
-            StringAssert.Contains(text, $"{N(Budgets.NearCapTokens)} estimated tokens or {N(Budgets.NearCapLines)} lines", doc);
+            StringAssert.Contains(text, $"{N(Budgets.NearCapTokens)} tokens of Read cost or {N(Budgets.NearCapLines)} lines", doc);
             StringAssert.Contains(text, $"Prices, debts and promises section over {N(Budgets.CanonPricesSection)}", doc);
             StringAssert.Contains(text, $"lines over {Budgets.LongLineCharacters} characters", doc);
         }
+    }
+
+    /// <summary>
+    /// Spec 021 FR-001: every token figure comes from <c>Measurement.Tokens</c>, the one home of the measure, so no code
+    /// under <c>src/</c> divides a byte count or a length by 4 to get tokens, as eleven places once did.
+    /// </summary>
+    [TestMethod]
+    public void NoCodeDividesBytesIntoTokens()
+    {
+        var division = new System.Text.RegularExpressions.Regex(@"(Bytes|Length)\)?\s*/\s*4\b|Sum\([^)]*Bytes[^)]*\)\s*/\s*4\b");
+        var found = Directory.EnumerateFiles(Path.Combine(TestEnv.Root, "src"), "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(f => File.ReadLines(f).Select((line, i) => (File: f, Line: i + 1, Text: line)))
+            .Where(l => division.IsMatch(l.Text))
+            .Select(l => $"{Path.GetRelativePath(TestEnv.Root, l.File)}:{l.Line}: {l.Text.Trim()}")
+            .ToList();
+        Assert.IsEmpty(found, "use Measurement.Tokens: " + string.Join("; ", found));
     }
 
     /// <summary>

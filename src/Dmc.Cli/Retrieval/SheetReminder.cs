@@ -16,7 +16,7 @@ namespace Dmc.Retrieval;
 /// </summary>
 internal static partial class SheetReminder
 {
-    /// <summary>The most bytes the sheet lines may print, their header included: about 2,500 estimated tokens.</summary>
+    /// <summary>The most bytes the sheet lines may print, their header included: about 4,000 tokens (<c>Measurement.Tokens</c>).</summary>
     public const int CapBytes = 10_000;
 
     /// <summary>The tokens of context after which a person shown or read is shown again.</summary>

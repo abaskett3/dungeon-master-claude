@@ -15,7 +15,7 @@ internal static class Recall
     /// <summary>BM25's length normalisation, the prototype's value.</summary>
     const double B = 0.6;
 
-    /// <summary>The most bytes the whole output may hold: about 1,500 estimated tokens by <c>dmc size</c>'s bytes ÷ 4 (FR-016).</summary>
+    /// <summary>The most bytes the whole output may hold: about 2,400 tokens in <c>dmc size</c>'s measure (FR-016; 1,500 under the bytes ÷ 4 it had then).</summary>
     public const int CapBytes = 6000;
 
     /// <summary>Room kept for the closing <c>(N more lines matched)</c> line while hits are added.</summary>
@@ -226,4 +226,8 @@ internal static class Recall
     /// <summary>The bytes a printed line costs: its UTF-8 and its line end.</summary>
     /// <param name="line">The line.</param>
     internal static int Bytes(string line) => Encoding.UTF8.GetByteCount(line) + 1;
+
+    /// <summary>The characters a printed line costs in tokens (<see cref="Size.Line.Characters"/>): its text and its line end.</summary>
+    /// <param name="line">The line.</param>
+    internal static int Characters(string line) => line.Length + 1;
 }

@@ -59,7 +59,7 @@ public sealed class ModuleCheckTests
     [TestMethod]
     public void ASectionOverTheLimitIsNamedWithItsLineAndSize()
     {
-        var problems = Of($"# Ch\n\n## 1. The Long Hall (PDF 9)\n\n{Prose(Budgets.ModuleSection * 4 + 400)}");
+        var problems = Of($"# Ch\n\n## 1. The Long Hall (PDF 9)\n\n{Prose(TokenSizes.Chars(Budgets.ModuleSection) + 400)}");
         Assert.HasCount(1, problems);
         StringAssert.StartsWith(problems[0], "f.md:3 \"1. The Long Hall (PDF 9)\" ");
         StringAssert.EndsWith(problems[0], $"over the {Measurement.FormatTokens(Budgets.ModuleSection)} section limit: give each area or entry its own heading");
@@ -67,7 +67,7 @@ public sealed class ModuleCheckTests
 
     [TestMethod]
     public void ASectionJustUnderTheLimitPasses() =>
-        CollectionAssert.AreEqual(Array.Empty<string>(), Of($"## A\n\n{Prose(Budgets.ModuleSection * 4 - 200)}"));
+        CollectionAssert.AreEqual(Array.Empty<string>(), Of($"## A\n\n{Prose(TokenSizes.Chars(Budgets.ModuleSection) - 200)}"));
 
     [TestMethod]
     public void ASectionIsItsHeadingsOwnTextSoAParentWithSmallChildrenPasses()
@@ -147,7 +147,7 @@ public sealed class ModuleCheckTests
     public void ProblemsComeByFileThenByLineWithTheFileLineFirst()
     {
         Write(_root, $"modules/{Module}/b.md", "# B\n\n## X\n\n## X\n");
-        Write(_root, $"modules/{Module}/a.md", "# A\n\n## Big\n\n" + Prose(Budgets.NearCapTokens * 4 + 100) + "## Y\n\n## Y\n");
+        Write(_root, $"modules/{Module}/a.md", "# A\n\n## Big\n\n" + Prose(Dmc.Tests.Support.TokenSizes.ReadChars(Budgets.NearCapTokens) + 100) + "## Y\n\n## Y\n");
         var problems = Problems();
         Assert.HasCount(4, problems);
         StringAssert.StartsWith(problems[0], $"modules/{Module}/a.md ");

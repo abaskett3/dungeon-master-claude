@@ -27,6 +27,9 @@ internal sealed class MarkdownFile
     /// <summary>For each line (0-based), its bytes in the file, line end included, as <c>dmc size</c> counts them.</summary>
     public int[] LineBytes { get; }
 
+    /// <summary>For each line (0-based), its characters as <c>dmc size</c> counts them for tokens (<see cref="Size.Line.Characters"/>).</summary>
+    public int[] LineCharacters { get; }
+
     /// <summary>For each line (0-based), true when it is part of a fenced code block, its fence lines included.</summary>
     public bool[] Fenced { get; }
 
@@ -48,6 +51,7 @@ internal sealed class MarkdownFile
         var lines = Size.Measurement.Split(bytes);
         Lines = lines.Select(l => l.Text).ToArray();
         LineBytes = lines.Select(l => l.Bytes).ToArray();
+        LineCharacters = lines.Select(l => l.Characters).ToArray();
         (Fenced, Visible) = MarkdownHeadings.Scan(Lines);
         var headings = new List<Heading>();
         for (int i = 0; i < Lines.Length; i++)

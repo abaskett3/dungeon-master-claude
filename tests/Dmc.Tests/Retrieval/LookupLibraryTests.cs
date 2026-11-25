@@ -188,17 +188,21 @@ public sealed class LookupLibraryTests
     }
 
     [TestMethod]
-    public void TheTooLargeMarkCountsBytesAsDmcSizeDoes()
+    public void TheTooLargeMarkCountsTheReadCostAsDmcSizeDoes()
     {
-        // A section of exactly 79,999 bytes: 14 for the heading, 799 lines of 100, and one of 85. dmc size's estimate,
-        // bytes ÷ 4 rounded down, is 19,999 tokens, under the 20,000 mark; rounding up would make it 20,000 and refuse it.
+        // A section of exactly 44,599 characters: 14 for the heading, 445 lines of 100, and one of 85. One Read of it costs
+        // 2 tokens for each whole 5 characters, 17,838, and 160 for the call: 17,998, under the 18,000 mark (spec 021).
         var text = new System.Text.StringBuilder("# Big\n").Append("## Just under\n");
-        for (int i = 0; i < 799; i++)
+        for (int i = 0; i < 445; i++)
             text.Append(new string('x', 99)).Append('\n');
         text.Append(new string('y', 84)).Append('\n');
         Write(_root, $"modules/{Module}/chapters/03-big.md", text.ToString());
         var lines = Lookup.Run(_root, Module, "just under");
-        Assert.AreEqual("## Just under", lines[1], "a section of 79,999 bytes is 19,999 tokens, under the 20,000 mark, so it is printed");
+        Assert.AreEqual("## Just under", lines[1], "a section whose Read costs 17,998 is under the 18,000 mark, so it is printed");
+
+        text.Append('z', 4).Append('\n');
+        Write(_root, $"modules/{Module}/chapters/03-big.md", text.ToString());
+        StringAssert.EndsWith(Lookup.Run(_root, Module, "just under").Single(), "read it in parts", "five more characters reach the mark");
     }
 
     [TestMethod]

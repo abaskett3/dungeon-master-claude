@@ -29,7 +29,7 @@ public abstract class CanonReminderContract
         + "- Oswin rowed the party over in the fog and asked after his brother (s4.2).\n- Kole posted Pip on the north wall (s5.1).\n"
         + (padded ? Places : "");
 
-    /// <summary>A Places section naming no one, about 83k bytes, that takes a canon past <see cref="Budgets.CanonWholeBelow"/> (19,000 tokens since the canon rollback).</summary>
+    /// <summary>A Places section naming no one, about 83k bytes, that takes a canon past <see cref="Budgets.CanonWholeBelow"/> (30,400 tokens, 76,000 characters, since spec 021).</summary>
     static readonly string Places =
         "\n## Places\n\n" + string.Concat(Enumerable.Range(1, 1100).Select(i => $"- The mill at Hollow Ford number {i} grinds barley for the lower farms (s9).\n"));
 

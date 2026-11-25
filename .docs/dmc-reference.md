@@ -296,7 +296,7 @@ id        start (UTC)       end (UTC)             KB  msgs peak ctx  campaign   
 
 | File | Holds |
 |---|---|
-| `DIR/stats.md` | The numbers for each session: context, tokens, tool calls, reads and writes, errors, compactions, and a **Play turns** line for a slip count's denominator (issue #251): the player messages that are not a slash command, a resume, a full save or an interruption, the context before the first of them, the effort each API call records, and the session kind the log names, each "not recorded" when the log has none. |
+| `DIR/stats.md` | The numbers for each session: context, tokens, tool calls, reads and writes, errors, compactions, and a **Play turns** line for a slip count's denominator (issue #251): the typed player messages (no slash command, shell command, task notice or interruption) that are not a resume or a full save, the context before the first of them, the effort each API call records, and the session kind the log names, each "not recorded" when the log has none. |
 | `DIR/<id>-turns.txt` | One line per player message: time, context size, the message, then the size and tool calls of the reply. Lines marked `!` may show friction. |
 | `DIR/<id>-transcript.md` | The whole session in order, with tool calls and results cut to a line each. |
 

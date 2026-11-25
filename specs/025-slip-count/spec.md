@@ -51,7 +51,7 @@ The #179 gate count is its own section and leaves `conduct` lines out, as its ba
   with no "Not slips" entry for conduct, and give one line per story session with its denominator.
 - **FR-004**: The #179 gate count MUST stay a separate section with its rule unchanged, conduct left out.
 - **FR-005**: `dmc digest show`'s `stats.md` MUST print, per session, the play turns (player messages that are not a
-  slash command, a resume, a full save or an interruption), the context before the first, the efforts the API calls
+  slash command, shell command, task notice, resume, full save or interruption), the context before the first, the efforts the API calls
   record and the session kind the log names, "not recorded" for each the log lacks. It adds no slip counter.
 - **FR-006**: The documents MUST describe the change: `.docs/campaign-files.md` (the session log's `Slip:` line),
   `.docs/dmc-reference.md` (`stats.md`), `.docs/roadmap.md`, `.docs/decisions.md`.

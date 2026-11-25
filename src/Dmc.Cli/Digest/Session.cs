@@ -121,12 +121,13 @@ internal sealed partial class Session
     public string Kind { get; private set; } = "";
 
     /// <summary>
-    /// The play turns (issue #251): the player messages that are not a slash command, a resume, a full save or an
-    /// interruption, so a slip count can be given per turn of play.
+    /// The play turns (issue #251): the player messages that <see cref="UserText.IsTyped"/> takes as typed (no
+    /// slash-command echo, shell-command record, task notice or interruption) and that are not a resume or a full
+    /// save, so a slip count can be given per turn of play.
     /// </summary>
     public IEnumerable<Turn> PlayTurns() => Turns.Where(t =>
         !UsedAny(t.Skills, ResumeSkills) && !UsedAny(t.Skills, SaveSkills)
-        && !t.Text.TrimStart().StartsWith("<command", StringComparison.Ordinal)
+        && UserText.IsTyped(t.Text.TrimStart())
         && !t.Text.Contains("[Request interrupted", StringComparison.Ordinal));
 
     /// <summary>The usage of each API call by message id, the last record of an id winning.</summary>
@@ -244,6 +245,7 @@ internal sealed partial class Session
         var toolOf = new Dictionary<PyKey, ToolInfo>(); // tool_use id -> (name, file)
         var callOf = new Dictionary<PyKey, Call>();     // API message id -> its entry in the turn's calls
         var seenIds = new HashSet<PyKey>();
+        var effortIds = new HashSet<PyKey>();
         double ctxNow = 0;
         string? raw;
         while ((raw = reader.ReadLine()) is not null)
@@ -287,7 +289,7 @@ internal sealed partial class Session
 
             if (kind == "assistant")
             {
-                if (Get(rec, "effort") is string { Length: > 0 } effort && !seenIds.Contains(PyKey.Of(Get(DictOrEmpty(rec, "message"), "id"))))
+                if (Get(rec, "effort") is string { Length: > 0 } effort && effortIds.Add(PyKey.Of(Get(DictOrEmpty(rec, "message"), "id"))))
                     Efforts.Add(effort);
                 ctxNow = Assistant(DictOrEmpty(rec, "message"), clock, toolOf, callOf, seenIds);
                 continue;

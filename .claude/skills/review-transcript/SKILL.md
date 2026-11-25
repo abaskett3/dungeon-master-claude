@@ -125,7 +125,9 @@ with the sessions before it.
 2. **What the files missed.** A slip the transcript shows with no `Slip:` line is listed on its own and not added to
    the count, since the count holds only the slips DMC admits; the baseline of issue #250 measures how many it misses.
 3. **The denominator.** From `stats.md`, for the Claude Code session that played the story session: the **Play turns**
-   line (the play turns, the context before the first, the effort and the session kind) and the **Models** line.
+   line (the play turns, the context before the first, the effort and the session kind) and the **Models** line. A
+   story session spread over several logs (a `/clear` or a restart) adds up their play turns and takes the context of
+   the first; a log that holds two story sessions (two resumes) is split at the second resume by its `<id>-turns.txt`.
 4. **The line.** One per story session, in this shape: `s72: 3 slips in 41 play turns (2 fact, 1 conduct), Sonnet
    high, ordinary session, 139,000 tokens at the start`. Write "not recorded" for what the log does not hold. Give
    the lines to the user in the report of section 6, with the total and the rate per play turn.
@@ -142,7 +144,8 @@ with its baseline: `specs/013-slimmer-resume/spec.md` FR-020 to FR-027 is the ru
    fact they held. Count the slips the files record: each `Slip:` line in the session logs, and any older wording
    ("DMC's slip", "corrected", "wrongly"). Check each against the transcript (`<id>-transcript.md`) for what happened.
    Not slips here: the player's taste, a fact the files never held, a slip corrected within the same reply, and
-   conduct (`Slip:` lines of the `conduct` category), which the baseline did not count.
+   conduct that is not about a recorded fact (acting early, rolling a die the player rolls), whether or not its
+   `Slip:` line says `conduct`, as the baseline did not count it.
 3. **Its category.** **canon** when the fact was in `canon.md` or its archive outside the always-read sections;
    **companion** when it was on a companion's sheet; **hook** when a line the prompt hook printed was wrong, out of
    date or misled DMC; **other** for the rest. A slip the transcript shows that the files never recorded is listed but

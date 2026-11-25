@@ -247,16 +247,23 @@ public sealed class DigestParsingTests
     public void ThePlayLineGivesTheDenominatorOfASlipCount()
     {
         using var folder = new TempFolder();
+        var thinking = Assistant(1, "m1", Blocks(Text("...")), 100, 900, 0, 5);
         var first = Assistant(1, "m1", Blocks(Text("Welcome back.")), 100, 900, 0, 5);
         first["effort"] = "high";
+        var again = Assistant(1, "m1", Blocks(Text("Welcome back.")), 100, 900, 0, 5);
+        again["effort"] = "high";
         var second = Assistant(3, "m2", Blocks(Text("The door opens.")), 100, 1900, 0, 5);
         second["effort"] = "high";
         second["sessionKind"] = "bg";
         var s = new Session(WriteLog(folder.Path,
         [
             User(0, "<command-name>/dmc-resume-campaign</command-name>"),
+            thinking,
             first,
+            again,
             User(2, "I open the door."),
+            User(2, "<task-notification>done</task-notification>"),
+            User(2, "<bash-input>git status</bash-input>"),
             second,
             User(4, "[Request interrupted by user]"),
         ]));
@@ -264,7 +271,7 @@ public sealed class DigestParsingTests
         StringAssert.Contains(Report.Stats(s), "**Play turns**: 1;");
 
         var bare = new Session(WriteLog(folder.Path, [User(0, "hello")], "eeeeeeee-0000-4000-8000-000000000005"));
-        Assert.AreEqual("- **Play turns**: 1; context before the first 0 tokens. **Effort**: not recorded. **Session kind**: not recorded.", Report.Play(bare));
+        Assert.AreEqual("- **Play turns**: 1; context before the first not recorded. **Effort**: not recorded. **Session kind**: not recorded.", Report.Play(bare));
     }
 
     [TestMethod]

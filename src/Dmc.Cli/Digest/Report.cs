@@ -177,16 +177,17 @@ internal static partial class Report
 
     /// <summary>
     /// The line of <c>stats.md</c> that a slip count needs as its denominator (issue #251): the play turns, the context
-    /// before the first, the efforts and the session kind, "not recorded" for what the log does not hold.
+    /// before the first (from the last API call before it), the efforts and the session kind, "not recorded" for what
+    /// the log does not hold.
     /// </summary>
     /// <param name="s">The session.</param>
     public static string Play(Session s)
     {
         var play = s.PlayTurns().ToList();
-        string context = play.Count > 0 ? $"; context before the first {Whole(play[0].Ctx)} tokens" : "";
+        string context = play.Count > 0 && play[0].Ctx > 0 ? $"{Whole(play[0].Ctx)} tokens" : "not recorded";
         string effort = s.Efforts.IsEmpty ? "not recorded" : Table(s.Efforts);
         string kind = s.Kind.Length > 0 ? s.Kind : "not recorded";
-        return $"- **Play turns**: {play.Count}{context}. **Effort**: {effort}. **Session kind**: {kind}.";
+        return $"- **Play turns**: {play.Count}; context before the first {context}. **Effort**: {effort}. **Session kind**: {kind}.";
     }
 
     /// <summary>

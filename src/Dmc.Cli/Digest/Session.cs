@@ -114,6 +114,22 @@ internal sealed partial class Session
     /// <summary>The model of each API call, counted once per message id.</summary>
     public Counter Models { get; } = new();
 
+    /// <summary>The effort of each API call that records one (an assistant record's <c>effort</c>), counted once per message id (issue #251).</summary>
+    public Counter Efforts { get; } = new();
+
+    /// <summary>The session kind the log names (the first <c>sessionKind</c> of any record), or "" when it names none (issue #251).</summary>
+    public string Kind { get; private set; } = "";
+
+    /// <summary>
+    /// The play turns (issue #251): the player messages that <see cref="UserText.IsTyped"/> takes as typed (no
+    /// slash-command echo, shell-command record, task notice or interruption) and that are not a resume or a full
+    /// save, so a slip count can be given per turn of play.
+    /// </summary>
+    public IEnumerable<Turn> PlayTurns() => Turns.Where(t =>
+        !UsedAny(t.Skills, ResumeSkills) && !UsedAny(t.Skills, SaveSkills)
+        && UserText.IsTyped(t.Text.TrimStart())
+        && !t.Text.Contains("[Request interrupted", StringComparison.Ordinal));
+
     /// <summary>The usage of each API call by message id, the last record of an id winning.</summary>
     public Dictionary<PyKey, PyDict> Calls { get; } = [];
 
@@ -229,6 +245,7 @@ internal sealed partial class Session
         var toolOf = new Dictionary<PyKey, ToolInfo>(); // tool_use id -> (name, file)
         var callOf = new Dictionary<PyKey, Call>();     // API message id -> its entry in the turn's calls
         var seenIds = new HashSet<PyKey>();
+        var effortIds = new HashSet<PyKey>();
         double ctxNow = 0;
         string? raw;
         while ((raw = reader.ReadLine()) is not null)
@@ -257,6 +274,8 @@ internal sealed partial class Session
             }
             string clock = Slice(stamp, 11, 19);
             string kind = TypeOf(rec, "type");
+            if (Kind.Length == 0 && Get(rec, "sessionKind") is string sessionKind)
+                Kind = sessionKind;
 
             if (kind == "system")
             {
@@ -270,6 +289,8 @@ internal sealed partial class Session
 
             if (kind == "assistant")
             {
+                if (Get(rec, "effort") is string { Length: > 0 } effort && effortIds.Add(PyKey.Of(Get(DictOrEmpty(rec, "message"), "id"))))
+                    Efforts.Add(effort);
                 ctxNow = Assistant(DictOrEmpty(rec, "message"), clock, toolOf, callOf, seenIds);
                 continue;
             }

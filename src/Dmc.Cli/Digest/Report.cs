@@ -126,7 +126,7 @@ internal static partial class Report
 
     /// <summary>
     /// The section of <c>stats.md</c> for one session, ending in a newline: when it ran, models, player messages and
-    /// API calls, context growth, token totals, reply lengths, tool, skill and file counts, the figures from
+    /// API calls, the play turns (<see cref="Play"/>), context growth, token totals, reply lengths, tool, skill and file counts, the figures from
     /// <see cref="CallFigures"/>, the five biggest context jumps and the first ten tool errors. A line is left out when
     /// its data does not exist (no context readings, no replies).
     /// </summary>
@@ -138,6 +138,7 @@ internal static partial class Report
         o.Add($"- **When**: {Minute(s.Start)} to {Minute(s.End)} UTC. Campaign: {s.Campaign()}. Log size {s.Size / 1024} KB.");
         o.Add($"- **Models**: {Table(s.Models)}");
         o.Add($"- **Player messages**: {s.Turns.Count} ({s.Turns.Count(t => Friction().IsMatch(t.Text))} marked \"!\", {s.Interrupts} interrupted). **API calls**: {s.Calls.Count}.");
+        o.Add(Play(s));
         if (s.Ctx.Count > 0)
         {
             double growth = FloorDiv(s.Ctx[^1] - s.Ctx[0], Math.Max(1, s.Turns.Count));
@@ -172,6 +173,21 @@ internal static partial class Report
             o.AddRange(s.Errors.Take(10).Select(e => $"  - {e}"));
         }
         return string.Join("\n", o) + "\n";
+    }
+
+    /// <summary>
+    /// The line of <c>stats.md</c> that a slip count needs as its denominator (issue #251): the play turns, the context
+    /// before the first (from the last API call before it), the efforts and the session kind, "not recorded" for what
+    /// the log does not hold.
+    /// </summary>
+    /// <param name="s">The session.</param>
+    public static string Play(Session s)
+    {
+        var play = s.PlayTurns().ToList();
+        string context = play.Count > 0 && play[0].Ctx > 0 ? $"{Whole(play[0].Ctx)} tokens" : "not recorded";
+        string effort = s.Efforts.IsEmpty ? "not recorded" : Table(s.Efforts);
+        string kind = s.Kind.Length > 0 ? s.Kind : "not recorded";
+        return $"- **Play turns**: {play.Count}; context before the first {context}. **Effort**: {effort}. **Session kind**: {kind}.";
     }
 
     /// <summary>

@@ -28,10 +28,11 @@ Check: the plan counts its cost as Development 1 says.
 Reason: every token play reads is paid by the player, in every exchange of every game.
 
 ### Development 1. Count the cost
-Every plan MUST count its token and context cost: lines added to `kit/dm-rules.md` (paid every turn) and to each
-skill (paid when it loads). Small additions add up.
-Check: the plan lists the lines it adds to `kit/dm-rules.md` and to each skill, and, where it changes what a
-resume reads, a `dmc size` result.
+Every plan MUST count its token and context cost in bytes: the bytes it adds to or removes from `kit/dm-rules.md`
+(paid every turn) and each skill (paid when it loads), and the tokens where `dmc size` measures them. A count of
+lines is not a cost: a line can grow without being added. Small additions add up.
+Check: the plan lists the bytes it adds to or removes from `kit/dm-rules.md` and each skill, and, where it changes
+what a resume reads, the `dmc size` result in tokens.
 Reason: what play reads is paid in every exchange of every game. See `.docs/development.md` § Writing prompts.
 
 ### Development 2. No change breaks a campaign
@@ -146,4 +147,4 @@ A removed principle's number is not reused, so the numbers older specs cite keep
 `/speckit-plan` and `/speckit-analyze` check each feature against every principle, and a plan that breaks one says
 why. The constitution's origin is described in `.docs/development.md` § Spec-driven changes.
 
-**Version**: 4.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-17
+**Version**: 5.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-25

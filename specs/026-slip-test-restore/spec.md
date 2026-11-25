@@ -40,7 +40,8 @@ restore takes the backup before the fork.
 When no backup holds a file as it was at the fork, `run` stops with one line that names the file and the time and
 says to leave the point out. It never forks from a wrong state.
 
-**Independent Test**: a test where edits fall on both sides of the only backup refuses with that line.
+**Independent Test**: a test where edits fall on both sides of the only backup refuses; a `run` with two such points
+names both and makes no model call.
 
 ## Requirements *(mandatory)*
 
@@ -48,13 +49,17 @@ says to leave the point out. It never forks from a wrong state.
   the DMC folder's logs, with its file and the time of its record.
 - **FR-002**: The runner MUST add each session's unrecorded first backup (`<stem>@v1`) when it is on disk, with the
   name stem any log gives that file, timed just before that session's first edit of the file.
-- **FR-003**: For each file under `adventures/`, the restore MUST take the earliest backup after the fork when no edit
-  of the file falls between the fork and that backup. Otherwise it MUST take the latest backup at or before the fork,
-  when no edit falls between that backup and the fork.
-- **FR-004**: A file with no backup and no edit before the fork, and an edit after it, MUST be treated as not existing
-  at the fork (a `Write` created it later).
-- **FR-005**: Otherwise the runner MUST refuse the point with one line:
-  `slip-test: no backup holds <file> as it was at <time>: leave this fork point out`.
+- **FR-003**: For each file under `adventures/` with a backup or an edit after the fork, the restore MUST take the
+  earliest backup after the fork when no edit of the file falls between the fork and that backup. Otherwise it MUST
+  take the latest backup at or before the fork, when no edit falls between that backup and the fork. This covers an
+  edit that no backup records yet, as when a session ends on it.
+- **FR-004**: A file with no backup and no edit before the fork, whose first edit is a `Write`, MUST be treated as not
+  existing at the fork (Claude Code records no backup of a file a `Write` creates). A first edit of another tool means
+  the file existed, so FR-005 applies.
+- **FR-005**: Otherwise the point MUST be refused. `run` MUST check every point it is about to run before the first
+  model call, and name every refused point in one line:
+  `slip-test: no backup can restore the files at points <ids>: leave them out (first: no backup holds <file> as it was at <time>)`.
+- **FR-007**: A relative path in a log that names no `cwd` MUST be skipped, not placed under the runner's own folder.
 - **FR-006**: The documents MUST say what the file history holds: `.docs/development.md` § The slip test,
   `.docs/decisions.md`, `.docs/roadmap.md`, and a pointer from spec 024 research R4 to this spec.
 
@@ -62,7 +67,7 @@ says to leave the point out. It never forks from a wrong state.
 
 - **SC-001**: The pilot at the point that leaked no longer shows `attachment:edited_text_file` (the maintainer's rerun,
   #249 comment of 2026-11-25).
-- **SC-002**: Every present test passes, and the four new tests pass.
+- **SC-002**: Every present test passes, and the eight new tests pass.
 
 ## Assumptions
 

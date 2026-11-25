@@ -162,13 +162,15 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
             foreach (var arm in trial.Arms)
                 if (!done.Contains(("base", arm.Name, 0)))
                     Base(arm, points.Values.First(), version);
-        foreach (var (point, arm, run) in Plan(random, pilot))
+        var plan = Plan(random, pilot).Where(r => !done.Contains((r.Point.Id, r.Arm.Name, r.Run))).ToList();
+        var states = trial.Mode == "fork"
+            ? States(plan.Select(r => points[r.Point.Id]).DistinctBy(p => p.Point.Id), backups, edits)
+            : [];
+        foreach (var (point, arm, run) in plan)
         {
-            if (done.Contains((point.Id, arm.Name, run)))
-                continue;
             var p = points[point.Id];
             if (trial.Mode == "fork")
-                RestoreFork(arm, p, backups, edits);
+                RestoreFork(arm, states[point.Id]);
             else
                 RestoreFresh(arm);
             string id = Guid.NewGuid().ToString();
@@ -179,15 +181,44 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         }
     }
 
-    /// <summary>Fork mode: the copy's <c>adventures/</c> as at the fork message, and its <c>CLAUDE.md</c> the arm's rules.</summary>
-    /// <param name="arm">The arm.</param>
-    /// <param name="point">The point.</param>
+    /// <summary>
+    /// Fork mode, before the first run: the state of the campaign files at each point to run, so a point no backup can
+    /// restore stops the run before any model call, with every such point named at once (spec 026 FR-005).
+    /// </summary>
+    /// <param name="points">The points to run.</param>
     /// <param name="backups">The file history of the DMC folder.</param>
     /// <param name="edits">The edits the DMC folder's logs record.</param>
-    void RestoreFork(Arm arm, ResolvedPoint point, List<Backup> backups, List<FileEdit> edits)
+    /// <returns>Each point's state, by point id.</returns>
+    /// <exception cref="SlipTestException">A point cannot be restored.</exception>
+    Dictionary<string, Dictionary<string, string?>> States(IEnumerable<ResolvedPoint> points, List<Backup> backups, List<FileEdit> edits)
+    {
+        var states = new Dictionary<string, Dictionary<string, string?>>();
+        var refused = new List<string>();
+        string? first = null;
+        foreach (var p in points)
+        {
+            try
+            {
+                states[p.Point.Id] = FileHistory.StateAt(backups, trial.Folder, p.Time, edits);
+            }
+            catch (SlipTestException e)
+            {
+                refused.Add(p.Point.Id);
+                first ??= e.Message.Replace(": leave this fork point out", "", StringComparison.Ordinal);
+            }
+        }
+        if (refused.Count > 0)
+            throw new SlipTestException($"no backup can restore the files at {(refused.Count == 1 ? "point" : "points")} {string.Join(", ", refused)}: leave {(refused.Count == 1 ? "it" : "them")} out (first: {first})");
+        return states;
+    }
+
+    /// <summary>Fork mode: the copy's <c>adventures/</c> as at the fork message, and its <c>CLAUDE.md</c> the arm's rules.</summary>
+    /// <param name="arm">The arm.</param>
+    /// <param name="state">The point's state (<see cref="States"/>).</param>
+    void RestoreFork(Arm arm, Dictionary<string, string?> state)
     {
         Folders.Replace(Path.Combine(trial.Folder, "adventures"), Path.Combine(trial.Copy, "adventures"));
-        FileHistory.Apply(FileHistory.StateAt(backups, trial.Folder, point.Time, edits), trial.Copy);
+        FileHistory.Apply(state, trial.Copy);
         File.Copy(arm.Source, Path.Combine(trial.Copy, "CLAUDE.md"), overwrite: true);
     }
 

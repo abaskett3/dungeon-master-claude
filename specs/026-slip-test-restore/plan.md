@@ -5,7 +5,7 @@
 ## Summary
 
 `FileHistory` reads the edits from the logs and the unrecorded `@v1` backups from disk. `StateAt` takes the backup
-that holds each file at the fork, or refuses the point. `Runner.RestoreFork` passes the edits through.
+that holds each file at the fork, or refuses the point. `Runner.States` checks every point before the first run.
 
 ## Technical Context
 
@@ -15,15 +15,16 @@ that holds each file at the fork, or refuses the point. `Runner.RestoreFork` pas
 
 ## The rule (research R4, corrected)
 
-A backup holds the file as it was at its `backupTime`. For each file under `adventures/` with a backup after the fork
-time T:
+A backup holds the file as it was at its `backupTime`. For each file under `adventures/` with a backup or an edit
+after the fork time T:
 
 1. The earliest backup after T, if no edit of the file falls between T and it.
 2. Else the latest backup at or before T, if no edit falls between it and T.
-3. Else, if the file has no backup and no edit at or before T, it did not exist at T.
-4. Else refuse the point.
+3. Else, if the file has no backup and no edit at or before T and its first edit is a `Write`, it did not exist at T.
+4. Else refuse the point. `Runner.States` computes every point's state before the first run and names every refused
+   point in one line.
 
-A file with no backup after T was not changed through Claude Code's tools since T, so the copy already holds it.
+A file with no backup or edit after T was not changed through Claude Code's tools since T, so the copy already holds it.
 `StateAt` without edits (`edits: null`) keeps spec 024's rule, so the present tests still check it.
 
 ## Constitution Check

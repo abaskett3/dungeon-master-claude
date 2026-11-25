@@ -14,7 +14,8 @@ internal sealed record Backup(string File, string? BackupFile, DateTimeOffset Ti
 /// <summary>One edit of a file through Claude Code's tools (<c>Edit</c>, <c>Write</c>, <c>MultiEdit</c>, <c>NotebookEdit</c>), from a log.</summary>
 /// <param name="File">The file's full path.</param>
 /// <param name="Time">The time of the assistant record that holds the call.</param>
-internal sealed record FileEdit(string File, DateTimeOffset Time);
+/// <param name="Tool">The tool's name.</param>
+internal sealed record FileEdit(string File, DateTimeOffset Time, string Tool = "Edit");
 
 /// <summary>
 /// Restores the campaign files of a copy folder to their state at a moment of play (FR-004), from the
@@ -27,7 +28,9 @@ internal static class FileHistory
     /// Every backup the logs of a project folder record, each once, and each session's first backup of a file
     /// (<c>@v1</c>, the file before that session's first edit of it), which the logs do not record: it is found in
     /// the session's file history folder under the name stem any log gives that file, and timed just before the
-    /// session's first edit of it.
+    /// session's first edit of it. That time is the time of the assistant record that holds the edit call, a little
+    /// before the edit ran; a fork point is a player message, which never falls inside one turn, so only an edit of the
+    /// same file by another session in that gap could be ordered wrongly.
     /// </summary>
     /// <param name="project">The DMC folder's Claude Code project folder.</param>
     /// <param name="historyRoot">Claude Code's <c>file-history</c> folder.</param>
@@ -53,7 +56,8 @@ internal static class FileHistory
                 {
                     if (value is not JsonObject entry || BackupTime(entry) is not { } time)
                         continue;
-                    string file = FullPath(name, cwd);
+                    if (FullPath(name, cwd) is not { } file)
+                        continue;
                     string? backupName = LogFile.Text(entry, "backupFileName");
                     string? backup = backupName is null ? null : Path.Combine(historyRoot, session, backupName);
                     if (backupName is not null)
@@ -105,18 +109,22 @@ internal static class FileHistory
                 if (LogFile.Text(block, "type") != "tool_use" || !EditTools.Contains(LogFile.Text(block, "name") ?? ""))
                     continue;
                 var input = block["input"] as JsonObject;
-                if ((LogFile.Text(input, "file_path") ?? LogFile.Text(input, "notebook_path")) is { Length: > 0 } name)
-                    edits.Add(new FileEdit(FullPath(name, cwd), time));
+                if ((LogFile.Text(input, "file_path") ?? LogFile.Text(input, "notebook_path")) is { Length: > 0 } name
+                    && FullPath(name, cwd) is { } file)
+                    edits.Add(new FileEdit(file, time, LogFile.Text(block, "name")!));
             }
         }
         return edits;
     }
 
-    /// <summary>A path from a log as a full path: as it is when rooted, else under the session's <c>cwd</c>.</summary>
+    /// <summary>
+    /// A path from a log as a full path: as it is when rooted, else under the session's <c>cwd</c>; null for a relative
+    /// path in a log that names no <c>cwd</c>, which cannot be placed.
+    /// </summary>
     /// <param name="name">The path as the log has it.</param>
     /// <param name="cwd">The session's working folder, or null.</param>
-    static string FullPath(string name, string? cwd) =>
-        Path.IsPathRooted(name) || cwd is null ? Path.GetFullPath(name) : Path.GetFullPath(Path.Combine(cwd, name));
+    static string? FullPath(string name, string? cwd) =>
+        Path.IsPathRooted(name) ? Path.GetFullPath(name) : cwd is null ? null : Path.GetFullPath(Path.Combine(cwd, name));
 
     /// <summary>A backup entry's <c>backupTime</c>: an ISO 8601 text, or milliseconds since 1970; null when it is neither.</summary>
     /// <param name="entry">An entry of <c>trackedFileBackups</c>.</param>
@@ -127,11 +135,16 @@ internal static class FileHistory
 
     /// <summary>
     /// What changes a copy needs to show each file under <c>adventures/</c> as it was at a time. A backup holds the file
-    /// as it was at its <c>backupTime</c>: Claude Code takes one at the first message after the file changed, and one
-    /// just before a session's first edit of it. So for each file with a backup after that time, the earliest such
-    /// backup, when no edit of the file falls between the time and that backup; else the latest backup at or before
-    /// the time, when no edit falls between that backup and the time (null as a backup: the file did not exist then).
-    /// A file with no backup after the time was not changed through Claude Code's tools since, so the copy of the DMC
+    /// as it was at its <c>backupTime</c>: Claude Code records one at the first player message after the file changed,
+    /// and one just before a session's first edit of it. For each file with a backup or an edit after the time:
+    /// <list type="number">
+    /// <item>the earliest backup after the time, when no edit of the file falls between the time and it;</item>
+    /// <item>else the latest backup at or before the time, when no edit falls between it and the time;</item>
+    /// <item>else, when the file has no backup or edit before the time and its first edit is a <c>Write</c>, null: a
+    /// <c>Write</c> made it later, and Claude Code records no backup of a file a <c>Write</c> creates;</item>
+    /// <item>else the time cannot be restored.</item>
+    /// </list>
+    /// A file with neither after the time was not changed through Claude Code's tools since, so the copy of the DMC
     /// folder already holds it.
     /// </summary>
     /// <param name="backups">Every backup (<see cref="Collect"/>).</param>
@@ -145,30 +158,29 @@ internal static class FileHistory
         string adventures = Path.Combine(folder, "adventures");
         var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var state = new Dictionary<string, string?>(comparer);
-        var all = backups.Where(b => Folders.IsInside(b.File, adventures)).GroupBy(b => b.File, comparer);
-        foreach (var group in all)
+        var backupsOf = backups.Where(b => Folders.IsInside(b.File, adventures)).ToLookup(b => b.File, comparer);
+        var editsOf = (edits ?? []).Where(e => Folders.IsInside(e.File, adventures)).ToLookup(e => e.File, comparer);
+        foreach (string file in backupsOf.Select(g => g.Key).Concat(editsOf.Select(g => g.Key)).Distinct(comparer))
         {
-            var after = group.Where(b => b.Time > at).OrderBy(b => b.Time).FirstOrDefault();
-            if (after is null)
-                continue;
-            bool EditedBetween(DateTimeOffset from, DateTimeOffset to) =>
-                edits is not null && edits.Any(e => comparer.Equals(e.File, group.Key) && e.Time > from && e.Time < to);
-            var chosen = after;
-            if (EditedBetween(at, after.Time))
+            var fileBackups = backupsOf[file].OrderBy(b => b.Time).ToList();
+            var fileEdits = editsOf[file].OrderBy(e => e.Time).ToList();
+            bool EditedBetween(DateTimeOffset from, DateTimeOffset to) => fileEdits.Any(e => e.Time > from && e.Time < to);
+            string relative = Path.GetRelativePath(folder, file);
+            var after = fileBackups.FirstOrDefault(b => b.Time > at);
+            if (after is not null && !EditedBetween(at, after.Time))
             {
-                var before = group.Where(b => b.Time <= at).OrderBy(b => b.Time).LastOrDefault();
-                if (before is null && !EditedBetween(DateTimeOffset.MinValue, at.AddTicks(1)))
-                {
-                    // Claude Code records no backup of a file its Write creates: one an edit made after the time, with
-                    // no backup or edit before it, did not exist then (a file that existed has a backup before its first edit).
-                    state[Path.GetRelativePath(folder, group.Key)] = null;
-                    continue;
-                }
-                if (before is null || EditedBetween(before.Time, at.AddTicks(1)))
-                    throw new SlipTestException($"no backup holds {Path.GetRelativePath(folder, group.Key)} as it was at {at:O}: leave this fork point out");
-                chosen = before;
+                state[relative] = after.BackupFile;
+                continue;
             }
-            state[Path.GetRelativePath(folder, chosen.File)] = chosen.BackupFile;
+            if (after is null && !EditedBetween(at, DateTimeOffset.MaxValue))
+                continue;
+            var before = fileBackups.LastOrDefault(b => b.Time <= at);
+            if (before is not null && !EditedBetween(before.Time, at.AddTicks(1)))
+                state[relative] = before.BackupFile;
+            else if (before is null && !EditedBetween(DateTimeOffset.MinValue, at.AddTicks(1)) && fileEdits.FirstOrDefault()?.Tool == "Write")
+                state[relative] = null;
+            else
+                throw new SlipTestException($"no backup holds {relative} as it was at {at:O}: leave this fork point out");
         }
         return state;
     }

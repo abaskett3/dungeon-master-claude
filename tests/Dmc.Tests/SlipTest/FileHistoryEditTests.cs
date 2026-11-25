@@ -120,4 +120,50 @@ public sealed class FileHistoryEditTests
             ("hb@v2", "old"), ("hb@v3", "later"));
         Assert.Throws<SlipTestException>(() => State(f));
     }
+
+    /// <summary>An edit after the fork that no backup records yet (the session ended on it) takes the backup before.</summary>
+    [TestMethod]
+    public void AnEditNoBackupRecordsYetTakesTheBackupBefore()
+    {
+        using var f = new SlipTestFixtures();
+        string b = Path.Combine(f.Folder, B);
+        Write(f, [Snapshot(b, Entry("hb@v2", At.AddMinutes(-5))), Edit(b, At.AddMinutes(2))], ("hb@v2", "at the fork"));
+        Assert.EndsWith("hb@v2", State(f)[B]);
+    }
+
+    /// <summary>A file a <c>Write</c> made after the fork, with no backup at all, did not exist then.</summary>
+    [TestMethod]
+    public void AFileAWriteMadeWithNoBackupDidNotExist()
+    {
+        using var f = new SlipTestFixtures();
+        Write(f, [Edit(Path.Combine(f.Folder, B), At.AddMinutes(2), "Write")]);
+        var state = State(f);
+        Assert.IsTrue(state.ContainsKey(B));
+        Assert.IsNull(state[B]);
+    }
+
+    /// <summary>A file first changed by an <c>Edit</c> after the fork, with no backup before it, existed then, so the point is refused.</summary>
+    [TestMethod]
+    public void AFileFirstEditedAfterTheForkWithNoBackupBeforeIsRefused()
+    {
+        using var f = new SlipTestFixtures();
+        string b = Path.Combine(f.Folder, B);
+        Write(f, [Edit(b, At.AddMinutes(2)), Snapshot(b, Entry("hb@v2", At.AddMinutes(9)))], ("hb@v2", "later"));
+        Assert.Throws<SlipTestException>(() => State(f));
+    }
+
+    /// <summary><c>run</c> checks every point's restore before the first model call, and names every point it refuses.</summary>
+    [TestMethod]
+    public void ARunRefusesEveryUnrestorablePointBeforeAnyCall()
+    {
+        using var f = new SlipTestFixtures();
+        string b = Path.Combine(f.Folder, B);
+        Write(f, [Edit(b, SlipTestFixtures.T2.AddMinutes(-1)), Edit(b, SlipTestFixtures.T2.AddMinutes(1))]);
+        Assert.AreEqual(0, f.Run(null, "prepare").Code);
+        var fake = new FakeClaude(f.ClaudeHome);
+        var (code, _, error) = f.Run(fake, "run");
+        Assert.AreEqual(1, code);
+        StringAssert.Contains(error, "no backup can restore the files at points p1, p2: leave them out");
+        Assert.IsEmpty(fake.Calls);
+    }
 }

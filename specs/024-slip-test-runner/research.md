@@ -59,6 +59,8 @@ be from another Claude Code version: the pilot (FR-007) is what checks them.
   exist), `version` and `backupTime`. Claude Code's rewind uses these. **Not verified here**: this container keeps no
   file history for `-p` runs, so the format comes from the maintainer's logs in the pilot. The parser accepts absolute
   paths and paths relative to the session's `cwd`.
+- **Corrected by spec 026**: the maintainer's logs show a backup recorded at the next player message, holding the
+  edits before it, and a first backup (`@v1`) that no log names; see `specs/026-slip-test-restore/`.
 - **Decision**: a file's content at time T is the content of its first backup with `backupTime` after T, in any
   session of the DMC folder: that backup was taken before the first edit after T, so nothing changed the file between
   T and it. A file with no such backup has not been changed through Claude Code's tools since T, so its present content

@@ -921,3 +921,12 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** keeping the hold with a later end date (it pauses the loop but does not change it); no words ever (a contradiction in the rules is a real cause that only words can fix).
 - **Limits:** The kind is the reviewer's reading of the evidence. Telling kind 4 from kind 2 needs the log, which the digest gives; without it the skill names no kind and says what it would need to read. The hold of spec 023 ended when `.docs/roadmap.md` showed the slip test done (PR #275), so this rule takes over from it with no gap.
 - **Source:** Issue #266 (Phase 4 of #238); `specs/027-cause-kinds/`; decision D5 of #238 and spec 023.
+
+## "Fixed" means the slip stopped (issue #267, spec 028)
+
+- **Date:** 2026-11-25
+- **Decision:** A feedback entry moves from `filed #N` to `released in X.Y.Z` once its PR has merged, states its slip-test result or why it has none, and a release holds it. It becomes `fixed in X.Y.Z: no case in N play turns` only when the story sessions on that release or later have at least 300 play turns, as `review-transcript` § 7 counts them, with no case of its fault. An entry whose fault comes back after released or fixed is `open` again: `dmc-record-feedback` and `review-transcript` search those statuses too, and start the occurrence "came back after <the status>". An older `fixed in PR #N` is read as released.
+- **Reason:** "Fixed in PR" meant a change was made, and entries marked fixed came back (#267: dead time, knowledge, names, clothing). Zero cases in 300 turns puts the fault below 1 in 100 turns with 95% confidence (the rule of three), a quarter of the 4.7 slips per 100 turns of #250's baseline.
+- **Rejected:** a rate test against the rate before the release (an entry's occurrences give no count of the fault before it); a new entry for a slip that came back (it starts from zero, which is what hid the failed fixes); a migration of old entries (the skills read the old word).
+- **Limits:** A fault rarer than 1 in 100 turns can still pass when it was never fixed: the condition shows the fault is rare, not gone. Whether a slip is "the entry's fault" is the reviewer's judgment.
+- **Source:** Issue #267 (Phase 4 of #238); `specs/028-fixed-condition/`; #250's baseline; spec 025.

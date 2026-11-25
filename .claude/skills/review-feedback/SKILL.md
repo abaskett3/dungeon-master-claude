@@ -13,11 +13,15 @@ The entries come from two skills: `dmc-record-feedback` (what the player said in
 
 ## 1. List the open entries
 
-Grep `^status: (open|filed)` in `feedback/` and read each file. A `filed #N` entry is listed so that its issue or PR can be checked and the entry closed once it has shipped. A fresh worker needs no campaign file except where an entry's Context section points.
+Grep `^status: (open|filed|released|fixed in PR)` in `feedback/` and read each file. A `filed #N` entry is listed so that its issue or PR can be checked, a `released` one (or an older `fixed in PR #N`) so that later play can confirm it (§ 2). A fresh worker needs no campaign file except where an entry's Context section points.
 
 ## 2. Check whether each is already fixed
 
-Read the current prompt files in `kit/`, `git log` since the entry's `recorded:` date, and `gh issue list --state all`. If it is fixed, set the status to `fixed in PR #N` and go on.
+Read the current prompt files in `kit/`, `git log` since the entry's `recorded:` date, and `gh issue list --state all`. "Fixed" means the slip stopped, not that a change was made (issue #267), so an entry moves in three steps:
+
+- `filed #N` stays until its PR has merged, the PR states its slip-test result or why it has none, and a release holds the change (`gh release list`, and `git tag --contains` the merge commit). Then set `released in X.Y.Z`, the first such release.
+- `released in X.Y.Z` (or an older `fixed in PR #N`, read as released in the first release after that PR) becomes `fixed in X.Y.Z: no case in N play turns` when the story sessions played on that release or later have at least 300 play turns, as `review-transcript` § 7 counts them, and none of them has a case of the entry's fault. Zero cases in 300 turns puts the fault below 1 in 100 turns with 95% confidence (3 ÷ 300). With fewer turns, or the turns not yet counted, it stays released: say how many turns there are.
+- An entry whose fault came back after `released` or `fixed` is `open` again (`dmc-record-feedback` and `review-transcript` set it), and the change is known to have failed: say so in its Worker notes, and find the cause again under § 5.
 
 ## 3. Apply the preference test again
 
@@ -63,6 +67,6 @@ Then file an issue, or make the change, under CLAUDE.md § Git and GitHub. An en
 - Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.
 - If `kit/dm-rules.md` grows, look for something in it that the entries show DMC never needed, and cut or move it to a skill.
 - A change that alters what campaign files should hold (a template, or a skill's rule for a campaign file's shape) adds the next-numbered migration in `kit/migrations/` and its golden fixture under `tests/Dmc.Tests/Fixtures/migrations/NNN/`, written for a campaign its author has never seen, or says in the PR why none is needed (a new optional field, say). The format is `specs/005-campaign-migrations/contracts/migration-file.md`; `.docs/development.md` § Changing a campaign-file standard says how to build and test one. Never add a clause to a skill that repairs older files as it goes.
-- Under the entry's Worker notes, write a short note of the cause's kind and what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges. A kind 4 entry is `filed #N` for the mechanism's issue. A kind 3 entry whose data is corrected is `filed #262` if a step wrote the line, `filed #N` for a mechanism's issue if DMC wrote it with no step at fault (as kind 4), and `not a toolkit problem: the story file was wrong, corrected with the player's ruling` only if someone other than DMC wrote it.
+- Under the entry's Worker notes, write a short note of the cause's kind and what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, then as § 2 moves it. A kind 4 entry is `filed #N` for the mechanism's issue. A kind 3 entry whose data is corrected is `filed #262` if a step wrote the line, `filed #N` for a mechanism's issue if DMC wrote it with no step at fault (as kind 4), and `not a toolkit problem: the story file was wrong, corrected with the player's ruling` only if someone other than DMC wrote it.
 - Remove any stopgap option line that an older entry names under Done in play once its fix has shipped (`dmc-record-feedback` no longer writes them).
 - Never delete an entry file: a closed status is the record.

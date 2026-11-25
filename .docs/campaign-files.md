@@ -82,25 +82,25 @@ adventures/
 
 ### How big the files may be
 
-Every file the resume reads that the full save trims has a size budget, in estimated tokens (bytes ÷ 4); canon has a size below which it is read whole and a limit over which the full save archives it. `dmc size` measures them (see [dmc-reference.md](dmc-reference.md#size)); the resume runs `dmc size <campaign> --check` once before it reads, and the full save's consistency check runs it and is not complete until it prints nothing or its report says why each line stays. The numbers are set in one place, `src/Dmc.Cli/Size/Budgets.cs`, and a toolkit test keeps this table equal to it; the reasons are in [decisions.md](decisions.md), "Size rules are measured in tokens by `dmc size`".
+Every file the resume reads that the full save trims has a size budget, in tokens of its text (estimated at 2 for 5 characters, within a few percent of what Claude Code counts); canon has a size below which it is read whole and a limit over which the full save archives it. `dmc size` measures them (see [dmc-reference.md](dmc-reference.md#size)); the resume runs `dmc size <campaign> --check` once before it reads, and the full save's consistency check runs it and is not complete until it prints nothing or its report says why each line stays. The numbers are set in one place, `src/Dmc.Cli/Size/Budgets.cs`, and a toolkit test keeps this table equal to it; the reasons are in [decisions.md](decisions.md), "Size rules are measured in tokens by `dmc size`".
 
-| What | Budget (estimated tokens) |
+| What | Budget (tokens) |
 |---|---|
-| `game-state.md` | 4,000 |
-| `story/dm-notes.md` | 10,000 |
-| its About this player section | 2,000 |
-| its Arc plan section | 1,500 |
-| `story/summary.md` | 3,000 |
-| a PC's sheet, down to its history | 6,000 |
-| any other sheet, down to its history | 4,000 |
-| a companion's sheet, through its play card | 1,000 |
-| `story/canon.md`: read whole below | 19,000 |
+| `game-state.md` | 6,400 |
+| `story/dm-notes.md` | 16,000 |
+| its About this player section | 3,200 |
+| its Arc plan section | 2,400 |
+| `story/summary.md` | 4,800 |
+| a PC's sheet, down to its history | 9,600 |
+| any other sheet, down to its history | 6,400 |
+| a companion's sheet, through its play card | 1,600 |
+| `story/canon.md`: read whole below | 30,400 |
 | `story/canon.md`: the scene's matches, at most (bytes) | 12,000 |
-| `story/canon.md`: a full save archives above | 19,000 |
-| `story/canon.md`: a full save archives down to | 16,000 |
-| `legacy.md` | 3,000 |
+| `story/canon.md`: a full save archives above | 30,400 |
+| `story/canon.md`: a full save archives down to | 25,600 |
+| `legacy.md` | 4,800 |
 
-The Arc plan section's budget counts its content only: its template comment is left out, so a full save never deletes the guidance to fit (spec 015); the comment still counts in `story/dm-notes.md`'s total. `legacy.md` is measured and flagged like the files above, but its own resume never reads it, so it is outside the resume total. The player options, the session log and the module files have no budget: the full save does not trim them. Any file the resume reads is flagged when it reaches 20,000 estimated tokens or 1,600 lines, near what the Read tool returns in one call. `dmc size` also flags a companion whose sheet has no play card, and what the templates say should not stay in a file read whole: more than one Last played line or a per-session Mix tracker, Opposition rows with none left alive, DONE or RESOLVED lines outside the Arc plan, a Prices, debts and promises section over 3,000, and lines over 400 characters.
+The Arc plan section's budget counts its content only: its template comment is left out, so a full save never deletes the guidance to fit (spec 015); the comment still counts in `story/dm-notes.md`'s total. `legacy.md` is measured and flagged like the files above, but its own resume never reads it, so it is outside the resume total. The player options, the session log and the module files have no budget: the full save does not trim them. Any file the resume reads is flagged when it reaches 18,000 tokens of Read cost or 1,600 lines, near what the Read tool returns in one call (Read cost is the text's tokens and 160 for the call); canon within its limit is left out, since the resume reads it in two reads when it must. `dmc size` also flags a companion whose sheet has no play card, and what the templates say should not stay in a file read whole: more than one Last played line or a per-session Mix tracker, Opposition rows with none left alive, DONE or RESOLVED lines outside the Arc plan, a Prices, debts and promises section over 4,800, and lines over 400 characters.
 
 Spoilers: the player can read and edit any file, but `story/dm-notes.md`, `story/dm-notes-archive.md`, `module-progress.md`, NPC sheets (their secrets) and anything under `modules/` give away what is ahead.
 
@@ -236,7 +236,7 @@ written in the sequel; nothing is ever written to the closed campaign. In `diges
 | File | Holds | Written by |
 |---|---|---|
 | `index.md` | Format, Campaign, Closing backup (its file name and SHA-256), Chain (the digests copied with it, nearest first), Carried (the characters the sequel carried over), Files. No facts. | `sequel --start`; Carried by DMC |
-| `people.md`, `places.md`, `factions.md`, `items.md` | One `## ` heading per subject, then its lines. A living character's stat block goes under their heading. A kind near 20k tokens goes on in `people-2.md` and so on, each part holding whole subjects. | DMC |
+| `people.md`, `places.md`, `factions.md`, `items.md` | One `## ` heading per subject, then its lines. A living character's stat block goes under their heading. A kind near the Read cap mark (18,000 tokens of Read cost) goes on in `people-2.md` and so on, each part holding whole subjects. | DMC |
 | `world.md` | `## Rulings`, `## Prices, debts and promises`, `## Lore`, `## How it ended`, `## Module` (the deviations and module NPCs' statuses of `module-progress.md`, DM-only in recall) and any other subject of the world. | DMC |
 | `spine.md` | Per session log, in session order, `## <its # title> (session-NNN.md)`, then `- sN.M <the text after "Scene M: ">` for each scene heading, word for word; a log with no scene headings has its line alone. | `sequel --start` |
 | `secrets.md` | The closed campaign's secrets, one `## ` heading per subject, each line ending with its outcome (`revealed sN`, `never revealed`, `abandoned`); a sheet's own `## Secrets` lines under the character's name. DM-only in recall. | DMC |
@@ -252,7 +252,7 @@ import does one part per session, and the sample is answered in a session that r
 must be accounted for are those of `story/canon.md`, `story/canon-archive.md`,
 `module-progress.md` and every file in `character-sheets/`, with § Secrets of `story/dm-notes.md` and § How it ended of
 `story/summary.md`, all read from the closing backup; `sequel --check` proves each one is copied, merged or dropped
-with a reason, that the copied digests match the closing backup's byte for byte, that no file is over 20k tokens and
+with a reason, that the copied digests match the closing backup's byte for byte, that no file is over the Read cap mark and
 that no subject has two headings. A sample of 20 facts and 5 people, answered by a fresh subagent from the digest
 alone, then has to pass with no miss.
 

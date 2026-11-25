@@ -2,18 +2,23 @@ using System.Text;
 
 namespace Dmc.Size;
 
-/// <summary>One line of a file: its text, without the line end, for matching, and its size on disk, line end included.</summary>
+/// <summary>
+/// One line of a file: its text, without the line end, for matching; its size on disk, line end included; and its
+/// characters as the Read tool returns them, which the token measure counts (spec 021).
+/// </summary>
 /// <param name="Text">The line decoded as UTF-8, without <c>\n</c> or <c>\r\n</c> (and without a byte-order mark on the first line).</param>
 /// <param name="Bytes">The bytes of the line on disk, its line end (CR included) and a byte-order mark included.</param>
-internal readonly record struct Line(string Text, int Bytes);
+/// <param name="Characters">The UTF-16 characters of <paramref name="Text"/>, plus 1 when the line ends in an LF; a CR before the LF and a byte-order mark are not counted, so it is never more than <paramref name="Bytes"/>.</param>
+internal readonly record struct Line(string Text, int Bytes, int Characters);
 
 /// <summary>One <c>## </c> section of a part: its heading (without the <c>## </c>) and its size.</summary>
 /// <param name="Heading">The heading text, or <c>(top)</c> for the text before the first heading.</param>
 /// <param name="Bytes">The bytes of the section, heading line included.</param>
-internal sealed record Section(string Heading, long Bytes)
+/// <param name="Characters">The characters of the section (<see cref="Line.Characters"/>), heading line included.</param>
+internal sealed record Section(string Heading, long Bytes, long Characters)
 {
-    /// <summary>The estimated tokens: bytes ÷ 4, rounded down.</summary>
-    public long Tokens => Bytes / 4;
+    /// <summary>The tokens of the section's text (<see cref="Measurement.Tokens"/>).</summary>
+    public long Tokens => Measurement.Tokens(Characters);
 }
 
 /// <summary>How much of a file the resume reads.</summary>
@@ -70,20 +75,32 @@ internal enum EntryState
 /// <param name="FileLines">Every line of the file, for a check that looks past the part read (canon's sections when it is read in sections); the same as <paramref name="Lines"/> otherwise.</param>
 /// <param name="InTotal">False for a file measured and flagged that the resume does not read (a campaign's own <c>legacy.md</c>, which other campaigns read), so the total leaves it out.</param>
 /// <param name="PointerMiss">For a module digest named by <c>module-progress.md</c>: the line saying a heading it names was not found, or found more than once, so the save fixes the pointer (spec 012 research R8); null otherwise.</param>
-/// <param name="ExtraBytes">Bytes the resume reads for this file beyond <paramref name="Lines"/>: for canon read by scene, what <c>dmc recall --scene</c> prints (spec 013 FR-009); 0 otherwise.</param>
+/// <param name="ExtraCharacters">Characters the resume reads for this file beyond <paramref name="Lines"/>, in a call of their own: for canon read by scene, what <c>dmc recall --scene</c> prints (spec 013 FR-009); 0 otherwise.</param>
 /// <param name="NoPlayCard">True for a companion's sheet that has no play card, which the full save writes (spec 013 FR-004).</param>
 internal sealed record Part(string Path, PartKind Kind, EntryState State, BudgetKind Budget, IReadOnlyList<Line> Lines,
-    string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true, string? PointerMiss = null, long ExtraBytes = 0,
+    string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true, string? PointerMiss = null, long ExtraCharacters = 0,
     bool NoPlayCard = false)
 {
-    /// <summary>The bytes of the part read, <see cref="ExtraBytes"/> included.</summary>
-    public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes) + ExtraBytes;
+    /// <summary>The bytes on disk of the lines read (<see cref="ExtraCharacters"/> is not on disk, so it is not included).</summary>
+    public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes);
 
-    /// <summary>The estimated tokens of the part read: bytes ÷ 4, rounded down.</summary>
-    public long Tokens => Bytes / 4;
+    /// <summary>The characters of the part read, <see cref="ExtraCharacters"/> included.</summary>
+    public long Characters { get; } = Lines.Sum(l => (long)l.Characters) + ExtraCharacters;
 
-    /// <summary>The estimated tokens of the whole file.</summary>
-    public long FileTokens => FileLines.Sum(l => (long)l.Bytes) / 4;
+    /// <summary>The tokens of the text of the part read (<see cref="Measurement.Tokens"/>): what its budget is compared with.</summary>
+    public long Tokens => Measurement.Tokens(Characters);
+
+    /// <summary>The Read calls the part takes: one, and one more for the output of <c>dmc recall --scene</c> when there is any.</summary>
+    public int Calls => ExtraCharacters > 0 ? 2 : 1;
+
+    /// <summary>
+    /// What the resume pays to read the part (<see cref="Measurement.ReadCost"/> of its characters and <see cref="Calls"/>):
+    /// the near-cap flag and the report's total use it (spec 021 FR-003, FR-006).
+    /// </summary>
+    public long ReadCost => Measurement.ReadCost(Characters, Calls);
+
+    /// <summary>The tokens of the whole file's text.</summary>
+    public long FileTokens => Measurement.TokensOf(FileLines);
 
     /// <summary>The <c>## </c> sections of the part read, in file order.</summary>
     public IReadOnlyList<Section> Sections { get; } = Measurement.Sections(Lines);
@@ -97,9 +114,36 @@ internal sealed record Part(string Path, PartKind Kind, EntryState State, Budget
         new(path, PartKind.Whole, state, budget, [], note, []);
 }
 
-/// <summary>Reading a file as lines with their sizes, cutting it into sections, and writing token counts.</summary>
+/// <summary>
+/// Reading a file as lines with their sizes, cutting it into sections, and counting and writing tokens. This is the one
+/// home of the token measure (spec 021 FR-001): no other code turns a size into tokens.
+/// </summary>
 internal static class Measurement
 {
+    /// <summary>
+    /// What one Read call adds to the context beyond its text's tokens: the tool call and its record. Fitted on 611 Read
+    /// batches of 194 Claude Code logs: 130 on Sonnet, 203 on Opus (spec 021 research R1).
+    /// </summary>
+    public const int ReadCallTokens = 160;
+
+    /// <summary>
+    /// The tokens of a text of so many characters (<see cref="Line.Characters"/>): 2 for each whole 5, that is 0.4 a
+    /// character, rounded down to the 5. Calibrated against real counts (spec 021 research R1 and R2: within 2% on large
+    /// Read batches, −7% to +5% on whole campaign files, the same on Sonnet and Opus). Rounding down to the 5 makes a
+    /// budget of 1.6 times its old bytes ÷ 4 number flag no text the old count let through (research R3).
+    /// </summary>
+    /// <param name="characters">The characters of the text.</param>
+    public static long Tokens(long characters) => 2 * (characters / 5);
+
+    /// <summary>The tokens of some lines' text: <see cref="Tokens"/> of their summed characters.</summary>
+    /// <param name="lines">The lines.</param>
+    public static long TokensOf(IEnumerable<Line> lines) => Tokens(lines.Sum(l => (long)l.Characters));
+
+    /// <summary>What reading a text in so many Read calls adds to the context: its tokens and <see cref="ReadCallTokens"/> a call.</summary>
+    /// <param name="characters">The characters of the text read.</param>
+    /// <param name="calls">The calls that read it.</param>
+    public static long ReadCost(long characters, int calls) => Tokens(characters) + ReadCallTokens * (long)calls;
+
     /// <summary>The name of the text before a part's first <c>## </c> heading.</summary>
     public const string Top = "(top)";
 
@@ -140,7 +184,7 @@ internal static class Measurement
             string text = Encoding.UTF8.GetString(bytes, start, textEnd - start);
             if (start == 0)
                 text = text.TrimStart('﻿');
-            lines.Add(new Line(text, next - start));
+            lines.Add(new Line(text, next - start, text.Length + (end < 0 ? 0 : 1)));
             start = next;
         }
         return lines;
@@ -155,22 +199,24 @@ internal static class Measurement
     {
         var sections = new List<Section>();
         string heading = Top;
-        long bytes = 0;
+        long bytes = 0, characters = 0;
         bool any = false;
         foreach (var line in lines)
         {
             if (IsSectionHeading(line.Text))
             {
                 if (any)
-                    sections.Add(new Section(heading, bytes));
+                    sections.Add(new Section(heading, bytes, characters));
                 heading = line.Text[3..].Trim();
                 bytes = 0;
+                characters = 0;
             }
             bytes += line.Bytes;
+            characters += line.Characters;
             any = true;
         }
         if (any)
-            sections.Add(new Section(heading, bytes));
+            sections.Add(new Section(heading, bytes, characters));
         return sections;
     }
 

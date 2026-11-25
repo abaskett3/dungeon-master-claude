@@ -64,15 +64,16 @@ public static class ModuleFixtures
 
     /// <summary>
     /// Writes a sound module: an index, <paramref name="chapters"/> chapter digests (chapter 5 the hub, with
-    /// <paramref name="hubAreas"/> keyed areas of about 1.7k tokens each), and a monster file with
-    /// <paramref name="monsters"/> stat blocks, each under its own heading.
+    /// <paramref name="hubAreas"/> keyed areas of about 2.7k tokens each; six keep it under the Read cap mark, where the
+    /// eight of the measured module were past it in spec 021's measure), and a monster file with
+    /// <paramref name="monsters"/> stat blocks, each under its own heading (15 keep it under the Read cap mark, spec 021).
     /// </summary>
     /// <param name="root">The DMC folder.</param>
     /// <param name="chapters">How many chapter files.</param>
     /// <param name="hubAreas">How many keyed areas the hub chapter has.</param>
     /// <param name="monsters">How many stat blocks the monster file holds.</param>
     /// <param name="chapterBytes">About how many bytes of prose each area of the other chapters holds.</param>
-    public static void WriteSoundModule(string root, int chapters = 38, int hubAreas = 8, int monsters = 20, int chapterBytes = 1200)
+    public static void WriteSoundModule(string root, int chapters = 38, int hubAreas = 6, int monsters = 15, int chapterBytes = 1200)
     {
         var index = new StringBuilder("# The Salt Marsh\n\n## Chapters\n\n");
         for (int c = 1; c <= chapters; c++)

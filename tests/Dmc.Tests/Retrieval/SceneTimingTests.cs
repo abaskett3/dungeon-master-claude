@@ -45,7 +45,7 @@ public sealed class SceneTimingTests
         }
         Write(root, "story/canon.md", "# Canon\n\n## Rulings\n\n" + Lines(11_000) + "\n## People\n\n"
             + "- **Oswin Reed** (also: the ferryman): keeps the ferry (s3).\n- **Captain Emmajeen Kole** (also: Em): the captain (s1).\n"
-            + "\n## Prices, debts and promises\n\n" + Lines(10_000) + "\n## Timeline\n\n" + Lines(global::Dmc.Size.Budgets.CanonWholeBelow * 4 - 21_000 + 8_000));
+            + "\n## Prices, debts and promises\n\n" + Lines(10_000) + "\n## Timeline\n\n" + Lines(TokenSizes.Chars(global::Dmc.Size.Budgets.CanonWholeBelow) - 21_000 + 8_000));
         Write(root, "story/canon-archive.md", "# Canon archive\n\n## Timeline\n\n" + Lines(140_000));
         Write(root, "game-state.md", GameState(["Kibil"], present: "Oswin, Kole and Bruni").Replace("a road", "the ferry at the ford"));
         return root;

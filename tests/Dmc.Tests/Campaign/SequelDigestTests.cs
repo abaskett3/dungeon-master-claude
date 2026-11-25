@@ -279,7 +279,7 @@ public sealed class SequelDigestTests
         WriteSequel(root, digest: true);
         var result = Sequel("--check");
         Assert.AreEqual(0, result.ExitCode, result.ToString());
-        Assert.AreEqual($"checked digests/{ClosedName}/: 109 units (75 copied, 0 merged, 34 dropped), 9 files, largest 754 tokens", result.StdoutLines.Single());
+        Assert.AreEqual($"checked digests/{ClosedName}/: 109 units (75 copied, 0 merged, 34 dropped), 9 files, largest 1.4k tokens", result.StdoutLines.Single());
     }
 
     /// <summary>A line of 20 characters or more inside a longer digest line counts as copied.</summary>
@@ -391,7 +391,7 @@ public sealed class SequelDigestTests
         CollectionAssert.AreEqual(new[] { "index: no Carried line", $"index: Closing backup's checksum differs from backups/{file}" }, result.StdoutLines);
     }
 
-    /// <summary>A file over 20,000 estimated tokens, and a subject heading twice across a kind's parts, are named.</summary>
+    /// <summary>A file whose Read costs over 18,000 tokens, and a subject heading twice across a kind's parts, are named.</summary>
     [TestMethod]
     public void ALargeFileAndAHeadingTwiceAreNamed()
     {
@@ -404,7 +404,7 @@ public sealed class SequelDigestTests
         var result = Sequel("--check");
         Assert.AreEqual(1, result.ExitCode, result.ToString());
         Assert.HasCount(2, result.StdoutLines);
-        StringAssert.Matches(result.StdoutLines[0], new System.Text.RegularExpressions.Regex($@"^too large: digests/{ClosedName}/people-2\.md 21(\.\d)?k tokens \(split it by subject\)$"));
+        StringAssert.Matches(result.StdoutLines[0], new System.Text.RegularExpressions.Regex($@"^too large: digests/{ClosedName}/people-2\.md 33(\.\d)?k tokens \(split it by subject\)$"));
         Assert.AreEqual($"heading twice: digests/{ClosedName}/people: Rook", result.StdoutLines[1]);
     }
 

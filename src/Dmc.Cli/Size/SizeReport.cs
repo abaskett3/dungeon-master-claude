@@ -9,8 +9,15 @@ namespace Dmc.Size;
 /// <param name="ModuleLine">The <c>module:</c> line for a module campaign whose module fails <c>dmc module check</c> (spec 012 research R6), or null.</param>
 internal sealed record SizeResult(string Campaign, IReadOnlyList<Part> Parts, IReadOnlyList<Flag> Flags, string? ModuleLine = null)
 {
-    /// <summary>The estimated tokens of everything the resume reads: the parts outside the total (<see cref="Part.InTotal"/>) are left out.</summary>
-    public long Total => Parts.Where(p => p.InTotal).Sum(p => p.Tokens);
+    /// <summary>
+    /// What the resume pays to read everything it reads: the Read cost of each part (<see cref="Part.ReadCost"/>), its text
+    /// and its calls (spec 021 FR-006). The parts outside the total (<see cref="Part.InTotal"/>) are left out, and so are
+    /// DMC's own replies, which no file measures.
+    /// </summary>
+    public long Total => Parts.Where(p => p.InTotal).Sum(p => p.ReadCost);
+
+    /// <summary>The Read calls <see cref="Total"/> counts.</summary>
+    public int Calls => Parts.Where(p => p.InTotal).Sum(p => p.Calls);
 }
 
 /// <summary>
@@ -104,13 +111,14 @@ internal static class SizeReport
     }
 
     /// <summary>
-    /// The full report (contract § Full report): a header, one line per file with its tokens, budget or limit and what is
-    /// read, the total, the largest sections of the files read whole, and the flags or <c>nothing to flag</c>.
+    /// The full report (contract § Full report): a header, one line per file with the tokens of its text, budget or limit
+    /// and what is read, the total (the Read cost, spec 021), the largest sections of the files read whole, and the flags
+    /// or <c>nothing to flag</c>.
     /// </summary>
     /// <param name="result">The measured campaign.</param>
     public static List<string> FullReport(SizeResult result)
     {
-        var lines = new List<string> { $"{result.Campaign}: what a resume reads, in estimated tokens (bytes / 4)" };
+        var lines = new List<string> { $"{result.Campaign}: what a resume reads, in tokens (estimated: 2 for 5 characters)" };
         int width = Math.Min(PathWidth, result.Parts.Select(p => p.Path.Length).Append("total".Length).Max());
         foreach (var part in result.Parts)
         {
@@ -121,14 +129,14 @@ internal static class SizeReport
                 notes.Add(note);
             if (part.State == EntryState.Measured && Budgets.Of(part.Budget) is { } over && part.Tokens > over)
                 notes.Add("over");
-            if (part.State == EntryState.Measured && (part.Tokens >= Budgets.NearCapTokens || part.Lines.Count >= Budgets.NearCapLines))
+            if (part.State == EntryState.Measured && Flags.IsNearCap(part))
                 notes.Add("near the Read cap");
             string tokens = part.State == EntryState.Measured ? Fmt(part.Tokens) : "";
             lines.Add($"  {Shorten(part.Path, width).PadRight(width)} {tokens,6}   {limit,-11} {string.Join(", ", notes)}".TrimEnd());
             if (part.Kind == PartKind.AlwaysReadSections)
                 lines.Add("    (the search for the scene's names is not counted)");
         }
-        lines.Add($"  {"total".PadRight(width)} {Fmt(result.Total),6}");
+        lines.Add($"  {"total".PadRight(width)} {Fmt(result.Total),6}   to read, with {result.Calls} Read call{(result.Calls == 1 ? "" : "s")}; DMC's own replies are not counted");
 
         // Canon's sections are those of the whole file even when it is read in sections: that is where the archive step looks.
         var sectioned = result.Parts

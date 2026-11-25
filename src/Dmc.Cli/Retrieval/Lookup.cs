@@ -138,9 +138,8 @@ internal static partial class Lookup
         int first = heading.Line;
         int last = MarkdownHeadings.SectionEnd(file.Headings, index, file.Lines.Length);
         var body = file.Lines[(first - 1)..last];
-        // Bytes as they are in the file, line ends included, and bytes ÷ 4 rounded down: the estimate dmc size flags with.
-        long bytes = file.LineBytes[(first - 1)..last].Sum(b => (long)b);
-        long tokens = bytes / 4;
+        // What one Read of the section costs, in the measure and against the mark dmc size flags with (spec 021 FR-003).
+        long tokens = Measurement.ReadCost(file.LineCharacters[(first - 1)..last].Sum(c => (long)c), 1);
         string where = $"{Shown(dmcFolder, file.Path)}:{first}-{last}";
         if (tokens >= Budgets.NearCapTokens || body.Length >= Budgets.NearCapLines)
         {

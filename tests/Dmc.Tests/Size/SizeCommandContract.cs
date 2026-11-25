@@ -62,10 +62,12 @@ public abstract class SizeCommandContract
         Assert.AreEqual(0, result.ExitCode, result.Stderr);
         Assert.AreEqual("", result.Stderr);
         string[] lines = result.StdoutLines;
-        Assert.AreEqual($"{Name}: what a resume reads, in estimated tokens (bytes / 4)", lines[0]);
+        Assert.AreEqual($"{Name}: what a resume reads, in tokens (estimated: 2 for 5 characters)", lines[0]);
         Assert.IsTrue(lines[1].TrimStart().StartsWith("adventures/player-options.md", StringComparison.Ordinal), lines[1]);
-        Assert.IsTrue(lines.Any(l => l.TrimStart().StartsWith("total ", StringComparison.Ordinal)), "a total line");
-        Assert.IsTrue(lines.Any(l => l.Contains("story/canon.md") && l.Contains("limit 19k") && l.Contains("read whole")));
+        string total = lines.Single(l => l.TrimStart().StartsWith("total ", StringComparison.Ordinal));
+        StringAssert.Matches(total, new System.Text.RegularExpressions.Regex(@"^  total +[0-9.]+k?   to read, with [0-9]+ Read calls?; DMC's own replies are not counted$"),
+            "the total is the Read cost, and says what it leaves out (spec 021 FR-006)");
+        Assert.IsTrue(lines.Any(l => l.Contains("story/canon.md") && l.Contains("limit 30.4k") && l.Contains("read whole")));
         Assert.AreEqual("  nothing to flag", lines[^1]);
         Assert.DoesNotContain("\r", result.Stdout, "output is LF on every system");
     }
@@ -89,14 +91,14 @@ public abstract class SizeCommandContract
         {
             Write(_root, "player-options.md", "# Player options\n\n## Rules\n\n- **Edition**: 5e 2014\n\n## Continuity\n\n" +
                 "- **Continues**: gone\n- **Side campaign of**: lost\n- **Shares a world with**: far, away\n");
-            Write(_root, "game-state.md", GameState([]) + Filler(Budgets.GameState * 4));
+            Write(_root, "game-state.md", GameState([]) + Filler(TokenSizes.Chars(Budgets.GameState)));
         });
         var result = Size("--check");
 
         Assert.AreEqual(0, result.ExitCode, result.Stderr);
         CollectionAssert.AreEqual(new[]
         {
-            "game-state.md 4.1k is over its 4k budget",
+            "game-state.md 6.6k is over its 6.4k budget",
             $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
             $"notice: {Name}: Side campaign of lost is not in adventures/ (not the full save's to trim)",
             $"notice: {Name}: Shares a world with far is not in adventures/ (not the full save's to trim)",
@@ -125,12 +127,12 @@ public abstract class SizeCommandContract
         Arrange(() =>
         {
             MakeModuleCampaign(problems: 2);
-            Write(_root, "game-state.md", GameState([]) + Filler(Budgets.GameState * 4));
+            Write(_root, "game-state.md", GameState([]) + Filler(TokenSizes.Chars(Budgets.GameState)));
             Write(_root, "player-options.md", "# Player options\n\n## Continuity\n\n- **Continues**: gone\n");
         });
         CollectionAssert.AreEqual(new[]
         {
-            "game-state.md 4.1k is over its 4k budget",
+            "game-state.md 6.6k is over its 6.4k budget",
             "module: modules/marsh has 2 problems: run dmc module check marsh (not the full save's to trim)",
             $"notice: {Name}: Continues gone is not in adventures/ (not the full save's to trim)",
         }, Size("--check").StdoutLines);
@@ -155,7 +157,7 @@ public abstract class SizeCommandContract
     public void AnOversizedReferenceFileGivesOneModuleLineAndNoneOnceSplit()
     {
         static string Entries(int from, int to) =>
-            string.Concat(Enumerable.Range(from, to - from + 1).Select(n => $"## Beast {n} (PDF {n})\n\n{Filler(2000)}"));
+            string.Concat(Enumerable.Range(from, to - from + 1).Select(n => $"## Beast {n} (PDF {n})\n\n{Filler(1500)}"));
         string module = Path.Combine(_root, "modules", "marsh");
         Arrange(() =>
         {
@@ -297,8 +299,8 @@ public abstract class SizeCommandContract
     {
         Arrange(() =>
         {
-            Write(_root, "game-state.md", GameState([]) + Filler(Budgets.GameState * 4));
-            Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- one\n\n## Timeline\n\n" + Filler(Budgets.CanonLimit * 4 + 400));
+            Write(_root, "game-state.md", GameState([]) + Filler(TokenSizes.Chars(Budgets.GameState)));
+            Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- one\n\n## Timeline\n\n" + Filler(TokenSizes.Chars(Budgets.CanonLimit) + 400));
         });
         var result = Size("--check", "--folder", _root, Name);
 
@@ -306,8 +308,8 @@ public abstract class SizeCommandContract
         Assert.AreEqual("", result.Stderr);
         CollectionAssert.AreEqual(new[]
         {
-            "story/canon.md 19.2k is over its 19k limit: a full save archives it down to 16k (move about 3.2k)",
-            "game-state.md 4.1k is over its 4k budget",
+            "story/canon.md 30.6k is over its 30.4k limit: a full save archives it down to 25.6k (move about 5k)",
+            "game-state.md 6.6k is over its 6.4k budget",
         }, result.StdoutLines);
     }
 
@@ -315,13 +317,13 @@ public abstract class SizeCommandContract
     [TestMethod]
     public void TheFullReportShowsCanonReadBySceneAndListsItsSections()
     {
-        Arrange(() => Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- one\n\n## Timeline\n\n" + Filler(Budgets.CanonLimit * 4 + 400)));
+        Arrange(() => Write(_root, "story/canon.md", "# Canon\n\n## Rulings\n\n- one\n\n## Timeline\n\n" + Filler(TokenSizes.Chars(Budgets.CanonLimit) + 400)));
         string[] lines = Size().StdoutLines;
         int canon = Array.FindIndex(lines, l => l.TrimStart().StartsWith("story/canon.md", StringComparison.Ordinal));
         StringAssert.Contains(lines[canon], "read in sections and by scene");
         Assert.DoesNotContain("is not counted", string.Join("\n", lines));
         string sections = lines.Single(l => l.StartsWith("  story/canon.md: ", StringComparison.Ordinal));
-        StringAssert.StartsWith(sections, "  story/canon.md: Timeline 19.2k", "canon's own sections are listed when it is over its limit, the archive step's guide");
+        StringAssert.StartsWith(sections, "  story/canon.md: Timeline 30.6k", "canon's own sections are listed when it is over its limit, the archive step's guide");
     }
 
     [TestMethod]
@@ -330,7 +332,7 @@ public abstract class SizeCommandContract
         Arrange(() => Write(_root, "story/dm-notes.md",
             "# Notes\n\n## A\n\n" + Filler(400) + "## B\n\n" + Filler(4000) + "## C\n\n" + Filler(800) + "## D\n\n" + Filler(1200) + "## E\n\n" + Filler(1600)));
         string line = Size().StdoutLines.Single(l => l.StartsWith("  story/dm-notes.md: ", StringComparison.Ordinal));
-        Assert.AreEqual("  story/dm-notes.md: B 1.1k, E 401, D 301, C 201 (+2 more)", line);
+        Assert.AreEqual("  story/dm-notes.md: B 1.7k, E 642, D 482, C 322 (+2 more)", line);
     }
 
     /// <summary>
@@ -343,14 +345,14 @@ public abstract class SizeCommandContract
         Arrange(() => Write(_root, "story/dm-notes.md",
             "# Notes\n\n## Arc plan\n\n<!--\n" + Filler(4000) + "\n-->\n" + Filler(800) + "## B\n\n" + Filler(2000)));
         string line = Size().StdoutLines.Single(l => l.StartsWith("  story/dm-notes.md: ", StringComparison.Ordinal));
-        StringAssert.StartsWith(line, "  story/dm-notes.md: B 501, Arc plan 200", $"the comment's 1k left out, so B comes first: {line}");
+        StringAssert.StartsWith(line, "  story/dm-notes.md: B 802, Arc plan 320", $"the comment's 1.6k left out, so B comes first: {line}");
     }
 
     [TestMethod]
     public void ANamedCampaignIsMeasuredInsteadOfTheActiveOne()
     {
         Arrange(() => NewCampaign(_root, "other"));
-        Assert.AreEqual("other: what a resume reads, in estimated tokens (bytes / 4)", Size("other").StdoutLines[0]);
+        Assert.AreEqual("other: what a resume reads, in tokens (estimated: 2 for 5 characters)", Size("other").StdoutLines[0]);
     }
 
     [TestMethod]
@@ -364,7 +366,7 @@ public abstract class SizeCommandContract
                 Write(_root, $"character-sheets/npc-{n.Split(' ')[0].ToLowerInvariant()}.md", Sheet(n));
             Write(_root, "game-state.md", GameState(names.Skip(1).Take(4).ToArray(), present: "Fen"));
             Write(_root, "story/sessions/session-039.md", LogOf(5));
-            Write(_root, "story/dm-notes.md", "# Notes\n\n## Mix tracker\n\n- s1\n\n## Opposition\n\n| Goblins | 0 / 4 | x | x | x |\n\n## Open\n\n- the mill: DONE\n" + Filler(Budgets.DmNotes * 4 + 400, lineLength: 500));
+            Write(_root, "story/dm-notes.md", "# Notes\n\n## Mix tracker\n\n- s1\n\n## Opposition\n\n| Goblins | 0 / 4 | x | x | x |\n\n## Open\n\n- the mill: DONE\n" + Filler(TokenSizes.Chars(Budgets.DmNotes) + 400, lineLength: 500));
         });
         string[] lines = Size().StdoutLines;
         Assert.IsLessThanOrEqualTo(40, lines.Length, string.Join("\n", lines));

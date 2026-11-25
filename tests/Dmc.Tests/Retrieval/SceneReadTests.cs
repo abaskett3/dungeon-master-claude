@@ -32,7 +32,7 @@ public sealed class SceneReadTests
     {
         var text = new StringBuilder("# Canon\n\n## Rulings\n\n").Append(always)
             .Append("\n## Prices, debts and promises\n\n- none\n\n## People\n\n").Append(searched).Append("\n## Timeline\n\n");
-        while (Encoding.UTF8.GetByteCount(text.ToString()) < Budgets.CanonWholeBelow * 4 + 100)
+        while (Encoding.UTF8.GetByteCount(text.ToString()) < TokenSizes.Chars(Budgets.CanonWholeBelow) + 100)
             text.Append("- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz (s1).\n");
         return text.ToString();
     }

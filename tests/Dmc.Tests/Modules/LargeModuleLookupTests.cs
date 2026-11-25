@@ -17,12 +17,12 @@ public sealed class LargeModuleLookupTests
         try
         {
             WriteSoundModule(root, chapters: 2, monsters: 57);
-            Assert.IsGreaterThan(140_000L, new FileInfo(Path.Combine(root, "modules", Module, "monsters.md")).Length, "about 37k tokens");
+            Assert.IsGreaterThan(140_000L, new FileInfo(Path.Combine(root, "modules", Module, "monsters.md")).Length, "about 59k tokens");
             var result = DmcRunner.BlackBox(["lookup", "--folder", root, Module, "Marsh Beast 31"]);
             Assert.AreEqual(0, result.ExitCode, result.Stderr);
             Assert.AreEqual($"modules/{Module}/monsters.md", result.StdoutLines[0].Split(':')[0]);
-            long tokens = result.Stdout.Length / 4;
-            Assert.IsTrue(tokens is > 550 and < 750, $"{tokens} tokens");
+            long tokens = 2 * (result.Stdout.Length / 5); // dmc size's measure (spec 021): 2 tokens for 5 characters
+            Assert.IsTrue(tokens is > 880 and < 1200, $"{tokens} tokens");
             StringAssert.Contains(result.Stdout, "## Marsh Beast 31 (PDF 331)");
             Assert.DoesNotContain("Marsh Beast 32", result.Stdout);
         }

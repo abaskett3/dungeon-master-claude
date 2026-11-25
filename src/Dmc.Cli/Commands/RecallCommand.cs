@@ -33,13 +33,13 @@ best first: canon above digests, archives, sheets, other story files and session
 lower, a campaign whose digest is held nearer lower still, a module lowest. Each line shows its campaign and, for
 another campaign, its link (continues, sequel, side or world), its file and line, the link of a digest's campaign, its
 session, and DM for a line only the DM may see; a line printed once is not printed again from elsewhere, and a long
-line is cut to the part around the match. The output stays within about 1,500 estimated tokens. import/, exports/ and
+line is cut to the part around the match. The output stays within about 2,400 tokens. import/, exports/ and
 backups/ are never searched. It changes nothing and stores nothing.
 
   NAME      a campaign folder in adventures/, when it names one and words follow (default: the active campaign)
   WORDS     what to search for
   --scene   no words: the canon lines for the scene in game-state.md, outside canon's always-read sections, best
-            first, within about 3,000 estimated tokens; a small canon prints that it is to be read whole
+            first, within about 4,800 tokens; a small canon prints that it is to be read whole
   --folder  the DMC folder (default: the one dmc folder prints)
 """.Replace("\r\n", "\n");
 

@@ -37,12 +37,15 @@ the condition and the reopening.
 - **FR-001**: The template's status list MUST hold `released in X.Y.Z` and `fixed in X.Y.Z: no case in N play turns`
   in place of `fixed in PR #N`.
 - **FR-002**: `review-feedback` MUST keep an entry `filed #N` until its PR has merged, states its slip-test result or
-  why it has none (#268), and a release holds the change. Then it sets `released in X.Y.Z`.
+  why it has none (#268; a PR merged before 2026-11-26 needs neither), and a release holds the change. Then it sets `released in X.Y.Z`.
 - **FR-003**: `review-feedback` MUST set `fixed in X.Y.Z: no case in N play turns` only when the story sessions on
   that release or later have at least 300 play turns, counted by `review-transcript` § 7, with no case of the entry's
-  fault. With fewer, the entry stays released, and the review says how many turns there are.
+  fault. A session counts by the `dmc` version on its § 7 line, which `review-transcript` now gives with the session's
+  date, or by its date when the version is not recorded. With fewer, the entry stays released, and the review says
+  how many turns there are.
 - **FR-004**: `dmc-record-feedback` and `review-transcript` MUST search the released and fixed entries for a repeat.
-  When one comes back, they MUST add an occurrence starting "came back after <the status>" and set the entry `open`.
+  When one comes back on that release or later (`dmc --version` in play, the session's version in a review), they
+  MUST add an occurrence starting "came back after <the status>" and set the entry `open`.
 - **FR-005**: An older entry's `fixed in PR #N` MUST be read as released, in the first release after that PR. The
   template says so, and `review-feedback` lists such entries.
 - **FR-006**: The documents MUST say the same: `.docs/campaign-files.md` (the feedback entry),
@@ -61,7 +64,7 @@ the condition and the reopening.
   do not give; it is left out.
 - No migration (Development 2). `feedback/` is not a campaign file, and old entries keep their words, which the skills
   read.
-- Cost (Development 1): `kit/dm-rules.md` 0 bytes; `dmc-record-feedback` +172 bytes and the feedback template +125
+- Cost (Development 1): `kit/dm-rules.md` 0 bytes; `dmc-record-feedback` +222 bytes and the feedback template +125
   bytes, both read only when an entry is recorded. `review-feedback` and `review-transcript` are developer skills.
 
 ## Out of Scope

@@ -20,7 +20,7 @@ entries and open one again when its fault comes back.
 |---|---|
 | Core 1 Consistency | Pass. The entry's status says what play has shown |
 | Core 2 Fun | Pass. A failed fix is known, so the same slip is not "fixed" again by words |
-| Core 3, Development 1 Cost | Pass. `kit/dm-rules.md` 0 bytes; `dmc-record-feedback` +172 bytes and the template +125 bytes, read only when an entry is recorded; the resume's reads do not change |
+| Core 3, Development 1 Cost | Pass. `kit/dm-rules.md` 0 bytes; `dmc-record-feedback` +222 bytes and the template +125 bytes, read only when an entry is recorded; the resume's reads do not change |
 | Development 2 Migration | Pass. None needed: `feedback/` is not a campaign file, and the old status is read |
 | Development 3 One step | Pass. The kit files reach a DMC folder with `dmc update` |
 | Development 4 Grounded | Pass. The statuses' homes are `kit/templates/feedback.md:11`, `review-feedback` § 2 and § 7, `dmc-record-feedback` § 2 and `review-transcript` § 6 |

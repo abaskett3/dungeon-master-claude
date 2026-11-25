@@ -14,3 +14,6 @@ description: "Task list for spec 028, a condition for fixed"
 - [X] T005 Documents: `.docs/campaign-files.md`, `.docs/user-guide.md`, `.docs/decisions.md`, `.docs/roadmap.md`
   (FR-006).
 - [X] T006 `dotnet test` passes.
+- [X] T007 Fixes from the code review of PR #282: reopen only on that release or later; the § 7 line gives the `dmc`
+  version and date; an older `fixed in PR #N` maps to a release in `review-transcript` too; PRs merged before
+  2026-11-26 need no slip-test statement; the failed change is named; campaign-files.md's search.

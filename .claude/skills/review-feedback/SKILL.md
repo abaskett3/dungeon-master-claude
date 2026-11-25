@@ -19,9 +19,9 @@ Grep `^status: (open|filed|released|fixed in PR)` in `feedback/` and read each f
 
 Read the current prompt files in `kit/`, `git log` since the entry's `recorded:` date, and `gh issue list --state all`. "Fixed" means the slip stopped, not that a change was made (issue #267), so an entry moves in three steps:
 
-- `filed #N` stays until its PR has merged, the PR states its slip-test result or why it has none, and a release holds the change (`gh release list`, and `git tag --contains` the merge commit). Then set `released in X.Y.Z`, the first such release.
-- `released in X.Y.Z` (or an older `fixed in PR #N`, read as released in the first release after that PR) becomes `fixed in X.Y.Z: no case in N play turns` when the story sessions played on that release or later have at least 300 play turns, as `review-transcript` § 7 counts them, and none of them has a case of the entry's fault. Zero cases in 300 turns puts the fault below 1 in 100 turns with 95% confidence (3 ÷ 300). With fewer turns, or the turns not yet counted, it stays released: say how many turns there are.
-- An entry whose fault came back after `released` or `fixed` is `open` again (`dmc-record-feedback` and `review-transcript` set it), and the change is known to have failed: say so in its Worker notes, and find the cause again under § 5.
+- `filed #N` stays until its PR has merged, the PR states its slip-test result or why it has none (a PR merged before 2026-11-26 needs neither), and a release holds the change (`gh release list`, and `git tag --contains` the merge commit). Then set `released in X.Y.Z`, the first such release.
+- `released in X.Y.Z` (or an older `fixed in PR #N`, read as released in the first release after that PR) becomes `fixed in X.Y.Z: no case in N play turns` when the story sessions played on that release or later have at least 300 play turns, as `review-transcript` § 7 counts them, and none of them has a case of the entry's fault. A session counts by the `dmc` version on its § 7 line, or by its date after the release's when the version is not recorded. Zero cases in 300 turns puts the fault below 1 in 100 turns with 95% confidence (3 ÷ 300). With fewer turns, or the turns not yet counted, it stays released: say how many turns there are.
+- An entry whose fault came back after `released` or `fixed` is `open` again (`dmc-record-feedback` and `review-transcript` set it), and the change is known to have failed: say so in its Worker notes with the issue or PR that made it, and find the cause again under § 5.
 
 ## 3. Apply the preference test again
 

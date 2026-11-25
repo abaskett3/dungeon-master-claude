@@ -101,7 +101,7 @@ The test: would the same behaviour have been wrong for a different player with d
 
 ## 6. Record
 
-Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions` first, so that an interrupted review is not repeated. Then Grep `^status: (open|filed|released|fixed)` in `feedback/` and Grep `^# ` in `feedback/`, looking only at the titles in files from that list, so that a problem already recorded gets a new occurrence and not a second file. An occurrence in an entry that says released or fixed, in a session played on that release or later, starts "came back after <the status>", and the entry's status goes back to `open`.
+Add the reviewed session ids, one per line with today's date, to `adventures/.reviewed-sessions` first, so that an interrupted review is not repeated. Then Grep `^status: (open|filed|released|fixed)` in `feedback/` and Grep `^# ` in `feedback/`, looking only at the titles in files from that list, so that a problem already recorded gets a new occurrence and not a second file. An occurrence in an entry that says released or fixed, in a session played on that release or later (an older `fixed in PR #N` means the first release after that PR, as `review-feedback` § 2 says), starts "came back after <the status>", and the entry's status goes back to `open`.
 
 Write each inconsistency or mistake as an entry from `kit/templates/feedback.md` (in this repository), setting `dmc:` to the version the session was played with if the log shows it and leaving it as the template has it otherwise, with `source: transcript review`, in `feedback/YYYY-MM-DD-<slug>.md`. Describe the behaviour generally, so that it makes sense without the adventure. Put the Claude Code session id, the time and the quote or the numbers under Occurrences. If an entry from that list covers the problem, add an occurrence to it instead.
 
@@ -129,7 +129,9 @@ with the sessions before it.
    story session spread over several logs (a `/clear` or a restart) adds up their play turns and takes the context of
    the first; a log that holds two story sessions (two resumes) is split at the second resume by its `<id>-turns.txt`.
 4. **The line.** One per story session, in this shape: `s72: 3 slips in 41 play turns (2 fact, 1 conduct), Sonnet
-   high, ordinary session, 139,000 tokens at the start`. Write "not recorded" for what the log does not hold. Give
+   high, ordinary session, 139,000 tokens at the start, dmc 0.5.0, 2026-12-02`. The `dmc` version is the one the
+   session was played with, if the log shows it; the date is the session's. Write "not recorded" for what the log
+   does not hold. Give
    the lines to the user in the report of section 6, with the total and the rate per play turn.
 
 ## 8. Issue #179's gate count

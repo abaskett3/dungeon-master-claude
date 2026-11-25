@@ -904,6 +904,15 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Limits:** A change made with a shell command still leaves no backup. The format is that of Claude Code 2.1.317; a later release that records `@v1` is read the same way, because a recorded backup is not added twice.
 - **Source:** #249 (the pilot comment of 2026-11-25); `specs/026-slip-test-restore/`; the fix written on the maintainer's computer (branch `fix-slip-test-restore`).
 
+## Development 1 counts bytes, not lines (issue #269, constitution 5.0.0)
+
+- **Date:** 2026-11-25
+- **Decision:** Constitution Development 1 counts a plan's cost in bytes added to or removed from `kit/dm-rules.md` and each skill, and in tokens where `dmc size` measures them, not in lines. Its check says the same. A MAJOR amendment (a principle redefined), 4.0.0 to 5.0.0; no other principle changes, and older plans that counted lines stay as records.
+- **Reason:** A line is not a unit of cost: one line of `kit/dm-rules.md` can hold 400 characters or more, and a line that gets longer counts as zero. The file grew from 13,581 to 32,510 bytes between 2026-10-12 and 2026-11-17, which a count of lines did not show. Practice already counts bytes (specs 014, 016 and 025; the size cap in `ToolkitTests`), and since #246 (spec 021) `dmc size` gives real tokens.
+- **Rejected:** counting both lines and bytes (lines add nothing a byte count lacks); tokens only (`dmc size` measures campaign files, not the kit rules or a skill).
+- **Limits:** Bytes stand in for tokens in the rules and the skills; `dmc size` counts 2 tokens for 5 characters (spec 021). The amendment was drafted from issue #269 and applied on the maintainer's word, not by running `/speckit-constitution`.
+- **Source:** Issue #269 (Phase 4 of #238).
+
 ## Feedback names the kind of its cause, and only one kind ends in words (issue #266, spec 027)
 
 - **Date:** 2026-11-25

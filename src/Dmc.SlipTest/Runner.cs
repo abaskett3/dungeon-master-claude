@@ -157,6 +157,7 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         List<Backup> backups = trial.Mode == "fork"
             ? FileHistory.Collect(Folders.Project(claudeHome, trial.Folder), Path.Combine(claudeHome, "file-history"))
             : [];
+        List<FileEdit> edits = trial.Mode == "fork" ? FileHistory.CollectEdits(Folders.Project(claudeHome, trial.Folder)) : [];
         if (trial.Mode == "fresh")
             foreach (var arm in trial.Arms)
                 if (!done.Contains(("base", arm.Name, 0)))
@@ -167,7 +168,7 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
                 continue;
             var p = points[point.Id];
             if (trial.Mode == "fork")
-                RestoreFork(arm, p, backups);
+                RestoreFork(arm, p, backups, edits);
             else
                 RestoreFresh(arm);
             string id = Guid.NewGuid().ToString();
@@ -182,10 +183,11 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
     /// <param name="arm">The arm.</param>
     /// <param name="point">The point.</param>
     /// <param name="backups">The file history of the DMC folder.</param>
-    void RestoreFork(Arm arm, ResolvedPoint point, List<Backup> backups)
+    /// <param name="edits">The edits the DMC folder's logs record.</param>
+    void RestoreFork(Arm arm, ResolvedPoint point, List<Backup> backups, List<FileEdit> edits)
     {
         Folders.Replace(Path.Combine(trial.Folder, "adventures"), Path.Combine(trial.Copy, "adventures"));
-        FileHistory.Apply(FileHistory.StateAt(backups, trial.Folder, point.Time), trial.Copy);
+        FileHistory.Apply(FileHistory.StateAt(backups, trial.Folder, point.Time, edits), trial.Copy);
         File.Copy(arm.Source, Path.Combine(trial.Copy, "CLAUDE.md"), overwrite: true);
     }
 

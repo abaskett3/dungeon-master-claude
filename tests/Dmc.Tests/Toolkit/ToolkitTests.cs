@@ -1054,22 +1054,23 @@ public sealed partial class ToolkitTests
     }
 
     /// <summary>
-    /// Spec 023 (issue #248): <c>review-feedback</c> holds a fix that is only words until the slip test of issue #249 can
-    /// test it, or until 2026-12-31; it names the three kinds of change the hold does not cover, and it does not act on a
-    /// held entry unless the user lifts the hold.
+    /// Spec 027 (issue #266): <c>review-feedback</c> names one of four kinds of cause for each entry, with what shows it;
+    /// only the first kind ends in changed words, a fix of that kind that adds words goes through the slip test, and the
+    /// hold of spec 023 it replaces is gone.
     /// </summary>
     [TestMethod]
-    public void ReviewFeedbackHoldsWordOnlyFixesUntilTheSlipTest()
+    public void ReviewFeedbackNamesTheKindOfEachCause()
     {
         string skill = Read(".claude/skills/review-feedback/SKILL.md");
-        StringAssert.Contains(skill, "a cause whose only fix is words is held: a new or longer sentence in `kit/dm-rules.md`, a skill or a template, a new template field included", "spec 023 FR-001");
-        StringAssert.Contains(skill, "List it in the report under \"Held until the slip test\" and propose no change for it.", "spec 023 FR-001");
-        StringAssert.Contains(skill, "- a change that removes a contradiction or replaces text without making the file longer;", "spec 023 FR-002");
-        StringAssert.Contains(skill, "- a mechanism: a hook, a script, a `dmc` check, a deny rule (with the sentence that tells DMC to use it);", "spec 023 FR-002");
-        StringAssert.Contains(skill, "- a change that replaces a kit rule with a shorter one.", "spec 023 FR-002");
-        StringAssert.Contains(skill, "The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or today's date (run `date`) is after 2026-12-31.", "spec 023 FR-003");
-        StringAssert.Contains(skill, "A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry: write `held until the slip test` under its Worker notes, unless it is there already, leave its status as it is, and change nothing.", "spec 023 FR-004");
-        StringAssert.Contains(skill, "When the hold has ended and the entry is proposed again, replace that line with the outcome.", "spec 023 FR-004");
+        StringAssert.Contains(skill, "Then name one of four kinds of cause, each with the file and line or the log record that shows it", "spec 027 FR-001");
+        foreach (string kind in new[] { "1. **The instructions say the wrong thing**", "2. **A mechanism is missing, or cannot do its work.**", "3. **The story files are wrong.**", "4. **The model does not do it reliably**" })
+            StringAssert.Contains(skill, kind, "spec 027 FR-001");
+        Assert.AreEqual(4, skill.Split("Example: ").Length - 1, "spec 027 FR-005: a worked example for each kind");
+        StringAssert.Contains(skill, "**Only kind 1 ends in changed words**", "spec 027 FR-002");
+        StringAssert.Contains(skill, "is proposed as a slip-test trial", "spec 027 FR-002");
+        StringAssert.Contains(skill, "Kinds 2, 3 and 4 never add a sentence to the prompts", "spec 027 FR-003");
+        StringAssert.Contains(skill, "Record \"the model does not do this reliably\" and add no sentence", "spec 027 FR-003");
+        Assert.DoesNotContain("The hold ends at the first of", skill, "spec 027 FR-004: the hold of spec 023 is replaced");
     }
 
     /// <summary>Feedback has one route: <c>dmc-record-feedback</c> writes to <c>feedback/</c> and to nothing else, and has no stopgap copy in a campaign.</summary>

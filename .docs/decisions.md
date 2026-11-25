@@ -912,3 +912,12 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** counting both lines and bytes (lines add nothing a byte count lacks); tokens only (`dmc size` measures campaign files, not the kit rules or a skill).
 - **Limits:** Bytes stand in for tokens in the rules and the skills; `dmc size` counts 2 tokens for 5 characters (spec 021). The amendment was drafted from issue #269 and applied on the maintainer's word, not by running `/speckit-constitution`.
 - **Source:** Issue #269 (Phase 4 of #238).
+
+## Feedback names the kind of its cause, and only one kind ends in words (issue #266, spec 027)
+
+- **Date:** 2026-11-25
+- **Decision:** `review-feedback` § 5 names one of four kinds of cause for each entry, each with the file and line or the log record that shows it (constitution Development 4): (1) the instructions say the wrong thing or contradict each other; (2) a mechanism is missing or cannot do its work; (3) the story files are wrong; (4) the model does not do it reliably, the right line having been in its context. Only kind 1 ends in changed words; it removes or replaces text, and a fix that makes a file longer is proposed as a slip-test trial and changes the kit only if it passes. Kind 2 becomes an issue for a mechanism in the form of a slip-plan trial (#241). Kind 3 is a correction of the data with the player's ruling, and a note on #262 when a step wrote the line. Kind 4 gets no sentence, and counts as evidence for a mechanism. This replaces the hold of spec 023 with a permanent rule.
+- **Reason:** The skill found "the cause in the prompts", so every cause was a prompt and every fix was words. Entries marked fixed by words came back: dead time, a character who knows what nobody told it, wrong names, clothing (#243). #237 found that 84% of replies with NPC speech had no lookup, so a rule to look something up does not run when the reply is written.
+- **Rejected:** keeping the hold with a later end date (it pauses the loop but does not change it); no words ever (a contradiction in the rules is a real cause that only words can fix).
+- **Limits:** The kind is the reviewer's reading of the evidence. Telling kind 4 from kind 2 needs the log, which the digest gives; without it the skill names no kind and says what it would need to read. The hold of spec 023 ended when `.docs/roadmap.md` showed the slip test done (PR #275), so this rule takes over from it with no gap.
+- **Source:** Issue #266 (Phase 4 of #238); `specs/027-cause-kinds/`; decision D5 of #238 and spec 023.

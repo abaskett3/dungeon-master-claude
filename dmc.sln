@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dmc.Tests", "tests\Dmc.Tests\Dmc.Tests.csproj", "{0BD79794-DEC0-4DA8-ABA4-3219A04BC7B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dmc.SlipTest", "src\Dmc.SlipTest\Dmc.SlipTest.csproj", "{2D35AEAD-7A95-4570-9811-CD8F67DC5971}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,18 @@ Global
 		{0BD79794-DEC0-4DA8-ABA4-3219A04BC7B4}.Release|x64.Build.0 = Release|Any CPU
 		{0BD79794-DEC0-4DA8-ABA4-3219A04BC7B4}.Release|x86.ActiveCfg = Release|Any CPU
 		{0BD79794-DEC0-4DA8-ABA4-3219A04BC7B4}.Release|x86.Build.0 = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|x64.Build.0 = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Debug|x86.Build.0 = Debug|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|x64.ActiveCfg = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|x64.Build.0 = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|x86.ActiveCfg = Release|Any CPU
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{9C9EBA61-F950-4D81-8CA2-AE2BFFAEB5D2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{0BD79794-DEC0-4DA8-ABA4-3219A04BC7B4} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{2D35AEAD-7A95-4570-9811-CD8F67DC5971} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

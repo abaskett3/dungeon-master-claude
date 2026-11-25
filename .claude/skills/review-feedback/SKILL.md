@@ -34,36 +34,35 @@ dmc digest show --folder <dmc folder> <id>
 
 Find the moment with the entry's quote in `adventures/.transcript-review/<id>-turns.txt` in the DMC folder, then read the stretch around it in `<id>-transcript.md`: about ten exchanges before it, so the cause is visible and not only the complaint. Never open raw `.jsonl` logs with Read: they hold page images and whole files inline.
 
-## 5. Find the cause in the prompts
+## 5. Find the cause, and name its kind
 
-For each entry read the relevant part of `kit/dm-rules.md`, the skill DMC had loaded (`kit/skills/dmc-<name>/SKILL.md`), the template behind the file it was editing (`kit/templates/`), and `kit/settings.json` for the hooks.
+For each entry read the relevant part of `kit/dm-rules.md`, the skill DMC had loaded (`kit/skills/dmc-<name>/SKILL.md`), the template behind the file it was editing (`kit/templates/`), and `kit/settings.json` for the hooks. Then name one of four kinds of cause, each with the file and line or the log record that shows it (issue #266). A kind you cannot show is not named: say what you would need to read.
+
+1. **The instructions say the wrong thing**, or two of them contradict each other. Example: after a correction, one rule says to redo the beat and the next line says to go on from it. The fix is words: remove or replace the wrong text.
+2. **A mechanism is missing, or cannot do its work.** Example: the context hook prints a sheet's looks, stats and traits but not its voice or names (`src/Dmc.Cli/Retrieval/SheetReminder.cs`, `Fields`), and DMC used a wrong name. The fix is the mechanism: an issue in the form of a trial of the slip plan (#241), never a sentence.
+3. **The story files are wrong.** Example: a sheet line DMC wrote says the player chose something they did not. The fix is the data, corrected with the player's ruling; if a skill's step wrote the wrong line, add a note to #262 naming the step.
+4. **The model does not do it reliably**: the right line was in its context and was not used. Example: the sheet's name line was read two play turns before the slip. Record "the model does not do this reliably" and add no sentence: a rule to look a thing up does not run at the moment of writing. The entry is evidence for a mechanism; link the issue for one, or propose one as in kind 2.
 
 ## 6. Report
 
 Lead with a short verdict: the two or three changes that would matter most. Group the entries by cause, most damaging first, and cite the entry file names. For each cause:
 
 - **What happened**, in a line, with the entries' occurrences (how often it was raised says how much it matters).
-- **Why the prompts allowed it**: the file and passage that caused it, or what is missing.
-- **The change**: which file, and the wording or the mechanism. Prefer the smallest change that would have prevented it. A hook or a script is better than a paragraph when the problem is that DMC forgot. Say what it costs: every line added to `CLAUDE.md` is paid for in every exchange of every session.
+- **Why the prompts allowed it**: its kind (§ 5), and the file and passage, data or log record that shows it.
+- **The change**: which file, and the wording, the mechanism or the data, as its kind allows. Prefer the smallest change that would have prevented it. A hook or a script is better than a paragraph when the problem is that DMC forgot. Say what it costs: every line added to `CLAUDE.md` is paid for in every exchange of every session.
 
-**The hold on word-only fixes** (issue #248). No measurement shows that new sentences in the rules, the skills or the templates decrease slips, and `kit/dm-rules.md` is at its size cap. So while the hold lasts, a cause whose only fix is words is held: a new or longer sentence in `kit/dm-rules.md`, a skill or a template, a new template field included. List it in the report under "Held until the slip test" and propose no change for it. Not held:
-
-- a change that removes a contradiction or replaces text without making the file longer;
-- a mechanism: a hook, a script, a `dmc` check, a deny rule (with the sentence that tells DMC to use it);
-- a change that replaces a kit rule with a shorter one.
-
-The hold ends at the first of: `.docs/roadmap.md` shows the slip test (issue #249) done, or today's date (run `date`) is after 2026-12-31. Then propose the held entries again, each with its slip-test result where the test can run it, and change only those that pass.
+**Only kind 1 ends in changed words** (issue #266; it replaces the hold of #248). A fix of kind 1 removes or replaces text, and is not longer than the text it replaces where it can be. A fix of kind 1 that can only add words (a new or longer sentence in `kit/dm-rules.md`, a skill or a template, a new template field included) is proposed as a slip-test trial (`.docs/development.md` § The slip test) with its pass line, and changes the kit only if it passes. Kinds 2, 3 and 4 never add a sentence to the prompts; a mechanism (a hook, a script, a `dmc` check, a deny rule) may carry the one sentence that tells DMC to use it.
 
 List separately, in a line each, anything that is a model or harness setting and not a prompt (reasoning effort, plugins and connectors loaded into a game session). Say what you did not read.
 
 ## 7. Act only when the user says which entries to act on
 
-Then file an issue, or make the change, under CLAUDE.md § Git and GitHub. A held entry (§ 6) is not acted on while the hold lasts, unless the user lifts it for that entry: write `held until the slip test` under its Worker notes, unless it is there already, leave its status as it is, and change nothing. When the hold has ended and the entry is proposed again, replace that line with the outcome.
+Then file an issue, or make the change, under CLAUDE.md § Git and GitHub. An entry whose Worker notes say `held until the slip test` (the hold of #248, which ended) is reviewed again under § 5 and § 6; replace that line with the outcome.
 
 - Make each change in the one place it belongs. Do not restate a rule in several files.
 - Write for a DMC that has none of this review in front of it: say what to do and why, and leave out the story of the session that prompted it.
 - If `kit/dm-rules.md` grows, look for something in it that the entries show DMC never needed, and cut or move it to a skill.
 - A change that alters what campaign files should hold (a template, or a skill's rule for a campaign file's shape) adds the next-numbered migration in `kit/migrations/` and its golden fixture under `tests/Dmc.Tests/Fixtures/migrations/NNN/`, written for a campaign its author has never seen, or says in the PR why none is needed (a new optional field, say). The format is `specs/005-campaign-migrations/contracts/migration-file.md`; `.docs/development.md` § Changing a campaign-file standard says how to build and test one. Never add a clause to a skill that repairs older files as it goes.
-- Under the entry's Worker notes, write a short note of what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges.
+- Under the entry's Worker notes, write a short note of the cause's kind and what was decided and done, with the issue or PR number, not the diff or the proposed wording. Set the status to `filed #N`, and to `fixed in PR #N` when the PR merges. A kind 4 entry is `filed #N` for the mechanism's issue. A kind 3 entry whose data is corrected is `not a toolkit problem: the story file was wrong, corrected with the player's ruling`, or `filed #262` if a step wrote the line.
 - Remove any stopgap option line that an older entry names under Done in play once its fix has shipped (`dmc-record-feedback` no longer writes them).
 - Never delete an entry file: a closed status is the record.

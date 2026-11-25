@@ -27,6 +27,8 @@
     <!-- The in-process layer calls the library code of the CLI project directly. The black-box layer runs the
          published binary (artifacts/bin/dmc), which "dotnet publish src/Dmc.Cli -r <rid> -o artifacts/bin" produces. -->
     <ProjectReference Include="..\..\src\Dmc.Cli\Dmc.Cli.csproj" />
+    <!-- The slip test runner (spec 024): its pure parts are tested in-process on invented logs. -->
+    <ProjectReference Include="..\..\src\Dmc.SlipTest\Dmc.SlipTest.csproj" />
     <!-- The tests run on the same three OSes, so the platform analyzer accepts their calls into the CLI. -->
     <Compile Include="..\..\src\Dmc.Cli\SupportedPlatforms.cs" Link="SupportedPlatforms.cs" />
   </ItemGroup>

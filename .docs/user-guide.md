@@ -258,7 +258,7 @@ To give DMC feedback, say it in play, in your own words or after "feedback:". DM
 
 Entries quote you and can contain spoilers, so `feedback/` is not in git. Each one makes sense without the adventure.
 
-To act on the entries, work on the toolkit (not in a game): start Claude Code in a clone of the toolkit's repository and ask for `/review-feedback`, naming your DMC folder (by default it uses the one `dmc folder` prints). It lists the open entries, checks whether each is already fixed, finds the cause in `kit/` (the source of the rules, skills, settings and templates `dmc` writes into a DMC folder), and reports. Players get a change through a newer `dmc`. It files issues or makes changes only once you say which entries to act on, and marks each entry `filed #N` or `fixed in PR #N`; it never deletes an entry.
+To act on the entries, work on the toolkit (not in a game): start Claude Code in a clone of the toolkit's repository and ask for `/review-feedback`, naming your DMC folder (by default it uses the one `dmc folder` prints). It lists the open entries, checks whether each is already fixed, finds the cause in `kit/` (the source of the rules, skills, settings and templates `dmc` writes into a DMC folder), and reports. Players get a change through a newer `dmc`. It files issues or makes changes only once you say which entries to act on, and marks each entry `filed #N` or `fixed in PR #N`; it never deletes an entry. Until the slip test (issue #249) is ready, or until 2026-12-31, it holds an entry whose only fix would be more words in the rules, a skill or a template: it lists it as held and changes nothing, unless you lift the hold for that entry.
 
 ## Reviewing your sessions
 

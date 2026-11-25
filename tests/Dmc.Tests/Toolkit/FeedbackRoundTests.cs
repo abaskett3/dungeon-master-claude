@@ -36,14 +36,16 @@ public sealed partial class ToolkitTests
         StringAssert.Contains(save, "Never mention these lines to the player");
     }
 
-    /// <summary>The rules carry the clauses of A and B, the correction rule's approved wording included.</summary>
+    /// <summary>
+    /// The rules carry the clauses of A and B, the correction rule's approved wording included. The Present-line read of a
+    /// sheet, also a clause of A, is checked by <see cref="ThePresentLineReadsASheetAsTheResumeDoes"/> since spec 022.
+    /// </summary>
     [TestMethod]
     public void TheRulesCarryTheClausesOfAAndB()
     {
         string rules = Read("kit/dm-rules.md");
         StringAssert.Contains(rules, "rewrite that line of the sheet (and the stat block), not only its History");
         StringAssert.Contains(rules, "A species or class never says what an established character can do");
-        StringAssert.Contains(rules, "read their sheet down to its History, once per session part");
         StringAssert.Contains(rules, "Correct only the fact that was wrong");
         StringAssert.Contains(rules, "read the files and open your reply by quoting what they say, for and against");
         StringAssert.Contains(rules, "change no file until they agree; `game-state.md` may note the fix as waiting on them");

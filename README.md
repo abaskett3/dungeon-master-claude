@@ -191,7 +191,7 @@ There are two kinds of feedback. How *you* like to play ("show my HP all the tim
 
 Claude Code also keeps a log of every session on your machine. `/review-transcript` (in this repository) reads the logs for a campaign and records where DMC let the game down (context and token use, facts or numbers that drifted, fights that were sized wrongly, DMC acting for your character, slow stretches, wasteful bookkeeping) as more entries in `feedback/`. It changes nothing.
 
-`/review-feedback` is the one place where DMC is tuned. It works through the open entries, finds the cause in `kit/` (the source of the rules, skills, settings and templates that `dmc` writes into a DMC folder), and proposes changes, which it files as issues or makes once you say which entries to act on. Your own preferences stay in your player options; they are not written into the toolkit.
+`/review-feedback` is the one place where DMC is tuned. It works through the open entries, finds the cause in `kit/` (the source of the rules, skills, settings and templates that `dmc` writes into a DMC folder), and proposes changes, which it files as issues or makes once you say which entries to act on. Until the slip test (issue #249) is ready, or until 2026-12-31, it holds a fix that would only add words. Your own preferences stay in your player options; they are not written into the toolkit.
 
 `dmc` condenses the logs, so it needs nothing else. The condensed transcripts it works from are written to `adventures/.transcript-review/` in your DMC folder, and nothing leaves your machine. The entries quote you and can contain spoilers.
 

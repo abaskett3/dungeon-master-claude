@@ -18,6 +18,7 @@ This document is for contributors changing `dmc`, the kit (the Dungeon Master ru
 | `.claude/skills/`, `.claude/settings.json` | Developer-only: the `review-feedback` and `review-transcript` skills (they take a DMC folder), Spec Kit's `speckit-*` skills, and the permissions development needs |
 | `tools/` | `install.ps1` and `install.sh`: the install line, attached to every release (tested by `Distribution/BootstrapTests.cs`) |
 | `src/Dmc.Cli/` | `dmc`'s source (C#, .NET 10) |
+| `src/Dmc.SlipTest/` | `slip-test`, the replay runner that measures slips (spec 024): developer tooling, built and tested with the solution, never released or run in CI (see [The slip test](#the-slip-test)) |
 | `tests/Dmc.Tests/` | The tests (MSTest and Playwright) |
 | `.github/workflows/` | `tests.yml` (CI) and `release.yml` (releases); `.github/release/sign.sh` signs a release's checksum list (see [releases.md](releases.md)) |
 | `Directory.Build.props`, `Directory.Packages.props`, `global.json`, `dmc.sln` | Shared build settings, centrally pinned package versions, the SDK pin, the solution |
@@ -98,6 +99,23 @@ The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README
 ### The recall test
 
 `tools/recall-test.ps1` reruns issue #179's recall test (spec 009, SC-002): it runs `dmc recall` for each question of a tab-separated questions file (`id`, `named` or `indirect`, the question, an answer regex) and prints, per style, how often the answer was in the output and in the first hit. The questions quote campaign facts, so the file lives in the maintainer's DMC folder (suggested: `recall-test/questions.tsv`) and is never committed; the script never runs in CI, where `tests/Dmc.Tests/Retrieval/` checks recall on invented fixtures. Run it after a change to the ranking (`src/Dmc.Cli/Retrieval/`) and compare with the figures on the issue. Usage and format: `specs/009-retrieval-lookup-recall/contracts/recall-test.md`.
+
+### The slip test
+
+`slip-test` (`src/Dmc.SlipTest/`, spec 024, issue #249) measures how often DMC's replies slip, so a change to the rules can be tested before it ships (#238, #240). It replays real play: for each fork point (a player message in a Claude Code log) and each arm (the control and a treatment), it writes the log up to that message under a new session id, with the DMC folder's path replaced by a copy folder's and the recorded `CLAUDE.md` replaced by the arm's rules; restores the copy's `adventures/` to that moment from Claude Code's file history; and runs `claude -p --resume <id> --fork-session` with the player's message and the original's model, effort and permission mode. Fresh-resume mode instead lays each arm's files over the copy, starts one base session per arm with the resume, and forks it. The pilot checks that the replays saw what play saw (no new notice, the same hook output, the arm's rules in the log, the same thinking blocks in both arms); `export` writes the replies under random ids for a blind score against a key written before the runs; `score` gives each arm's slip rate with a 95% interval over fork points, the difference, the pass line's verdict and the cost.
+
+```
+dotnet run --project src/Dmc.SlipTest -- prepare --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- run --pilot --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- pilot --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- run --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- export --work <work folder>
+dotnet run --project src/Dmc.SlipTest -- score --work <work folder>
+```
+
+The work folder holds the trial, the fork points, the key and every run; they quote play, so it lives outside the repository (suggested: `slip-test/<trial>/` in the DMC folder) and is never committed. It needs Claude Code signed in, the logs and file history kept (#239), and a trusted copy folder. `tests/Dmc.Tests/SlipTest/` checks the runner on invented logs with a stand-in for Claude Code; nothing in CI runs a model. The file formats, the commands and their output: `specs/024-slip-test-runner/contracts/slip-test.md`; the pilot and the base rate step by step: its `quickstart.md`.
+
+Limits (#249): a fork after a fresh resume measures a session's first slips, not the groups of slips in a long correction or a session above 300,000 tokens. A background session cannot be replayed (Claude Code rejects `--bg` with `-p`), so it runs as an ordinary one. A change made with a shell command left no backup and is not undone. Which billing applies to the runs is not verified. A rewrite before a thinking block makes Claude Code drop that block (research R3), so the control's rules must differ from the recorded text as the treatment's do.
 
 ## CI
 
@@ -210,7 +228,7 @@ specify integration upgrade claude --integration-options="--events false --no-mo
 - **`kit/dm-rules.md` becomes the DMC folder's `CLAUDE.md`, which is loaded into every play session**, so every line in it is paid for in every exchange of every game. Keep it lean: put procedures in skills, which load only when they apply, and put rarely needed reference material (the map format, for example) in a separate file a skill points to. When the rules must grow, look for something to cut or move.
 - **Give each rule one home.** Write a rule in the one place it belongs, and have other places point to it ("in the order `CLAUDE.md` § Maps gives") instead of repeating it. Two copies drift apart.
 - **Preferences are not rules.** How long one player likes replies, or how hard they like fights, belongs in `player-options.md`. The test, from the `record-feedback` and `review-feedback` skills: would the same behaviour have been wrong for a different player with different preferences? Only then is it a toolkit rule.
-- **Feedback is recorded first, and tuned in one place.** Feedback about how DMC itself runs the game is recorded in `feedback/` of the DMC folder (see [campaign-files.md](campaign-files.md#feedback-entries)), by `dmc-record-feedback` in play and by `review-transcript` from the session logs. `review-feedback` is the only skill that reviews it, finds the cause in the prompts, and files issues or makes the changes. During play nothing edits the toolkit. A toolkit test keeps `gh issue` and `gh pr` out of every other skill.
+- **Feedback is recorded first, and tuned in one place.** Feedback about how DMC itself runs the game is recorded in `feedback/` of the DMC folder (see [campaign-files.md](campaign-files.md#feedback-entries)), by `dmc-record-feedback` in play and by `review-transcript` from the session logs. `review-feedback` is the only skill that reviews it, finds the cause in the prompts, and files issues or makes the changes. During play nothing edits the toolkit. A toolkit test keeps `gh issue` and `gh pr` out of every other skill. Until the slip test of issue #249 can test a change, or until 2026-12-31, `review-feedback` holds a fix that is only words and changes nothing for it; during the hold a new template field counts as words, not as a mechanism (spec 023; see [decisions.md](decisions.md)).
 - **Prefer a mechanism to a paragraph** when the problem is that DMC forgets: a hook, a template field or a `dmc` feature is more reliable than another sentence.
 - **Write for a reader with none of the history.** Say what to do and why; leave out the session that prompted it.
 - **The toolkit tests check the prompts.** Every `dmc` command in a prompt must be a real subcommand, and the ones DMC runs must match an allow rule; every path under `templates/` or `.claude/skills/` in a kit prompt must exist in `kit/` (a DMC folder has no `tools/` or `.docs/`); a backticked `/word-word` is read as a skill name and must be a real one, so name Claude Code's own commands in words rather than as `/code-review`.

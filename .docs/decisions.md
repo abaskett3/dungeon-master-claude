@@ -894,3 +894,12 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** a slip counter in `dmc digest` (#251); widening the gate count itself (its baseline holds no conduct).
 - **Limits:** The count holds only the slips DMC admits; #250's baseline measures what it misses. The session kind comes from a `sessionKind` property that the logs of this container do not have, so the line says "not recorded" until a log shows it; the same holds for effort in an older Claude Code. No migration: an older session log has no `conduct` line and needs none, and a new line uses the new category.
 - **Source:** Issue #251 (Phase 1 of #238); `specs/025-slip-count/`.
+
+## The slip test restores each file from the backup that holds it at the fork (issue #278, spec 026, a correction of spec 024)
+
+- **Date:** 2026-11-25
+- **Decision:** `FileHistory.StateAt` takes, for each file under `adventures/` with a backup after the fork time, the earliest such backup only when no edit of the file falls between the fork and it; otherwise the latest backup at or before the fork, when no edit falls between them. A file with no backup or edit before the fork did not exist then. Any other case refuses the point. The edits are every `Edit`, `Write`, `MultiEdit` and `NotebookEdit` call the DMC folder's logs record, and each session's first backup of a file (`<stem>@v1`), which no log names, is read from disk.
+- **Reason:** Spec 024 research R4 assumed a backup before each turn's first edit, and marked the format not verified. The maintainer's logs show a backup recorded at the next player message and holding the edits before it, no record of `@v1`, and no backup for a file a `Write` creates. In the pilot of #249, one fork saw a session log as it was after play had corrected the slip being replayed.
+- **Rejected:** dropping every point with an edit before the next backup (it would drop most points of a session with a save near the fork); rebuilding files by replaying the edit calls (an `Edit` holds only the changed text, and a shell change holds none).
+- **Limits:** A change made with a shell command still leaves no backup. The format is that of Claude Code 2.1.317; a later release that records `@v1` is read the same way, because a recorded backup is not added twice.
+- **Source:** #249 (the pilot comment of 2026-11-25); `specs/026-slip-test-restore/`; the fix written on the maintainer's computer (branch `fix-slip-test-restore`).

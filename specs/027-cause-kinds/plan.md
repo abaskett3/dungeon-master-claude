@@ -21,7 +21,7 @@ status.
 |---|---|
 | Core 1 Consistency | Pass. A wrong story file is corrected with the player's ruling (kind 3) |
 | Core 2 Fun | Pass. Fixes aim at the cause, so fewer slips come back |
-| Core 3, Development 1 Cost | Pass. 0 bytes to `kit/dm-rules.md` and every player skill; `review-feedback` +1,186 bytes, developer-only |
+| Core 3, Development 1 Cost | Pass. 0 bytes to `kit/dm-rules.md` and every player skill; `review-feedback` +1,365 bytes, developer-only |
 | Development 2 Migration | Pass. None needed: no template or campaign file changes |
 | Development 3 One step | Pass. A developer skill, not released |
 | Development 4 Grounded | Pass. Every kind needs the file, line or log record that shows it |

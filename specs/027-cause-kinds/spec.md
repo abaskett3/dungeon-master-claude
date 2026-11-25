@@ -37,8 +37,8 @@ replacement that is no longer than the text it replaces.
 - **FR-001**: § 5 MUST name one of four kinds for each entry, with the file and line or the log record that shows it:
   (1) the instructions say the wrong thing or contradict each other, (2) a mechanism is missing or cannot do its work,
   (3) the story files are wrong, (4) the model does not do it reliably.
-- **FR-002**: Only kind 1 MAY end in changed words. Its fix removes or replaces text. A fix that can only add words
-  is proposed as a slip-test trial and changes the kit only if it passes.
+- **FR-002**: Only kind 1 MAY end in changed words. Its fix removes or replaces text. A fix that makes a file longer
+  (a new template field included) is proposed as a slip-test trial and changes the kit only if it passes.
 - **FR-003**: Kind 2 MUST become an issue for a mechanism in the form of a trial (#241). Kind 3 MUST become a
   correction of the data with the player's ruling, and a note on #262 when a step wrote the line. Kind 4 MUST be
   recorded as "the model does not do this reliably", get no sentence, and count as evidence for a mechanism.
@@ -56,11 +56,12 @@ replacement that is no longer than the text it replaces.
 
 ## Assumptions
 
-- No new entry status. Kind 4 is `filed #N` for the mechanism's issue. Kind 3 is `not a toolkit problem: the story
-  file was wrong, corrected with the player's ruling`, or `filed #262`. So the feedback template does not change and
+- No new entry status. Kind 4 is `filed #N` for the mechanism's issue. Kind 3 is `filed #262` when a step wrote the line,
+  `filed #N` for a mechanism when DMC wrote it with no step at fault, and `not a toolkit problem: the story file was
+  wrong, corrected with the player's ruling` only when someone other than DMC wrote it. So the feedback template does not change and
   no migration is needed (Development 2).
 - Cost (Development 1): 0 bytes to `kit/dm-rules.md` and to every player skill. `review-feedback` is a developer
-  skill: +1,186 bytes, read only when it runs.
+  skill: +1,365 bytes, read only when it runs.
 
 ## Out of Scope
 

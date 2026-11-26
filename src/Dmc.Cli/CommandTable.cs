@@ -19,6 +19,7 @@ public static class CommandTable
         new DigestCommand(),
         new CampaignCommand(),
         new SizeCommand(),
+        new SheetCommand(),
         new LookupCommand(),
         new ModuleCommand(),
         new RecallCommand(),

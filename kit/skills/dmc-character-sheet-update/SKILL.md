@@ -1,6 +1,6 @@
 ---
 name: dmc-character-sheet-update
-description: Create or update a character sheet for a player character, companion or NPC in the active campaign, including stats, inventory, notes, objectives, relationships and backstory. Use on level-up, when items or abilities change, when an NPC is introduced or becomes recurring, or when a character's goals, knowledge or attitude change.
+description: Create or update a character sheet for a player character, companion or NPC in the active campaign, including stats, inventory, notes, objectives, relationships and backstory. Also shows the player a printable sheet. Use on level-up, when the player asks to see a sheet, when items or abilities change, when an NPC is introduced or becomes recurring, or when a character's goals, knowledge or attitude change.
 ---
 
 # Character sheet update
@@ -26,6 +26,10 @@ A sheet must let a DM who has never met the character play them correctly: the n
 6. If current HP, slots or conditions changed, `game-state.md` is where those live during play. Update it too so the two agree.
 7. On a companion's sheet, change anything the play card holds on the card, in the same edit. The card is the only copy of each number on it; keep it within the budget `dmc size` checks.
 8. Looks (Appearance on a sheet with no card) is what they wear now. What they own and are not wearing or carrying goes under `## Wardrobe and keepsakes` on the owner's sheet, with where it is kept, who holds it and when it is worn. A change of clothes moves the old outfit there and the new one to Looks, so nothing is lost; read that section before you dress them.
+
+## Showing a sheet to the player
+
+When the player asks to see a sheet, never type it out: run `dmc sheet` (every player character), `dmc sheet NAME` (one, by the sheet's title or file name) or `dmc sheet --party`, and give the page's path it prints. If the player options say `Maps are shown as: remote`, send that file with the file-sending tool. The page holds only what the player character could know. If it refuses, it prints one line per thing to fix in the files: fix each with Read and Edit, from what the sheet and play already say, and run it again.
 
 ## New character
 

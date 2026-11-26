@@ -241,6 +241,36 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    /// <summary>The sheet cases that must fail, as test data.</summary>
+    public static IEnumerable<object[]> SheetErrors { get; } = Dmc.Tests.Sheets.SheetCases.ErrorCases().Select(c => new object[] { c }).ToArray();
+
+    /// <summary>
+    /// Every bad argument and every one-line refusal of <c>dmc sheet</c> (a name that is not a PC or in the party, nobody
+    /// to print, a campaign it cannot find) prints one line and no stack trace, and leaves the working folder exactly as
+    /// the case made it: no page is written.
+    /// </summary>
+    [TestMethod]
+    [DynamicData(nameof(SheetErrors), DynamicDataDisplayName = nameof(CaseName))]
+    public void EveryErrorOfSheetPrintsOneLine(CommandCase test)
+    {
+        string before = Path.Combine(Path.GetTempPath(), "dmc-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(before);
+        try
+        {
+            test.Seed?.Invoke(before);
+            string[] seeded = Entries(before);
+            test.Run("sheet", (result, folder) =>
+            {
+                AssertOneLine(result, test.Describe("sheet"));
+                CollectionAssert.AreEqual(seeded, Entries(folder), "a failed run must not write anything");
+            });
+        }
+        finally
+        {
+            Directory.Delete(before, recursive: true);
+        }
+    }
+
     /// <summary>Every way <c>install</c>, <c>refresh</c> and <c>folder</c> fail without writing anything prints one line, no stack trace and a non-zero exit code.</summary>
     [TestMethod]
     public void EveryErrorOfInstallRefreshAndFolderPrintsOneLine()

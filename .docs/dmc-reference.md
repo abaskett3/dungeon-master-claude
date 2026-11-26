@@ -467,7 +467,10 @@ not checked); `people-entries-named` (each list item under `## People` in `story
 it, outside comments, that starts with Character arcs); `arc-plan-guidance-current` (`story/dm-notes.md`'s Arc plan,
 when it has one, holds a comment naming the Five Commandments, and it has an `## Antagonists` section whose comment asks
 for the next move; text outside comments does not count, and a template comment without those words (one opening "The
-current arc of a homebrew campaign" or "For each: what they want") left beside the current one fails it).
+current arc of a homebrew campaign" or "For each: what they want") left beside the current one fails it);
+`wardrobe-sections-in-place` (each PC's sheet and each companion's, found as `companions-have-play-card` finds it,
+has one `## Wardrobe and keepsakes` section, spelled exactly, and no sheet has another `## ` or `### ` heading that
+starts with Wardrobe, in any case).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

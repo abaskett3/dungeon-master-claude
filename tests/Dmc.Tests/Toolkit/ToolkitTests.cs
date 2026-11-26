@@ -1160,6 +1160,28 @@ public sealed partial class ToolkitTests
         Assert.DoesNotContain("Read every file this save changed again", save);
     }
 
+    /// <summary>
+    /// Spec 030 (issue #286): both sheet templates hold <c>## Wardrobe and keepsakes</c> right before <c>## History</c>,
+    /// Looks is what they wear now, the sheet-update skill makes a change of clothes a swap and carries the wardrobe into
+    /// a sequel, and migration 009 names the check that holds the shape.
+    /// </summary>
+    [TestMethod]
+    public void SheetsKeepAWardrobeAndAChangeOfClothesIsASwap()
+    {
+        foreach (string sheet in new[] { "kit/templates/pc-sheet.md", "kit/templates/npc-sheet.md" })
+        {
+            string text = Read(sheet);
+            var headings = Regex.Matches(text, @"^## (.+)$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToList();
+            Assert.AreEqual("Wardrobe and keepsakes", headings[^2], $"{sheet}: the wardrobe comes right before History");
+            StringAssert.Contains(text, "- **Looks** (worn now):", sheet);
+            StringAssert.Contains(text, "on the owner's sheet", sheet);
+        }
+        string update = Read("kit/skills/dmc-character-sheet-update/SKILL.md");
+        StringAssert.Contains(update, "A change of clothes moves the old outfit there and the new one to Looks, so nothing is lost");
+        StringAssert.Contains(update, "their appearance and their wardrobe and keepsakes go on the sheet itself");
+        StringAssert.Contains(Read("kit/migrations/009-wardrobe-and-keepsakes.md"), "checks: [wardrobe-sections-in-place]");
+    }
+
     /// <summary>The rules for messages that are not actions, and for NPCs that must not re-ask, are in the rules.</summary>
     [TestMethod]
     public void MessagesThatAreNotActionsAreHandled()

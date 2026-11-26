@@ -44,7 +44,11 @@ internal static partial class MigrationChecks
         ["people-entries-named"] = PeopleEntriesNamed,
         ["dm-notes-have-arc-plan"] = DmNotesHaveArcPlan,
         ["arc-plan-guidance-current"] = ArcPlanGuidanceCurrent,
+        ["wardrobe-sections-in-place"] = WardrobeSectionsInPlace,
     };
+
+    /// <summary>The heading of a sheet's wardrobe section, without the <c>## </c> (migration 009, spec 030).</summary>
+    const string Wardrobe = "Wardrobe and keepsakes";
 
     /// <summary>The game state, whose Party status names the companions.</summary>
     const string GameState = "game-state.md";
@@ -317,11 +321,7 @@ internal static partial class MigrationChecks
     {
         if (!input.New.TryGetValue(GameState, out string? state))
             yield break;
-        // Every sheet the read set considers (ReadSet.Sheets), in the same order, so the indexes and the match agree with dmc size.
-        var sheets = input.New.Where(f => f.Key.StartsWith(Sheets, StringComparison.Ordinal) && f.Key.EndsWith(".md", StringComparison.Ordinal)
-                                          && f.Key[Sheets.Length..] is var name && !name.Contains('/') && name != "minor-npcs.md"
-                                          && !name.EndsWith("-history.md", StringComparison.Ordinal))
-            .OrderBy(f => f.Key, StringComparer.Ordinal).ToList();
+        var sheets = SheetFiles(input);
         var titles = sheets.Select(s => Lines(s.Value).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t
             ? t[2..].Trim() : Path.GetFileNameWithoutExtension(s.Key)).ToList();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -392,5 +392,54 @@ internal static partial class MigrationChecks
             yield return $"{DmNotes} has no ## {Antagonists} section";
         else if (!GuidanceCurrent(antagonists, "For each: what they want", "next move"))
             yield return $"{DmNotes}'s {Antagonists} has an older template comment";
+    }
+
+    /// <summary>
+    /// Every sheet the read set considers (<c>ReadSet.Sheets</c>): the files directly in <c>character-sheets/</c> but
+    /// <c>minor-npcs.md</c> and the <c>-history.md</c> files, in path order, so indexes and matches agree with <c>dmc size</c>.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static List<KeyValuePair<string, string>> SheetFiles(CheckInput input) =>
+        [.. input.New.Where(f => f.Key.StartsWith(Sheets, StringComparison.Ordinal) && f.Key.EndsWith(".md", StringComparison.Ordinal)
+                                 && f.Key[Sheets.Length..] is var name && !name.Contains('/') && name != "minor-npcs.md"
+                                 && !name.EndsWith("-history.md", StringComparison.Ordinal))
+            .OrderBy(f => f.Key, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// <c>wardrobe-sections-in-place</c> (migration 009, spec 030 FR-006): each PC's sheet (<c>pc-*.md</c>) and each
+    /// companion's sheet, found from <c>game-state.md</c>'s Party status as <see cref="CompanionsHavePlayCard"/> finds
+    /// it, has one <c>## Wardrobe and keepsakes</c> section, spelled exactly; and no sheet has another <c>## </c> or
+    /// <c>### </c> heading that starts with "Wardrobe", in any case (a hand-made section the migration renames or merges).
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> WardrobeSectionsInPlace(CheckInput input)
+    {
+        var sheets = SheetFiles(input);
+        var needs = new SortedSet<string>(sheets.Select(s => s.Key).Where(p => p[Sheets.Length..].StartsWith("pc-", StringComparison.Ordinal)),
+            StringComparer.Ordinal);
+        if (input.New.TryGetValue(GameState, out string? state))
+        {
+            var titles = sheets.Select(s => Lines(s.Value).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t
+                ? t[2..].Trim() : Path.GetFileNameWithoutExtension(s.Key)).ToList();
+            foreach (string block in ReadSet.CompanionBlocks(Measurement.Split(System.Text.Encoding.UTF8.GetBytes(state))))
+            {
+                int index = ReadSet.MatchCompanion(block, titles);
+                if (index >= 0)
+                    needs.Add(sheets[index].Key);
+            }
+        }
+        foreach (var (path, text) in sheets)
+        {
+            var headings = Lines(text).Where(l => l.StartsWith("## ", StringComparison.Ordinal) || l.StartsWith("### ", StringComparison.Ordinal))
+                .Select(l => l.TrimEnd()).ToList();
+            int exact = headings.Count(h => h == $"## {Wardrobe}");
+            if (needs.Contains(path) && exact == 0)
+                yield return $"{path} has no ## {Wardrobe} section";
+            if (exact > 1)
+                yield return $"{path} has {exact} ## {Wardrobe} sections, not one";
+            foreach (string other in headings.Where(h => h.TrimStart('#').TrimStart().StartsWith("Wardrobe", StringComparison.OrdinalIgnoreCase)
+                                                         && h != $"## {Wardrobe}"))
+                yield return $"{path} has {other}, not ## {Wardrobe}";
+        }
     }
 }

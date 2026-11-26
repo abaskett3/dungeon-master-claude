@@ -136,6 +136,8 @@ updates its documentation.
   `.docs/development.md` § Spec-driven changes ("How a change goes through it").
 - The toolkit tests check the prompts: commands, paths and skill names a prompt names must be real. Source:
   `.docs/development.md` § Writing prompts.
+- A PR that changes how DMC plays states its slip-test result, or why it has none. The rule's home is `CLAUDE.md`
+  § Git and GitHub ("Slip test").
 
 ## Governance
 
@@ -148,4 +150,4 @@ A removed principle's number is not reused, so the numbers older specs cite keep
 `/speckit-plan` and `/speckit-analyze` check each feature against every principle, and a plan that breaks one says
 why. The constitution's origin is described in `.docs/development.md` § Spec-driven changes.
 
-**Version**: 5.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-25
+**Version**: 5.1.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-11-26

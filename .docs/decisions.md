@@ -930,3 +930,12 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Rejected:** a rate test against the rate before the release (an entry's occurrences give no count of the fault before it); a new entry for a slip that came back (it starts from zero, which is what hid the failed fixes); a migration of old entries (the skills read the old word).
 - **Limits:** A fault rarer than 1 in 100 turns can still pass when it was never fixed: the condition shows the fault is rare, not gone. Whether a slip is "the entry's fault" is the reviewer's judgment.
 - **Source:** Issue #267 (Phase 4 of #238); `specs/028-fixed-condition/`; #250's baseline; spec 025.
+
+## A PR that changes play states its slip-test result (issue #268, constitution 5.1.0)
+
+- **Date:** 2026-11-26
+- **Decision:** A PR that changes how DMC plays (`kit/dm-rules.md`, a kit skill, a kit hook or its output, a kit template, or `kit/settings.json`) states its slip-test result: the fork points or play sessions, the number of runs, the pass line fixed in its issue before the run, and the result against a control run at the same time. A PR the slip test cannot run says why. The rule's home is `CLAUDE.md` § Git and GitHub. Constitution 5.1.0 (MINOR) points at it from § Development Workflow, and the Spec Kit task template has a line for it.
+- **Reason:** A slip has a small chance in each reply, so one clean run shows nothing: #237 replayed one context 20 times with no slip. No feedback round showed a decrease. The one fix with a measured result is the map: wording failed 6 times in 6, and the `Stop` hook got 25 correct replies in 25.
+- **Rejected:** a PR template (the repository has none, and the rule would have two homes); requiring a run for every change (a document or a test changes no reply).
+- **Limits:** A trial costs about $1.30 for a fork point's first run on Opus, and $0.10 to $0.20 for later runs while the cache lasts (#249's base rate), and its points need the maintainer's logs, so a PR from the cloud states the trial and the maintainer runs it. PRs merged before 2026-11-26 need no statement (#267). Applied on the maintainer's word from a reviewed draft, not with `/speckit-constitution`.
+- **Source:** Issue #268 (Phase 4 of #238); #237; #249.

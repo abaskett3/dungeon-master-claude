@@ -72,7 +72,8 @@ internal sealed record RunRow(string Point, string Arm, int Run, string Session,
 /// <param name="claudeHome">Claude Code's folder (<c>~/.claude</c>).</param>
 /// <param name="claude">How to start Claude Code.</param>
 /// <param name="output">Where to print one line per run.</param>
-internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, TextWriter output)
+/// <param name="hookCommand">The context hook's command line with <c>{file}</c> (spec 029), or null for this process's (<see cref="ContextHook.ThisCommandLine"/>).</param>
+internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, TextWriter output, string? hookCommand = null)
 {
     /// <summary>The marker <c>prepare</c> leaves in a copy folder it made, so a second <c>prepare</c> may reuse it.</summary>
     public const string Marker = ".slip-test";
@@ -112,6 +113,7 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
     public void Prepare(DateTimeOffset now)
     {
         Resolve();
+        ContextHook.Check(trial);
         if (Directory.Exists(trial.Copy) && Directory.EnumerateFileSystemEntries(trial.Copy).Any() && !File.Exists(Path.Combine(trial.Copy, Marker)))
             throw new SlipTestException($"the copy folder {trial.Copy} is not empty: name an empty or new folder");
         Folders.CopyTree(trial.Folder, trial.Copy, skip: trial.Work);
@@ -170,12 +172,24 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         {
             var p = points[point.Id];
             if (trial.Mode == "fork")
+            {
                 RestoreFork(arm, states[point.Id]);
+                SetContext(arm, point);
+            }
             else
                 RestoreFresh(arm);
             string id = Guid.NewGuid().ToString();
             var (lines, model, effort, permission) = BaseLog(arm, p, id);
-            var row = Replay(lines, id, new ClaudeCall(id, model, effort, permission), p.Text, point.Id, arm.Name, run, version, p.Log.Kind());
+            RunRow row;
+            try
+            {
+                row = Replay(lines, id, new ClaudeCall(id, model, effort, permission), p.Text, point.Id, arm.Name, run, version, p.Log.Kind());
+            }
+            finally
+            {
+                if (trial.Mode == "fork")
+                    ContextHook.Reset(trial.Folder, trial.Copy);
+            }
             Append(row);
             output.WriteLine($"{point.Id} {arm.Name} {run}: {row.Seconds:0}s ${row.Result.CostUsd:0.0000}");
         }
@@ -220,6 +234,19 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         Folders.Replace(Path.Combine(trial.Folder, "adventures"), Path.Combine(trial.Copy, "adventures"));
         FileHistory.Apply(state, trial.Copy);
         File.Copy(arm.Source, Path.Combine(trial.Copy, "CLAUDE.md"), overwrite: true);
+    }
+
+    /// <summary>
+    /// Fork mode: the copy's local settings as the DMC folder has them, with the hook that prints the arm's text at
+    /// this point when the arm has a context folder and the point's file is not blank (spec 029 FR-002).
+    /// </summary>
+    /// <param name="arm">The arm.</param>
+    /// <param name="point">The point.</param>
+    void SetContext(Arm arm, ForkPoint point)
+    {
+        ContextHook.Reset(trial.Folder, trial.Copy);
+        if (trial.ContextFile(arm.Name, point.Id) is { } file && File.ReadAllText(file).Trim().Length > 0)
+            ContextHook.Add(trial.Copy, file, hookCommand ??= ContextHook.ThisCommandLine());
     }
 
     /// <summary>

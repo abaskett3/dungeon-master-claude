@@ -37,6 +37,9 @@ maintainer's campaign to judge.
   what they want and fear, their attitude), relationships, ideals, backstory, aims and history, and on the NPC
   template Role in the story, Usually found and First appeared. Their looks, voice, appearance, personality, numbers,
   gear and wardrobe print.
+- Q: The slip test failed at point A. What changes? → A: A hook line, not `kit/dm-rules.md` (at its cap): for any
+  message that says "sheet", `dmc context-check` names `dmc sheet` (FR-019), and the skill's description names a plain
+  request for sheets. Point A runs again on the maintainer's computer before the fix merges.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -112,6 +115,12 @@ The player asks for one companion's full sheet. DMC runs `dmc sheet NAME`. An NP
   Markdown and number readers, and a Playwright check of the printed page.
 - **FR-018**: Documents: `.docs/dmc-reference.md`, `campaign-files.md`, `architecture.md`, `user-guide.md`,
   `development.md`, `roadmap.md`, `decisions.md`, and the README.
+- **FR-019**: After the phase 1 slip test failed at point A (a plain request for the party's sheets never reached the
+  skill's § Showing a sheet to the player), `dmc context-check` prints one line last for a message that holds `sheet`
+  or `sheets` as a whole word and is not a command. The line names `dmc sheet` (the player characters),
+  `dmc sheet --party` and `dmc sheet NAME`, says to give the path it prints and never to type a sheet out; its wording
+  is in `.docs/dmc-reference.md` § context-check. The skill's description says "asks for sheets or to see one (the
+  party's or one character's)". Tested in `ContextCheck/SheetRequestReminderContract.cs`.
 
 ## Success Criteria *(mandatory)*
 
@@ -126,6 +135,11 @@ character sheet. Both from the campaign the issue measured. 5 runs per point per
 (this branch) at the same time. Pass: in all 10 treatment runs DMC runs `dmc sheet` and types no sheet out in its
 reply, and no treatment reply holds a spoiler; and the treatment slips no more often than the control over the same
 runs.
+
+**Result and rerun.** The run on 2026-11-26 (on #191) failed at A: 0 of 5 treatment runs ran `dmc sheet`; B passed
+5 of 5. The FR-019 fix is tested by running point A again, 5 runs per arm, control `main` and treatment the fix's
+branch, at the same time. Its pass line: all 5 treatment runs run `dmc sheet` and type no sheet out, no treatment reply
+holds a spoiler, and the treatment slips no more often than the control.
 
 ## Assumptions
 

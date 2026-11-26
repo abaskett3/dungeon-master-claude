@@ -397,4 +397,54 @@ public sealed class MigrationChecksTests
     [TestMethod]
     public void TheDmsOwnCommentBesideTheCurrentOnePasses() =>
         Assert.IsEmpty(RunGuidance($"# DM notes\n\n## Arc plan\n\n{CurrentArcComment}<!-- My note: acts 2 and 3 can swap. -->\n\n## Antagonists\n\n{CurrentAntagonistsComment}<!-- Mara lies about the bell. -->\n"));
+
+    // ---------- wardrobe-sections-in-place (migration 009, spec 030) ----------
+
+    /// <summary>A sheet with or without the wardrobe section before its history.</summary>
+    /// <param name="name">The sheet's title.</param>
+    /// <param name="heading">The wardrobe section's heading, or null for none.</param>
+    static string Dressed(string name, string? heading) =>
+        $"# {name}\n\n## Play card\n\n- **Looks** (worn now): a cloak\n\n" + (heading is null ? "" : $"## {heading}\n\n- a hat: at home; feast days\n\n") + "## History\n\n- s1\n";
+
+    /// <summary>The PC and both companions have the section; an NPC who is not a companion needs none.</summary>
+    [TestMethod]
+    public void ThePcAndCompanionsWithTheWardrobeSectionPassAndOtherNpcsNeedNone() =>
+        Assert.IsEmpty(Run("wardrobe-sections-in-place", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/pc-wren.md"] = Dressed("Wren", "Wardrobe and keepsakes"),
+            ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", "Wardrobe and keepsakes"),
+            ["character-sheets/npc-vex.md"] = Dressed("Vex", "wardrobe and keepsakes"),
+            ["character-sheets/npc-tobin.md"] = Dressed("Tobin", null),
+            ["character-sheets/minor-npcs.md"] = "# Minor NPCs\n\n## Wardrobe notes\n",
+            ["character-sheets/npc-mara-history.md"] = "# Mara Quill: history\n\n## Wardrobe\n",
+        }));
+
+    /// <summary>A PC or companion without the section fails, and a hand-made heading fails on any sheet.</summary>
+    [TestMethod]
+    public void AMissingSectionOrAHandMadeHeadingFails() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "wardrobe-sections-in-place: character-sheets/npc-mara.md has no ## Wardrobe and keepsakes section",
+            "wardrobe-sections-in-place: character-sheets/npc-mara.md has ## Wardrobe and keepsakes (kept, not worn now), not ## Wardrobe and keepsakes",
+            "wardrobe-sections-in-place: character-sheets/npc-tobin.md has ## Wardrobe, not ## Wardrobe and keepsakes",
+            "wardrobe-sections-in-place: character-sheets/pc-wren.md has no ## Wardrobe and keepsakes section",
+        }, Run("wardrobe-sections-in-place", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/pc-wren.md"] = Dressed("Wren", null),
+            ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", "Wardrobe and keepsakes (kept, not worn now)"),
+            ["character-sheets/npc-vex.md"] = Dressed("Vex", "Wardrobe and keepsakes"),
+            ["character-sheets/npc-tobin.md"] = Dressed("Tobin", "Wardrobe"),
+        }));
+
+    /// <summary>With no game state, only the PCs' sheets need the section.</summary>
+    [TestMethod]
+    public void WithNoGameStateOnlyPcSheetsNeedTheSection() =>
+        CollectionAssert.AreEqual(new[] { "wardrobe-sections-in-place: character-sheets/pc-wren.md has no ## Wardrobe and keepsakes section" },
+            Run("wardrobe-sections-in-place", now: new()
+            {
+                ["character-sheets/pc-wren.md"] = Dressed("Wren", null),
+                ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", null),
+            }));
 }

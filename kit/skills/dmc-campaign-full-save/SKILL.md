@@ -15,7 +15,7 @@ Follow the `dmc-update-game-state` skill so `game-state.md` matches this exact m
 
 ## 2. Character sheets
 
-For each PC, companion and NPC who appeared since the last full save, follow the `dmc-character-sheet-update` skill. Check for anything gained, lost, learned or changed: items, gold, XP or level, spells, relationships, attitudes, goals, injuries, what each NPC now knows. Where a History entry from this session overturns a standing line or the stat block (a trait lost, an item given away, a new home), fix that line too. Anyone under "With the party, not companions" whom the player directed in a fight this session is a companion: move their block into Party status.
+For each PC, companion and NPC who appeared since the last full save, follow the `dmc-character-sheet-update` skill. Check for anything gained, lost, learned or changed: items, clothes, gold, XP or level, spells, relationships, attitudes, goals, injuries, what each NPC now knows. Where a History entry from this session overturns a standing line or the stat block (a trait lost, an item given away, a new home), fix that line too. Anyone under "With the party, not companions" whom the player directed in a fight this session is a companion: move their block into Party status.
 
 Add a line to `character-sheets/minor-npcs.md` for any named bit-part character met. Promote anyone who has become recurring to their own sheet.
 

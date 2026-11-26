@@ -11,7 +11,7 @@
 <!-- A companion's only; leave it out for anyone else. Resume reads a companion's sheet only to the end of this section, so it holds what a scene and a fight need, within the budget `dmc size` checks, and it is the only copy of each number on it. -->
 
 - **Who**:
-- **Looks**:
+- **Looks** (worn now):
 - **Voice** (and one sample line):
 - **Names they use**:
 - **Toward the PC, and what they want now**:
@@ -69,7 +69,7 @@
 - **Equipped**:
 - **Carried**:
 - **Magic items** (note attunement):
-- **Stored elsewhere**:
+- **Stored elsewhere** (tools and property; clothes and keepsakes go in Wardrobe and keepsakes):
 <!-- Current gold and consumables are tracked in game-state.md. -->
 
 ## Story
@@ -85,6 +85,10 @@
 ## Relationships
 
 <!-- Who matters to this character and how things stand between them. -->
+
+## Wardrobe and keepsakes
+
+<!-- What they own and are not wearing or carrying now, on the owner's sheet, one item a line: what it is; where it is kept and who holds it; when it is worn (everyday, watch, ceremony, winter, outgrown, keepsake). A change of clothes moves the old outfit here and the new one to Looks (Appearance on a sheet with no play card). -->
 
 ## History
 

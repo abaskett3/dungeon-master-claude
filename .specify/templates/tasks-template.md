@@ -157,6 +157,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX If the change alters how DMC plays (CLAUDE.md § Git and GitHub, "Slip test", says what counts), run the
+  slip test against the pass line in the issue and put the result in the PR
 
 ---
 

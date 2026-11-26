@@ -2,13 +2,13 @@ namespace Dmc.SlipTest;
 
 /// <summary>
 /// The entry point of <c>slip-test</c>, the replay runner of spec 024 (issue #249). Usage:
-/// <c>slip-test &lt;prepare|run|pilot|export|score&gt; --work &lt;folder&gt; [--pilot] [--claude &lt;program&gt;]</c>.
-/// The contract is <c>specs/024-slip-test-runner/contracts/slip-test.md</c>.
+/// <c>slip-test &lt;prepare|run|pilot|export|score&gt; --work &lt;folder&gt; [--pilot] [--claude &lt;program&gt;]</c>, and
+/// <c>slip-test context &lt;file&gt;</c>, which the context hook runs (spec 029). The contract is <c>specs/024-slip-test-runner/contracts/slip-test.md</c>.
 /// </summary>
 internal static class Program
 {
     /// <summary>The usage line printed for a malformed command line.</summary>
-    public const string Usage = "usage: slip-test <prepare|run|pilot|export|score> --work <folder> [--pilot] [--claude <program>]";
+    public const string Usage = "usage: slip-test <prepare|run|pilot|export|score> --work <folder> [--pilot] [--claude <program>] | slip-test context <file>";
 
     /// <summary>Runs the program on the real console, Claude Code folder and clock.</summary>
     /// <param name="args">The command line.</param>
@@ -24,14 +24,22 @@ internal static class Program
     /// <param name="now">The time a lock records.</param>
     /// <param name="random">The source of the arm order, the ids and the export's order.</param>
     /// <param name="fake">A stand-in for Claude Code (the tests), or null for the real program.</param>
+    /// <param name="hookCommand">The context hook's command line (the tests), or null for this process's.</param>
     /// <returns>0 when the command did its work (for <c>pilot</c>, every check passed), 1 otherwise.</returns>
-    public static int Run(string[] args, TextWriter output, TextWriter error, string claudeHome, string? claude, DateTimeOffset now, Random random, IClaude? fake = null)
+    public static int Run(string[] args, TextWriter output, TextWriter error, string claudeHome, string? claude, DateTimeOffset now, Random random, IClaude? fake = null, string? hookCommand = null)
     {
         try
         {
             if (args.Length == 0)
                 throw new SlipTestException(Usage);
             string command = args[0];
+            if (command == ContextHook.Command)
+            {
+                if (args.Length != 2)
+                    throw new SlipTestException(Usage);
+                ContextHook.Print(args[1], output);
+                return 0;
+            }
             string? work = null;
             bool pilot = false;
             for (int i = 1; i < args.Length; i++)
@@ -60,7 +68,7 @@ internal static class Program
                     new Runner(trial, claudeHome, null, output).Prepare(now);
                     return 0;
                 case "run":
-                    new Runner(trial, claudeHome, fake ?? new ClaudeProcess(claude ?? ClaudeRunner.Find()), output).Run(pilot, random);
+                    new Runner(trial, claudeHome, fake ?? new ClaudeProcess(claude ?? ClaudeRunner.Find()), output, hookCommand).Run(pilot, random);
                     return 0;
                 case "pilot":
                 {

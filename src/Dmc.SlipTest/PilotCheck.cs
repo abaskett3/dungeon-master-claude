@@ -18,7 +18,7 @@ internal enum Outcome
 }
 
 /// <summary>One check's result on one run.</summary>
-/// <param name="Check">The check: <c>notice</c>, <c>hook</c>, <c>rules</c> or <c>thinking</c>.</param>
+/// <param name="Check">The check: <c>notice</c>, <c>hook</c>, <c>context</c>, <c>rules</c> or <c>thinking</c>.</param>
 /// <param name="Point">The point id.</param>
 /// <param name="Arm">The arm, or <c>all</c> for the thinking check.</param>
 /// <param name="Run">The run number.</param>
@@ -28,7 +28,8 @@ internal sealed record CheckResult(string Check, string Point, string Arm, int R
 
 /// <summary>
 /// The pilot's four checks (FR-007, #249): (a) no notice that play did not have, (b) the hook output play had, (c)
-/// the arm's rules in the request, (d) the same thinking blocks in every arm. Each compares the part of the replayed
+/// the arm's rules in the request, (d) the same thinking blocks in every arm; and, for an arm with a context folder
+/// (spec 029), that its text was a hook output, which check (b) leaves out. Each compares the part of the replayed
 /// turn that came with the player message (its records before the first <c>assistant</c> record) with the same part
 /// of the original turn.
 /// </summary>
@@ -110,12 +111,15 @@ internal static class PilotCheck
     /// <param name="allow">The documented differences.</param>
     /// <param name="folder">The DMC folder, whose path in the original's hook output becomes <paramref name="copy"/>; null to compare as is.</param>
     /// <param name="copy">The copy folder.</param>
-    public static (Outcome, List<string>) CheckHooks(IEnumerable<JsonObject> original, IEnumerable<JsonObject> replay, IReadOnlyList<Allowed> allow, string? folder = null, string? copy = null)
+    /// <param name="context">The arm's text at this point (spec 029), whose one hook output is left out of the replay's before they are compared; null or blank for none.</param>
+    public static (Outcome, List<string>) CheckHooks(IEnumerable<JsonObject> original, IEnumerable<JsonObject> replay, IReadOnlyList<Allowed> allow, string? folder = null, string? copy = null, string? context = null)
     {
         var a = Hooks(original);
         if (folder is not null && copy is not null)
             a = a.Select(h => (h.Type, h.Text.Replace(folder, copy, Folders.PathComparison).Replace(folder.Replace('\\', '/'), copy.Replace('\\', '/'), Folders.PathComparison))).ToList();
         var b = Hooks(replay);
+        if (ContextAt(b, context) is int at)
+            b.RemoveAt(at);
         var differ = new List<string>();
         for (int i = 0; i < Math.Max(a.Count, b.Count); i++)
         {
@@ -127,6 +131,26 @@ internal static class PilotCheck
         }
         return (Judge(differ, "hook", allow), differ);
     }
+
+    /// <summary>The index of the hook output whose text is an arm's context text, ignoring white space at either end; null when there is none or the text is blank.</summary>
+    /// <param name="hooks">The hook outputs of a turn (<see cref="Hooks"/>).</param>
+    /// <param name="context">The context text, or null.</param>
+    static int? ContextAt(List<(string Type, string Text)> hooks, string? context)
+    {
+        if (string.IsNullOrWhiteSpace(context))
+            return null;
+        int at = hooks.FindIndex(h => h.Text.Trim() == context.Trim());
+        return at < 0 ? null : at;
+    }
+
+    /// <summary>
+    /// The context check (spec 029 FR-005): the arm's text at this point is one of the replayed turn's hook outputs,
+    /// or the text is blank, so no hook was added.
+    /// </summary>
+    /// <param name="replay">The replayed turn.</param>
+    /// <param name="context">The context text.</param>
+    public static bool CheckContext(IEnumerable<JsonObject> replay, string context) =>
+        string.IsNullOrWhiteSpace(context) || ContextAt(Hooks(replay), context) is not null;
 
     /// <summary>Check (c): some string in the fork log equals the arm's rules text as Claude Code records it, so the rules reached the request.</summary>
     /// <param name="fork">The fork log.</param>
@@ -222,8 +246,14 @@ internal static class PilotCheck
             results.Add(new CheckResult("notice", id, arm.Name, 1, at < 0 ? Outcome.Fail : n, at < 0 ? ["replayed message not found"] : nn));
             if (trial.Mode == "fork")
             {
-                var (h, hn) = CheckHooks(original, replay, trial.Allow, trial.Folder, trial.Copy);
+                string? context = trial.ContextFile(arm.Name, id) is { } file ? File.ReadAllText(file) : null;
+                var (h, hn) = CheckHooks(original, replay, trial.Allow, trial.Folder, trial.Copy, context);
                 results.Add(new CheckResult("hook", id, arm.Name, 1, h, hn));
+                if (context is not null)
+                {
+                    bool arrived = CheckContext(replay, context);
+                    results.Add(new CheckResult("context", id, arm.Name, 1, arrived ? Outcome.Pass : Outcome.Fail, arrived ? [] : ["context text not in the fork's hook output"]));
+                }
                 bool rules = CheckRules(fork, File.ReadAllText(arm.Source));
                 results.Add(new CheckResult("rules", id, arm.Name, 1, rules ? Outcome.Pass : Outcome.Fail, rules ? [] : ["rules text not in the fork log"]));
             }
@@ -241,7 +271,7 @@ internal static class PilotCheck
 
         var o = new StringBuilder();
         o.Append("check     runs  pass  documented  fail\n");
-        foreach (string check in new[] { "notice", "hook", "rules", "thinking" })
+        foreach (string check in trial.Context.Count > 0 ? ["notice", "hook", "context", "rules", "thinking"] : new[] { "notice", "hook", "rules", "thinking" })
         {
             var of = results.Where(r => r.Check == check).ToList();
             o.Append($"{check,-9} {of.Count,4}  {of.Count(r => r.Outcome == Outcome.Pass),4}  {of.Count(r => r.Outcome == Outcome.Documented),10}  {of.Count(r => r.Outcome == Outcome.Fail),4}\n");

@@ -30,6 +30,9 @@ internal sealed class SlipTestFixtures : IDisposable
     /// <summary>The hook output the play log records for the fork message.</summary>
     public const string HookText = "Scene: the cellar. Present: Hala.";
 
+    /// <summary>The context hook's command line the runs use (spec 029); the stand-in reads the file it names.</summary>
+    public const string HookCommand = "\"/opt/slip-test/slip-test\" context \"{file}\"";
+
     /// <summary>The time of the first player message.</summary>
     public static readonly DateTimeOffset T1 = new(2026, 11, 1, 10, 0, 0, TimeSpan.Zero);
 
@@ -211,7 +214,7 @@ internal sealed class SlipTestFixtures : IDisposable
     {
         var output = new StringWriter();
         var error = new StringWriter();
-        int code = Dmc.SlipTest.Program.Run([.. args, "--work", Work], output, error, ClaudeHome, "claude", T2.AddDays(1), new Random(1), fake);
+        int code = Dmc.SlipTest.Program.Run([.. args, "--work", Work], output, error, ClaudeHome, "claude", T2.AddDays(1), new Random(1), fake, HookCommand);
         return (code, output.ToString(), error.ToString());
     }
 
@@ -243,6 +246,16 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
     /// <summary>Whether the fork reports an error result, as Claude Code does after an API error.</summary>
     public bool Fails { get; set; }
 
+    /// <summary>
+    /// Whether the fork records the output of each context hook the copy's <c>.claude/settings.local.json</c> names
+    /// (spec 029), after the kit's hook, as Claude Code would run it. The stand-in reads the file the command names
+    /// instead of starting the program.
+    /// </summary>
+    public bool RunsContextHooks { get; set; } = true;
+
+    /// <summary>The copy's <c>.claude/settings.local.json</c> as each call saw it, or null when there was none.</summary>
+    public List<string?> LocalSettings { get; } = [];
+
     /// <summary>What each call saw: the call, the message, and the copy folder's files under <c>adventures/</c> with their contents.</summary>
     public List<(ClaudeCall Call, string Message, Dictionary<string, string> Files)> Calls { get; } = [];
 
@@ -257,6 +270,8 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
             ? Directory.EnumerateFiles(adventures, "*", SearchOption.AllDirectories).ToDictionary(f => Path.GetRelativePath(cwd, f).Replace('\\', '/'), File.ReadAllText)
             : [];
         Calls.Add((call, message, files));
+        string settings = ContextHook.SettingsPath(cwd);
+        LocalSettings.Add(File.Exists(settings) ? File.ReadAllText(settings) : null);
         string project = Folders.Project(claudeHome, cwd);
         Directory.CreateDirectory(project);
         string id = Guid.NewGuid().ToString();
@@ -264,6 +279,9 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
         string history = string.Join("\n", lines);
         lines.Add(SlipTestFixtures.Typed(Guid.NewGuid().ToString(), message, SlipTestFixtures.T2, cwd, id).ToJsonString());
         lines.Add(SlipTestFixtures.Hook(Hook(message), id).ToJsonString());
+        if (RunsContextHooks)
+            foreach (string file in ContextFiles(settings))
+                lines.Add(SlipTestFixtures.Hook(File.ReadAllText(file).TrimEnd(), id).ToJsonString());
         foreach (string notice in Notices)
             lines.Add(SlipTestFixtures.Attachment(new JsonObject { ["type"] = notice }, id).ToJsonString());
         if (Thinking(history) is { } t)
@@ -280,5 +298,21 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
             ["usage"] = new JsonObject { ["input_tokens"] = 5, ["output_tokens"] = 100, ["cache_read_input_tokens"] = 1000, ["cache_creation_input_tokens"] = 50 },
         }.ToJsonString();
         return ClaudeRunner.Parse(raw);
+    }
+
+    /// <summary>The file each context hook in a local settings file prints: the last quoted part of its command.</summary>
+    /// <param name="settings">The settings file.</param>
+    static IEnumerable<string> ContextFiles(string settings)
+    {
+        if (!File.Exists(settings) || JsonNode.Parse(File.ReadAllText(settings))?["hooks"]?["UserPromptSubmit"] is not JsonArray prompt)
+            yield break;
+        foreach (var hook in prompt.SelectMany(e => e?["hooks"] as JsonArray ?? []))
+        {
+            string command = hook?["command"]?.GetValue<string>() ?? "";
+            if (!command.Contains($" {ContextHook.Command} ", StringComparison.Ordinal))
+                continue;
+            string[] parts = command.Split('"');
+            yield return parts[^2];
+        }
     }
 }

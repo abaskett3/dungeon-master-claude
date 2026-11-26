@@ -78,6 +78,18 @@ internal sealed partial class Trial
     /// <summary>The documented pilot differences.</summary>
     public required IReadOnlyList<Allowed> Allow { get; init; }
 
+    /// <summary>
+    /// The context folders (spec 029): for each arm that has one, the full path of the folder that holds
+    /// <c>&lt;point id&gt;.md</c> for every point, the text a hook puts next to the player's message at that point.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Context { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>The context file of an arm at a point, or null when the arm has no context folder.</summary>
+    /// <param name="arm">The arm's name.</param>
+    /// <param name="point">The point id.</param>
+    public string? ContextFile(string arm, string point) =>
+        Context.TryGetValue(arm, out string? folder) ? Path.Combine(folder, point + ".md") : null;
+
     /// <summary>Reads and checks every input file of a work folder.</summary>
     /// <param name="work">The work folder.</param>
     /// <exception cref="SlipTestException">A file is missing or malformed; the message names the file and, for a table, the line.</exception>
@@ -137,6 +149,7 @@ internal sealed partial class Trial
         }
 
         var points = ReadPoints(Path.Combine(work, "points.tsv"));
+        var context = ReadContext(json, work, mode, arms, points);
         return new Trial
         {
             Work = work,
@@ -151,7 +164,41 @@ internal sealed partial class Trial
             Points = points,
             Key = ReadKey(Path.Combine(work, "key.tsv"), points),
             Allow = ReadAllow(Path.Combine(work, "allow.tsv")),
+            Context = context,
         };
+    }
+
+    /// <summary>Reads <c>context</c> of <c>trial.json</c>, which is optional (spec 029 FR-001).</summary>
+    /// <param name="json">The trial.</param>
+    /// <param name="work">The work folder.</param>
+    /// <param name="mode">The mode.</param>
+    /// <param name="arms">The arms.</param>
+    /// <param name="points">The fork points.</param>
+    /// <exception cref="SlipTestException">The mode is not fork, an arm is unknown, or a folder or a point's file is missing.</exception>
+    static Dictionary<string, string> ReadContext(JsonObject json, string work, string mode, IReadOnlyList<Arm> arms, IReadOnlyList<ForkPoint> points)
+    {
+        var context = new Dictionary<string, string>();
+        if (json["context"] is null)
+            return context;
+        if (json["context"] is not JsonObject map)
+            throw new SlipTestException("trial.json: context must map an arm to a folder");
+        if (mode != "fork")
+            throw new SlipTestException("trial.json: context needs fork mode");
+        foreach (var (name, value) in map)
+        {
+            if (!arms.Any(a => a.Name == name))
+                throw new SlipTestException($"trial.json: context names arm {name}, which arms does not list");
+            string? source = value is JsonValue v && v.TryGetValue(out string? s) ? s : null;
+            if (string.IsNullOrWhiteSpace(source))
+                throw new SlipTestException($"trial.json: context of arm {name} must name a folder");
+            string full = Path.GetFullPath(Path.Combine(work, source));
+            if (!Directory.Exists(full))
+                throw new SlipTestException($"trial.json: context of arm {name}: no folder at {full}");
+            if (points.FirstOrDefault(p => !File.Exists(Path.Combine(full, p.Id + ".md"))) is { } missing)
+                throw new SlipTestException($"trial.json: context of arm {name}: no {missing.Id}.md in {full}");
+            context[name] = full;
+        }
+        return context;
     }
 
     /// <summary>A string property that must be present and not blank.</summary>
@@ -233,17 +280,26 @@ internal sealed partial class Trial
         return allow;
     }
 
-    /// <summary>The SHA-256 of each locked file, as lowercase hexadecimal.</summary>
-    /// <param name="work">The work folder.</param>
-    static Dictionary<string, string> Hashes(string work) =>
-        LockedFiles.ToDictionary(f => f, f => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(Path.Combine(work, f)))));
+    /// <summary>
+    /// The SHA-256 of each locked file, as lowercase hexadecimal, by its path relative to the work folder with
+    /// <c>/</c>: <see cref="LockedFiles"/>, then every context file (spec 029 FR-004).
+    /// </summary>
+    Dictionary<string, string> Hashes()
+    {
+        var files = LockedFiles.Select(f => Path.Combine(Work, f)).ToList();
+        foreach (var (arm, _) in Context.OrderBy(c => c.Key, StringComparer.Ordinal))
+            files.AddRange(Points.Select(p => ContextFile(arm, p.Id)!));
+        return files.Distinct().ToDictionary(
+            f => Path.GetRelativePath(Work, f).Replace('\\', '/'),
+            f => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(f))));
+    }
 
     /// <summary>Writes <c>lock.json</c>: the hash of each locked file and the time.</summary>
     /// <param name="now">The time to record.</param>
     public void WriteLock(DateTimeOffset now)
     {
         var json = new JsonObject { ["locked"] = now.ToString("O", System.Globalization.CultureInfo.InvariantCulture) };
-        foreach (var (file, hash) in Hashes(Work))
+        foreach (var (file, hash) in Hashes())
             json[file] = hash;
         File.WriteAllText(Path.Combine(Work, "lock.json"), json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n");
     }
@@ -264,7 +320,7 @@ internal sealed partial class Trial
         {
             throw new SlipTestException("lock.json is not valid JSON: start a new work folder");
         }
-        foreach (var (file, hash) in Hashes(Work))
+        foreach (var (file, hash) in Hashes())
             if (LogFile.Text(locked, file) != hash)
                 throw new SlipTestException($"{file} changed after prepare locked it: start a new work folder");
     }

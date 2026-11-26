@@ -120,7 +120,7 @@ public sealed class SheetLibraryTests
     public void FieldsReadTheirLabelHintValueAndSubItems()
     {
         var others = new List<string>();
-        var fields = SheetText.Fields(["- **Skills** (proficient, with total bonus): Athletics +5", "- **Attacks**:", "  - hook: +5", "- **Player character**", "stray text"], others);
+        var fields = SheetText.Fields(["- **Skills** (proficient, with total bonus): Athletics +5", "- **Attacks**:", "  - hook: +5", "- **Player character**", "", "stray text"], others);
         Assert.HasCount(3, fields);
         Assert.AreEqual("Skills", fields[0].Label);
         Assert.AreEqual("Athletics +5", fields[0].Value);
@@ -143,4 +143,28 @@ public sealed class SheetLibraryTests
         Assert.AreEqual(-1, SheetNumbers.Modifier(9));
         CollectionAssert.AreEquivalent(new[] { "STR", "CON" }, SheetNumbers.SaveAbilities("Strength, CON").ToArray());
     }
+
+    /// <summary>Code review of PR #288: a bonus in brackets or after a colon is the bonus, not a note.</summary>
+    [TestMethod]
+    public void ABonusInBracketsOrAfterAColonIsRead()
+    {
+        var entries = SheetNumbers.SkillList("Athletics (+5), Stealth: +4 (loud), Perception (+3) passive 13");
+        CollectionAssert.AreEqual(new[] { "+5", "+4", "+3" }, entries.Select(e => e.Written).ToArray());
+        CollectionAssert.AreEqual(new[] { "", "loud", "passive 13" }, entries.Select(e => e.Note).ToArray());
+    }
+
+    /// <summary>Code review of PR #288: a value wrapped onto an unindented next line continues the field, as Markdown reads it; after a blank line it does not.</summary>
+    [TestMethod]
+    public void AValueWrappedOntoTheNextLineContinuesTheField()
+    {
+        var others = new List<string>();
+        var fields = SheetText.Fields(["- **Backstory**: Born on the barges,", "she left at sixteen.", "", "stray"], others);
+        Assert.AreEqual("Born on the barges, she left at sixteen.", fields.Single().Value);
+        CollectionAssert.AreEqual(new[] { "stray" }, others);
+    }
+
+    /// <summary>Code review of PR #288: a history file's <c>## </c> headings are headings on the page.</summary>
+    [TestMethod]
+    public void TwoHashHeadingsAreHeadings() =>
+        Assert.AreEqual("<h4>Arc one</h4><ul><li>s1: met</li></ul>", SheetMarkdown.Blocks(["## Arc one", "- s1: met"]));
 }

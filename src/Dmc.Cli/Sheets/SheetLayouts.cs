@@ -65,7 +65,7 @@ internal sealed record NotExported(string Section, string Label, string Reason);
 /// <summary>
 /// The fixed layouts of <c>dmc sheet</c> and the map from every template label to a box or to a reason it is not
 /// printed. This is the allow-list (spec 031 FR-014): a layout prints only the places named here, so a section or a
-/// label not named (Secrets, What they know, Role in the story) never reaches the page. <c>SheetLayoutTests</c> checks
+/// label not named (Secrets, What they know, Role in the story) never reaches the page. <c>SheetLibraryTests</c> checks
 /// that every label of <c>kit/templates/pc-sheet.md</c>, <c>npc-sheet.md</c> and the Party status block of
 /// <c>campaign/game-state.md</c> is mapped here, so a template change fails the build until this file follows.
 /// </summary>
@@ -105,13 +105,10 @@ internal static class SheetLayouts
     public static IReadOnlyList<string> OlderHistoryHeadings { get; } = ["Notes", "History with the PC"];
 
     /// <summary>
-    /// The free-form sections: their lines are not checked for labels, because they hold prose or one item a line (the
-    /// templates' comments say so). The rest are structured: every line is a labelled field of the template.
+    /// The template's labels of each structured section of the PC template (all of them, exported or not). A section not
+    /// listed here or in <see cref="NpcLabels"/> is free-form (Features and traits, Relationships, Wardrobe and keepsakes,
+    /// History, What they know, Secrets): its lines hold prose or one item a line and are not checked for labels.
     /// </summary>
-    public static IReadOnlySet<string> FreeSections { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        { "Features and traits", "Relationships", "Wardrobe and keepsakes", "History", "Notes", "History with the PC", "What they know", "Secrets" };
-
-    /// <summary>The template's labels of each structured section of the PC template (all of them, exported or not).</summary>
     public static IReadOnlyDictionary<string, string[]> PcLabels { get; } = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
     {
         [SheetText.Top] = ["Player character", "Companion", "Species and background", "Class and level", "Alignment", "XP or milestone progress"],

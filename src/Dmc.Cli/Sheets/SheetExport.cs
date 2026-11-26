@@ -69,7 +69,7 @@ internal static class SheetExport
         string asOf = SheetText.Find(state, "Scene") is { } scene
             ? SheetText.Fields(scene.Lines).FirstOrDefault(f => f.Label.Equals("In-world date and time", StringComparison.OrdinalIgnoreCase))?.Value ?? ""
             : "";
-        string name = request.Party ? PartyFile : sheets.Count == 1 ? Path.GetFileNameWithoutExtension(sheets[0].File) + ".html" : SeveralFile;
+        string name = request.Party ? PartyFile : sheets.Count == 1 ? OnePage(sheets[0].File) : SeveralFile;
         string relative = $"{ExportFolder}/{campaign}/{name}";
         string target = Path.Combine(dmcFolder, ExportFolder.Replace('/', Path.DirectorySeparatorChar), campaign, name);
         Write(target, SheetHtml.Page(sheets, asOf.Length > 0 ? asOf : null, today, request.History));
@@ -78,6 +78,18 @@ internal static class SheetExport
         if (skipped.Count > 0)
             line += "; skipped " + string.Join(", ", skipped.Select(s => s + " (no sheet)"));
         return new SheetOutcome([.. lines, line], null, target);
+    }
+
+    /// <summary>
+    /// The page of one character: the sheet's file name with <c>.html</c>, or with <c>-sheet.html</c> when that would be
+    /// <see cref="PartyFile"/> or <see cref="SeveralFile"/>, so one character's page never replaces the party's.
+    /// </summary>
+    /// <param name="sheetFile">The sheet's file name.</param>
+    static string OnePage(string sheetFile)
+    {
+        string page = Path.GetFileNameWithoutExtension(sheetFile) + ".html";
+        return page.Equals(PartyFile, StringComparison.OrdinalIgnoreCase) || page.Equals(SeveralFile, StringComparison.OrdinalIgnoreCase)
+            ? Path.GetFileNameWithoutExtension(sheetFile) + "-sheet.html" : page;
     }
 
     /// <summary>
@@ -154,14 +166,23 @@ internal static class SheetExport
     static SheetFileText? Match(List<SheetFileText> files, string name)
     {
         string n = name.Trim();
-        var found = files.Where(f => f.Title.Equals(n, StringComparison.OrdinalIgnoreCase) || f.File.Equals(n, StringComparison.OrdinalIgnoreCase)
-                                     || Path.GetFileNameWithoutExtension(f.File).Equals(n, StringComparison.OrdinalIgnoreCase)).ToList();
+        var found = files.Where(f => Names(f, n)).ToList();
         return found.Count switch
         {
             0 => null,
             1 => found[0],
             _ => throw new DmcException($"{n} names {found.Count} sheets ({string.Join(", ", found.Select(f => f.File))}): give the file name"),
         };
+    }
+
+    /// <summary>Whether a name or a block's heading names this sheet: its title or its file name, with or without <c>.md</c>, ignoring case.</summary>
+    /// <param name="file">The sheet.</param>
+    /// <param name="name">The name.</param>
+    static bool Names(SheetFileText file, string name)
+    {
+        string n = name.Trim();
+        return file.Title.Equals(n, StringComparison.OrdinalIgnoreCase) || file.File.Equals(n, StringComparison.OrdinalIgnoreCase)
+               || Path.GetFileNameWithoutExtension(file.File).Equals(n, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Which sheets an export prints, in order, each once.</summary>
@@ -201,11 +222,10 @@ internal static class SheetExport
                 : throw new DmcException($"no player character's sheet (character-sheets/pc-*.md) in {campaign}");
         }
 
-        var party = blocks.Select(b => Match(files, b.Name)).OfType<SheetFileText>().ToHashSet();
         foreach (string name in request.Names)
         {
             var f = Match(files, name) ?? throw new DmcException($"no sheet named {name} in {campaign}/character-sheets/ (give its title or its file name)");
-            if (!f.Pc && !party.Contains(f))
+            if (!f.Pc && !blocks.Any(b => Names(f, b.Name)))
                 throw new DmcException($"{name} is not a player character or in the party: an NPC's sheet holds spoilers, so it is not exported");
             Add(f);
         }
@@ -225,9 +245,7 @@ internal static class SheetExport
         var others = new List<string>();
         foreach (var (name, lines) in blocks)
         {
-            string n = name.Trim();
-            if (file.Title.Equals(n, StringComparison.OrdinalIgnoreCase) || file.File.Equals(n, StringComparison.OrdinalIgnoreCase)
-                || Path.GetFileNameWithoutExtension(file.File).Equals(n, StringComparison.OrdinalIgnoreCase))
+            if (Names(file, name))
             {
                 party = SheetText.Fields(lines, others);
                 break;

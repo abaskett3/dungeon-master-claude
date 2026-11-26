@@ -111,6 +111,25 @@ public abstract class SheetCommandContract
         Assert.AreEqual("dmc sheet: no sheet named Ana in vale/character-sheets/ (give its title or its file name)", loose.Stderr.TrimEnd());
     }
 
+    /// <summary>Code review of PR #288: a party block that names two sheets does not stop the export of a PC by name.</summary>
+    [TestMethod]
+    public void AnAmbiguousPartyBlockDoesNotStopAPcByName()
+    {
+        Arrange(() => File.WriteAllText(PathOf(Root, "character-sheets/npc-bram2.md"), "# Bram\n"));
+        var result = Sheet("Ana Reed");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+    }
+
+    /// <summary>Code review of PR #288: one character whose sheet is called party.md never replaces the party's page.</summary>
+    [TestMethod]
+    public void OneCharacterNeverWritesThePartyPage()
+    {
+        Arrange(() => File.Move(PathOf(Root, "character-sheets/npc-bram.md"), PathOf(Root, "character-sheets/party.md")));
+        var result = Sheet("Bram");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        Assert.AreEqual("wrote exports/sheets/vale/party-sheet.html: 1 sheet (Bram)", result.StdoutLines.Last());
+    }
+
     [TestMethod]
     public void SeveralNamesWriteOnePageOfThemAll()
     {

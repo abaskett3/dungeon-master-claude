@@ -49,8 +49,8 @@ internal static partial class SheetMarkdown
     }
 
     /// <summary>
-    /// Lines of a free-form section, or a field's sub-items, as HTML blocks: lists nested by indent, tables, <c>### </c>
-    /// and <c>#### </c> headings, and paragraphs. Blank lines end a paragraph or a list.
+    /// Lines of a free-form section, or a field's sub-items, as HTML blocks: lists nested by indent, tables, headings of
+    /// two to six hashes (a history file's <c>## </c> ones among them), and paragraphs. Blank lines end a paragraph or a list.
     /// </summary>
     /// <param name="lines">The lines, comments removed.</param>
     /// <returns>The HTML, or empty when the lines hold nothing.</returns>
@@ -104,7 +104,7 @@ internal static partial class SheetMarkdown
                 continue;
             }
             EndTable();
-            var heading = Regex.Match(line, @"^(#{3,6})\s+(.*)$");
+            var heading = Regex.Match(line, @"^(#{2,6})\s+(.*)$");
             if (heading.Success)
             {
                 EndParagraph();

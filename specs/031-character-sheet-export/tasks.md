@@ -44,4 +44,8 @@ description: "Task list for spec 031, printable character sheets (issue #191 pha
   slip test against the pass line in the issue and put the result in the PR: it runs on the maintainer's computer
   (research R5); the PR states the trial.
 - [X] T013 Converge: spec, plan and tasks against the diff.
-- [ ] T014 Code review on the PR.
+- [X] T014 Code review on the PR: a bonus in brackets or after a colon is read; a value wrapped onto an unindented
+  next line continues its field; a party block that names two sheets no longer stops a PC's export by name; a history
+  file's `## ` headings render as headings; the unused `FreeSections` list is gone and the layouts' doc names
+  `SheetLibraryTests`; one character's page never takes the party's or the several-name page's file name. Tests added.
+- [X] T015 Converge again after T014; no task added.

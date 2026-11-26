@@ -42,6 +42,10 @@ internal static partial class SheetText
     [GeneratedRegex(@"^[-*] \*\*(?<label>[^*]+?)\*\*(?<rest>.*)$")]
     private static partial Regex FieldLine();
 
+    /// <summary>The start of a list item: <c>- </c>, <c>* </c>, <c>+ </c> or <c>1. </c>.</summary>
+    [GeneratedRegex(@"^(?:[-*+]|\d+[.)])\s")]
+    private static partial Regex ListStart();
+
     /// <summary>An HTML comment on one line.</summary>
     [GeneratedRegex(@"<!--.*?-->")]
     private static partial Regex InlineComment();
@@ -152,8 +156,9 @@ internal static partial class SheetText
         sections.FirstOrDefault(s => string.Equals(s.Heading, heading, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// What a run of lines holds: its labelled fields, each with the indented lines under it, and every other line that
-    /// is not blank, not indented under a field and not a table row (<paramref name="tables"/> collects those), in order.
+    /// What a run of lines holds: its labelled fields, each with the indented lines under it (and an unindented line that
+    /// continues its value with no blank line between, as Markdown reads it), and every other line that is not blank, not
+    /// part of a field and not a table row (<paramref name="tables"/> collects those), in order.
     /// </summary>
     /// <param name="lines">The lines of a section or subsection.</param>
     /// <param name="others">Receives the lines that are neither a field, a field's sub-line, a table row nor blank.</param>
@@ -162,7 +167,7 @@ internal static partial class SheetText
     {
         var fields = new List<SheetField>();
         string? label = null, value = null, line = null;
-        bool colon = false;
+        bool colon = false, afterBlank = false;
         var sub = new List<string>();
 
         void Flush()
@@ -176,7 +181,12 @@ internal static partial class SheetText
         foreach (string text in lines)
         {
             if (text.Trim().Length == 0)
+            {
+                afterBlank = true;
                 continue;
+            }
+            bool lazy = !afterBlank;
+            afterBlank = false;
             bool indented = text[0] is ' ' or '\t';
             if (indented && label is not null)
             {
@@ -195,6 +205,12 @@ internal static partial class SheetText
                 colon = at >= 0 || colonInLabel;
                 value = (colonInLabel && at < 0 ? rest : at >= 0 ? rest[(at + 1)..] : "").Trim();
                 line = text.TrimEnd();
+                continue;
+            }
+            // A Markdown lazy continuation: a field's value wrapped onto the next line with no indent and no blank between.
+            if (label is not null && lazy && sub.Count == 0 && !text.StartsWith('|') && !ListStart().IsMatch(text) && !text.StartsWith('#'))
+            {
+                value = (value + " " + text.Trim()).Trim();
                 continue;
             }
             Flush();

@@ -20,8 +20,8 @@ internal static partial class SheetNumbers
     [GeneratedRegex(@"^\s*(?<sign>[+\-−–])?\s*(?<n>\d{1,3})\b")]
     private static partial Regex Signed();
 
-    /// <summary>What follows a skill's name in a skill list: an optional bonus, then anything else (a note).</summary>
-    [GeneratedRegex(@"^\s*(?<bonus>[+\-−–]\s*\d{1,3})?(?<rest>.*)$")]
+    /// <summary>What follows a skill's name in a skill list: an optional colon, an optional bonus (bare or in brackets: <c>+5</c>, <c>(+5)</c>), then anything else (a note).</summary>
+    [GeneratedRegex(@"^\s*(?::\s*)?(?:\((?<bonus>[+\-−–]\s*\d{1,3})\)|(?<bonus>[+\-−–]\s*\d{1,3}))?(?<rest>.*)$")]
     private static partial Regex Bonus();
 
     /// <summary>A signed number at the start of a text, or null when it does not start with one.</summary>

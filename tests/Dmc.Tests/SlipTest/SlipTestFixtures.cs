@@ -31,7 +31,7 @@ internal sealed class SlipTestFixtures : IDisposable
     public const string HookText = "Scene: the cellar. Present: Hala.";
 
     /// <summary>The context hook's command line the runs use (spec 029); the stand-in reads the file it names.</summary>
-    public const string HookCommand = "\"/opt/slip-test/slip-test\" context \"{file}\"";
+    public const string HookCommand = "'/opt/slip-test/slip-test' context {file}";
 
     /// <summary>The time of the first player message.</summary>
     public static readonly DateTimeOffset T1 = new(2026, 11, 1, 10, 0, 0, TimeSpan.Zero);
@@ -300,7 +300,7 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
         return ClaudeRunner.Parse(raw);
     }
 
-    /// <summary>The file each context hook in a local settings file prints: the last quoted part of its command.</summary>
+    /// <summary>The file each context hook in a local settings file prints: the last single-quoted part of its command (paths in the tests hold no <c>'</c>).</summary>
     /// <param name="settings">The settings file.</param>
     static IEnumerable<string> ContextFiles(string settings)
     {
@@ -311,7 +311,7 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
             string command = hook?["command"]?.GetValue<string>() ?? "";
             if (!command.Contains($" {ContextHook.Command} ", StringComparison.Ordinal))
                 continue;
-            string[] parts = command.Split('"');
+            string[] parts = command.Split('\'');
             yield return parts[^2];
         }
     }

@@ -17,3 +17,7 @@ description: "Task list for spec 029, the slip test puts per-point text next to 
 - [X] T005 Documents: `specs/024-slip-test-runner/contracts/slip-test.md`, `.docs/development.md` § The slip test,
   `.docs/decisions.md`, `.docs/roadmap.md` (FR-006).
 - [X] T006 `dotnet test` passes.
+- [X] T007 Fixes from the code review, tests first: the hook check leaves out every record of the context hook
+  (`TheHookCheckLeavesOutEveryRecordOfTheContextHook`); `prepare` refuses a context file over 10,000 characters and
+  local settings that do not parse; paths are single-quoted (`TheQuotedPathReachesTheProgramUnchangedThroughAShell`);
+  `context` prints Claude Code's JSON form, so a file that is JSON is still text.

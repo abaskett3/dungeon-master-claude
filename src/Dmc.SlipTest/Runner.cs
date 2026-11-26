@@ -113,6 +113,7 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
     public void Prepare(DateTimeOffset now)
     {
         Resolve();
+        ContextHook.Check(trial);
         if (Directory.Exists(trial.Copy) && Directory.EnumerateFileSystemEntries(trial.Copy).Any() && !File.Exists(Path.Combine(trial.Copy, Marker)))
             throw new SlipTestException($"the copy folder {trial.Copy} is not empty: name an empty or new folder");
         Folders.CopyTree(trial.Folder, trial.Copy, skip: trial.Work);

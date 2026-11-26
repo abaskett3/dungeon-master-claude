@@ -139,7 +139,15 @@ public sealed class ContextTests
         File.WriteAllText(file, P1Text);
         var output = new StringWriter();
         Assert.AreEqual(0, Dmc.SlipTest.Program.Run(["context", file], output, new StringWriter(), f.ClaudeHome, null, DateTimeOffset.UtcNow, new Random(1)));
-        Assert.AreEqual(P1Text, output.ToString());
+        var json = JsonNode.Parse(output.ToString())!["hookSpecificOutput"]!;
+        Assert.AreEqual("UserPromptSubmit", json["hookEventName"]!.GetValue<string>());
+        Assert.AreEqual(P1Text, json["additionalContext"]!.GetValue<string>());
+
+        // A file that is itself JSON is still printed as text.
+        File.WriteAllText(file, "{\"facts\": [1]}");
+        output = new StringWriter();
+        Dmc.SlipTest.Program.Run(["context", file], output, new StringWriter(), f.ClaudeHome, null, DateTimeOffset.UtcNow, new Random(1));
+        Assert.AreEqual("{\"facts\": [1]}", JsonNode.Parse(output.ToString())!["hookSpecificOutput"]!["additionalContext"]!.GetValue<string>());
 
         output = new StringWriter();
         Assert.AreEqual(0, Dmc.SlipTest.Program.Run(["context", Path.Combine(f.Root, "none.md")], output, new StringWriter(), f.ClaudeHome, null, DateTimeOffset.UtcNow, new Random(1)));
@@ -148,15 +156,60 @@ public sealed class ContextTests
     }
 
     [TestMethod]
-    public void TheHookCommandUsesForwardSlashes()
+    public void TheHookCommandUsesForwardSlashesAndSingleQuotes()
     {
-        Assert.AreEqual("\"D:/r/bin/Dmc.SlipTest.exe\" context \"{file}\"", ContextHook.CommandLine(@"D:\r\bin\Dmc.SlipTest.exe", @"D:\r\bin\Dmc.SlipTest.dll"));
-        Assert.AreEqual("\"/usr/bin/dotnet\" \"/r/bin/Dmc.SlipTest.dll\" context \"{file}\"", ContextHook.CommandLine("/usr/bin/dotnet", "/r/bin/Dmc.SlipTest.dll"));
+        Assert.AreEqual("'D:/r/bin/slip-test.exe' context {file}", ContextHook.CommandLine(@"D:\r\bin\slip-test.exe", @"D:\r\bin\slip-test.dll"));
+        Assert.AreEqual("'/usr/bin/dotnet' '/r/bin/slip-test.dll' context {file}", ContextHook.CommandLine("/usr/bin/dotnet", "/r/bin/slip-test.dll"));
+        Assert.AreEqual("'/w/$trial/it'\\''s `x` \"y\"'", ContextHook.Quoted("/w/$trial/it's `x` \"y\""));
 
         using var f = new SlipTestFixtures();
-        ContextHook.Add(f.Copy, @"D:\w\context\oracle\p1.md", ContextHook.CommandLine(@"D:\r\bin\Dmc.SlipTest.exe", ""));
+        ContextHook.Add(f.Copy, @"D:\w\context\oracle\p1.md", ContextHook.CommandLine(@"D:\r\bin\slip-test.exe", ""));
         string command = JsonNode.Parse(File.ReadAllText(ContextHook.SettingsPath(f.Copy)))!["hooks"]!["UserPromptSubmit"]![0]!["hooks"]![0]!["command"]!.GetValue<string>();
-        Assert.AreEqual("\"D:/r/bin/Dmc.SlipTest.exe\" context \"D:/w/context/oracle/p1.md\"", command);
+        Assert.AreEqual("'D:/r/bin/slip-test.exe' context 'D:/w/context/oracle/p1.md'", command);
+    }
+
+    [TestMethod]
+    public void TheQuotedPathReachesTheProgramUnchangedThroughAShell()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Inconclusive("needs a POSIX shell on the PATH");
+        string path = "/w/$trial/it's `x` \"y\"";
+        var info = new System.Diagnostics.ProcessStartInfo("sh") { RedirectStandardOutput = true };
+        info.ArgumentList.Add("-c");
+        info.ArgumentList.Add("printf %s " + ContextHook.Quoted(path));
+        using var shell = System.Diagnostics.Process.Start(info)!;
+        string printed = shell.StandardOutput.ReadToEnd();
+        shell.WaitForExit();
+        Assert.AreEqual(path, printed);
+    }
+
+    [TestMethod]
+    public void PrepareRefusesAContextFileClaudeCodeWouldShorten()
+    {
+        using var f = new SlipTestFixtures();
+        AddContext(f, p2: new string('x', ContextHook.MaxLength + 1));
+        StringAssert.Contains(f.Run(null, "prepare").Error, "p2.md holds more than 10,000 characters");
+    }
+
+    [TestMethod]
+    public void PrepareRefusesLocalSettingsTheHookCannotBeAddedTo()
+    {
+        using var f = new SlipTestFixtures();
+        AddContext(f);
+        Directory.CreateDirectory(Path.Combine(f.Folder, ".claude"));
+        File.WriteAllText(ContextHook.SettingsPath(f.Folder), "{\"a\": 1,}");
+        StringAssert.Contains(f.Run(null, "prepare").Error, "is not valid JSON, so the context hook cannot be added to it");
+    }
+
+    [TestMethod]
+    public void TheHookCheckLeavesOutEveryRecordOfTheContextHook()
+    {
+        var original = new[] { SlipTestFixtures.Hook("Scene: the cellar.", "s") };
+        var once = new[] { SlipTestFixtures.Hook("Scene: the cellar.", "s"), SlipTestFixtures.Hook(P1Text, "s") };
+        var twice = once.Append(SlipTestFixtures.Attachment(new JsonObject { ["type"] = "hook_success", ["content"] = P1Text + "\n", ["hookEvent"] = "UserPromptSubmit" }, "s")).ToArray();
+        Assert.AreEqual(Outcome.Pass, PilotCheck.CheckHooks(original, once, [], context: P1Text).Item1);
+        Assert.AreEqual(Outcome.Pass, PilotCheck.CheckHooks(original, twice, [], context: P1Text).Item1);
+        Assert.AreEqual(Outcome.Fail, PilotCheck.CheckHooks(original, twice, []).Item1);
     }
 
     [TestMethod]

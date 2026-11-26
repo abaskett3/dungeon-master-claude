@@ -111,15 +111,15 @@ internal static class PilotCheck
     /// <param name="allow">The documented differences.</param>
     /// <param name="folder">The DMC folder, whose path in the original's hook output becomes <paramref name="copy"/>; null to compare as is.</param>
     /// <param name="copy">The copy folder.</param>
-    /// <param name="context">The arm's text at this point (spec 029), whose one hook output is left out of the replay's before they are compared; null or blank for none.</param>
+    /// <param name="context">The arm's text at this point (spec 029), whose hook outputs (Claude Code may record one hook under more than one attachment type) are left out of the replay's before they are compared; null or blank for none.</param>
     public static (Outcome, List<string>) CheckHooks(IEnumerable<JsonObject> original, IEnumerable<JsonObject> replay, IReadOnlyList<Allowed> allow, string? folder = null, string? copy = null, string? context = null)
     {
         var a = Hooks(original);
         if (folder is not null && copy is not null)
             a = a.Select(h => (h.Type, h.Text.Replace(folder, copy, Folders.PathComparison).Replace(folder.Replace('\\', '/'), copy.Replace('\\', '/'), Folders.PathComparison))).ToList();
         var b = Hooks(replay);
-        if (ContextAt(b, context) is int at)
-            b.RemoveAt(at);
+        if (!string.IsNullOrWhiteSpace(context))
+            b.RemoveAll(h => IsContext(h.Text, context));
         var differ = new List<string>();
         for (int i = 0; i < Math.Max(a.Count, b.Count); i++)
         {
@@ -132,16 +132,10 @@ internal static class PilotCheck
         return (Judge(differ, "hook", allow), differ);
     }
 
-    /// <summary>The index of the hook output whose text is an arm's context text, ignoring white space at either end; null when there is none or the text is blank.</summary>
-    /// <param name="hooks">The hook outputs of a turn (<see cref="Hooks"/>).</param>
-    /// <param name="context">The context text, or null.</param>
-    static int? ContextAt(List<(string Type, string Text)> hooks, string? context)
-    {
-        if (string.IsNullOrWhiteSpace(context))
-            return null;
-        int at = hooks.FindIndex(h => h.Text.Trim() == context.Trim());
-        return at < 0 ? null : at;
-    }
+    /// <summary>Whether a hook output's text is an arm's context text, ignoring white space at either end.</summary>
+    /// <param name="text">The hook output's text.</param>
+    /// <param name="context">The context text.</param>
+    static bool IsContext(string text, string context) => text.Trim() == context.Trim();
 
     /// <summary>
     /// The context check (spec 029 FR-005): the arm's text at this point is one of the replayed turn's hook outputs,
@@ -150,7 +144,7 @@ internal static class PilotCheck
     /// <param name="replay">The replayed turn.</param>
     /// <param name="context">The context text.</param>
     public static bool CheckContext(IEnumerable<JsonObject> replay, string context) =>
-        string.IsNullOrWhiteSpace(context) || ContextAt(Hooks(replay), context) is not null;
+        string.IsNullOrWhiteSpace(context) || Hooks(replay).Any(h => IsContext(h.Text, context));
 
     /// <summary>Check (c): some string in the fork log equals the arm's rules text as Claude Code records it, so the rules reached the request.</summary>
     /// <param name="fork">The fork log.</param>

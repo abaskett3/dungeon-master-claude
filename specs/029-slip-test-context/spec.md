@@ -45,10 +45,12 @@ check passes only when the text is in the fork's hook output.
   one `UserPromptSubmit` hook whose command prints that file. After the run, failed or not, it MUST put the file back
   as the DMC folder has it. Before each run of an arm without context it MUST do the same with no hook added.
 - **FR-003**: The hook's command MUST start the running `slip-test` program as `slip-test context <file>`, with
-  forward slashes, so it works in the shell Claude Code runs hooks in on Windows and Linux. `context` prints the file
-  and exits 0, and a missing file prints nothing.
+  forward slashes and in single quotes, so it works in the shell Claude Code runs hooks in on Windows and Linux.
+  `context` prints the file as the hook's `additionalContext` in Claude Code's JSON form and exits 0, and a missing
+  file prints nothing. `prepare` MUST refuse a context file over 10,000 characters, which Claude Code would shorten,
+  and a DMC folder's `.claude/settings.local.json` that is not a JSON object.
 - **FR-004**: The context files MUST be locked with `trial.json`, `points.tsv` and `key.tsv`.
-- **FR-005**: The pilot's hook check MUST leave out the one hook output whose text is the arm's text at that point,
+- **FR-005**: The pilot's hook check MUST leave out every hook output whose text is the arm's text at that point,
   and a `context` check MUST pass when that output was found (or the file is blank) and fail otherwise. The report
   shows the `context` row only when an arm has context.
 - **FR-006**: The documents MUST say how to use it: the contract of spec 024, `.docs/development.md` § The slip test,

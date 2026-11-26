@@ -49,3 +49,12 @@ description: "Task list for spec 031, printable character sheets (issue #191 pha
   file's `## ` headings render as headings; the unused `FreeSections` list is gone and the layouts' doc names
   `SheetLibraryTests`; one character's page never takes the party's or the several-name page's file name. Tests added.
 - [X] T015 Converge again after T014; no task added.
+
+## Phase 5: The slip test's point A
+
+- [X] T016 `src/Dmc.Cli/ContextCheck/SheetRequestReminder.cs` and its place last in `Commands/ContextCheckCommand.cs`
+  (FR-019); `ContextCheck/SheetRequestReminderContract.cs` (in-process and binary).
+- [X] T017 `dmc-character-sheet-update`'s description; `.docs/dmc-reference.md`, `architecture.md`, `roadmap.md`,
+  `decisions.md`.
+- [ ] T018 Run point A of the slip test again on the maintainer's computer (spec § The slip test, Result and rerun) and
+  put the result on the PR.

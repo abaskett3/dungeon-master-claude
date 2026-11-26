@@ -13,8 +13,9 @@ namespace Dmc.Commands;
 /// people of the register the player's message names, once per person per session part (<see cref="CanonReminder"/>).
 /// Then the sheet lines (spec 016 FR-008): what the sheets of the people present say of them now, again once 100,000
 /// tokens have passed, and none in a fresh log, before DMC's first reply after a <c>/clear</c> (<see cref="SheetReminder"/>,
-/// spec 019). Last, for a message that starts out of character, the rule for a
-/// correction in one line (spec 016 FR-011, <see cref="OocReminder"/>).
+/// spec 019). Then, for a message that starts out of character, the rule for a correction in one line (spec 016
+/// FR-011, <see cref="OocReminder"/>). Last, for a message that names a sheet, how to show one in one line (spec 031
+/// FR-019, <see cref="SheetRequestReminder"/>).
 /// <para>
 /// It never gets in the way of a prompt: on any error (bad input, a missing or unreadable log) it prints nothing
 /// and exits 0.
@@ -36,7 +37,8 @@ public sealed class ContextCheckCommand : ICommand
     /// current context size and baseline, or nothing when the size is below the first band or cannot be found; then the
     /// canon reminder for the people the player's message names (<see cref="CanonReminder"/>, spec 013 FR-015); then the
     /// sheet lines of the people present (<see cref="SheetReminder"/>, spec 016 FR-008); then the out-of-character line
-    /// (<see cref="OocReminder"/>, spec 016 FR-011). Each part prints nothing when it has nothing.
+    /// (<see cref="OocReminder"/>, spec 016 FR-011); then the sheet-request line (<see cref="SheetRequestReminder"/>, spec
+    /// 031 FR-019). Each part prints nothing when it has nothing.
     /// </summary>
     /// <param name="args">Ignored: the hook passes everything on standard input.</param>
     /// <param name="io">Standard input is the hook's JSON; standard output gets the lines.</param>
@@ -61,12 +63,15 @@ public sealed class ContextCheckCommand : ICommand
         var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh), SheetReminder.Found.None);
         var reminder = Quietly(() => CanonReminder.For(input, project, sheets.WithoutFields), new List<string>());
         string ooc = Quietly(() => OocReminder.For(input), "");
+        string sheetRequest = Quietly(() => SheetRequestReminder.For(input), "");
         if (line.Length > 0)
             io.Out.WriteLine(line);
         foreach (string text in reminder.Concat(sheets.Lines))
             io.Out.WriteLine(text);
         if (ooc.Length > 0)
             io.Out.WriteLine(ooc);
+        if (sheetRequest.Length > 0)
+            io.Out.WriteLine(sheetRequest);
         return 0;
     }
 

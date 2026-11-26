@@ -916,7 +916,9 @@ character-sheets/npc-captain-kole.md | - **Usually found**: the wall, the gate, 
 
 On Rorn's Landing with four companions present it printed 5,490 bytes (about 1,370 tokens).
 
-**The out-of-character line** (spec 016 FR-011). Last, when the message starts (after spaces) with `ooc` in any case followed by a space, a colon or the end, or holds `((` anywhere (an aside in double brackets, as the player options allow), one line: `Out of character: if this says a fact is wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you think, propose one fix, and change no file until the player agrees.` Nothing for any other message.
+**The out-of-character line** (spec 016 FR-011). After the sheet lines, when the message starts (after spaces) with `ooc` in any case followed by a space, a colon or the end, or holds `((` anywhere (an aside in double brackets, as the player options allow), one line: `Out of character: if this says a fact is wrong or asks how someone knew, read the files, open your reply by quoting what they say, for and against, say what you think, propose one fix, and change no file until the player agrees.` Nothing for any other message.
+
+**The sheet-request line** (spec 031 FR-019). Last, when the message holds `sheet` or `sheets` as a whole word in any case and does not start with `/`, one line, about 190 bytes: `Sheets: if the player wants to see one, run `dmc sheet` (the player characters), `dmc sheet --party` (the whole party) or `dmc sheet NAME` and give the path it prints; never type a sheet out.` Nothing for any other message, `bedsheet` included. The phase 1 slip test of #191 found that a plain request for the party's sheets never reached `dmc-character-sheet-update` § Showing a sheet to the player, so the line puts that rule next to the request.
 
 It never fails: on any error (input that is not JSON, a missing or unreadable log, a canon or sheet that cannot be read) it prints nothing and exits 0; a failure of one part alone still prints the others.
 

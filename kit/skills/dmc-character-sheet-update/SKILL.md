@@ -1,6 +1,6 @@
 ---
 name: dmc-character-sheet-update
-description: Create or update a character sheet for a player character, companion or NPC in the active campaign, including stats, inventory, notes, objectives, relationships and backstory. Also shows the player a printable sheet. Use on level-up, when the player asks to see a sheet, when items or abilities change, when an NPC is introduced or becomes recurring, or when a character's goals, knowledge or attitude change.
+description: Create or update a character sheet for a player character, companion or NPC in the active campaign, including stats, inventory, notes, objectives, relationships and backstory. Also shows the player a printable sheet. Use on level-up, when the player asks for sheets or to see one (the party's or one character's), when items or abilities change, when an NPC is introduced or becomes recurring, or when a character's goals, knowledge or attitude change.
 ---
 
 # Character sheet update

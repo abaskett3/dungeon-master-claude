@@ -32,6 +32,7 @@
 - **Proficiency bonus**:
 - **Saving throw proficiencies**:
 - **Skills** (proficient, with total bonus):
+- **Other skills** (every other skill, with total bonus):
 - **Expertise**:
 - **Passive Perception**:
 - **Languages**:

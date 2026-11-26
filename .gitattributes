@@ -15,3 +15,6 @@ tests/Dmc.Tests/Fixtures/migrations/** text eol=lf
 
 # The sequel import's fixture campaign and digest are hashed and compared line for line: keep them LF on every checkout
 tests/Dmc.Tests/Fixtures/sequel/** text eol=lf
+
+# The sheet export's fixture campaign is edited by exact text and its golden page compared byte for byte: keep them LF on every checkout
+tests/Dmc.Tests/Fixtures/sheets/** text eol=lf

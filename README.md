@@ -137,6 +137,14 @@ dmc campaign import exports/the-silver-egg-<date and time>.zip --as silver-egg-c
 dmc size the-silver-egg
 ```
 
+### Printable character sheets
+
+Ask DMC to show you your character's sheet, or the party's, and it runs `dmc sheet`, which writes a page from your campaign files with every box in the same place each time: all eighteen skills, attacks, spells, gear and what you have left right now. Open it in your browser and print it, or save it as a PDF. It holds only what your character could know, so a companion's secrets stay secret. If a sheet is out of shape, DMC fixes it first. See [dmc-reference.md](.docs/dmc-reference.md#sheet).
+
+```
+dmc sheet --party --open
+```
+
 ### Finding something in your files
 
 DMC looks facts up with two commands of its own, so it reads only what it needs. `dmc recall` finds the lines that best match some words across a campaign, the campaign it continues and their modules, best first. `dmc lookup` prints one section, such as a monster's stat block or a page of canon, by its heading. Neither changes anything, and you never need to run them: DMC does, and falls back to searching the files itself if they fail. See [dmc-reference.md](.docs/dmc-reference.md#recall).
@@ -223,7 +231,7 @@ A DMC folder, written by `dmc install`:
 CLAUDE.md, .claude/, templates/   written and kept up to date by dmc (do not edit; a refresh puts them back and keeps your edit under .dmc/replaced/)
 .dmc/                             dmc's manifest: which files it wrote
 adventures/                       your campaigns
-exports/                          campaign exports made by dmc campaign export, one ZIP each
+exports/                          campaign exports made by dmc campaign export, one ZIP each, and printable sheets (exports/sheets/)
 feedback/                         feedback about DMC, one file per entry, outside any campaign
 modules/                          ingested published modules
 rules/                            optional local rules reference

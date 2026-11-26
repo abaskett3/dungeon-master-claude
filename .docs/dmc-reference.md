@@ -40,9 +40,9 @@ A release prints its own version (`dmc 0.1.2`); every other build prints `dmc 0.
 
 ```
 $ dmc
-dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, size, lookup, recall, play, install, folder, refresh, update, --version)
+dmc: no command given (try roll, context-check, map, redraw, pdf, digest, campaign, size, sheet, lookup, recall, play, install, folder, refresh, update, --version)
 $ dmc foo
-dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, size, lookup, recall, play, install, folder, refresh, update, --version)
+dmc: unknown command "foo" (try roll, context-check, map, redraw, pdf, digest, campaign, size, sheet, lookup, recall, play, install, folder, refresh, update, --version)
 ```
 
 **Arguments.** `map`, `pdf`, `digest` and `campaign` read their arguments as Python's `argparse` would: an option may be shortened to a unique prefix (`--pa` for `--pages`), `--option=value` works, a negative number is a plain argument, and `--` ends the options. A mistake is one line and exit code 2.
@@ -726,6 +726,63 @@ The full report has a header line, one line per file (path, tokens, budget or li
 - `arc: <name>'s next move has no session (by sN): add one (step 5, Clocks)`: an Antagonists entry (a `###` block, or a top-level list item where there are none) with no `by sN`, unless the entry names someone dead.
 
 It prints nothing when the Arc plan holds only Character arcs and a Last played line, as a module campaign's does until its module is finished, or when `dm-notes.md` is missing. The full save fixes each line in `dm-notes.md` and runs it again; it never names them to the player, so they are not part of `--check`, whose leftover lines the resume and the save's report do name.
+
+## sheet
+
+Added after release 0.4.3 (spec 031, issue #191 phase 1).
+
+```
+dmc sheet [NAME ...] [--campaign NAME] [--party] [--history] [--open] [--folder PATH]
+dmc sheet --check [NAME ...] [--campaign NAME] [--party] [--folder PATH]
+```
+
+Writes a printable character sheet from the campaign files: one self-contained HTML file, a sheet per printed page, in `exports/sheets/<campaign>/` of the DMC folder. DMC runs it when the player asks to see a sheet (`dmc-character-sheet-update` § Showing a sheet to the player), so a sheet is never retyped from memory. It reads the sheets in `character-sheets/` and `game-state.md`, and never writes under `adventures/`.
+
+| Argument | Meaning |
+|---|---|
+| `NAME` | A sheet's `# ` title or its file name (with or without `.md`), matched exactly, ignoring case: `Ana Reed`, `pc-ana`. It must be a player character's (`pc-*.md`) or named by a block under Party status. Several names make one page. Default: every player character. |
+| `--campaign` | A campaign folder under `adventures/`. Default: the active campaign. |
+| `--party` | Every character with a `### ` block under `## Party status` (not "With the party, not companions"), each block matched to a sheet the same exact way. A block that names no sheet (shared supplies, a mount) is skipped and named. Not with a name. |
+| `--history` | Add a player character's History: the sheet's `## History` and `character-sheets/<sheet>-history.md`. A companion's history is never printed. |
+| `--open` | Open the page in the default browser. Not with `--check`. |
+| `--check` | Only check the files: print what to fix, one line each, and nothing when all is well; exit 0; write nothing. |
+| `--folder` | The DMC folder. Default: the one `dmc folder` prints. |
+
+**The page.** `<sheet>.html` for one character (`pc-ana.html`), `party.html` for `--party`, `sheets.html` for several names (one character whose sheet is `party.md` or `sheets.md` gets `party-sheet.html` or `sheets-sheet.html`). A new export replaces the file of the same name. A skill's bonus may be written `+5`, `(+5)` or `: +5`, with any note after it; a field's value may wrap onto the next line with no blank line between. Each sheet has a fixed list of panels and boxes in a fixed order, and each box is filled from one labelled field; an empty box prints `none`, never goes missing. Three layouts:
+
+- **A player character** (`pc-*.md`, `templates/pc-sheet.md`): the opening fields; the ability table, proficiency bonus, saves, passive Perception and expertise; all eighteen skills, each with its ability, its bonus as written, proficiency and the note beside it (from `Skills` and `Other skills`); combat and the attack table; Now; languages and other proficiencies; features and traits; spellcasting; equipment and the wardrobe; the story fields and relationships; with `--history`, the history.
+- **A companion on the NPC template**: species, occupation and age, and status; the play card's looks, voice, defences line, attacks, limited abilities, standing traits and items; the stat block; Now; appearance, personality and the wardrobe.
+- **A companion on the PC template** (`- **Companion**`): the PC's panels after the play card's, its story cut to appearance and personality.
+
+Now is the character's block under Party status: HP, hit dice left, slots left, class resources, conditions, concentration, exhaustion, death saves, inspiration, gold and consumables; a line missing prints `not recorded`. The heading says `As of <the Scene's In-world date and time> in the story · exported <date>`. A companion's number that migration 006 moved to the play card prints `on the play card` in the box that would hold it.
+
+**What is never printed.** The allow-list in `src/Dmc.Cli/Sheets/SheetLayouts.cs`: Secrets, What they know, Role in the story, Usually found, First appeared, the names DMC uses for voicing someone, and a companion's Who, motives (what they want and fear, their attitude, Toward the PC), relationships, ideals, backstory, aims and history. From `game-state.md`, only the character's own Party status fields and the Scene's date. Known limit: a program cannot recognise a secret written as prose inside a printed field.
+
+**The check.** The templates are the schema. A refused export, and `--check`, print one line for each of: a sheet that follows neither template; a companion with no `## Play card`; a section the template does not have (the older history headings `## Notes` and `## History with the PC` are allowed); in a structured section (every section but Features and traits, Relationships, Wardrobe and keepsakes, History, What they know and Secrets), a `- **Label**` the template does not have, a line that is not a labelled field, a field twice, or a `### ` subsection other than Combat's Attacks; a printed field missing or blank (`write its value, or none`); the ability table without a Score, Modifier or Save for an ability; no attack table; and the skills: `Skills` and `Other skills` must name all eighteen, each once, each with its bonus. A companion's fields that its play card holds instead may be missing.
+
+**The arithmetic.** For a sheet on the PC template, each modifier (from the score), save (modifier and proficiency bonus when proficient), skill (modifier, plus the proficiency bonus when in `Skills`, doubled when in `Expertise`) and passive Perception (10 and Perception) is worked out and compared with what is written. A difference is a warning, and the written value is what prints, because a feature or an item can rightly change it. A line of the character's Party status block that is not a field of the template is a warning too, and is not printed. A missing block is a warning.
+
+**Output.** A written export prints its warnings, then one line; `--check` prints its findings and warnings and exits 0; a refused export prints them on standard output, then one line on standard error, and exits 1. The lines are capped at 12, the twelfth saying how many more.
+
+```
+$ dmc sheet --party
+wrote exports/sheets/test-vale/party.html: 3 sheets (Ana Reed, Bram, Cora); skipped Shared supplies (no sheet)
+$ dmc sheet
+pc-ana.md: ## Combat: "- **Swim speed**: 15 ft" has no label of templates/pc-sheet.md: move it to the field it belongs to
+pc-ana.md: Speed is blank: write its value, or none
+dmc sheet: refused: 2 problems in the files: fix each one and run it again
+```
+
+| Failure | Exit |
+|---|---|
+| `refused: N problems in the files: fix each one and run it again` (after the lines) | 1 |
+| `<NAME> is not a player character or in the party: an NPC's sheet holds spoilers, so it is not exported` | 1 |
+| `no sheet named <NAME> in <campaign>/character-sheets/ (give its title or its file name)` | 1 |
+| `<NAME> names N sheets (<files>): give the file name` | 1 |
+| `no player character's sheet (character-sheets/pc-*.md) in <campaign>` | 1 |
+| `no block under Party status in <campaign>/game-state.md names a sheet in character-sheets/` | 1 |
+| `no active campaign: name one (dmc sheet --campaign NAME)`, `no campaign <NAME> in adventures/`, `cannot read <path>: <reason>`, `cannot write <path>: <reason>` | 1 |
+| `argument --party: not allowed with a character's name`, `argument --open: not allowed with argument --check`, and the usual argument mistakes | 2 |
 
 ## module
 

@@ -28,7 +28,7 @@ sheet-update skill makes a change of clothes a swap. Migration 009 brings existi
 
 - **Core 1, consistency**: one home for clothes not worn now, on the owner's sheet. Pass.
 - **Core 3 and Development 1, cost**: `kit/dm-rules.md` 0 bytes; `dmc-character-sheet-update` +397,
-  `dmc-generate-image-prompt` +64, `dmc-campaign-full-save` +9; templates +372 (NPC) and +445 (PC), paid when a sheet
+  `dmc-generate-image-prompt` +77, `dmc-campaign-full-save` +9; templates +372 (NPC) and +445 (PC), paid when a sheet
   is written. `dmc size`: a companion is read through its card, so no change; a PC's and a present NPC's sheets are
   read to their history and pay for their section's lines (the PC's empty section with its comment removed is about
   30 bytes). Pass.

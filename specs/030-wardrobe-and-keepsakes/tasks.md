@@ -31,8 +31,12 @@ description: "Task list for spec 030, a wardrobe and keepsakes section on sheets
 - [X] T007 Documents: `.docs/campaign-files.md`, `.docs/dmc-reference.md`, `.docs/roadmap.md`, `.docs/decisions.md`
   (FR-008).
 - [X] T008 Run quickstart steps 1 and 2.
-- [ ] T009 If the change alters how DMC plays (CLAUDE.md § Git and GitHub, "Slip test", says what counts), run the
+- [X] T009 If the change alters how DMC plays (CLAUDE.md § Git and GitHub, "Slip test", says what counts), run the
   slip test against the pass line in the issue and put the result in the PR: it runs on the maintainer's computer
   (research R4); the PR states the trial.
-- [ ] T010 Converge: spec, plan and tasks against the diff.
-- [ ] T011 Code review on the PR; fixes; converge again.
+- [X] T010 Converge: spec, plan and tasks against the diff.
+- [X] T011 Code review on the PR: the fixture's sections move right before History with the template comment; the
+  check takes the exact heading, reports a second section and a `### Wardrobe` subsection, and the migration merges
+  them; canon is left as it is; the image prompt uses the wardrobe only to describe an item the scene names;
+  `.docs/campaign-files.md` names a change of clothes; an unrelated roadmap correction is taken out. Tests updated.
+- [X] T012 Converge again after T011; no task added.

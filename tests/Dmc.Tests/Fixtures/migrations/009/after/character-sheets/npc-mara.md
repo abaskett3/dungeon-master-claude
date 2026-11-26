@@ -19,15 +19,17 @@
 - **Standing traits that change play**: none
 - **Items used in play**: longbow and 30 arrows
 
+## Secrets
+
+- Her brother is alive and serves the Drowned King.
+
 ## Wardrobe and keepsakes
+
+<!-- What they own and are not wearing or carrying now, on the owner's sheet, one item a line: what it is; where it is kept and who holds it; when it is worn (everyday, watch, ceremony, winter, outgrown, keepsake). A change of clothes moves the old outfit here and the new one to Looks (Appearance on a sheet with no play card). -->
 
 - her grey fur cloak: kept by Wren at the ferry hut; cold days
 - her blue sash: where kept not recorded; the Watch's feast
 - her mother's silver brooch: kept by Wren; a keepsake, when worn not recorded
-
-## Secrets
-
-- Her brother is alive and serves the Drowned King.
 
 ## History
 

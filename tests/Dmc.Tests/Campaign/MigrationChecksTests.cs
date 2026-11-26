@@ -414,7 +414,7 @@ public sealed class MigrationChecksTests
             ["game-state.md"] = PartyState,
             ["character-sheets/pc-wren.md"] = Dressed("Wren", "Wardrobe and keepsakes"),
             ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", "Wardrobe and keepsakes"),
-            ["character-sheets/npc-vex.md"] = Dressed("Vex", "wardrobe and keepsakes"),
+            ["character-sheets/npc-vex.md"] = Dressed("Vex", "Wardrobe and keepsakes"),
             ["character-sheets/npc-tobin.md"] = Dressed("Tobin", null),
             ["character-sheets/minor-npcs.md"] = "# Minor NPCs\n\n## Wardrobe notes\n",
             ["character-sheets/npc-mara-history.md"] = "# Mara Quill: history\n\n## Wardrobe\n",
@@ -428,14 +428,30 @@ public sealed class MigrationChecksTests
             "wardrobe-sections-in-place: character-sheets/npc-mara.md has no ## Wardrobe and keepsakes section",
             "wardrobe-sections-in-place: character-sheets/npc-mara.md has ## Wardrobe and keepsakes (kept, not worn now), not ## Wardrobe and keepsakes",
             "wardrobe-sections-in-place: character-sheets/npc-tobin.md has ## Wardrobe, not ## Wardrobe and keepsakes",
+            "wardrobe-sections-in-place: character-sheets/npc-vex.md has no ## Wardrobe and keepsakes section",
+            "wardrobe-sections-in-place: character-sheets/npc-vex.md has ## wardrobe and keepsakes, not ## Wardrobe and keepsakes",
             "wardrobe-sections-in-place: character-sheets/pc-wren.md has no ## Wardrobe and keepsakes section",
         }, Run("wardrobe-sections-in-place", now: new()
         {
             ["game-state.md"] = PartyState,
             ["character-sheets/pc-wren.md"] = Dressed("Wren", null),
             ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", "Wardrobe and keepsakes (kept, not worn now)"),
-            ["character-sheets/npc-vex.md"] = Dressed("Vex", "Wardrobe and keepsakes"),
+            ["character-sheets/npc-vex.md"] = Dressed("Vex", "wardrobe and keepsakes"),
             ["character-sheets/npc-tobin.md"] = Dressed("Tobin", "Wardrobe"),
+        }));
+
+    /// <summary>A <c>### Wardrobe</c> under another section, or the section twice, fails.</summary>
+    [TestMethod]
+    public void ASubsectionWardrobeOrTwoSectionsFail() =>
+        CollectionAssert.AreEqual(new[]
+        {
+            "wardrobe-sections-in-place: character-sheets/npc-mara.md has ### Wardrobe, not ## Wardrobe and keepsakes",
+            "wardrobe-sections-in-place: character-sheets/pc-wren.md has 2 ## Wardrobe and keepsakes sections, not one",
+        }, Run("wardrobe-sections-in-place", now: new()
+        {
+            ["game-state.md"] = PartyState,
+            ["character-sheets/pc-wren.md"] = Dressed("Wren", "Wardrobe and keepsakes").Replace("## History", "## Wardrobe and keepsakes\n\n- a hat\n\n## History"),
+            ["character-sheets/npc-mara.md"] = Dressed("Mara Quill", "Wardrobe and keepsakes").Replace("## Play card\n\n", "## Play card\n\n### Wardrobe\n\n- a cloak\n\n"),
         }));
 
     /// <summary>With no game state, only the PCs' sheets need the section.</summary>

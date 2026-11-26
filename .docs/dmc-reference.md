@@ -469,7 +469,8 @@ when it has one, holds a comment naming the Five Commandments, and it has an `##
 for the next move; text outside comments does not count, and a template comment without those words (one opening "The
 current arc of a homebrew campaign" or "For each: what they want") left beside the current one fails it);
 `wardrobe-sections-in-place` (each PC's sheet and each companion's, found as `companions-have-play-card` finds it,
-has a `## Wardrobe and keepsakes` section, and no sheet has another `## ` heading that starts with Wardrobe).
+has one `## Wardrobe and keepsakes` section, spelled exactly, and no sheet has another `## ` or `### ` heading that
+starts with Wardrobe, in any case).
 
 **restore** puts the campaign back as a backup holds it (`--from`: default the marked backup, else the latest). Without
 `--yes` it prints the plan and changes nothing:

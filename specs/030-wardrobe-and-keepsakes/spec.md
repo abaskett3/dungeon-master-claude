@@ -84,10 +84,10 @@ moved line.
 - **FR-003**: `dmc-character-sheet-update` gains a step: Looks (Appearance without a card) is what they wear now; what
   they own and do not wear or carry goes on the owner's sheet in the wardrobe; a change of clothes is a swap; read the
   section before dressing them. Its linked-campaign paragraph carries the wardrobe into a sequel's sheet.
-- **FR-004**: `dmc-generate-image-prompt` reads the wardrobe for what was worn at a past moment; the full save's
+- **FR-004**: `dmc-generate-image-prompt` reads the wardrobe to describe an item a past scene names; the full save's
   sheet check names clothes.
 - **FR-005**: `kit/dm-rules.md` does not change.
-- **FR-006**: Migration 009 adds the section to each PC's and companion's sheet, renames a hand-made wardrobe heading,
+- **FR-006**: Migration 009 adds the section to each PC's and companion's sheet, renames or merges a hand-made wardrobe heading (`## ` or `### `),
   moves what the sheets say about things not worn now into it, accounts every moved line as `reworded`, and names the
   check `wardrobe-sections-in-place`, which `dmc` implements.
 - **FR-007**: Tests: the check's cases in `MigrationChecksTests`, and a toolkit test pinning the templates, the

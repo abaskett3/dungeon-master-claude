@@ -408,8 +408,8 @@ internal static partial class MigrationChecks
     /// <summary>
     /// <c>wardrobe-sections-in-place</c> (migration 009, spec 030 FR-006): each PC's sheet (<c>pc-*.md</c>) and each
     /// companion's sheet, found from <c>game-state.md</c>'s Party status as <see cref="CompanionsHavePlayCard"/> finds
-    /// it, has a <c>## Wardrobe and keepsakes</c> section; and no sheet has another <c>## </c> heading that starts with
-    /// "Wardrobe" (a hand-made section the migration renames).
+    /// it, has one <c>## Wardrobe and keepsakes</c> section, spelled exactly; and no sheet has another <c>## </c> or
+    /// <c>### </c> heading that starts with "Wardrobe", in any case (a hand-made section the migration renames or merges).
     /// </summary>
     /// <param name="input">The migrated campaign.</param>
     static IEnumerable<string> WardrobeSectionsInPlace(CheckInput input)
@@ -430,13 +430,16 @@ internal static partial class MigrationChecks
         }
         foreach (var (path, text) in sheets)
         {
-            var headings = SectionHeadings(text);
-            bool has = headings.Any(h => string.Equals(h, Wardrobe, StringComparison.OrdinalIgnoreCase));
-            if (needs.Contains(path) && !has)
+            var headings = Lines(text).Where(l => l.StartsWith("## ", StringComparison.Ordinal) || l.StartsWith("### ", StringComparison.Ordinal))
+                .Select(l => l.TrimEnd()).ToList();
+            int exact = headings.Count(h => h == $"## {Wardrobe}");
+            if (needs.Contains(path) && exact == 0)
                 yield return $"{path} has no ## {Wardrobe} section";
-            foreach (string other in headings.Where(h => h.StartsWith("Wardrobe", StringComparison.OrdinalIgnoreCase)
-                                                         && !string.Equals(h, Wardrobe, StringComparison.OrdinalIgnoreCase)))
-                yield return $"{path} has ## {other}, not ## {Wardrobe}";
+            if (exact > 1)
+                yield return $"{path} has {exact} ## {Wardrobe} sections, not one";
+            foreach (string other in headings.Where(h => h.TrimStart('#').TrimStart().StartsWith("Wardrobe", StringComparison.OrdinalIgnoreCase)
+                                                         && h != $"## {Wardrobe}"))
+                yield return $"{path} has {other}, not ## {Wardrobe}";
         }
     }
 }

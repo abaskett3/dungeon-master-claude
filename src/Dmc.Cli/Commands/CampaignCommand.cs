@@ -4,10 +4,10 @@ using Dmc.Campaign;
 namespace Dmc.Commands;
 
 /// <summary>
-/// <c>dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE</c>: moves a whole campaign in and out
+/// <c>dmc campaign export|import|show|standard|backups|backup|verify|compare|restore|close|links|sequel NAME-or-FILE</c>: moves a whole campaign in and out
 /// of one file. <c>export</c> writes a campaign folder (and the general player options) to a ZIP with a manifest of sizes
 /// and checksums; <c>import</c> checks such a file completely, then creates the campaign all or nothing under a name that
-/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign. <c>links</c> lists the campaigns linked to one, through the Continuity sections of their <c>player-options.md</c> (spec 011), with their modules and any problem with a link line; it writes nothing. <c>sequel</c> is the exact parts of a sequel's import of the closed campaign it continues (spec 011): the digest's start, its accounting, its check and the sample draw.
+/// is free; <c>show</c> says what a file holds and writes nothing. <c>standard</c>, <c>backups</c>, <c>backup</c>, <c>verify</c> and <c>restore</c> are the exact steps of bringing a campaign's files up to the kit's standard (spec 005): where it stands, a checked backup, the no-loss check, and the way back. <c>compare</c> checks a campaign against any export of it and writes nothing (spec 033). <c>close</c> closes a finished campaign for good (spec 010): the mark, a permanent closing backup and its copy in <c>exports/</c>; every writing verb then refuses the campaign. <c>links</c> lists the campaigns linked to one, through the Continuity sections of their <c>player-options.md</c> (spec 011), with their modules and any problem with a link line; it writes nothing. <c>sequel</c> is the exact parts of a sequel's import of the closed campaign it continues (spec 011): the digest's start, its accounting, its check and the sample draw.
 /// </summary>
 /// <remarks>
 /// Arguments are read the way Python's <c>argparse</c> reads them (see <see cref="CampaignArguments"/>), with its messages,
@@ -20,7 +20,7 @@ public sealed class CampaignCommand : ICommand
     public string Name => "campaign";
 
     /// <inheritdoc />
-    public string Summary => "export or import a whole campaign as one file, bring its files up to date, close it for good, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE";
+    public string Summary => "export or import a whole campaign as one file, bring its files up to date, close it for good, check it against any export, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|compare|restore|close|links|sequel NAME-or-FILE";
 
     /// <summary>The text <c>--help</c> prints: usage, what each verb does and what the options mean.</summary>
     // A checkout with CRLF line endings makes the literal CRLF too; the program always prints "\n".
@@ -32,6 +32,7 @@ usage: dmc campaign export NAME [--out PATH] [--force]
        dmc campaign backups NAME
        dmc campaign backup NAME [--prune oldest|old]
        dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
+       dmc campaign compare NAME [--with FILE] [--all]
        dmc campaign restore NAME [--from FILE] [--yes]
        dmc campaign close NAME [--yes]
        dmc campaign links [NAME]
@@ -42,7 +43,7 @@ usage: dmc campaign export NAME [--out PATH] [--force]
 
 Moves a whole campaign in and out of one ZIP file: a backup, a copy under another name, or a move to another computer.
 Brings a campaign's files up to the kit's standard with DMC, safely: a backup first, a check that nothing was lost, and
-a way back. Closes a finished campaign for good. Lists the campaigns linked to one. Proves a sequel's import of the
+a way back. Checks a campaign against any export of it. Closes a finished campaign for good. Lists the campaigns linked to one. Proves a sequel's import of the
 closed campaign it continues.
 
   export    writes adventures/NAME, and the general adventures/player-options.md if there is one, to a file. Nothing in
@@ -59,6 +60,9 @@ closed campaign it continues.
   backup    writes a checked backup to adventures/NAME/backups/ and, when a migration is pending, marks it as under way.
   verify    checks that every line of the backup is in the migrated campaign or accounted for, and that each pending
             migration's checks pass; then records the new standard. Changes nothing when it fails.
+  compare   checks every file of the campaign against an export of it (the latest backup, a closed campaign's
+            closing backup, or the file --with names) by path and content, and names each file changed, added or
+            missing. Line endings and the map page are no change. Writes nothing, pass or fail.
   restore   puts the campaign back as a backup holds it, keeping backups/. Without --yes, prints the plan only.
   close     closes a current campaign for good: marks it closed, writes a checked closing backup that is never pruned
             to adventures/NAME/backups/ and a copy of it to exports/. Nothing changes a closed campaign again; a
@@ -87,7 +91,9 @@ closed campaign it continues.
   --backup      verify: the backup to compare with (default: the one of the unfinished migration, else the latest)
   --accounting  verify: the accounting file (default: backups/<backup file>.accounting.tsv)
   --list        verify, sequel: print what is still to account for, and write nothing
-  --all         verify, sequel --list: print every unaccounted line, not the first 40
+  --with        compare: the export to compare with, a file in backups/ or a path (default: a closed campaign's
+                closing backup, in backups/ or exports/; else the latest backup)
+  --all         verify, sequel --list: print every unaccounted line, not the first 40; compare: every difference
   --start, --check, --sample
                 sequel: start the digest, check it, or draw the sample test
   --round       sequel --sample: the round to draw, 1 or more (default 1); a new round is a new draw
@@ -123,6 +129,8 @@ A published module is not exported; ingest it again from your own copy.
                 return RunBackup(backup, io);
             case VerifyRequest verify:
                 return RunVerify(verify, io);
+            case CompareRequest compare:
+                return RunCompare(compare, io);
             case RestoreRequest restore:
                 return RunRestore(restore, io);
             case CloseRequest close:
@@ -303,6 +311,20 @@ A published module is not exported; ingest it again from your own copy.
         foreach (string line in outcome.Lines)
             io.Out.WriteLine(line);
         return outcome.Failure is null ? 0 : throw new DmcException("verification failed: " + outcome.Failure);
+    }
+
+    /// <summary>Compares a campaign with an export of it, after putting back an interrupted restore, and prints the lines (spec 033).</summary>
+    /// <param name="request">The parsed <c>compare</c> request.</param>
+    /// <param name="io">Standard output gets the lines.</param>
+    /// <exception cref="DmcException">A file differs (after the lines are printed), or the comparison cannot run.</exception>
+    static int RunCompare(CompareRequest request, Io io)
+    {
+        string root = DmcFolder.Require();
+        Recover(root, request.Name, io);
+        var outcome = CampaignComparer.Run(root, request.Name, request.With, request.All);
+        foreach (string line in outcome.Lines)
+            io.Out.WriteLine(line);
+        return outcome.Failure is null ? 0 : throw new DmcException(outcome.Failure);
     }
 
     /// <summary>Plans or makes a restore and prints its lines.</summary>

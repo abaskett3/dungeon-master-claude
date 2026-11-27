@@ -211,6 +211,26 @@ internal static partial class BackupFolder
             : throw new DmcException($"{campaign} has no backup: dmc campaign backup {campaign} takes one");
     }
 
+    /// <summary>
+    /// Where the closing backup a closed campaign's mark names is (spec 033 research R3): in the campaign's <c>backups/</c>,
+    /// else the copy of the same name that <c>close</c> writes to <c>exports/</c> in the DMC folder. An import of that copy
+    /// has no <c>backups/</c> (exports leave it out), so the copy in <c>exports/</c> is the one it can be checked against.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="campaignFolder">The campaign folder.</param>
+    /// <param name="fileName">The closing backup's file name, as the mark records it.</param>
+    /// <returns>The full path of the first that exists, or null when neither does.</returns>
+    public static string? ClosingPath(string root, string campaignFolder, string fileName)
+    {
+        if (fileName.IndexOfAny(['/', '\\']) >= 0)
+            return null;
+        string inBackups = Path.Combine(Of(campaignFolder), fileName);
+        if (File.Exists(inBackups))
+            return inBackups;
+        string inExports = Path.Combine(root, "exports", fileName);
+        return File.Exists(inExports) ? inExports : null;
+    }
+
     /// <summary>The backups a prune removes, chosen from those counted before the new one.</summary>
     /// <param name="earlier">The counted backups before the new one, oldest first.</param>
     /// <param name="mode">What the player agreed to.</param>

@@ -61,7 +61,7 @@ internal static partial class CampaignVerifier
         string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, name));
         if (ClosedCampaign.IsClosed(campaign))
-            return VerifyClosed(campaign, name, options);
+            return VerifyClosed(root, campaign, name, options);
         var set = MigrationSet.Read(root);
         int current = StandardRecord.Read(campaign, name);
         if (current > set.Kit)
@@ -166,18 +166,19 @@ internal static partial class CampaignVerifier
     /// mark names, or <c>--backup</c>, checks it whole, and compares every file of the campaign but <c>backups/</c>, the mark
     /// and <c>.standard</c> included, with it by path and SHA-256. Writes nothing, pass or fail.
     /// </summary>
+    /// <param name="root">The DMC folder, whose <c>exports/</c> holds the copy of the closing backup.</param>
     /// <param name="campaign">The campaign folder.</param>
     /// <param name="name">The campaign's name.</param>
     /// <param name="options">What was asked: <c>--backup</c> and <c>--all</c>; <c>--list</c> and <c>--accounting</c> are refused.</param>
     /// <returns>The <c>changed:</c>, <c>added:</c> and <c>missing:</c> lines and, when any, the failure; else the one <c>verified</c> line.</returns>
     /// <exception cref="DmcException"><c>--list</c> or <c>--accounting</c> was given; the mark cannot be read and no <c>--backup</c> names the backup; or the backup is missing or damaged.</exception>
-    static VerifyOutcome VerifyClosed(string campaign, string name, VerifyOptions options)
+    static VerifyOutcome VerifyClosed(string root, string campaign, string name, VerifyOptions options)
     {
         if (options.List || options.Accounting is not null)
             throw new DmcException($"{name} is closed: --list and --accounting are for migrations");
-        string given = options.Backup ?? ClosedCampaign.Read(campaign)?.Backup
-            ?? throw new DmcException($"adventures/{name}/{ClosedCampaign.FileName} is unreadable: name the closing backup with --backup");
-        string backup = BackupFolder.Resolve(campaign, name, given);
+        string backup = options.Backup is null
+            ? ClosingBackup(root, campaign, name, "--backup")
+            : BackupFolder.Resolve(campaign, name, options.Backup);
         string backupName = Path.GetFileName(backup);
         // Opened without the name check: an imported copy of a closed campaign (import --as) is checked against the
         // backup it came from, which names the campaign it was taken of. The byte comparison below is the check.
@@ -191,6 +192,25 @@ internal static partial class CampaignVerifier
             lines.Add(string.Create(CultureInfo.InvariantCulture, $"{problems.Count - Cap} more"));
         string differ = problems.Count == 1 ? "differs" : "differ";
         return new VerifyOutcome(lines, $"{Count(problems.Count, "file")} {differ} from {backupName}");
+    }
+
+    /// <summary>
+    /// The closing backup a closed campaign's mark names, in <c>backups/</c> or else <c>exports/</c>
+    /// (<see cref="BackupFolder.ClosingPath"/>; spec 033 FR-003): the default file of <c>verify</c> and <c>compare</c> on a
+    /// closed campaign.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="name">The campaign's name.</param>
+    /// <param name="option">The option that names a file instead, for the messages: <c>--backup</c> or <c>--with</c>.</param>
+    /// <returns>The closing backup's full path.</returns>
+    /// <exception cref="DmcException">The mark cannot be read, or the file it names is in neither folder.</exception>
+    internal static string ClosingBackup(string root, string campaign, string name, string option)
+    {
+        string marked = ClosedCampaign.Read(campaign)?.Backup
+            ?? throw new DmcException($"adventures/{name}/{ClosedCampaign.FileName} is unreadable: name the closing backup with {option}");
+        return BackupFolder.ClosingPath(root, campaign, marked)
+            ?? throw new DmcException($"no backup {marked} in {BackupFolder.FolderName}/ or exports/: name it with {option}");
     }
 
     /// <summary>

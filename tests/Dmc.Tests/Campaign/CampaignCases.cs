@@ -36,6 +36,11 @@ public static class CampaignCases
         new("import with an empty --as", "import", "x.zip", "--as="),
         new("import with --as starting with a hyphen", "import", "x.zip", "--as=-bad"),
         new("import with --as and no value", "import", "x.zip", "--as"),
+        new("compare without a name", "compare"),
+        new("compare with --with and no value", "compare", "x", "--with"),
+        new("compare with an option of verify", "compare", "x", "--list"),
+        new("compare with --all given a value", "compare", "x", "--all=yes"),
+        new("compare of a campaign that does not exist", "compare", "no-such-campaign-zz9"),
         // The binary works on the real repository, so the name cannot be one that exists; the message lists whatever campaigns there are.
         new("export of a campaign that does not exist", "export", "no-such-campaign-zz9"),
         new("export of a name that is not one folder", "export", "../adventures"),

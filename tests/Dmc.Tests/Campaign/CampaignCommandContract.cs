@@ -143,7 +143,7 @@ public abstract class CampaignCommandContract
     [DataRow("close rorn --yes=1", "argument --yes: ignored explicit argument '1'")]
     [DataRow("close rorn --prune old", "unrecognized arguments: --prune old")]
     [DataRow("close rorn other", "unrecognized arguments: other")]
-    [DataRow("migrate rorn", "give export, import, show, standard, backups, backup, verify, restore, close, links or sequel (try dmc campaign --help)")]
+    [DataRow("migrate rorn", "give export, import, show, standard, backups, backup, verify, compare, restore, close, links or sequel (try dmc campaign --help)")]
     public void AMistakeWithTheNewVerbsIsOneLineAndExitTwo(string line, string message)
     {
         string[] before = Snapshot(_folder);

@@ -31,13 +31,44 @@ public sealed class RecordCheckTests
         return RecordCheck.Draft(_folder, RecordFixtures.Campaign, path);
     }
 
+    /// <summary>Gives Pim's sheet a second Names line, at line 10 (the play card's is line 6).</summary>
+    void SecondNamesLine()
+    {
+        string sheet = Path.Combine(_folder, "adventures", RecordFixtures.Campaign, "character-sheets", "npc-pim-kettering.md");
+        File.AppendAllText(sheet, "\n\n## Playing them\n\n- **Names they use** (for people): Hessa is Ma\n");
+    }
+
     [TestMethod]
     public void TwoNamesLinesThatDisagreeAreFound()
     {
+        SecondNamesLine();
         var findings = Draft(
-            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:5", "kind": "usage", "from": "Pim Kettering", "word": "Mam", "source": "s5.1" }""",
-            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:20", "kind": "usage", "from": "Pim Kettering", "word": "Ma", "source": "s5.1" }""");
-        CollectionAssert.Contains(findings, "names-lines-differ: character-sheets/npc-pim-kettering.md:5 and character-sheets/npc-pim-kettering.md:20 give Pim Kettering different words for Hessa Kettering (mam against ma)", string.Join("\n", findings));
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:6", "kind": "usage", "from": "Pim Kettering", "word": "Mam", "source": "s5.1" }""",
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:10", "kind": "usage", "from": "Pim Kettering", "word": "Ma", "source": "s5.1" }""");
+        CollectionAssert.Contains(findings, "names-lines-differ: character-sheets/npc-pim-kettering.md:6 and character-sheets/npc-pim-kettering.md:10 give Pim Kettering different words for Hessa Kettering (mam against ma)", string.Join("\n", findings));
+    }
+
+    /// <summary>A speaker and person only one Names line gives is a difference (#237: Kole's second line alone had Vaelorn's "Auntie Em").</summary>
+    [TestMethod]
+    public void ARowOnlyOneNamesLineGivesIsFound()
+    {
+        SecondNamesLine();
+        var findings = Draft(
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:6", "kind": "usage", "from": "Pim Kettering", "word": "Mam", "source": "s5.1" }""",
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:10", "kind": "usage", "from": "Pim Kettering", "word": "Mam", "source": "s5.1" }""",
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:10", "kind": "usage", "from": "Ilvane Vell", "word": "Skipper", "source": "s5.1" }""");
+        CollectionAssert.Contains(findings, "names-lines-differ: character-sheets/npc-pim-kettering.md:6 and character-sheets/npc-pim-kettering.md:10 give Ilvane Vell different words for Hessa Kettering (nothing against skipper)", string.Join("\n", findings));
+        Assert.AreEqual(1, findings.Count(f => f.StartsWith("names-lines-differ", StringComparison.Ordinal)), string.Join("\n", findings));
+    }
+
+    /// <summary>A Voice line is not a Names line: its rows are never compared with the Names line's.</summary>
+    [TestMethod]
+    public void AVoiceLineIsNotComparedWithTheNamesLine()
+    {
+        var findings = Draft(
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:5", "kind": "usage", "from": "Pim Kettering", "word": "Mama", "source": "s5.1" }""",
+            """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:6", "kind": "usage", "from": "Pim Kettering", "word": "Mam", "source": "s5.1" }""");
+        Assert.IsFalse(findings.Any(f => f.StartsWith("names-lines-differ", StringComparison.Ordinal)), string.Join("\n", findings));
     }
 
     [TestMethod]
@@ -67,6 +98,37 @@ public sealed class RecordCheckTests
         File.WriteAllText(sheet, File.ReadAllText(sheet).Replace("\"Nan, look at the fish!\"", "\"Nan Nettle, look at the fish!\"", StringComparison.Ordinal));
         var findings = RecordCheck.Records(_folder, RecordFixtures.Campaign);
         Assert.IsFalse(findings.Any(f => f.Contains("never says \"Nan\"", StringComparison.Ordinal)), string.Join("\n", findings));
+    }
+
+    /// <summary>
+    /// A never word the speaker uses for someone else is that person in a sample, not a break: Kibil's "Auntie" is Kole,
+    /// though he never says it for Hush (the planted-error test of SC-002 found this false finding).
+    /// </summary>
+    [TestMethod]
+    public void ANeverWordTheSpeakerUsesForSomeoneElseIsNoFinding()
+    {
+        string root = Path.Combine(_folder, "adventures", RecordFixtures.Campaign);
+        string record = Path.Combine(root, "records", "hessa-kettering.json");
+        const string mam = "{ \"kind\": \"usage\", \"from\": \"Pim Kettering\", \"word\": \"Mam\", \"when\": \"when she is frightened\", \"source\": \"s5.1\" },";
+        Assert.IsTrue(File.ReadAllText(record).Contains(mam, StringComparison.Ordinal));
+        File.WriteAllText(record, File.ReadAllText(record).Replace(mam, mam + "\n    { \"kind\": \"usage\", \"from\": \"Pim Kettering\", \"word\": \"Nan\", \"source\": \"s1.1\" },", StringComparison.Ordinal));
+        string sheet = Path.Combine(root, "character-sheets", "npc-pim-kettering.md");
+        File.WriteAllText(sheet, File.ReadAllText(sheet).Replace("\"Nan, look at the fish!\" (to Nettlebone)", "\"Nan, look at the fish!\"", StringComparison.Ordinal));
+        var findings = RecordCheck.Records(_folder, RecordFixtures.Campaign);
+        Assert.IsFalse(findings.Any(f => f.Contains("never says \"Nan\"", StringComparison.Ordinal)), string.Join("\n", findings));
+        Assert.IsFalse(findings.Any(f => f.StartsWith("invalid", StringComparison.Ordinal)), string.Join("\n", findings));
+    }
+
+    /// <summary>A limit's key word is found in a sample said with a child's lisp, r and l as w ("wead" for "read").</summary>
+    [TestMethod]
+    public void ALispedSampleStillBreaksALimit()
+    {
+        string sheet = Path.Combine(_folder, "adventures", RecordFixtures.Campaign, "character-sheets", "npc-ilvane-vell.md");
+        File.WriteAllText(sheet, File.ReadAllText(sheet).Replace("\"I'll read the river, not your letters.\"", "\"I'll wead the wiver, not your wettews.\"", StringComparison.Ordinal));
+        var findings = RecordCheck.Records(_folder, RecordFixtures.Campaign);
+        Assert.IsTrue(findings.Any(f => f.StartsWith("sample-stale: character-sheets/npc-ilvane-vell.md:5: \"read\"", StringComparison.Ordinal)), string.Join("\n", findings));
+        Assert.AreEqual("fwy", RecordCheck.Lisped("fly"));
+        Assert.IsNull(RecordCheck.Lisped("swim"));
     }
 
     /// <summary>A speaker's word for themselves in a sample to someone else ("Pim-Pim sees a fish, Mam!") is no finding.</summary>

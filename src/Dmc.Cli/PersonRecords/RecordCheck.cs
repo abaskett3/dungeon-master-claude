@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Dmc.Size;
 
@@ -82,14 +83,21 @@ internal static partial class RecordCheck
                 foreach (var other in draft.Where(o => o.To == d.To && o.Row.From == speaker && Same(o.Row.Word, d.Row.Word) && o.Row.Kind == RowKind.Usage))
                     findings.Add($"rows-disagree: {other.Line} has {Speaker.Shown(speaker)} say \"{other.Row.Word}\" for {d.To}, and {d.Line} says {Speaker.Shown(speaker)} never does");
 
-        // Two Names lines of one sheet that give one speaker different words for one person.
-        foreach (var pair in draft.Where(d => !string.IsNullOrWhiteSpace(d.Row.From)).GroupBy(d => (Speaker: d.Row.From!, d.To, File: FileOf(d.Line))))
+        // Two Names lines of one sheet that give one speaker different words for one person, a speaker and person one
+        // line has and the other lacks among them (#237's five sheets).
+        foreach (var file in draft.Where(d => !string.IsNullOrWhiteSpace(d.Row.From)).GroupBy(d => FileOf(d.Line)))
         {
-            var byLine = pair.GroupBy(d => d.Line).Select(g => (Line: g.Key, Words: g.Select(d => d.Row.Word?.Trim().ToLowerInvariant()).OfType<string>().ToHashSet(StringComparer.Ordinal))).ToList();
-            for (int i = 0; i < byLine.Count; i++)
-                for (int j = i + 1; j < byLine.Count; j++)
-                    if (!byLine[i].Words.SetEquals(byLine[j].Words))
-                        findings.Add($"names-lines-differ: {byLine[i].Line} and {byLine[j].Line} give {Speaker.Shown(pair.Key.Speaker)} different words for {pair.Key.To} ({string.Join(", ", byLine[i].Words.Order())} against {string.Join(", ", byLine[j].Words.Order())})");
+            var namesLines = file.Select(d => d.Line).Distinct(StringComparer.Ordinal).Where(l => IsNamesLine(root, l)).OrderBy(l => l.Length).ThenBy(l => l, StringComparer.Ordinal).ToList();
+            if (namesLines.Count < 2)
+                continue;
+            foreach (var pair in file.Where(d => namesLines.Contains(d.Line)).GroupBy(d => (Speaker: d.Row.From!, d.To)))
+            {
+                var byLine = namesLines.Select(l => (Line: l, Words: pair.Where(d => d.Line == l).Select(d => d.Row.Word?.Trim().ToLowerInvariant()).OfType<string>().ToHashSet(StringComparer.Ordinal))).ToList();
+                for (int i = 0; i < byLine.Count; i++)
+                    for (int j = i + 1; j < byLine.Count; j++)
+                        if (!byLine[i].Words.SetEquals(byLine[j].Words))
+                            findings.Add($"names-lines-differ: {byLine[i].Line} and {byLine[j].Line} give {Speaker.Shown(pair.Key.Speaker)} different words for {pair.Key.To} ({WordList(byLine[i].Words)} against {WordList(byLine[j].Words)})");
+            }
         }
 
         // The sheets' samples against the draft's rows and the records' limits.
@@ -101,9 +109,9 @@ internal static partial class RecordCheck
     }
 
     /// <summary>
-    /// The sample lines of each sheet against the rows: a word on the speaker's <c>never</c> list
-    /// (<c>sample-breaks-rows</c>); for a sample that names whom it addresses, <c>(to X)</c>, a word the speaker uses
-    /// only for someone else; and a sample with a word a limit of the speaker is about (<c>sample-stale</c>).
+    /// The sample lines of each sheet against the rows: a word on the speaker's <c>never</c> list that they use for no one
+    /// else (<c>sample-breaks-rows</c>); for a sample that names whom it addresses, <c>(to X)</c>, a word the speaker uses
+    /// only for someone else; and a sample with a word a limit of the speaker is about, lisped or not (<c>sample-stale</c>).
     /// </summary>
     /// <param name="root">The campaign folder.</param>
     /// <param name="index">The rows to check against.</param>
@@ -122,7 +130,10 @@ internal static partial class RecordCheck
                 string? addressee = m.Groups[2].Success ? ResolveAddressee(index, m.Groups[2].Value) : null;
                 // The words as the index reads them, longest first, so "Auntie Em" is not taken for an "Auntie" inside it.
                 var said = index.WordsIn(words);
-                foreach (var entry in said.SelectMany(f => f.Rows).Where(e => (e.Row.Never ?? []).Contains(speaker)))
+                // A never word breaks the rows only when the speaker has no usage of it for someone else: Kibil's "Auntie"
+                // is Kole, though he never says it for Hush; a gloss to Hush is caught below.
+                foreach (var entry in said.Where(f => !f.Rows.Any(r => r.Row.From == speaker && r.Row.Kind == RowKind.Usage))
+                             .SelectMany(f => f.Rows).Where(e => (e.Row.Never ?? []).Contains(speaker)))
                     findings.Add($"sample-breaks-rows: {where}: {speaker} never says \"{entry.Row.Word}\" for {entry.Person} ({entry.Row.Source})");
                 if (addressee is not null)
                 {
@@ -137,7 +148,7 @@ internal static partial class RecordCheck
                 if (index.Record(speaker) is { } record)
                     foreach (var limit in record.Limits.Where(l => l.Text is not null))
                         foreach (string key in KeyWords(limit.Text!))
-                            if (Holds(words, key))
+                            if (Holds(words, key) || Lisped(key) is { } lisped && Holds(words, lisped))
                                 findings.Add($"sample-stale: {where}: \"{key}\" against the limit \"{limit.Text!.Trim()}\" ({limit.Source})");
             }
         }
@@ -150,6 +161,14 @@ internal static partial class RecordCheck
         LimitWords().Matches(limit).SelectMany(m => Word().Matches(m.Groups[1].Value).Select(w => w.Value.ToLowerInvariant()))
             .Where(w => !Retrieval.Words.IsCommon(w) && !ReadSet.IsCommonNameWord(w) && w is not ("yet" or "any" or "one" or "the" or "and"))
             .Distinct(StringComparer.Ordinal).ToList();
+
+    /// <summary>
+    /// A limit's key word as a child's lisp says it, r and l spoken as w ("fly" as "fwy", #237's case of Hala's sample),
+    /// or null when the word has neither letter.
+    /// </summary>
+    /// <param name="key">The key word, in lower case.</param>
+    internal static string? Lisped(string key) =>
+        key.IndexOfAny(['r', 'l']) < 0 ? null : key.Replace('r', 'w').Replace('l', 'w');
 
     /// <summary>Each sheet's Voice lines (play card and Playing them): the file, the sheet's title, the 1-based line and its text.</summary>
     /// <param name="root">The campaign folder.</param>
@@ -181,6 +200,25 @@ internal static partial class RecordCheck
         return Directory.EnumerateFiles(folder, "*.md")
             .Select(p => File.ReadLines(p).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)))
             .OfType<string>().Select(t => RecordFiles.SheetPerson(t[2..])).ToList();
+    }
+
+    /// <summary>A line's words for a finding, or <c>nothing</c> when the line gives none.</summary>
+    /// <param name="words">The words.</param>
+    static string WordList(HashSet<string> words) => words.Count == 0 ? "nothing" : string.Join(", ", words.Order(StringComparer.Ordinal));
+
+    /// <summary>Whether a draft row's line (<c>character-sheets/npc-x.md:14</c>) is a sheet's "Names they use" line.</summary>
+    /// <param name="root">The campaign folder.</param>
+    /// <param name="line">The draft row's line.</param>
+    static bool IsNamesLine(string root, string line)
+    {
+        int colon = line.LastIndexOf(':');
+        if (colon <= 0 || !int.TryParse(line[(colon + 1)..], NumberStyles.None, CultureInfo.InvariantCulture, out int number) || number < 1)
+            return false;
+        string path = Path.Combine(root, line[..colon]);
+        if (!File.Exists(path))
+            return false;
+        string? text = File.ReadLines(path).Skip(number - 1).FirstOrDefault();
+        return text is not null && text.Contains("**Names they use**", StringComparison.Ordinal);
     }
 
     /// <summary>The person an addressee names: a full name, or a word whose rows all mean one person; else the text as written.</summary>

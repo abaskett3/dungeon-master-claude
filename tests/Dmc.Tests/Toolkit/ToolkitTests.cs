@@ -784,7 +784,10 @@ public sealed partial class ToolkitTests
     public void CiReviewCitesItsClaims()
     {
         string workflow = Read(".github/workflows/claude-code-review.yml");
-        var prompt = Regex.Match(workflow, @"--append-system-prompt ""([^""]+)""");
+        // The flag must be in the claude_args block (its lines are indented deeper than the key), not a comment or another input.
+        var args = Regex.Match(workflow, @"^([ \t]*)claude_args: \|\n((?:\1[ \t]+.*\n)+)", RegexOptions.Multiline);
+        Assert.IsTrue(args.Success, "claude-code-review.yml has no claude_args block");
+        var prompt = Regex.Match(args.Groups[2].Value, @"--append-system-prompt\s+(""(?:[^""\\]|\\.)+""|'[^']+')");
         Assert.IsTrue(prompt.Success, "claude-code-review.yml passes no --append-system-prompt");
         foreach (string part in new[] { "Development 4", ".specify/memory/constitution.md", "path:line", "unverified", "subagent" })
             StringAssert.Contains(prompt.Groups[1].Value, part, $"the review's appended prompt must name {part}");

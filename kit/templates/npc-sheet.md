@@ -13,7 +13,7 @@
 - **Who**:
 - **Looks** (worn now):
 - **Voice** (and one sample line):
-- **Names they use**:
+- **Names for places and things** (who calls whom what is in their record, `records/`):
 - **Toward the PC, and what they want now**:
 - **AC, max HP, speed, saves, senses**:
 - **Attacks** (to hit, damage, reach or range, anything it needs):
@@ -25,7 +25,7 @@
 
 - **Appearance**:
 - **Voice** (speech pattern, mannerism, a sample line):
-- **Names they use** (for people, places and things that matter, where they differ from DMC's labels; what they would never call them):
+- **Names for places and things** (only on a sheet with no play card; where they differ from DMC's labels, and what they would never call them):
 - **Personality**:
 - **What they want**:
 - **What they fear**:

@@ -57,6 +57,47 @@ public sealed class MigrationChecksTests
         CollectionAssert.AreEqual(new[] { "npc-sheets-have-names-line: character-sheets/npc-mara.md has no Names they use line" }, failures);
     }
 
+    [TestMethod]
+    public void OnceRecordsExistTheNamesForPlacesLinePassesMigration003sCheck()
+    {
+        var failures = Run("npc-sheets-have-names-line", now: new()
+        {
+            ["character-sheets/npc-mara.md"] = "# Mara\n\n## Play card\n\n- **Names for places and things**: the ford is \"the crossing\"\n",
+            ["records/mara.json"] = "{ \"person\": \"Mara\", \"rows\": [], \"limits\": [] }\n",
+        });
+        CollectionAssert.AreEqual(Array.Empty<string>(), failures);
+    }
+
+    // ---------- records-in-place (migration 010) ----------
+
+    [TestMethod]
+    public void RecordsInPlacePassesAMigratedCampaign() =>
+        CollectionAssert.AreEqual(Array.Empty<string>(), Run("records-in-place", now: new()
+        {
+            ["character-sheets/npc-mara.md"] = "# Mara\n\n## Play card\n\n- **Names for places and things**: none\n",
+            ["records/mara.json"] = "{ \"person\": \"Mara\", \"rows\": [ { \"kind\": \"name\", \"from\": \"anyone\", \"word\": \"Mara\", \"source\": \"setup\" } ], \"limits\": [] }\n",
+            ["story/canon.md"] = "# Canon\n\n## People\n\n- **Mara**: keeps the ferry (s1)\n",
+        }));
+
+    [TestMethod]
+    public void RecordsInPlaceNamesWhatIsLeftInTheOldShape()
+    {
+        var failures = Run("records-in-place", now: new()
+        {
+            ["character-sheets/npc-mara.md"] = "# Mara\n\n## Play card\n\n- **Names they use**: calls Wren \"the ferry rat\"\n",
+            ["character-sheets/npc-vex.md"] = "# Vex\n",
+            ["records/mara.json"] = "{ \"person\": \"Mara\", \"rows\": [ { \"kind\": \"usage\", \"word\": \"Mar\", \"source\": \"setup\" } ], \"limits\": [] }\n",
+            ["story/canon.md"] = "# Canon\n\n## People\n\n- **Mara** (also: the ferrywoman): keeps the ferry (s1)\n",
+        });
+        CollectionAssert.AreEqual(new[]
+        {
+            "records-in-place: records/mara.json row 1 (\"Mar\"): no speaker (from): say who uses the word, or anyone for a name",
+            "records-in-place: character-sheets/npc-mara.md still has a Names they use line",
+            "records-in-place: character-sheets/npc-vex.md: Vex has no record in records/",
+            "records-in-place: story/canon.md People: an entry still has (also: …): - **Mara** (also: the ferrywoman): keeps the ferry (s1)",
+        }, failures);
+    }
+
     // ---------- no-dead-opposition-rows ----------
 
     [TestMethod]

@@ -47,8 +47,14 @@ internal static partial class BackupFolder
     /// <summary>The companion written by <c>backup</c> when a migration is pending, and removed by a passing <c>verify</c> or a <c>restore</c>: a migration is under way.</summary>
     public const string MigratingSuffix = ".migrating";
 
+    /// <summary>
+    /// The companion <c>dmc records draft</c> writes for migration 010 (spec 032 research R7): the rows the migration
+    /// proposes before the player rules. It is never a campaign file, and goes when its backup is pruned.
+    /// </summary>
+    public const string RecordsDraftSuffix = ".records-draft.json";
+
     /// <summary>Every companion suffix, in the order they are removed.</summary>
-    public static readonly string[] CompanionSuffixes = [AccountingSuffix, VerifiedSuffix, MigratingSuffix];
+    public static readonly string[] CompanionSuffixes = [AccountingSuffix, VerifiedSuffix, MigratingSuffix, RecordsDraftSuffix];
 
     /// <summary>A counted backup's name, after the campaign's name: <c>_backup_</c>, 14 digits, an optional <c>-N</c>, <c>.zip</c>.</summary>
     [GeneratedRegex(@"^_backup_(\d{14})(?:-(\d+))?\.zip$", RegexOptions.CultureInvariant)]

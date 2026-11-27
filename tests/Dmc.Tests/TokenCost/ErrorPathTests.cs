@@ -271,6 +271,51 @@ public sealed partial class ErrorPathTests
         }
     }
 
+    /// <summary>
+    /// Every bad command line and refusal of <c>dmc records</c> (spec 032) prints one line, in this process and through the
+    /// binary: an unknown subcommand, no campaign, an unknown option, a person with no record, a campaign with no
+    /// records, a draft that does not exist or already does; and the hook, <c>records edited</c>, prints nothing for
+    /// input it cannot use.
+    /// </summary>
+    [TestMethod]
+    public void EveryErrorOfRecordsPrintsOneLine()
+    {
+        string folder = Dmc.Tests.PersonRecords.RecordFixtures.NewFolder();
+        try
+        {
+            string campaign = Dmc.Tests.PersonRecords.RecordFixtures.Campaign;
+            string[][] cases =
+            [
+                ["records", "nope"],
+                ["records", "show"],
+                ["records", "show", "--folder", folder],
+                ["records", "show", "no-such-campaign", "--folder", folder],
+                ["records", "show", campaign, "Quenby", "--folder", folder],
+                ["records", "show", campaign, "Kettering", "--folder", folder],
+                ["records", "show", Dmc.Tests.PersonRecords.RecordFixtures.Earlier, "--folder", folder],
+                ["records", "check", campaign, "--loud", "--folder", folder],
+                ["records", "check", campaign, "--draft", "--folder", folder],
+                ["records", "draft", campaign, "--folder", folder],
+                ["records", "draft", campaign, "extra", "--folder", folder],
+                ["records", "show", campaign, "--folder"],
+            ];
+            foreach (var args in cases)
+            {
+                AssertOneLine(DmcRunner.InProcess(args), "in process: dmc " + string.Join(' ', args));
+                AssertOneLine(DmcRunner.BlackBox(args), "binary: dmc " + string.Join(' ', args));
+            }
+            foreach (string input in new[] { "", "{", "[1,2]", "{\"tool_input\":{\"file_path\":7}}" })
+            {
+                AssertSilentSuccess(DmcRunner.InProcess(["records", "edited"], input), "in process: records edited " + input);
+                AssertSilentSuccess(DmcRunner.BlackBox(["records", "edited"], input), "binary: records edited " + input);
+            }
+        }
+        finally
+        {
+            DmcFolders.Delete(folder);
+        }
+    }
+
     /// <summary>Every way <c>install</c>, <c>refresh</c> and <c>folder</c> fail without writing anything prints one line, no stack trace and a non-zero exit code.</summary>
     [TestMethod]
     public void EveryErrorOfInstallRefreshAndFolderPrintsOneLine()

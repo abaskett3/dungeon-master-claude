@@ -45,6 +45,7 @@ internal static partial class MigrationChecks
         ["dm-notes-have-arc-plan"] = DmNotesHaveArcPlan,
         ["arc-plan-guidance-current"] = ArcPlanGuidanceCurrent,
         ["wardrobe-sections-in-place"] = WardrobeSectionsInPlace,
+        ["records-in-place"] = RecordsInPlace,
     };
 
     /// <summary>The heading of a sheet's wardrobe section, without the <c>## </c> (migration 009, spec 030).</summary>
@@ -220,15 +221,61 @@ internal static partial class MigrationChecks
         }
     }
 
-    /// <summary><c>npc-sheets-have-names-line</c> (migration 003): every NPC or companion sheet has the template's "Names they use" line.</summary>
+    /// <summary>
+    /// <c>npc-sheets-have-names-line</c> (migration 003): every NPC or companion sheet has the template's "Names they use"
+    /// line; or, once the campaign has records (migration 010, spec 032 research R9), the "Names for places and things"
+    /// line that replaced it, so a campaign below standard 3 can be brought to 10 in one migration.
+    /// </summary>
     /// <param name="input">The campaigns.</param>
     static IEnumerable<string> NpcSheetsHaveNamesLine(CheckInput input)
     {
+        bool records = input.New.Keys.Any(k => k.StartsWith(RecordsFolder, StringComparison.Ordinal));
         foreach (var (path, text) in SheetsOf(input.New, npcOnly: true))
         {
-            if (!Lines(text).Any(l => l.Contains("Names they use", StringComparison.OrdinalIgnoreCase)))
+            var lines = Lines(text);
+            if (!lines.Any(l => l.Contains("Names they use", StringComparison.OrdinalIgnoreCase))
+                && !(records && lines.Any(l => l.Contains(NamesForPlaces, StringComparison.OrdinalIgnoreCase))))
                 yield return $"{path} has no Names they use line";
         }
+    }
+
+    /// <summary>The folder of the records (migration 010), as a campaign path.</summary>
+    const string RecordsFolder = "records/";
+
+    /// <summary>The sheet line migration 010 leaves for the names of places and things.</summary>
+    const string NamesForPlaces = "Names for places and things";
+
+    /// <summary>
+    /// <c>records-in-place</c> (migration 010, spec 032 FR-008): every sheet's person has a record; every record passes
+    /// the rules of its shape (<see cref="PersonRecords.RecordRules"/>, scenes not looked up: the check after each edit
+    /// did that); no sheet has a "Names they use" line; and no canon People entry has an <c>(also: …)</c> bracket.
+    /// </summary>
+    /// <param name="input">The migrated campaign.</param>
+    static IEnumerable<string> RecordsInPlace(CheckInput input)
+    {
+        var records = new List<PersonRecords.PersonRecord>();
+        foreach (var (path, text) in input.New.Where(f => f.Key.StartsWith(RecordsFolder, StringComparison.Ordinal) && f.Key.EndsWith(".json", StringComparison.Ordinal)).OrderBy(f => f.Key, StringComparer.Ordinal))
+        {
+            if (PersonRecords.RecordFiles.Parse("", path[RecordsFolder.Length..], text, out var record) is { } error)
+                yield return error;
+            else
+                records.Add(record!);
+        }
+        foreach (string error in PersonRecords.RecordRules.Check(PersonRecords.SceneBook.Lenient(), records).Errors)
+            yield return error;
+        var persons = new HashSet<string>(records.Select(r => r.Person), StringComparer.OrdinalIgnoreCase);
+        foreach (var (path, text) in SheetsOf(input.New, npcOnly: false))
+        {
+            var lines = Lines(text);
+            string? title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal))?[2..].Trim();
+            if (title is not null && !persons.Contains(title))
+                yield return $"{path}: {title} has no record in records/";
+            if (lines.Any(l => l.Contains("**Names they use**", StringComparison.Ordinal)))
+                yield return $"{path} still has a Names they use line";
+        }
+        if (input.New.TryGetValue(Canon, out string? canon) && Section(canon, Retrieval.Register.PeopleHeading) is { } people)
+            foreach (string line in people.Where(l => l.Contains("(also:", StringComparison.OrdinalIgnoreCase)))
+                yield return $"{Canon} People: an entry still has (also: …): {(line.Length > 80 ? line[..80] + "..." : line.Trim())}";
     }
 
     /// <summary><c>no-dead-opposition-rows</c> (migration 004): the Opposition table of <c>story/dm-notes.md</c> has no row with none left alive.</summary>

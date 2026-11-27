@@ -22,10 +22,11 @@ A sheet must let a DM who has never met the character play them correctly: the n
 2. On a rules change, recompute everything that depends on it. A level-up touches HP, hit dice, proficiency bonus, features, spell slots, spells known, save DC and attack bonuses. An ability score change touches modifiers, saves, skills, AC, attacks and DCs. Follow the edition in `player-options.md`.
 3. On a level-up, the player makes the choices (subclass, feats, spells, ability increases). Explain the options, then record what they pick. Roll or use fixed HP according to `player-options.md`.
 4. Keep the story sections current: what the character wants now, what they know, how they feel about the PC, what they have promised or been promised, what has happened to them. Add dated notes to the sheet's `## History` section, which is its last section, instead of deleting old ones when history matters. The full save moves history older than the current stretch of the story to a separate file, so the sheet stays a size resume can read.
-5. For NPCs and companions, keep the voice note (speech pattern, mannerism, a sample line), the names they use for people, places and things that matter, and the secrets section up to date. Secrets are spoilers; do not show the player an NPC sheet without warning them.
+5. For NPCs and companions, keep the voice note (speech pattern, mannerism, a sample line, with whom it addresses: `"…" (to Tam)`), the names they use for places and things, and the secrets section up to date. Secrets are spoilers; do not show the player an NPC sheet without warning them.
 6. If current HP, slots or conditions changed, `game-state.md` is where those live during play. Update it too so the two agree.
 7. On a companion's sheet, change anything the play card holds on the card, in the same edit. The card is the only copy of each number on it; keep it within the budget `dmc size` checks.
 8. Looks (Appearance on a sheet with no card) is what they wear now. What they own and are not wearing or carrying goes under `## Wardrobe and keepsakes` on the owner's sheet, with where it is kept, who holds it and when it is worn. A change of clothes moves the old outfit there and the new one to Looks, so nothing is lost; read that section before you dress them.
+9. Who calls whom what, and what someone cannot do, live in the person's record, `records/<name>.json`, not on a sheet: a row for each word one person (or a group, or anyone) uses for another, and each relationship; a limit for each thing they cannot do. When play settles one, add it with Edit (Write for a new person), following `records-format.md` beside this skill. Never guess a speaker or a source; `dmc` checks each edit and refuses a bad one in one line: fix it or put it back.
 
 ## Showing a sheet to the player
 
@@ -33,9 +34,9 @@ When the player asks to see a sheet, never type it out: run `dmc sheet` (every p
 
 ## New character
 
-Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md`'s People for the character's first appearance, starting with their bold name, then `(also: …)` with any other names and role words the player may use for them alone.
+Fill in every field of the template that applies; write "none" instead of leaving a field blank, so a later reader knows it was considered. Add a line to `story/canon.md`'s People for the character's first appearance, starting with their bold name, and write their record (step 9) with the names the files give them.
 
-A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history. Their voice, the names they use, their appearance and their wardrobe and keepsakes go on the sheet itself.
+A character from a linked campaign, carried over into a sequel or returning later, already has a history: look them up first with `dmc lookup` or `dmc recall`, in that campaign's digest (`digests/<campaign>/`) or in the campaign itself. Build the sheet from that history. Their voice, their appearance and their wardrobe and keepsakes go on the sheet itself; what they are called, and by whom, in their record, with `"of": "<that campaign>"` when they belong to it.
 
 For every character, linked or not, use species or class defaults only where the files and play say nothing. Where they contradict a default (a trait lost or never had), the field says so in their words, with the reason when they give one, so no later reader puts the default back.
 

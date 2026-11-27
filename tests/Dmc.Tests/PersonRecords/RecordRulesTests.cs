@@ -1,0 +1,107 @@
+using Dmc.PersonRecords;
+using Dmc.Tests.Support;
+
+namespace Dmc.Tests.PersonRecords;
+
+/// <summary>
+/// The rules every record must meet (spec 032 data-model.md § Rules, task T007): each break refused with its line, the
+/// note for one word that means two persons to one speaker, and the invented fixture passing as it is.
+/// </summary>
+[TestClass]
+public sealed class RecordRulesTests
+{
+    /// <summary>The temporary DMC folder of the test.</summary>
+    string _folder = "";
+
+    /// <summary>The campaign folder in it.</summary>
+    string Root => Path.Combine(_folder, "adventures", RecordFixtures.Campaign);
+
+    /// <summary>A fresh copy of the fixture for each test.</summary>
+    [TestInitialize]
+    public void Start() => _folder = RecordFixtures.NewFolder();
+
+    /// <summary>Deletes the copy.</summary>
+    [TestCleanup]
+    public void End() => DmcFolders.Delete(_folder);
+
+    /// <summary>The breaks and notes of the fixture with one record replaced.</summary>
+    /// <param name="file">The record's file name.</param>
+    /// <param name="text">Its new text.</param>
+    RecordRules.Outcome With(string file, string text)
+    {
+        File.WriteAllText(Path.Combine(Root, "records", file), text);
+        var loaded = RecordFiles.Read(Root);
+        var outcome = RecordRules.Check(SceneBook.For(_folder, RecordFixtures.Campaign), loaded.Records);
+        return new RecordRules.Outcome([.. loaded.Errors, .. outcome.Errors], outcome.Notes);
+    }
+
+    /// <summary>A record of Pim with one row, the rest of the fixture as it is.</summary>
+    /// <param name="row">The row's JSON.</param>
+    RecordRules.Outcome PimRow(string row) =>
+        With("pim-kettering.json", $$"""{ "person": "Pim Kettering", "rows": [ {{row}} ], "limits": [] }""");
+
+    [TestMethod]
+    public void TheFixturePassesWithOneNote()
+    {
+        var outcome = With("pim-kettering.json", RecordFixtures.Records["pim-kettering.json"]);
+        Assert.HasCount(0, outcome.Errors, string.Join("\n", outcome.Errors));
+        CollectionAssert.AreEqual(new[] { "to Benno Kettering, \"Da\" now means Grumbald and Ilvane Vell; the hook prints both." }, outcome.Notes);
+    }
+
+    [TestMethod]
+    public void EachBreakIsRefusedWithItsLine()
+    {
+        var cases = new (string Row, string Expected)[]
+        {
+            ("""{ "kind": "usage", "word": "the Salt-wife", "source": "s3.1" }""", "records/pim-kettering.json row 1 (\"the Salt-wife\"): no speaker (from): say who uses the word, or anyone for a name"),
+            ("""{ "kind": "usage", "from": "Grumbald", "word": "Thimble" }""", "records/pim-kettering.json row 1 (\"Thimble\"): no source (a scene such as s4.2, player: \"…\", setup, or inference)"),
+            ("""{ "kind": "alias", "from": "anyone", "word": "the Heron", "source": "s3.2" }""", "records/pim-kettering.json row 1 (\"the Heron\"): kind \"alias\" is not usage, name or relationship"),
+            ("""{ "kind": "name", "from": "anyone", "word": "Pimkin", "source": "s9.9" }""", "records/pim-kettering.json row 1 (\"Pimkin\"): scene s9.9 is not in the session logs"),
+            ("""{ "kind": "name", "from": "anyone", "word": "Pimkin", "source": "s2.7" }""", "records/pim-kettering.json row 1 (\"Pimkin\"): scene s2.7 is not in the session logs"),
+            ("""{ "kind": "name", "from": "anyone", "word": "Pimkin", "source": "the dock" }""", "records/pim-kettering.json row 1 (\"Pimkin\"): source \"the dock\" is not a scene (s4.2), player: \"…\", setup, or inference"),
+            ("""{ "kind": "usage", "from": "Benno", "word": "Pip", "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"Pip\"): speaker \"Benno\" is not a person of the records, anyone, or group: … (did you mean \"Benno Kettering\"?)"),
+            ("""{ "kind": "usage", "from": "anyone", "word": "Pip", "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"Pip\"): a word anyone says is kind name, not usage"),
+            ("""{ "kind": "name", "from": "Grumbald", "word": "Pip", "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"Pip\"): kind name is from anyone; a person's word is kind usage"),
+            ("""{ "kind": "relationship", "from": "group: her crew", "word": "ward", "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"ward\"): a relationship is from a person, not a group"),
+            ("""{ "kind": "usage", "from": "Grumbald", "word": "Pip", "nickname": true, "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"Pip\"): unknown key \"nickname\" (a row has kind, from, word, when, never, source)"),
+            ("""{ "kind": "usage", "from": "Grumbald", "word": "Pip", "never": ["Somebody"], "source": "s1.1" }""", "records/pim-kettering.json row 1 (\"Pip\"): never \"Somebody\" is not a person of the records or group: …"),
+            ("""{ "kind": "name", "from": "anyone", "word": "Pimkin", "source": "kettle-before s2.1" }""", ""),
+            ("""{ "kind": "name", "from": "anyone", "word": "Pimkin", "source": "elsewhere s2.1" }""", "records/pim-kettering.json row 1 (\"Pimkin\"): elsewhere is not a campaign this one continues"),
+        };
+        foreach (var (row, expected) in cases)
+        {
+            var errors = PimRow(row).Errors;
+            if (expected.Length == 0)
+                Assert.HasCount(0, errors, $"{row}: {string.Join("\n", errors)}");
+            else
+                Assert.AreEqual(expected, errors.FirstOrDefault(), row);
+        }
+    }
+
+    [TestMethod]
+    public void ARowOfASpeakerOnTheWordsNeverListIsRefused()
+    {
+        const string da = """{ "kind": "usage", "from": "Benno Kettering", "word": "Da",""";
+        const string cap = """{ "kind": "usage", "from": "Benno Kettering", "word": "Cap", "source": "s4.1" },""";
+        string ilvane = RecordFixtures.Records["ilvane-vell.json"].Replace(da, cap + "\n" + da);
+        var errors = With("ilvane-vell.json", ilvane).Errors;
+        Assert.AreEqual("records/ilvane-vell.json row 5 (\"Cap\"): Benno Kettering never says \"Cap\" for Ilvane Vell (row 4, s2.4)", errors.Single());
+    }
+
+    [TestMethod]
+    public void ARepeatedRowAWrongFileNameAndBadJsonAreRefused()
+    {
+        Assert.AreEqual("records/pim-kettering.json row 2 (\"pim\"): the same row as row 1",
+            PimRow("""{ "kind": "name", "from": "anyone", "word": "Pim", "source": "setup" }, { "kind": "name", "from": "anyone", "word": "pim", "source": "s1.1" }""").Errors.Single());
+        CollectionAssert.Contains(With("pim-kettering.json", """{ "person": "Pim Vane", "rows": [], "limits": [] }""").Errors,
+            "records/pim-kettering.json: the record of \"Pim Vane\" must be records/pim-vane.json");
+        CollectionAssert.Contains(With("pim-kettering.json", "{ \"person\": ").Errors, "records/pim-kettering.json: not valid JSON (line 1)");
+        Assert.AreEqual("records/pim-kettering.json limit 1: no text",
+            With("pim-kettering.json", """{ "person": "Pim Kettering", "rows": [], "limits": [ { "source": "s1.1" } ] }""").Errors.Single());
+    }
+
+    [TestMethod]
+    public void AnOfThatNamesNoCampaignThisOneContinuesIsRefused() =>
+        Assert.AreEqual("records/mother-gorse.json: \"of\" names nowhere, which is not a campaign this one continues",
+            With("mother-gorse.json", """{ "person": "Mother Gorse", "of": "nowhere", "rows": [], "limits": [] }""").Errors.Single());
+}

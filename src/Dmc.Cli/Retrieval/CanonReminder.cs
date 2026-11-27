@@ -56,6 +56,10 @@ internal static class CanonReminder
 
         var canon = Measurement.ReadLines(canonPath);
         string namedText = alsoNamed is { Count: > 0 } ? prompt + "\n" + string.Join("; ", alsoNamed) : prompt;
+        // A campaign with records (spec 032 research R6): the persons the message names through the index, a word whose
+        // rows all mean one person included, so a bare title such as "Auntie" is no longer dropped by the register.
+        if (PersonRecords.RecordFiles.Has(root) && PersonRecords.RecordIndex.Build(folder, campaign).Named(prompt) is { Count: > 0 } byRecords)
+            namedText += "\n" + string.Join("; ", byRecords);
         var named = Register.Named(namedText, Register.Of(canon));
         if (named.Count == 0)
             return [];

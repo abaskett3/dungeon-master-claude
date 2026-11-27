@@ -1,6 +1,6 @@
 # Dungeon Master Claude
 
-Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **DMC** here) runs the game in your terminal and keeps the whole campaign in plain Markdown files, so the story and your character stay consistent across sessions that may be weeks apart.
+Play solo D&D 5e campaigns with Claude as your Dungeon Master. Claude (called **DMC** here) runs the game in your terminal and keeps the whole campaign in files on your computer (plain Markdown, and a small record per person of who calls whom what), so the story and your character stay consistent across sessions that may be weeks apart.
 
 This repository is the source of DMC. You play in a **DMC folder** that `dmc install` writes for you, not here: the Dungeon Master rules, the skills and the settings are written into that folder, beside your own `adventures/`, `feedback/`, `modules/` and `rules/`, and `dmc` keeps them up to date without ever touching your files.
 

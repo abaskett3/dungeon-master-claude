@@ -117,7 +117,7 @@ internal static class SheetLayouts
         ["Combat"] = ["Max HP", "Hit dice", "Armor Class", "Initiative", "Speed", "Senses", "Resistances, immunities, vulnerabilities"],
         ["Spellcasting"] = ["Casting ability, save DC, attack bonus", "Slots per level", "Cantrips", "Prepared or known spells", "Spellbook or other spells available"],
         ["Inventory"] = ["Equipped", "Carried", "Magic items", "Stored elsewhere"],
-        ["Story"] = ["Appearance", "Personality", "Names they use", "Ideals, bonds, flaws", "Backstory", "Current objectives", "Long-term goals"],
+        ["Story"] = ["Appearance", "Personality", "Names for places and things", "Ideals, bonds, flaws", "Backstory", "Current objectives", "Long-term goals"],
     };
 
     /// <summary>The template's labels of each structured section of the NPC template.</summary>
@@ -125,13 +125,20 @@ internal static class SheetLayouts
     {
         [SheetText.Top] = ["Role in the story", "Species, occupation, age", "Usually found", "First appeared", "Status"],
         [PlayCard] = CardLabels,
-        ["Playing them"] = ["Appearance", "Voice", "Names they use", "Personality", "What they want", "What they fear", "Attitude to the PC, and why"],
+        ["Playing them"] = ["Appearance", "Voice", "Names for places and things", "Personality", "What they want", "What they fear", "Attitude to the PC, and why"],
         ["Stat block"] = ["Based on", "AC", "Max HP", "Speed", "STR / DEX / CON / INT / WIS / CHA", "Saves and skills", "Senses and languages", "Traits", "Actions", "Spells or special abilities", "Gear"],
     };
 
+    /// <summary>
+    /// Labels of an older template that a sheet not yet migrated still has, accepted wherever they stand and never
+    /// printed: "Names they use", which migration 010 (spec 032) replaced with "Names for places and things" and the
+    /// records. They are not the templates' labels, so the lists above leave them out.
+    /// </summary>
+    public static IReadOnlyList<string> RetiredLabels { get; } = ["Names they use"];
+
     /// <summary>The play card's labels, the same on both templates.</summary>
     static string[] CardLabels =>
-        ["Who", "Looks", "Voice", "Names they use", "Toward the PC, and what they want now", "AC, max HP, speed, saves, senses",
+        ["Who", "Looks", "Voice", "Names for places and things", "Toward the PC, and what they want now", "AC, max HP, speed, saves, senses",
          "Attacks", "Recharge and limited abilities", "Standing traits that change play", "Items used in play"];
 
     /// <summary>The labels of the PC template that no layout prints, and why.</summary>
@@ -140,9 +147,9 @@ internal static class SheetLayouts
         new(SheetText.Top, "Player character", "a marker of the sheet's kind"),
         new(SheetText.Top, "Companion", "a marker of the sheet's kind"),
         new(PlayCard, "Who", "DMC's own summary, which may hold what the PC has not learned"),
-        new(PlayCard, "Names they use", "DMC's notes for voicing them"),
+        new(PlayCard, "Names for places and things", "DMC's notes for voicing them"),
         new(PlayCard, "Toward the PC, and what they want now", "their motives, which may be a spoiler"),
-        new("Story", "Names they use", "DMC's notes for voicing them"),
+        new("Story", "Names for places and things", "DMC's notes for voicing them"),
     ];
 
     /// <summary>The labels of the PC template that only a companion's layout leaves out, and why: what a companion wants and where they come from may be a spoiler.</summary>
@@ -161,10 +168,10 @@ internal static class SheetLayouts
         new(SheetText.Top, "Usually found", "DMC's notes"),
         new(SheetText.Top, "First appeared", "DMC's notes"),
         new(PlayCard, "Who", "DMC's own summary, which may hold what the PC has not learned"),
-        new(PlayCard, "Names they use", "DMC's notes for voicing them"),
+        new(PlayCard, "Names for places and things", "DMC's notes for voicing them"),
         new(PlayCard, "Toward the PC, and what they want now", "their motives, which may be a spoiler"),
         new("Playing them", "Voice", "the play card's Voice is printed instead"),
-        new("Playing them", "Names they use", "DMC's notes for voicing them"),
+        new("Playing them", "Names for places and things", "DMC's notes for voicing them"),
         new("Playing them", "What they want", "their motives, which may be a spoiler"),
         new("Playing them", "What they fear", "their motives, which may be a spoiler"),
         new("Playing them", "Attitude to the PC, and why", "their motives, which may be a spoiler"),

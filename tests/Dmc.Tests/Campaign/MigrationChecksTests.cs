@@ -76,8 +76,18 @@ public sealed class MigrationChecksTests
         {
             ["character-sheets/npc-mara.md"] = "# Mara\n\n## Play card\n\n- **Names for places and things**: none\n",
             ["records/mara.json"] = "{ \"person\": \"Mara\", \"rows\": [ { \"kind\": \"name\", \"from\": \"anyone\", \"word\": \"Mara\", \"source\": \"setup\" } ], \"limits\": [] }\n",
+            ["character-sheets/npc-quill.md"] = "# Quill (Quillamere)\n\n## Play card\n\n- **Names for places and things**: none\n",
+            ["records/quill.json"] = "{ \"person\": \"Quill\", \"rows\": [], \"limits\": [] }\n",
             ["story/canon.md"] = "# Canon\n\n## People\n\n- **Mara**: keeps the ferry (s1)\n",
         }));
+
+    [TestMethod]
+    public void ASheetTitlesEndBracketIsNotPartOfThePerson()
+    {
+        Assert.AreEqual("Quill", Dmc.PersonRecords.RecordFiles.SheetPerson("Quill (Quillamere) "));
+        Assert.AreEqual("Captain Emmajeen Kole", Dmc.PersonRecords.RecordFiles.SheetPerson("Captain Emmajeen Kole"));
+        Assert.AreEqual("(Quillamere)", Dmc.PersonRecords.RecordFiles.SheetPerson("(Quillamere)"));
+    }
 
     [TestMethod]
     public void RecordsInPlaceNamesWhatIsLeftInTheOldShape()

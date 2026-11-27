@@ -29,7 +29,10 @@ internal static partial class RecordDraft
     public static string PathFor(string campaignFolder, string campaign) =>
         BackupFolder.Companion(BackupFolder.Resolve(campaignFolder, campaign, null), BackupFolder.RecordsDraftSuffix);
 
-    /// <summary>The rows of canon's People register that have a regular shape: each <c>(also: …)</c> item, as a row with no speaker.</summary>
+    /// <summary>
+    /// The rows of canon's People register that have a regular shape: each name of an <c>(also: …)</c> bracket, as a row
+    /// with no speaker and the source the bracket's note gives (<see cref="SplitBracket"/>).
+    /// </summary>
     /// <param name="campaignFolder">The campaign folder.</param>
     public static List<DraftRow> FromCanon(string campaignFolder)
     {
@@ -50,10 +53,30 @@ internal static partial class RecordDraft
             if (!inside || AlsoEntry().Match(text) is not { Success: true } m)
                 continue;
             string person = m.Groups[1].Value.Trim();
-            foreach (string item in m.Groups[2].Value.Split([',', ';']).Select(s => s.Trim().Trim('"', '*', '“', '”').Trim()).Where(s => s.Length > 0))
-                rows.Add(new DraftRow(person, new Row(null, null, item, null, null, null, []), $"story/canon.md:{i + 1}"));
+            var (names, source) = SplitBracket(m.Groups[2].Value);
+            foreach (string item in names)
+                rows.Add(new DraftRow(person, new Row(null, null, item, null, null, source, []), $"story/canon.md:{i + 1}"));
         }
         return rows;
+    }
+
+    /// <summary>A scene reference in a bracket's note, such as <c>s56</c> or <c>s88.4</c>.</summary>
+    [GeneratedRegex(@"\bs\d+(?:\.\d+)?\b", RegexOptions.CultureInvariant)]
+    private static partial Regex SceneRef();
+
+    /// <summary>
+    /// Splits an <c>(also: …)</c> bracket the way canon writes it: the names before the first semicolon, separated by
+    /// commas, and after it a note (an age, an audit, the scene the name came from). The note is never a name; its first
+    /// scene reference becomes the rows' source, and with none the rows have no source, a finding for the player.
+    /// </summary>
+    /// <param name="bracket">The text inside the bracket, after <c>also:</c>.</param>
+    internal static (List<string> Names, string? Source) SplitBracket(string bracket)
+    {
+        int semicolon = bracket.IndexOf(';');
+        string namePart = semicolon < 0 ? bracket : bracket[..semicolon];
+        string? source = semicolon < 0 ? null : SceneRef().Match(bracket[(semicolon + 1)..]) is { Success: true } s ? s.Value : null;
+        var names = namePart.Split(',').Select(n => n.Trim().Trim('"', '*', '“', '”').Trim()).Where(n => n.Length > 0).ToList();
+        return (names, source);
     }
 
     /// <summary>Writes a new draft; refuses when one exists, so DMC's added rows are never lost.</summary>

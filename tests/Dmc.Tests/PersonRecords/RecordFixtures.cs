@@ -120,7 +120,7 @@ internal static class RecordFixtures
             ## People
 
             - **Hessa Kettering** (also: Hessa, Mam, Nan): keeps the barge's galley (s1.2)
-            - **Nettlebone** (also: Nan, Nan Nettle): the reed-witch (s4.2)
+            - **Nettlebone** (also: Nan, Nan Nettle; the barge folk's names, s4.2): the reed-witch (s4.2)
             - **Mother Gorse** (also: Mother): the hag of the marsh (s2)
 
             ## Places

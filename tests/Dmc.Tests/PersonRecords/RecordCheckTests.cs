@@ -58,4 +58,43 @@ public sealed class RecordCheckTests
             """{ "to": "Hessa Kettering", "line": "character-sheets/npc-pim-kettering.md:5", "kind": "usage", "from": "Pim Kettering", "word": "Pa", "source": "s1.2" }""");
         Assert.IsFalse(findings.Any(f => f.Contains("\"Pa\"", StringComparison.Ordinal) && !f.StartsWith("sample", StringComparison.Ordinal)), string.Join("\n", findings));
     }
+
+    /// <summary>A sample that says a longer word is not taken for a never-word inside it: "Nan Nettle" is not "Nan".</summary>
+    [TestMethod]
+    public void ANeverWordInsideALongerWordOfTheSampleIsNoFinding()
+    {
+        string sheet = Path.Combine(_folder, "adventures", RecordFixtures.Campaign, "character-sheets", "npc-pim-kettering.md");
+        File.WriteAllText(sheet, File.ReadAllText(sheet).Replace("\"Nan, look at the fish!\"", "\"Nan Nettle, look at the fish!\"", StringComparison.Ordinal));
+        var findings = RecordCheck.Records(_folder, RecordFixtures.Campaign);
+        Assert.IsFalse(findings.Any(f => f.Contains("never says \"Nan\"", StringComparison.Ordinal)), string.Join("\n", findings));
+    }
+
+    /// <summary>A speaker's word for themselves in a sample to someone else ("Pim-Pim sees a fish, Mam!") is no finding.</summary>
+    [TestMethod]
+    public void ASpeakersWordForThemselvesInASampleIsNoFinding()
+    {
+        string root = Path.Combine(_folder, "adventures", RecordFixtures.Campaign);
+        string record = Path.Combine(root, "records", "pim-kettering.json");
+        const string name = "{ \"kind\": \"name\", \"from\": \"anyone\", \"word\": \"Pim\", \"source\": \"setup\" }";
+        Assert.IsTrue(File.ReadAllText(record).Contains(name, StringComparison.Ordinal));
+        File.WriteAllText(record, File.ReadAllText(record).Replace(name, name + ",\n    { \"kind\": \"usage\", \"from\": \"Pim Kettering\", \"word\": \"Pim-Pim\", \"source\": \"s1.1\" }", StringComparison.Ordinal));
+        string sheet = Path.Combine(root, "character-sheets", "npc-pim-kettering.md");
+        File.WriteAllText(sheet, File.ReadAllText(sheet).Replace("\"Nan, look at the fish!\" (to Nettlebone)", "\"Pim-Pim sees a fish, Mam!\" (to Hessa Kettering)", StringComparison.Ordinal));
+        var findings = RecordCheck.Records(_folder, RecordFixtures.Campaign);
+        Assert.IsFalse(findings.Any(f => f.Contains("Pim-Pim", StringComparison.Ordinal)), string.Join("\n", findings));
+        Assert.IsFalse(findings.Any(f => f.StartsWith("invalid", StringComparison.Ordinal)), string.Join("\n", findings));
+    }
+
+    /// <summary>Canon's bracket keeps notes after a semicolon: they are never names, and their scene is the rows' source.</summary>
+    [TestMethod]
+    public void ACanonBracketsNoteIsNoNameAndGivesItsScene()
+    {
+        var (names, source) = RecordDraft.SplitBracket("Old Wren, \"the Tallow\"; nineteen at the fair, sheet audit 2026-11-11, s7.3");
+        CollectionAssert.AreEqual(new[] { "Old Wren", "the Tallow" }, names);
+        Assert.AreEqual("s7.3", source);
+        Assert.IsNull(RecordDraft.SplitBracket("Wren, Old Wren").Source);
+        var rows = RecordDraft.FromCanon(Path.Combine(_folder, "adventures", RecordFixtures.Campaign));
+        CollectionAssert.AreEqual(new[] { "Nan", "Nan Nettle" }, rows.Where(r => r.To == "Nettlebone").Select(r => r.Row.Word).ToArray());
+        Assert.IsTrue(rows.Where(r => r.To == "Nettlebone").All(r => r.Row.Source == "s4.2"));
+    }
 }

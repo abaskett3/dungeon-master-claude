@@ -35,6 +35,21 @@ internal static partial class RecordFiles
     /// <param name="person">The person's full name.</param>
     public static string Slug(string person) => NotSlug().Replace(person.ToLowerInvariant(), "-").Trim('-') + ".json";
 
+    /// <summary>A bracket at the end of a sheet's title, such as the <c> (Hysvearorn)</c> of <c># Rorn (Hysvearorn)</c>.</summary>
+    [GeneratedRegex(@"\s*\([^()]*\)\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex TitleBracket();
+
+    /// <summary>
+    /// The person a sheet's title names: the title without a bracket at its end, so <c>Rorn (Hysvearorn)</c> is the
+    /// record of <c>Rorn</c>; the whole title when the bracket is all there is.
+    /// </summary>
+    /// <param name="title">The text after the sheet's <c># </c>.</param>
+    public static string SheetPerson(string title)
+    {
+        string person = TitleBracket().Replace(title, "").Trim();
+        return person.Length > 0 ? person : title.Trim();
+    }
+
     /// <summary>Whether a campaign folder has a <c>records/</c> folder: a campaign at standard 10.</summary>
     /// <param name="campaignFolder">The campaign folder.</param>
     public static bool Has(string campaignFolder) => Directory.Exists(Path.Combine(campaignFolder, Folder));

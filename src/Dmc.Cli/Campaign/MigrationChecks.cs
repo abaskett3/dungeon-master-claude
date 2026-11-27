@@ -267,7 +267,7 @@ internal static partial class MigrationChecks
         foreach (var (path, text) in SheetsOf(input.New, npcOnly: false))
         {
             var lines = Lines(text);
-            string? title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal))?[2..].Trim();
+            string? title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } heading ? PersonRecords.RecordFiles.SheetPerson(heading[2..]) : null;
             if (title is not null && !persons.Contains(title))
                 yield return $"{path}: {title} has no record in records/";
             if (lines.Any(l => l.Contains("**Names they use**", StringComparison.Ordinal)))

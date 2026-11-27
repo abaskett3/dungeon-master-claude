@@ -120,13 +120,16 @@ internal static partial class RecordCheck
             {
                 string words = m.Groups[1].Value;
                 string? addressee = m.Groups[2].Success ? ResolveAddressee(index, m.Groups[2].Value) : null;
-                foreach (var entry in index.Rows.Where(e => (e.Row.Never ?? []).Contains(speaker) && Holds(words, e.Row.Word!)))
+                // The words as the index reads them, longest first, so "Auntie Em" is not taken for an "Auntie" inside it.
+                var said = index.WordsIn(words);
+                foreach (var entry in said.SelectMany(f => f.Rows).Where(e => (e.Row.Never ?? []).Contains(speaker)))
                     findings.Add($"sample-breaks-rows: {where}: {speaker} never says \"{entry.Row.Word}\" for {entry.Person} ({entry.Row.Source})");
                 if (addressee is not null)
                 {
-                    foreach (var found in index.WordsIn(words))
+                    foreach (var found in said)
                     {
-                        var mine = found.Rows.Where(r => r.Row.From == speaker && r.Row.Kind == RowKind.Usage).ToList();
+                        // A speaker's word for themselves ("Kibiw fwy high!" to Shale) is not a word for whom they address.
+                        var mine = found.Rows.Where(r => r.Row.From == speaker && r.Row.Kind == RowKind.Usage && r.Person != speaker).ToList();
                         if (mine.Count > 0 && mine.All(r => r.Person != addressee))
                             findings.Add($"sample-breaks-rows: {where}: to {speaker}, \"{found.Word}\" means {string.Join(" and ", mine.Select(r => r.Person).Distinct())}, not {addressee}");
                     }
@@ -161,7 +164,7 @@ internal static partial class RecordCheck
             if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
                 continue;
             var lines = File.ReadAllLines(path);
-            string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t ? t[2..].Trim() : Path.GetFileNameWithoutExtension(file);
+            string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t ? RecordFiles.SheetPerson(t[2..]) : Path.GetFileNameWithoutExtension(file);
             for (int i = 0; i < lines.Length; i++)
                 if (lines[i].TrimStart().StartsWith("- **Voice**", StringComparison.Ordinal))
                     yield return (file, title, i + 1, lines[i]);
@@ -177,7 +180,7 @@ internal static partial class RecordCheck
             return [];
         return Directory.EnumerateFiles(folder, "*.md")
             .Select(p => File.ReadLines(p).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)))
-            .OfType<string>().Select(t => t[2..].Trim()).ToList();
+            .OfType<string>().Select(t => RecordFiles.SheetPerson(t[2..])).ToList();
     }
 
     /// <summary>The person an addressee names: a full name, or a word whose rows all mean one person; else the text as written.</summary>

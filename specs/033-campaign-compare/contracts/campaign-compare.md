@@ -20,4 +20,5 @@ Nothing in `adventures/` or `exports/` is written, pass or fail; an interrupted 
 `recovered NAME from an interrupted restore` line printed, as for `verify`.
 
 `verify` on a closed campaign with no `--backup` finds the closing backup the same way: `backups/`, then `exports/`,
-with `--backup` in its messages.
+with `--backup` in its messages. On a closed campaign, a bare file name given to `--with` or `--backup` is looked for
+in `backups/`, then `exports/`, before it is read as a path.

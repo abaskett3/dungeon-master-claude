@@ -20,7 +20,7 @@ usage: dmc <command> [args]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
   digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
-  campaign      export or import a whole campaign as one file, bring its files up to date, check it against any export, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|compare|restore|close|links|sequel NAME-or-FILE
+  campaign      export or import a whole campaign as one file, bring its files up to date, close it for good, check it against any export, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|compare|restore|close|links|sequel NAME-or-FILE
   play          start a play session in your DMC folder: claude --model sonnet --effort high [args]
   install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
   folder        print the DMC folder this command would use
@@ -511,8 +511,9 @@ same recovery first.
 Added by spec 033 (issue #189). `compare NAME [--with FILE] [--all]` checks every file of the campaign but `backups/`
 (`.standard` and `.closed` included) against an export of it, by path and content, and writes nothing, pass or fail
 (an interrupted restore is put back first, as for `verify`). It never checks or records a migration: that is `verify`.
-The file is `--with` (a file in `backups/` or a path: a backup, an export in `exports/`, a copy anywhere), else, for a
-closed campaign, its closing backup (in `backups/`, else `exports/`), else the latest backup. The export is checked
+The file is `--with` (a file in `backups/` or a path: a backup, an export in `exports/`, a copy anywhere; for a closed
+campaign a bare file name is also looked for in `exports/`), else, for a closed campaign, its closing backup (in
+`backups/`, else `exports/`), else the latest backup. The export is checked
 whole first, and need not be of the same name: an import made `--as` another name is compared with the file it came
 from. A text file whose only change is its line endings matches, and the map page files are neither compared nor
 counted, as for a closed campaign's `verify`; the comparison is the same one.

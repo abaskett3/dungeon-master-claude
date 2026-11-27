@@ -97,7 +97,8 @@ campaign verifies with no `--backup`.
 - **FR-002**: It writes nothing in `adventures/` or `exports/` (an interrupted restore's recovery aside), pass or fail.
 - **FR-003**: Default file: for an open campaign, the latest counted backup; for a closed one, the closing backup the
   mark names in `backups/`, else in `exports/`.
-- **FR-004**: `--with` takes a file name in `backups/` or a path, as `verify --backup` does.
+- **FR-004**: `--with` takes a file name in `backups/` or a path, as `verify --backup` does. On a closed campaign a
+  bare file name is also looked for in `exports/`, for `--with` and `verify --backup` alike.
 - **FR-005**: The export is checked whole before it is compared (sizes and SHA-256); it need not be of the same name;
   when it is another's, the first line is `note: <file> is an export of <campaign>`.
 - **FR-006**: Output: `NAME matches <file>: <n> files` (exit 0), or up to 40 difference lines, then `<n> more`, and

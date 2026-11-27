@@ -178,7 +178,7 @@ internal static partial class CampaignVerifier
             throw new DmcException($"{name} is closed: --list and --accounting are for migrations");
         string backup = options.Backup is null
             ? ClosingBackup(root, campaign, name, "--backup")
-            : BackupFolder.Resolve(campaign, name, options.Backup);
+            : ResolveClosed(root, campaign, name, options.Backup);
         string backupName = Path.GetFileName(backup);
         // Opened without the name check: an imported copy of a closed campaign (import --as) is checked against the
         // backup it came from, which names the campaign it was taken of. The byte comparison below is the check.
@@ -212,6 +212,20 @@ internal static partial class CampaignVerifier
         return BackupFolder.ClosingPath(root, campaign, marked)
             ?? throw new DmcException($"no backup {marked} in {BackupFolder.FolderName}/ or exports/: name it with {option}");
     }
+
+    /// <summary>
+    /// The file a closed campaign's <c>--backup</c> or <c>--with</c> names: a bare file name in <c>backups/</c> or else
+    /// <c>exports/</c> (<see cref="BackupFolder.ClosingPath"/>), so the name the default would find works when given;
+    /// otherwise as <see cref="BackupFolder.Resolve"/> reads it, a name in <c>backups/</c> or a path.
+    /// </summary>
+    /// <param name="root">The DMC folder.</param>
+    /// <param name="campaign">The campaign folder.</param>
+    /// <param name="name">The campaign's name.</param>
+    /// <param name="given">What the option named.</param>
+    /// <returns>The file's full path.</returns>
+    /// <exception cref="DmcException">The named file does not exist.</exception>
+    internal static string ResolveClosed(string root, string campaign, string name, string given) =>
+        BackupFolder.ClosingPath(root, campaign, given) ?? BackupFolder.Resolve(campaign, name, given);
 
     /// <summary>
     /// The byte check of a closed campaign against its closing backup: every file of the campaign but <c>backups/</c>, the mark

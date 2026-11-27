@@ -11,7 +11,8 @@ internal sealed record CompareOutcome(IReadOnlyList<string> Lines, string? Failu
 /// <c>dmc campaign compare</c> (spec 033, issue #189; contracts/campaign-compare.md): checks a campaign against any export of
 /// it, a backup, a closing backup, the file it was imported from or any other copy, by path and content, and writes nothing,
 /// pass or fail. The comparison is <see cref="CampaignVerifier.ClosedDifferences"/>, the one the closed campaign's
-/// <c>verify</c> and the sequel use, so the three cannot disagree. Unlike <c>verify</c> it never checks or records a
+/// <c>verify</c> and the sequel use, so the three cannot disagree about whether two copies differ. (Which file they compare
+/// with is another matter: the sequel still looks for a closing backup only in <c>backups/</c>.) Unlike <c>verify</c> it never checks or records a
 /// migration.
 /// </summary>
 internal static class CampaignComparer
@@ -30,7 +31,10 @@ internal static class CampaignComparer
     {
         string adventures = Path.Combine(root, "adventures");
         string campaign = Path.Combine(adventures, CampaignExporter.FindCampaign(adventures, name));
-        string file = with is not null ? BackupFolder.Resolve(campaign, name, with) : Default(root, campaign, name);
+        bool closed = ClosedCampaign.IsClosed(campaign);
+        string file = with is null ? Default(root, campaign, name)
+            : closed ? CampaignVerifier.ResolveClosed(root, campaign, name, with)
+            : BackupFolder.Resolve(campaign, name, with);
         string fileName = Path.GetFileName(file);
 
         // Opened without the name check, as the closed verify opens it: an import made --as another name is compared with

@@ -34,3 +34,11 @@ description: "Task list for spec 033, dmc campaign compare (issue #189)"
 - [X] T007 `.docs/dmc-reference.md` (usage, § Comparing a campaign with an export, the closed verify, the verb list),
   `.docs/user-guide.md`, `.docs/campaign-files.md`, `.docs/architecture.md`, `.docs/roadmap.md`, `.docs/decisions.md`
   (FR-009).
+
+## Phase 5: Code review fixes
+
+- [X] T008 A bare file name for `--with` or `verify --backup` on a closed campaign is looked for in `exports/` too
+  (`CampaignVerifier.ResolveClosed`; FR-004), with a test.
+- [X] T009 `.docs/dmc-reference.md`'s summary line matches the program's; the decision's sources name `ClosingPath`,
+  and its limits say the sequel still looks only in `backups/` (play calls it, so its own change, with a slip test).
+- [X] T010 A doc comment on every test method of `CampaignCompareTests`.

@@ -39,6 +39,8 @@ record's shape. Every step first checks whether it is needed, so a campaign alre
    neither, leave it `null`. For each `(also: …)` row, fill in `from` only where canon or a sheet says who uses it.
 4. **The conflicts, to the player.** Run `dmc records check <campaign> --draft`. Put every finding to the player with
    the lines it cites, and ask for their ruling: who says a word, which of two lines is right, the source of a row.
+   A row with no source is kept only on the player's word: they name the scene, keep it on their own words (its
+   `player: "…"` source), or drop it; never offer to write it with no source, or as `inference`.
    Ask them also to confirm any ruling of theirs that the files do not yet hold, and quote their answer as the
    `player: "…"` source. Change the draft as they rule, and run the check again until it prints `no findings`, or
    only findings the player chose to keep.

@@ -20,7 +20,7 @@ usage: dmc <command> [args]
   redraw        Stop hook: redraw the player's map if its file changed (exit 2 with one line if the file is refused)
   pdf           text and page pictures of a PDF: dmc pdf info|text|render|all <pdf> [--pages 1-20,35] [--dpi 110] [--out DIR]
   digest        condense Claude Code session logs for review: dmc digest list|show [SESSION ...] [--campaign NAME] [--after YYYY-MM-DD] [--folder DIR] [--logs DIR] [--out DIR]
-  campaign      export or import a whole campaign as one file, bring its files up to date, close it for good, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|restore|close|links|sequel NAME-or-FILE
+  campaign      export or import a whole campaign as one file, bring its files up to date, close it for good, check it against any export, list its links, or import a closed one into its sequel: dmc campaign export|import|show|standard|backups|backup|verify|compare|restore|close|links|sequel NAME-or-FILE
   play          start a play session in your DMC folder: claude --model sonnet --effort high [args]
   install       install dmc and write a DMC folder to play in: dmc install [--path FOLDER] [--force]
   folder        print the DMC folder this command would use
@@ -314,6 +314,7 @@ dmc campaign standard [NAME] [--init]
 dmc campaign backups NAME
 dmc campaign backup NAME [--prune oldest|old]
 dmc campaign verify NAME [--backup FILE] [--accounting FILE] [--list] [--all]
+dmc campaign compare NAME [--with FILE] [--all]
 dmc campaign restore NAME [--from FILE] [--yes]
 dmc campaign close NAME [--yes]
 dmc campaign links [NAME]
@@ -323,7 +324,7 @@ dmc campaign sequel NAME --check
 dmc campaign sequel NAME --sample [--round N]
 ```
 
-Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. The next five verbs are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign). `links` lists the campaigns linked to one; see [Linked campaigns](#linked-campaigns). `sequel` is the exact parts of a sequel's import of the closed campaign it continues; see [A sequel's import](#a-sequels-import).
+Moves a whole campaign in and out of one file: a backup, a copy under another name, or a move to another computer. `export`, `import` and `show` work on one campaign and never delete or overwrite anything that was already there, except a file named by `--out` with `--force`. `standard`, `backups`, `backup`, `verify` and `restore` are the exact steps of bringing a campaign's files up to the kit's standard; see [Migrations](#migrations) below. `compare` checks a campaign against any export of it and writes nothing; see [Comparing a campaign with an export](#comparing-a-campaign-with-an-export). `close` closes a finished campaign for good; see [Closing a campaign](#closing-a-campaign). `links` lists the campaigns linked to one; see [Linked campaigns](#linked-campaigns). `sequel` is the exact parts of a sequel's import of the closed campaign it continues; see [A sequel's import](#a-sequels-import).
 
 | Argument | Meaning |
 |---|---|
@@ -356,7 +357,7 @@ to play it, start a session and ask DMC to resume silver-egg-copy
 
 | Message (after `dmc campaign: `) | Exit |
 |---|---|
-| `give export, import, show, standard, backups, backup, verify, restore or close (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
+| `give export, import, show, standard, backups, backup, verify, compare, restore, close, links or sequel (try dmc campaign --help)` (no verb, or an unknown one) | 2 |
 | `the following arguments are required: name` (or `file`), `unrecognized arguments: ...`, `argument --out: expected one argument` | 2 |
 | `--as must be lowercase letters, digits and hyphens, starting with a letter or digit` | 2 |
 | `no campaign "<name>" in adventures/ (there are: a, b)` (`(there are none)` when empty; folders starting with `.` are not campaigns) | 1 |
@@ -494,7 +495,7 @@ finds the campaign renamed aside by an interrupted restore puts it back first an
 `recovered NAME from an interrupted restore`. With `--yes` the backup is read once, checked as it is extracted.
 A closed campaign is refused, with or without `--yes` (below).
 
-**Recovery.** `standard`, `backups`, `backup`, `verify` and `restore` each first put back what an interrupted restore
+**Recovery.** `standard`, `backups`, `backup`, `verify`, `compare` and `restore` each first put back what an interrupted restore
 left, and print `recovered NAME from an interrupted restore` before their own output, followed by `; <folder> ...` for
 anything kept. A restore's staging and aside folders share an id, so they show how far it got. An aside with no
 campaign folder goes back as the campaign. An aside beside a campaign folder, with its staging gone, means the restore
@@ -504,6 +505,32 @@ left NAME as adventures/<aside>, and adventures/NAME exists too: keep the one to
 command again`. A staging's `backups/` goes back into the campaign's (entry by entry when the campaign has a
 `backups/` again, never replacing a file), and the staging is deleted only when it holds none of them. `close` runs the
 same recovery first.
+
+### Comparing a campaign with an export
+
+Added by spec 033 (issue #189). `compare NAME [--with FILE] [--all]` checks every file of the campaign but `backups/`
+(`.standard` and `.closed` included) against an export of it, by path and content, and writes nothing, pass or fail
+(an interrupted restore is put back first, as for `verify`). It never checks or records a migration: that is `verify`.
+The file is `--with` (a file in `backups/` or a path: a backup, an export in `exports/`, a copy anywhere; for a closed
+campaign a bare file name is also looked for in `exports/`), else, for a closed campaign, its closing backup (in
+`backups/`, else `exports/`), else the latest backup. The export is checked
+whole first, and need not be of the same name: an import made `--as` another name is compared with the file it came
+from. A text file whose only change is its line endings matches, and the map page files are neither compared nor
+counted, as for a closed campaign's `verify`; the comparison is the same one.
+
+| Output | Exit |
+|---|---|
+| `NAME matches <file>: <n> files` | 0 |
+| up to 40 of `changed: <path>`, `added: <path>` and `missing: <path>` (then `<n> more`; every one with `--all`), and the error `<n> files differ from <file>` | 1 |
+| first, when the export is another campaign's: `note: <file> is an export of <campaign>` | |
+
+| Message (after `dmc campaign: `) | Exit |
+|---|---|
+| `NAME has no backup: name an export with --with FILE` | 1 |
+| `no backup <given>: dmc campaign backups NAME lists them` (`--with` names no file) | 1 |
+| `adventures/NAME/.closed is unreadable: name the closing backup with --with` | 1 |
+| `no backup <file> in backups/ or exports/: name it with --with` (a closed campaign's closing backup is in neither) | 1 |
+| the export check's line for a damaged or unreadable file, as for `show` | 1 |
 
 ### Closing a campaign
 
@@ -553,9 +580,10 @@ campaign cloned from git still verifies. It prints `verified NAME: closed, <n> f
 `verification failed: <n> files differ from <file>`. `--list` and `--accounting` are refused
 (`NAME is closed: --list and --accounting are for migrations`); a mark that cannot be read needs `--backup`
 (`adventures/NAME/.closed is unreadable: name the closing backup with --backup`); a mark naming a file not in `backups/`
-(an import, whose `backups/` the export left out) gives `no backup <file>: dmc campaign backups NAME lists them`, and
-`--backup <the copy in exports/>` checks it. The backup is not required to be of the same name, so an import made
-`--as` another name checks against the file it came from. Checking against any other export is issue #189.
+(an import, whose `backups/` the export left out) is looked for in `exports/`, where `close` wrote its copy; in neither,
+`no backup <file> in backups/ or exports/: name it with --backup`. The backup is not required to be of the same name, so
+an import made `--as` another name checks against the file it came from. To check against any other export, use
+[`compare`](#comparing-a-campaign-with-an-export).
 
 **import** of a closing backup works as for any export: the new campaign holds the mark, so it is closed too, and the
 last line says so.

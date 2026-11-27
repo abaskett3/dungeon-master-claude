@@ -199,15 +199,25 @@ public sealed class CampaignVerifyClosedTests
         Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name, "--backup", backup).ExitCode);
     }
 
+    /// <summary>
+    /// With the closing backup gone from <c>backups/</c>, verify finds the copy in <c>exports/</c> (spec 033 FR-007); with that
+    /// gone too, it says so, and <c>--backup</c> names the file.
+    /// </summary>
     [TestMethod]
-    public void AMarkNamingABackupThatIsNotThereSaysSo()
+    public void AMarkNamingABackupThatIsNotThereFallsBackToExportsThenSaysSo()
     {
         var (root, backup) = Closed();
         using var _ = root;
-        File.Move(root.InBackups(backup), Path.Combine(root.Folder, "moved.zip"));
+        string moved = Path.Combine(root.Folder, "moved.zip");
+        File.Move(root.InBackups(backup), moved);
+        var fromExports = MigrationRoot.Run("verify", MigrationRoot.Name);
+        Assert.AreEqual(0, fromExports.ExitCode, fromExports.ToString());
+        CollectionAssert.AreEqual(new[] { $"verified rorn: closed, 6 files match {backup}" }, fromExports.StdoutLines);
+
+        File.Delete(Path.Combine(root.Folder, "exports", backup));
         var result = MigrationRoot.Run("verify", MigrationRoot.Name);
         Assert.AreEqual(1, result.ExitCode);
-        Assert.AreEqual($"dmc campaign: no backup {backup}: dmc campaign backups rorn lists them", result.Stderr.TrimEnd());
-        Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name, "--backup", Path.Combine(root.Folder, "exports", backup)).ExitCode);
+        Assert.AreEqual($"dmc campaign: no backup {backup} in backups/ or exports/: name it with --backup", result.Stderr.TrimEnd());
+        Assert.AreEqual(0, MigrationRoot.Run("verify", MigrationRoot.Name, "--backup", moved).ExitCode);
     }
 }

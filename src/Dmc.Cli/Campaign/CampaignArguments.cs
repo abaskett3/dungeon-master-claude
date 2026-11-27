@@ -37,6 +37,12 @@ internal sealed record BackupRequest(string Name, PruneMode Prune) : CampaignReq
 /// <param name="Options">The backup, the accounting file and the two flags.</param>
 internal sealed record VerifyRequest(string Name, VerifyOptions Options) : CampaignRequest;
 
+/// <summary><c>dmc campaign compare NAME [--with FILE] [--all]</c> (spec 033): a read-only check against any export.</summary>
+/// <param name="Name">A folder under <c>adventures/</c>.</param>
+/// <param name="With">The export to compare with; null for the closing backup of a closed campaign, else the latest backup.</param>
+/// <param name="All">Print every difference, not the first 40.</param>
+internal sealed record CompareRequest(string Name, string? With, bool All) : CampaignRequest;
+
 /// <summary><c>dmc campaign restore NAME [--from FILE] [--yes]</c>.</summary>
 /// <param name="Name">A folder under <c>adventures/</c>.</param>
 /// <param name="From">The backup to restore; null for the marked backup, else the latest.</param>
@@ -84,13 +90,13 @@ internal static class CampaignArguments
 {
     /// <summary>The verbs. This is the only place they are spelled out in the program.</summary>
     public const string Export = "export", Import = "import", Show = "show", Standard = "standard", Backups = "backups",
-        Backup = "backup", Verify = "verify", Restore = "restore", Close = "close", Links = "links", Sequel = "sequel";
+        Backup = "backup", Verify = "verify", Compare = "compare", Restore = "restore", Close = "close", Links = "links", Sequel = "sequel";
 
     /// <summary>The verbs, in the order the usage lists them; <c>ToolkitTests</c> checks the prompts against this list.</summary>
-    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Restore, Close, Links, Sequel];
+    public static readonly string[] Commands = [Export, Import, Show, Standard, Backups, Backup, Verify, Compare, Restore, Close, Links, Sequel];
 
     /// <summary>The message for a missing or unknown verb (exit code 2).</summary>
-    const string NeedVerb = "give export, import, show, standard, backups, backup, verify, restore, close, links or sequel (try dmc campaign --help)";
+    const string NeedVerb = "give export, import, show, standard, backups, backup, verify, compare, restore, close, links or sequel (try dmc campaign --help)";
 
     /// <summary>The message for a <c>sequel</c> without exactly one form (exit code 2).</summary>
     internal const string NeedForm = "give one of --start, --list, --check or --sample";
@@ -109,6 +115,7 @@ internal static class CampaignArguments
         Standard => ["--help", "--init"],
         Backup => ["--help", "--prune"],
         Verify => ["--help", "--backup", "--accounting", "--list", "--all"],
+        Compare => ["--help", "--with", "--all"],
         Restore => ["--help", "--from", "--yes"],
         Close => ["--help", "--yes"],
         Sequel => ["--help", "--start", "--list", "--all", "--check", "--sample", "--round"],
@@ -209,6 +216,7 @@ internal static class CampaignArguments
             Backups => new BackupsRequest(target!),
             Backup => new BackupRequest(target!, prune),
             Verify => new VerifyRequest(target!, new VerifyOptions(Value("--backup"), Value("--accounting"), flags.Contains("--list"), flags.Contains("--all"))),
+            Compare => new CompareRequest(target!, Value("--with"), flags.Contains("--all")),
             Restore => new RestoreRequest(target!, Value("--from"), flags.Contains("--yes")),
             Links => new LinksRequest(target),
             _ => new CloseRequest(target!, flags.Contains("--yes")),

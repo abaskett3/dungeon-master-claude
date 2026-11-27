@@ -312,6 +312,7 @@ dmc campaign import exports/the-silver-egg-202610220605.zip --as silver-egg-copy
 - **Restore, or make a copy.** `import` creates `adventures/<name>` from an export. It never replaces a campaign: if the name is taken, it says so, and you choose another with `--as`. It checks every file against the checksums in the file first, so a damaged export is refused and nothing is left half done. It never touches your general `adventures/player-options.md` (it writes one only if you have none) and never changes which campaign is active: start a session and ask DMC to resume the new name.
 - **Move to another computer.** Copy the `.zip` across (the file name does not matter), install `dmc` and a DMC folder there, and import it. If the export was made before an update, `import` says the campaign is behind and DMC offers to bring it up to date when you resume it; if it was made by a newer `dmc`, update `dmc` first. A published module is not in the export, because it is your own copy of a book: if the campaign runs one, `import` and `show` say so, and you ingest it again from your PDF with `/dmc-ingest-module`.
 - **Look first.** `show` says what a file holds (campaign, date, files, size, module) and writes nothing.
+- **Check a copy against the campaign.** `dmc campaign compare <campaign>` says whether every file still matches the latest backup in `backups/` (a closed campaign: its closing backup), or names each file changed, added or missing since. `--with <file>` names any export instead, such as the file a copy was imported from. A change of line endings alone, as git makes, is no change. It writes nothing.
 - **Run it inside your DMC folder.** `dmc campaign` finds `adventures/` in the DMC folder (the current folder if it is one, else the first recorded), and fails with `no DMC folder: run dmc install` when there is none.
 
 An export holds everything in the campaign, including `story/dm-notes.md`, so do not open it before you have played the story, and do not send it to anyone who will play it. To bring in a campaign played elsewhere (a chat export or transcript), use `/dmc-new-campaign` instead. Every message and option is in [dmc-reference.md](dmc-reference.md#campaign).
@@ -438,7 +439,8 @@ when the main story ends, and once more when the last open thread is resolved; i
 
 Keep a further copy of the file in `exports/` somewhere outside the DMC folder. A closed campaign still opens for
 reading (`dmc recall`, `dmc lookup`, `dmc campaign show` and `export`), but nothing changes it; `dmc campaign verify
-<campaign>` says whether any file differs from its closing backup. To go on with its characters, start a sequel (see
+<campaign>` (or `compare`) says whether any file differs from its closing backup, found in `backups/` or, for an
+imported copy, in `exports/`. To go on with its characters, start a sequel (see
 [Starting a sequel](#starting-a-sequel)): DMC imports the closed campaign into the new one, and never writes to it.
 
 ### Linked campaigns

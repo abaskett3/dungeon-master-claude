@@ -774,6 +774,27 @@ public sealed partial class ToolkitTests
                 $"this step of tests.yml runs whether or not the change needs the tests:\n{string.Join('\n', step)}");
     }
 
+    /// <summary>
+    /// <c>claude-code-review.yml</c> appends a system prompt that gives the CI review constitution Development 4: every
+    /// claim it posts cites a file and line or a command, or says "unverified", and its subagents get the same rule
+    /// (issue #218, spec 034). The plugin's prompt is upstream, so this appended prompt is the only place the rule
+    /// reaches the review; the test fails if a reset of the workflow drops it.
+    /// </summary>
+    [TestMethod]
+    public void CiReviewCitesItsClaims()
+    {
+        string workflow = Read(".github/workflows/claude-code-review.yml");
+        // The flag must be in the claude_args block (its lines are indented deeper than the key), not a comment or another input.
+        var args = Regex.Match(workflow, @"^([ \t]*)claude_args: \|\n((?:\1[ \t]+.*\n)+)", RegexOptions.Multiline);
+        Assert.IsTrue(args.Success, "claude-code-review.yml has no claude_args block");
+        var prompt = Regex.Match(args.Groups[2].Value, @"--append-system-prompt\s+(""(?:[^""\\]|\\.)+""|'[^']+')");
+        Assert.IsTrue(prompt.Success, "claude-code-review.yml passes no --append-system-prompt");
+        foreach (string part in new[] { "Development 4", ".specify/memory/constitution.md", "path:line", "unverified", "subagent" })
+            StringAssert.Contains(prompt.Groups[1].Value, part, $"the review's appended prompt must name {part}");
+        StringAssert.Contains(Read(".specify/memory/constitution.md"), "### Development 4. Grounded in the code",
+            "the prompt points at Development 4, which the constitution must still hold");
+    }
+
     /// <summary>Nothing under the personal folders (<c>adventures/</c>, <c>exports/</c>, <c>feedback/</c>, <c>modules/</c>, <c>rules/</c>) or <c>bin/</c> is tracked, and <c>.gitignore</c> still ignores them, so a <c>git add .</c> in a maintainer's old checkout cannot pick up their files: players keep them in a DMC folder.</summary>
     [TestMethod]
     public void PersonalFilesStayOutOfGit()

@@ -85,7 +85,7 @@ Leave defaults where the player has no preference.
 
 Build the character together, following the rules for the chosen edition. The player makes every choice; you explain options and do the arithmetic. If they want rolled stats, the player rolls them unless the player options say DMC rolls.
 
-Create `character-sheets/pc-<name>.md` from `templates/pc-sheet.md` and fill in every field. Double-check derived numbers (modifiers, proficiency bonus, AC, HP, save DCs, attack bonuses) before saving. Ask for a few lines of backstory, a goal and a tie to the setting.
+Write the character's record, `records/<name>.json`, with its sheet as facts and lists (`"sheet": "pc-<name>.md"`, the labels and sections of `templates/pc-sheet.md`), as the `records-format.md` of `dmc-character-sheet-update` says, and fill in every field. Double-check derived numbers (modifiers, proficiency bonus, AC, HP, save DCs, attack bonuses) before saving. Ask for a few lines of backstory, a goal and a tie to the setting.
 
 If the player wants a companion, create it the same way from `templates/npc-sheet.md`.
 
@@ -95,7 +95,7 @@ Before the first scene, write down enough that you will stay consistent later:
 
 - `story/dm-notes.md`: the central conflict, the main antagonist and what they want, two or three secrets, a few possible directions. Keep it loose; this is a plan, not a script. For a homebrew campaign, fill in the Arc plan for the first arc as step 4a and the template's comment lay out, checking the party's gaps against the threats you plan, and give each antagonist a next move with its session. Fill in the Opposition table for whatever stands between the character and the first goal, sized for the party as described under "Sizing fights" in `CLAUDE.md`, and check that the party has some way to rest or heal along the way.
 - `story/canon.md`: the facts the player already knows (setting name, starting town, anyone they know).
-- `character-sheets/`: a sheet for each NPC who will matter in the first session.
+- `records/`: a record with a sheet (`npc-<name>.md`, from `templates/npc-sheet.md`) for each NPC who will matter in the first session.
 - `game-state.md`: starting location, date and time, the PC's current HP and resources, the opening quest hook if there is one.
 - `story/summary.md`: a two or three sentence premise.
 - `story/sessions/session-001.md` from `templates/session-log.md`.

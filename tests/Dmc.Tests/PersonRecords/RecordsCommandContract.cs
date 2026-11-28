@@ -78,6 +78,32 @@ public abstract class RecordsCommandContract
         Assert.AreEqual(1, again.ExitCode, "a second draft must not overwrite the first");
     }
 
+    [TestMethod]
+    public void DraftSheetsHoldsEachSheetLineWithItsLabelSectionAndLine()
+    {
+        Directory.CreateDirectory(Path.Combine(Root, "backups"));
+        File.WriteAllBytes(Path.Combine(Root, "backups", $"{RecordFixtures.Campaign}_backup_20261126120000.zip"), []);
+        File.AppendAllText(Path.Combine(Root, "character-sheets", "npc-ilvane-vell.md"), "\n## History\n\n- Took the barge through the weir (s3.2).\n");
+        var draft = Records("draft", RecordFixtures.Campaign, "--sheets", "--folder", Folder);
+        Assert.AreEqual(0, draft.ExitCode, draft.ToString());
+        string path = $"adventures/{RecordFixtures.Campaign}/backups/{RecordFixtures.Campaign}_backup_20261126120000.zip.sheets-draft.json";
+        CollectionAssert.AreEqual(new[] { $"draft: {path}, 4 entries (1 with a source)" }, draft.StdoutLines);
+
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Folder, path)));
+        var first = doc.RootElement.GetProperty("entries")[0];
+        Assert.AreEqual("Ilvane Vell", first.GetProperty("to").GetString());
+        Assert.AreEqual("Play card", first.GetProperty("section").GetString());
+        Assert.AreEqual("Voice", first.GetProperty("label").GetString());
+        Assert.AreEqual("gruff. \"I'll read the river, not your letters.\"", first.GetProperty("text").GetString());
+        Assert.AreEqual("character-sheets/npc-ilvane-vell.md:5", first.GetProperty("line").GetString());
+        var history = doc.RootElement.GetProperty("entries")[1];
+        Assert.AreEqual(System.Text.Json.JsonValueKind.Null, history.GetProperty("label").ValueKind);
+        Assert.AreEqual("s3.2", history.GetProperty("source").GetString());
+
+        Assert.AreEqual(1, Records("draft", RecordFixtures.Campaign, "--sheets", "--folder", Folder).ExitCode, "a second draft must not overwrite the first");
+        Assert.AreEqual(2, Records("draft", RecordFixtures.Campaign, "--loud", "--folder", Folder).ExitCode);
+    }
+
     /// <summary>
     /// Spec 032 (SC-003's base resume needed six calls): a person is found by a file name, a sheet's file name, or words
     /// of their name in any order and case; a name several records fit gives them all; a name that fits none is named

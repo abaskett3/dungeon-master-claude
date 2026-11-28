@@ -297,6 +297,9 @@ public sealed partial class ErrorPathTests
                 ["records", "check", campaign, "--draft", "--folder", folder],
                 ["records", "draft", campaign, "--folder", folder],
                 ["records", "draft", campaign, "extra", "--folder", folder],
+                ["records", "draft", campaign, "--sheets", "--folder", folder],
+                ["records", "show", campaign, "--card", "--all", "--folder", folder],
+                ["records", "show", campaign, "--loud", "--folder", folder],
                 ["records", "show", campaign, "--folder"],
             ];
             foreach (var args in cases)

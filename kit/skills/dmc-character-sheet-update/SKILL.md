@@ -9,6 +9,8 @@ Sheets live in `character-sheets/` in the active campaign folder: `pc-<name>.md`
 
 A sheet must let a DM who has never met the character play them correctly: the numbers for the rules, and the voice, wants and history for the story.
 
+A person whose record names a `"sheet"` has no Markdown sheet: their sheet is the record's facts and lists, which `dmc records show <campaign> <name> --all` prints in the template's shape. Read the record and change it with Edit, as `records-format.md` beside this skill says; everything below applies to its entries (a template's label is a key or a list's name, its section the `section`, the play card `"card": true`). A new character in a campaign whose sheets are records gets a record with Write instead of a Markdown sheet.
+
 ## Which kind of record
 
 - **PC or companion**: full sheet from `templates/pc-sheet.md`.

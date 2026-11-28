@@ -34,7 +34,7 @@ One line each, as part A's: `dmc records: <file> <fact|list> <n> ("<key or list>
 
 ```
 dmc records: records/hessa-kettering.json fact 4 ("Hair"): a second value for "Hair" (fact 2 says "brown"): change that fact, or put this one back
-dmc records: records/hessa-kettering.json list 3 ("What they know"): "the 3rd" has no month: write the full in-world date (the 3rd of Mirtul)
+dmc records: records/hessa-kettering.json list 3 ("What they know"): "the 3rd" has no month: write the full in-world date (the 3rd of <month>, <year> DR)
 dmc records: records/hessa-kettering.json fact 6 ("STR"): "strong" is not a score: STR is a whole number from 1 to 30
 dmc records: records/hessa-kettering.json: a record with facts or lists names its sheet ("sheet": "npc-hessa-kettering.md")
 ```

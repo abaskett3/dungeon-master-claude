@@ -34,14 +34,17 @@ Each decision cites the code it rests on, or says unverified.
 ## R4. The full-date rule reads text
 
 - **Decision**: a pattern over each value, entry, limit and `when`: an ordinal day must be followed by a month word,
-  or by `to`/`and`/`-` and another ordinal followed by one. A year is required when `game-state.md`'s "In-world date
-  and time" line (`kit/templates/campaign/game-state.md:12`) holds a number of three or four digits. **ASSUMED**.
+  or by `to`/`and`/`-` and another ordinal followed by one, and a year after the month. **Ruled by the player,
+  2026-11-28** (was ASSUMED, a year only when `game-state.md`'s in-world date held one): every date has a year, so
+  memories can tell one Midwinter from the next.
 - **Rationale**: the slip was in free text ("ready on the 14th", #263 feedback comment). A separate date field would
   not catch it. On 2026-11-28 the long campaign's game-state date was "Wednesday the 18th of Eleasis, about 6 AM"
   (no year), and its sheets had 436 ordinal days with no month after them (a pattern count, unverified by hand;
   SC-002 checks a sample).
-- **Month word**: a capitalised word after the day, with an optional `of`. `dmc` has no calendar list, so "the 3rd
-  Company" passes and "the 3rd floor" is refused.
+- **Month word**: a month of the Harptos calendar after the day, with an optional `of` (the player adopted Harptos
+  for the campaigns, 2026-11-28). With any capitalised word as a month, the year rule would refuse 13 lines of the
+  live sheets that are names ("the 58th Dwarven", "the 9th Kelderak", "1st Class"; a count, 2026-11-28), so an ordinal
+  followed straight by a capitalised word that is not a month is a name. "the 3rd floor" is still refused. **ASSUMED**.
 
 ## R5. Checked keys
 

@@ -35,9 +35,11 @@ The file format in full is [contracts/records-file.md](contracts/records-file.md
 ## Full dates (rule F)
 
 In a fact's value, an entry's text, and on a record with facts or lists a limit's text and a row's `when`: each ordinal day (`1st`, `14th`) is followed by
-a month (a capitalised word, with an optional `of`), or by `to`, `and`, `or`, `-` or `–` and another ordinal day that
-is. When `game-state.md`'s "In-world date and time" line holds a number of three or four digits, each date also has
-such a number within the next three words after its month.
+a month of the Harptos calendar (with an optional `of`), or by `to`, `and`, `or`, `-` or `–` and another ordinal day
+that is, and each date has a year (a number of three or four digits) within the next three words after its month:
+`the 14th of Eleasis, 1493 DR`. `of` and a capitalised word that is not a Harptos month (`the 3rd of Harvestmoon`) is
+refused, naming the months. An ordinal followed straight by another capitalised word (`the 58th Dwarven Company`) is
+a name, not a date. (Ruled by the player, 2026-11-28: every date has a year, and the campaigns use Harptos.)
 
 ## Rules the check adds (refusals)
 

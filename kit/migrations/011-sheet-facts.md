@@ -42,8 +42,9 @@ first checks whether it is needed, so a campaign already in shape is left as it 
    or `setup` for what the campaign began with. A line that cites several scenes gives each fact the scene that says
    it. When a line gives no source, put it to the player with the line: they name the scene, keep it on their own words
    (`player: "…"`, quoting their answer), or drop it. Never write `inference` for a line that came from a sheet.
-5. **Dates.** A date with a day and no month ("ready on the 14th") gets its month from the line, its scene's session log
-   or the player; with a year when the campaign's in-world date has one. Ask the player when nothing says it.
+5. **Dates.** A date with a day and no month ("ready on the 14th") gets its month, and every date gets its year
+   (`the 14th of Eleasis, 1493 DR`), from the line, its scene's session log, the campaign's in-world date or the
+   player. Ask the player when nothing says it.
 6. **The record.** Add `"sheet": "<the sheet's file name>"` and the facts and lists to the person's record with Edit
    (Write for a person with no record yet), as `records-format.md` says; `dmc` checks it after each edit: fix what it
    refuses. Then run `dmc records show <campaign> <name> --all`, compare it with the sheet line by line, and put any

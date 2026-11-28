@@ -54,7 +54,7 @@ public sealed class RecordSheetTests
             "",
             "## What they know",
             "",
-            "- The smugglers land at the north stair on the 3rd of Mirtul. (s4.1)",
+            "- The smugglers land at the north stair on the 3rd of Mirtul, 1492 DR. (s4.1)",
             "",
             "## Stat block",
             "",
@@ -62,7 +62,7 @@ public sealed class RecordSheetTests
             "",
             "## History",
             "",
-            "- The 5th of Mirtul: mended Pim's sail for nothing. (s5.1)",
+            "- The 5th of Mirtul, 1492 DR: mended Pim's sail for nothing. (s5.1)",
         }, RecordSheet.Print(Record("Hessa Kettering"), sources: true));
     }
 
@@ -126,7 +126,7 @@ public sealed class RecordSheetTests
         var parts = ReadSet.Build(_folder, RecordFixtures.Campaign);
         var hessa = parts.Single(p => p.Path == "records/hessa-kettering.json");
         Assert.AreEqual(PartKind.ToHistory, hessa.Kind);
-        Assert.IsTrue(hessa.Lines.Any(l => l.Text == "- The smugglers land at the north stair on the 3rd of Mirtul. (s4.1)"), "the resume reads the marks");
+        Assert.IsTrue(hessa.Lines.Any(l => l.Text == "- The smugglers land at the north stair on the 3rd of Mirtul, 1492 DR. (s4.1)"), "the resume reads the marks");
         Assert.IsFalse(hessa.Lines.Any(l => l.Text.StartsWith("## History", StringComparison.Ordinal)));
         // T035: " (s4.1)" and the rest are counted in what the resume reads and left out of what the budget sees (#262).
         long marks = RecordSheet.Part(RecordSheet.Print(Record("Hessa Kettering"), sources: true), PrintPart.Sheet).Sum(l => l.Length)
@@ -169,7 +169,7 @@ public sealed class RecordSheetTests
             p => Path.GetRelativePath(Root, p).Replace('\\', '/'), File.ReadAllBytes);
         var units = Dmc.Campaign.SequelDigest.Units(files);
         CollectionAssert.Contains(units.Where(u => u.Path == "records/hessa-kettering.json").Select(u => u.Text).ToList(), "**Status**: alive");
-        CollectionAssert.Contains(units.Select(u => u.Text).ToList(), "The smugglers land at the north stair on the 3rd of Mirtul.");
+        CollectionAssert.Contains(units.Select(u => u.Text).ToList(), "The smugglers land at the north stair on the 3rd of Mirtul, 1492 DR.");
         CollectionAssert.Contains(units.Select(u => u.Text).ToList(), "**Looks**: Grey shawl, a net needle behind one ear.");
         Assert.IsFalse(units.Any(u => u.Path == "records/pim-kettering.json"), "a record of rows and limits alone is not a source");
         var people = Dmc.Campaign.SampleDraw.PeopleOf(files, []);

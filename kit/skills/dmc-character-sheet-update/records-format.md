@@ -81,6 +81,6 @@ character), and holds it as facts and lists, which `dmc records show <campaign> 
 - **Numbers `dmc` computes with**: `STR` to `CHA` (a score from 1 to 30) and `STR save` to `CHA save` (signed) print as
   the ability table in `Abilities`; `Proficiency bonus` and `Passive Perception`. Attacks of a PC are entries of the
   list `Attacks` in `Combat`: `Boathook | +5 | 1d8+3 piercing | reach 10 ft`.
-- **A date** is a full in-world date: the day with its month (`the 14th of Eleasis`), never a day alone, and the year
-  when the in-world date in `game-state.md` has one. `dmc` refuses "ready on the 14th".
+- **A date** is a full in-world date: the day, its month of the Harptos calendar and its year (`the 14th of Eleasis,
+  1493 DR`), never a day alone. `dmc` refuses "ready on the 14th" and "the 14th of Eleasis".
 - **Every fact and entry has a source**, as a row does.

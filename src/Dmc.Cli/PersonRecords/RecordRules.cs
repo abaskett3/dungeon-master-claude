@@ -59,7 +59,7 @@ internal static partial class RecordRules
                     errors.Add($"{where}: no text");
                 if (SourceError(scenes, limit.Source) is { } error)
                     errors.Add($"{where}: {error}");
-                if (record.HasSheetContent && RecordDates.Error(limit.Text, scenes.CalendarHasYear) is { } date)
+                if (record.HasSheetContent && RecordDates.Error(limit.Text) is { } date)
                     errors.Add($"{where}: {date}");
             }
             errors.AddRange(SheetErrors(scenes, record));
@@ -105,7 +105,7 @@ internal static partial class RecordRules
                 yield return $"{where}: {bad}";
             if (SourceError(scenes, fact.Source) is { } source)
                 yield return $"{where}: {source}";
-            if (RecordDates.Error(fact.Value, scenes.CalendarHasYear) is { } date)
+            if (RecordDates.Error(fact.Value) is { } date)
                 yield return $"{where}: {date}";
         }
         for (int i = 0; i < record.Lists.Count; i++)
@@ -120,7 +120,7 @@ internal static partial class RecordRules
                 yield return $"{where}: no text";
             if (SourceError(scenes, entry.Source) is { } source)
                 yield return $"{where}: {source}";
-            if (RecordDates.Error(entry.Text, scenes.CalendarHasYear) is { } date)
+            if (RecordDates.Error(entry.Text) is { } date)
                 yield return $"{where}: {date}";
         }
     }
@@ -155,7 +155,7 @@ internal static partial class RecordRules
                 notes.Add(Waiting(where, never));
         if (SourceError(scenes, row.Source) is { } source)
             yield return $"{where}: {source}";
-        if (record.HasSheetContent && RecordDates.Error(row.When, scenes.CalendarHasYear) is { } date)
+        if (record.HasSheetContent && RecordDates.Error(row.When) is { } date)
             yield return $"{where}: {date}";
         for (int j = 0; j < index; j++)
         {
@@ -298,15 +298,6 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
 
     /// <summary>Whether this book's check takes a person it cannot see as known: shape only, in a campaign that continues another.</summary>
     public bool TakesUnseenSpeakers => _lenient && _unseen;
-
-    /// <summary>Whether the campaign's calendar has a year, read once (<see cref="RecordDates.CalendarHasYear"/>); false for a lenient book.</summary>
-    bool? _hasYear;
-
-    /// <summary>
-    /// Whether a date in the campaign's records needs a year (spec 036 FR-005): its <c>game-state.md</c>'s in-world date
-    /// holds one. A book of shape only cannot see the game state and asks for none.
-    /// </summary>
-    public bool CalendarHasYear => _hasYear ??= !_lenient && campaignFolder.Length > 0 && RecordDates.CalendarHasYear(campaignFolder);
 
     /// <summary>Whether a campaign is one this one continues.</summary>
     /// <param name="name">Its folder name.</param>

@@ -79,7 +79,7 @@ public sealed class RecordFactsTests
             ("""{ "key": "DEX save", "value": "good", "source": "setup" }""", "records/hessa-kettering.json fact 3 (\"DEX save\"): \"good\" is not a save: write the signed number (+3, -1)"),
             ("""{ "key": "Proficiency bonus", "value": "+12", "source": "setup" }""", "records/hessa-kettering.json fact 3 (\"Proficiency bonus\"): \"+12\" is not a proficiency bonus: write +2 to +9"),
             ("""{ "key": "Passive Perception", "value": "-1", "source": "setup" }""", "records/hessa-kettering.json fact 3 (\"Passive Perception\"): \"-1\" is not a passive Perception: write a whole number"),
-            ("""{ "key": "Net ready", "value": "on the 14th", "source": "s6.1" }""", "records/hessa-kettering.json fact 3 (\"Net ready\"): \"the 14th\" has no month: write the full in-world date (the 14th of <month>)"),
+            ("""{ "key": "Net ready", "value": "on the 14th", "source": "s6.1" }""", "records/hessa-kettering.json fact 3 (\"Net ready\"): \"the 14th\" has no month: write the full in-world date (the 14th of <month>, <year> DR)"),
         };
         foreach (var (fact, expected) in cases)
             CollectionAssert.AreEqual(new[] { expected }, Errors(AddFact(fact)), fact);
@@ -94,7 +94,7 @@ public sealed class RecordFactsTests
             """{ "key": "DEX save", "value": "+2 (proficient)", "source": "setup" }""",
             """{ "key": "Proficiency bonus", "value": "+2", "source": "setup" }""",
             """{ "key": "Passive Perception", "value": 12, "source": "setup" }""",
-            """{ "key": "Net ready", "value": "on the 14th of Mirtul", "source": "s6.1" }""",
+            """{ "key": "Net ready", "value": "on the 14th of Mirtul, 1492 DR", "source": "s6.1" }""",
             """{ "key": "Hair", "value": "brown", "source": "player: \"brown hair\"" }""",
         })
             Assert.HasCount(0, Errors(AddFact(fact)), fact);
@@ -111,7 +111,7 @@ public sealed class RecordFactsTests
             Errors(_ => Entry("""{ "list": "Looks", "source": "setup" }""")));
         CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json list 1 (\"Looks\"): no source (a scene such as s4.2, player: \"…\", setup, or inference)" },
             Errors(_ => Entry("""{ "list": "Looks", "text": "Tall." }""")));
-        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json list 1 (\"History\"): \"the 2nd\" has no month: write the full in-world date (the 2nd of <month>)" },
+        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json list 1 (\"History\"): \"the 2nd\" has no month: write the full in-world date (the 2nd of <month>, <year> DR)" },
             Errors(_ => Entry("""{ "list": "History", "text": "Met Pim on the 2nd.", "source": "s1.1" }""")));
     }
 
@@ -136,21 +136,20 @@ public sealed class RecordFactsTests
             { "person": "Pim Kettering", "rows": [ { "kind": "name", "from": "anyone", "word": "Pim", "source": "setup" } ], "limits": [ { "text": "Cannot swim until the 9th.", "source": "s2.5" } ] }
             """);
         Assert.HasCount(0, Errors());
-        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json limit 1: \"the 9th\" has no month: write the full in-world date (the 9th of <month>)" },
+        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json limit 1: \"the 9th\" has no month: write the full in-world date (the 9th of <month>, <year> DR)" },
             Errors(t => t.Replace("\"limits\": []", "\"limits\": [ { \"text\": \"Cannot row until the 9th.\", \"source\": \"s2.5\" } ]")));
-        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json row 2 (\"Mam\"): \"the 3rd\" has no month: write the full in-world date (the 3rd of <month>)" },
+        CollectionAssert.AreEqual(new[] { "records/hessa-kettering.json row 2 (\"Mam\"): \"the 3rd\" has no month: write the full in-world date (the 3rd of <month>, <year> DR)" },
             Errors(t => t.Replace("when she is frightened", "since the 3rd")));
     }
 
     [TestMethod]
-    public void AYearIsNeededWhenTheGameStatesDateHasOne()
+    public void EveryDateNeedsItsYear()
     {
-        File.AppendAllText(Path.Combine(Root, "game-state.md"), "- **In-world date and time**: the 7th of Mirtul, 1492 DR, dawn\n");
-        var errors = Errors();
+        var errors = Errors(t => t.Replace(", 1492 DR", ""));
         CollectionAssert.AreEqual(new[]
         {
-            "records/hessa-kettering.json list 3 (\"What they know\"): \"the 3rd of Mirtul\" has no year: write the full in-world date with its year",
-            "records/hessa-kettering.json list 4 (\"History\"): \"The 5th of Mirtul\" has no year: write the full in-world date with its year",
+            "records/hessa-kettering.json list 3 (\"What they know\"): \"the 3rd of Mirtul\" has no year: write the full in-world date with its year (<year> DR)",
+            "records/hessa-kettering.json list 4 (\"History\"): \"The 5th of Mirtul\" has no year: write the full in-world date with its year (<year> DR)",
         }, errors);
     }
 }

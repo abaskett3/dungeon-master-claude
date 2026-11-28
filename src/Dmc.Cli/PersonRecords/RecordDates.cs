@@ -4,22 +4,35 @@ namespace Dmc.PersonRecords;
 
 /// <summary>
 /// The full-date rule (spec 036 FR-005, data-model.md § Full dates): a date in a record's text holds a full in-world
-/// date, never a day alone. An ordinal day (<c>14th</c>) must have a month after it (<c>the 14th of Eleasis</c>), or end
-/// a range that does (<c>the 8th to the 10th of Flamerule</c>); when the campaign's calendar has a year, the date needs
-/// one after its month too. <c>dmc</c> has no list of month names, so a month is any capitalised word (research R4).
+/// date, never a day alone and never without its year. An ordinal day (<c>14th</c>) must have a month of the Harptos
+/// calendar after it (<c>the 14th of Eleasis</c>), or end a range that does (<c>the 8th to the 10th of Flamerule</c>),
+/// and a year after its month (<c>the 14th of Eleasis, 1493 DR</c>). An ordinal followed straight by another capitalised
+/// word is a name (<c>the 58th Dwarven Company</c>), not a date.
 /// </summary>
 internal static partial class RecordDates
 {
+    /// <summary>The twelve months of the Harptos calendar, the calendar of every campaign (the player's ruling, 2026-11-28).</summary>
+    public static readonly IReadOnlyList<string> Months =
+        ["Hammer", "Alturiak", "Ches", "Tarsakh", "Mirtul", "Kythorn", "Flamerule", "Eleasis", "Eleint", "Marpenoth", "Uktar", "Nightal"];
+
     /// <summary>An ordinal day: one or two digits and <c>st</c>, <c>nd</c>, <c>rd</c> or <c>th</c>, as a whole word.</summary>
     [GeneratedRegex(@"(?<![\w.])(?<day>\d{1,2}(?:st|nd|rd|th))\b", RegexOptions.CultureInvariant)]
     private static partial Regex Ordinal();
 
     /// <summary>
-    /// A month right after a day: an optional <c>of</c>, then a capitalised word; or a month counted in words, <c>of the
+    /// A month right after a day: an optional <c>of</c>, then a Harptos month; or a month counted in words, <c>of the
     /// second month</c> (T034).
     /// </summary>
-    [GeneratedRegex(@"^,?\s+(?:of\s+the\s+[\p{L}-]+\s+month\b|(?:of\s+)?\p{Lu}[\p{L}'’-]*)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^,?\s+(?:of\s+the\s+[\p{L}-]+\s+month\b|(?:of\s+)?(?:Hammer|Alturiak|Ches|Tarsakh|Mirtul|Kythorn|Flamerule|Eleasis|Eleint|Marpenoth|Uktar|Nightal)\b)", RegexOptions.CultureInvariant)]
     private static partial Regex MonthAfter();
+
+    /// <summary><c>of</c> and a capitalised word that is not a Harptos month (<c>the 3rd of Harvestmoon</c>): a month the calendar does not have.</summary>
+    [GeneratedRegex(@"^,?\s+of\s+(?<word>\p{Lu}[\p{L}'’-]*)", RegexOptions.CultureInvariant)]
+    private static partial Regex OtherMonth();
+
+    /// <summary>A capitalised word straight after a day, with no comma or <c>of</c> (<c>the 58th Dwarven</c>): a name, not a date.</summary>
+    [GeneratedRegex(@"^\s+\p{Lu}", RegexOptions.CultureInvariant)]
+    private static partial Regex NameAfter();
 
     /// <summary>
     /// The joint of a range of days, after the first: up to two lower-case words (<c>the 14th night to the 18th</c>, T034),
@@ -32,21 +45,12 @@ internal static partial class RecordDates
     [GeneratedRegex(@"^(?:[,\s]+[\p{L}'’]+){0,3}?[,\s]+\d{3,4}\b", RegexOptions.CultureInvariant)]
     private static partial Regex YearAfter();
 
-    /// <summary>A year in a game state's date line: a number of three or four digits.</summary>
-    [GeneratedRegex(@"(?<!\d)\d{3,4}(?!\d)", RegexOptions.CultureInvariant)]
-    private static partial Regex Year();
-
-    /// <summary>The "In-world date and time" line of <c>game-state.md</c>.</summary>
-    [GeneratedRegex(@"^\s*-\s*\*\*In-world date(?: and time)?\*\*\s*:(?<date>.*)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
-    private static partial Regex DateLine();
-
     /// <summary>
     /// What is wrong with the dates in a text, or null when every date is full: the first ordinal day with no month after
-    /// it, or, when <paramref name="needsYear"/>, with no year after its month.
+    /// it, with a month the Harptos calendar does not have, or with no year after its month.
     /// </summary>
     /// <param name="text">The text of a value, entry, limit or <c>when</c> note.</param>
-    /// <param name="needsYear">True when the campaign's calendar has a year.</param>
-    public static string? Error(string? text, bool needsYear)
+    public static string? Error(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return null;
@@ -62,9 +66,15 @@ internal static partial class RecordDates
             string after = text[(last.Index + last.Length)..];
             var month = MonthAfter().Match(after);
             if (!month.Success)
-                return $"\"{Quote(first, last, text)}\" has no month: write the full in-world date (the {last.Groups["day"].Value} of <month>{(needsYear ? ", <year>" : "")})";
-            if (needsYear && !YearAfter().IsMatch(after[month.Length..]))
-                return $"\"{Quote(first, last, text)}{month.Value}\" has no year: write the full in-world date with its year";
+            {
+                if (OtherMonth().Match(after) is { Success: true } other)
+                    return $"\"{Quote(first, last, text)} of {other.Groups["word"].Value}\": {other.Groups["word"].Value} is not a month of the Harptos calendar ({string.Join(", ", Months)})";
+                if (first == last && NameAfter().IsMatch(after))
+                    continue;
+                return $"\"{Quote(first, last, text)}\" has no month: write the full in-world date (the {last.Groups["day"].Value} of <month>, <year> DR)";
+            }
+            if (!YearAfter().IsMatch(after[month.Length..]))
+                return $"\"{Quote(first, last, text)}{month.Value}\" has no year: write the full in-world date with its year (<year> DR)";
         }
         return null;
     }
@@ -78,24 +88,4 @@ internal static partial class RecordDates
         int start = first.Index >= 4 && text.AsSpan(first.Index - 4, 4).Equals("the ", StringComparison.OrdinalIgnoreCase) ? first.Index - 4 : first.Index;
         return text[start..(last.Index + last.Length)];
     }
-
-    /// <summary>
-    /// Whether a campaign's calendar has a year: its <c>game-state.md</c>'s "In-world date and time" line holds a number of
-    /// three or four digits (research R4). False when the file or the line is missing.
-    /// </summary>
-    /// <param name="campaignFolder">The campaign folder.</param>
-    public static bool CalendarHasYear(string campaignFolder)
-    {
-        string path = Path.Combine(campaignFolder, "game-state.md");
-        if (!File.Exists(path))
-            return false;
-        foreach (string line in File.ReadLines(path))
-            if (DateLine().Match(line) is { Success: true } m)
-                return Year().IsMatch(Comment().Replace(m.Groups["date"].Value, ""));
-        return false;
-    }
-
-    /// <summary>An HTML comment, left out of the date line.</summary>
-    [GeneratedRegex("<!--.*?-->", RegexOptions.CultureInvariant)]
-    private static partial Regex Comment();
 }

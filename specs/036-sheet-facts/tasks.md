@@ -80,6 +80,7 @@ Nettlebone, Quenby Tolliver).
 - [X] T034 The date rule takes up to two words before a range's joint ("the 14th night to the 18th of Eleasis") and "of the <ordinal> month", the two kinds of false hit SC-002's sample found
 - [X] T037 `dmc-generate-image-prompt` reads a sheet held in a record with `dmc records show --all`
 - [ ] T038 A sheet's title bracket (`# Rorn (Hysvearorn)`) is lost in the print, which titles it with the record's person (`Rorn`): keep the sheet's full title (a `title` field, or the migration keeps it as a fact) so Party status blocks and `dmc sheet` still match it
+- [X] T039 Every date has a year, always (the player's ruling, 2026-11-28), and a month is a Harptos month (`RecordDates.Months`): drop `CalendarHasYear`; an ordinal followed straight by another capitalised word is a name; tests, fixtures, migration 011 step 5, `records-format.md`, the docs
 - [X] T035 `dmc size` measures a printed sheet with its source marks, which the resume reads, and compares the budget without them (`Part.MarkCharacters`, `Part.BudgetTokens`; #262)
 
 ## Dependencies

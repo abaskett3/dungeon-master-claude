@@ -27,8 +27,8 @@ internal static class SheetFixtures
           "lists": [
             { "list": "Looks", "text": "Grey shawl, a net needle behind one ear.", "card": true, "source": "s1.2" },
             { "list": "Voice", "text": "Slow, dry; ends a sentence with \"so.\" \"Sit, Pim, so.\" (to Pim Kettering)", "card": true, "source": "s1.2" },
-            { "list": "What they know", "text": "The smugglers land at the north stair on the 3rd of Mirtul.", "section": "What they know", "source": "s4.1" },
-            { "list": "History", "text": "The 5th of Mirtul: mended Pim's sail for nothing.", "section": "History", "source": "s5.1" }
+            { "list": "What they know", "text": "The smugglers land at the north stair on the 3rd of Mirtul, 1492 DR.", "section": "What they know", "source": "s4.1" },
+            { "list": "History", "text": "The 5th of Mirtul, 1492 DR: mended Pim's sail for nothing.", "section": "History", "source": "s5.1" }
           ]
         }
         """;

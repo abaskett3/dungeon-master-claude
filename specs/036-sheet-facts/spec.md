@@ -42,8 +42,8 @@ and their limits. The rest of a sheet is still free Markdown with no source on a
   already has when a new one is added), and free text in lists, one entry one fact with a source (#263 items 2 to 4).
 - Q: The format? → A: JSON (#263 item 11).
 - Q: The order? → A: Part A, then part B, then `game-state.md` (#264), the session logs last.
-- Q: Dates? → A: A fact with a date holds a full in-world date: day, month and year where the calendar has one, never
-  a day alone. `dmc` refuses one that lacks one of them (#291, feedback of 2026-11-26).
+- Q: Dates? → A: A fact with a date holds a full in-world date: day, month and year (ruled by the player,
+  2026-11-28: always a year, so memories can tell one year's Midwinter from the next), never a day alone. `dmc` refuses one that lacks one of them (#291, feedback of 2026-11-26).
 
 ### Session 2026-11-28 (`/speckit-specify` and `/speckit-clarify`, unattended: ASSUMED answers)
 
@@ -64,11 +64,11 @@ player confirms or changes each before the PR.
   (`src/Dmc.Cli/Sheets/SheetCheck.cs:244`): the six ability scores (`STR` to `CHA`, a whole number 1 to 30), their
   saves (`STR save` to `CHA save`, a signed number), `Proficiency bonus` (signed, +2 to +9) and `Passive Perception`
   (a whole number). Any other key is stored, sourced and printed as it is.
-- Q: How does `dmc` know which facts hold a date, and whether the calendar has a year? → **ASSUMED**: a date is an
-  ordinal day (`14th`) in any value or entry text, and in part A's limits and `when` notes. It must have a month
-  after it (`the 14th of Eleasis`), or end a range that does (`the 8th to the 10th of Flamerule`). The calendar has a
-  year when `game-state.md`'s "In-world date and time" line holds one (a number of three or four digits); then the
-  date needs one too. The long campaign's dates have no year ("the 18th of Eleasis"), so there it needs none.
+- Q: How does `dmc` know which facts hold a date? → **ASSUMED** (the year part ruled by the player, 2026-11-28): a
+  date is an ordinal day (`14th`) in any value or entry text, and in part A's limits and `when` notes. It must have a
+  Harptos month after it (`the 14th of Eleasis`), or end a range that does (`the 8th to the 10th of Flamerule`), and
+  a year after the month (`1493 DR`). An ordinal followed straight by another capitalised word (`the 58th Dwarven`) is
+  a name. The campaigns' calendar becomes Harptos in its own spec and migration 012.
 - Q: What counts as "a new key" for the note? → **ASSUMED**: a fact key, or a list name, that the record did not have
   before the edit. The note lists the record's keys and lists, and names any key that shares a word with the new
   one ("Hair colour" and "Hair").
@@ -100,20 +100,17 @@ with one line.
 
 ### User Story 2 - A date with no month is refused (Priority: P1)
 
-DMC writes "ready on the 14th" in an item's entry. The edit is refused: the date needs its month (and its year
-where the calendar has one).
+DMC writes "ready on the 14th" in an item's entry. The edit is refused: the date needs its month and its year.
 
 **Why this priority**: it is the slip of 2026-11-25.
 
-**Independent Test**: an edit that adds "ready on the 14th" is refused; "ready on the 14th of Eleasis" stands.
+**Independent Test**: an edit that adds "ready on the 14th" is refused; "ready on the 14th of Eleasis, 1493 DR" stands.
 
 **Acceptance Scenarios**:
 
-1. **Given** a campaign whose in-world date has no year, **When** an entry says "the 14th of Eleasis", **Then** it
-   stands.
-2. **Given** a campaign whose in-world date is "the 14th of Eleasis, 1492 DR", **When** an entry says "the 14th of
-   Eleasis", **Then** it is refused for want of a year.
-3. **Given** "the 8th to the 10th of Flamerule", **Then** it stands: the range ends with a month.
+1. **Given** an entry that says "the 14th of Eleasis, 1493 DR", **Then** it stands.
+2. **Given** an entry that says "the 14th of Eleasis", **Then** it is refused for want of a year.
+3. **Given** "the 8th to the 10th of Flamerule, 1493 DR", **Then** it stands: the range ends with a month and a year.
 
 ---
 
@@ -191,8 +188,8 @@ reads JSON to check a sheet.
   logs do not have, and checks a new quotation of the player against the session's messages, as for rows.
 - **FR-005 (full dates)**: An ordinal day (`14th`, `1st`) in a fact's value, a list entry, and, on a record that holds
   a sheet, a limit's text or a row's `when` (so a standard 10 record is checked as before) must have a month after it (`of Eleasis` or `Eleasis`), or end a range that does (`the 8th to the 10th of
-  Flamerule`, `the 5th and 6th of Kythorn`). When `game-state.md`'s "In-world date and time" line holds a year, each
-  such date needs a year after its month too. `dmc` refuses the record in one line that names the entry and the day.
+  Flamerule`, `the 5th and 6th of Kythorn`); the month is one of the Harptos calendar, and a year follows it
+  (`1493 DR`). `dmc` refuses the record in one line that names the entry and the day.
 - **FR-006 (the keys note)**: When an edit adds a fact key or a list name the record did not have, the edit stands
   and `dmc` adds one line to DMC's context: the record's other keys and lists, and any that shares a word with the
   new one.

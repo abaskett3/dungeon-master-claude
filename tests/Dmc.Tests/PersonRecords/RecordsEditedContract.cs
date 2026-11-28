@@ -76,6 +76,36 @@ public abstract class RecordsEditedContract
         StringAssert.StartsWith(notSaid.Stderr, "dmc records: records/pim-kettering.json row 3: the player's words \"Benno always calls her that\" are not in this session's messages");
     }
 
+    /// <summary>
+    /// T058: a quotation of the player from an earlier session stays when its row moves or another row is deleted; only
+    /// a quotation the edit's new text adds is looked for in this session's messages.
+    /// </summary>
+    [TestMethod]
+    public void AnOldQuotationIsNotNewWhenItsRowMovesOrAnotherIsDeleted()
+    {
+        string earlier = RecordFixtures.Log(_folder, "OOC: Grumbald calls Pim \"Thimble\", he said it when she sewed his glove.");
+        const string quoted = """{ "kind": "usage", "from": "Grumbald", "word": "Thimble", "source": "player: \"he said it when she sewed his glove\"" }""";
+        Assert.AreEqual(0, EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + quoted, earlier).ExitCode);
+
+        string today = RecordFixtures.Log(_folder, "We pole on downriver.");
+        const string added = """{ "kind": "usage", "from": "Benno Kettering", "word": "Pipsqueak", "source": "s6.2" }""";
+        var moved = EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + added, today);
+        Assert.AreEqual(0, moved.ExitCode, "the quoted row is now row 3: " + moved);
+        var deleted = EditRecord("pim-kettering.json", ",\n    " + added, "", today);
+        Assert.AreEqual(0, deleted.ExitCode, "a deleting edit adds no quotation: " + deleted);
+    }
+
+    /// <summary>T059: a row whose speaker has a sheet and no record yet stands with a note, so two records that name each other can be written one at a time.</summary>
+    [TestMethod]
+    public void ASpeakerWithASheetAndNoRecordYetStandsWithANote()
+    {
+        File.WriteAllText(Path.Combine(Root, "character-sheets", "npc-orrin-flax.md"), "# Orrin Flax\n\n## Play card\n");
+        var result = EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + """{ "kind": "usage", "from": "Orrin Flax", "word": "Pip", "source": "s3.3" }""");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        var output = System.Text.Json.Nodes.JsonNode.Parse(result.Stdout)!["hookSpecificOutput"]!;
+        Assert.AreEqual("dmc records: records/pim-kettering.json row 2 (\"Pip\"): \"Orrin Flax\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then).", (string?)output["additionalContext"]);
+    }
+
     [TestMethod]
     public void AWordForTwoPersonsToOneSpeakerStandsWithANote()
     {

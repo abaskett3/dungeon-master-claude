@@ -76,7 +76,9 @@ internal static partial class RecordEdit
     static Outcome Record(string folder, string campaign, string campaignFolder, string path, JsonElement tool, string toolName, string? oldText, string? newText, string? transcript)
     {
         var loaded = RecordFiles.Read(campaignFolder);
-        var outcome = RecordRules.Check(SceneBook.For(folder, campaign), loaded.Records);
+        // A person with a sheet and no record yet is a note here, not a refusal (T059), so two records that name each
+        // other can be written one at a time; the full save's check still refuses the row until the record exists.
+        var outcome = RecordRules.Check(SceneBook.For(folder, campaign), loaded.Records, RecordCheck.SheetTitles(campaignFolder).ToList());
         var errors = loaded.Errors.Concat(outcome.Errors).ToList();
         if (errors.Count > 0)
             return new Outcome($"dmc records: {errors[0]}. Fix the record now, or put it back as it was.", null);
@@ -92,7 +94,7 @@ internal static partial class RecordEdit
         RecordFiles.Parse(campaign, fileName, before, out var previous);
         var current = loaded.Records.FirstOrDefault(r => r.FileName.Equals(fileName, StringComparison.Ordinal));
 
-        var added = Quotations(current).Except(Quotations(previous)).ToList();
+        var added = NewQuotations(current, toolName, tool);
         if (added.Count > 0 && !string.IsNullOrEmpty(transcript))
         {
             string log = Commands.ContextCheckCommand.ExpandUser(transcript, OperatingSystem.IsWindows());
@@ -110,6 +112,57 @@ internal static partial class RecordEdit
         var fresh = outcome.Notes.Except(notesBefore, StringComparer.Ordinal).ToList();
         return fresh.Count > 0 ? new Outcome(null, "dmc records: " + string.Join(" ", fresh)) : Outcome.Pass;
     }
+
+    /// <summary>
+    /// The quotations of the player this edit adds (T058), found by their words, not by where they are, so a row that
+    /// moves keeps its old quotation: for an Edit or a MultiEdit, those of the record whose words the edit's new text
+    /// holds more often than its old text, so a deleting Edit adds none; for a Write, every quotation of the record
+    /// (a Write creates a record, FR-006; one over an existing record is checked whole).
+    /// </summary>
+    /// <param name="current">The record as it is now, or null.</param>
+    /// <param name="toolName">The tool's name.</param>
+    /// <param name="tool">The hook's <c>tool_input</c>.</param>
+    static List<(string Where, string Words)> NewQuotations(PersonRecord? current, string toolName, JsonElement tool)
+    {
+        var all = Quotations(current).ToList();
+        if (toolName is not ("Edit" or "MultiEdit"))
+            return all;
+        List<(string Old, string New)> edits = toolName == "Edit"
+            ? [(RecordFiles.String(tool, "old_string") ?? "", RecordFiles.String(tool, "new_string") ?? "")]
+            : tool.TryGetProperty("edits", out var list) && list.ValueKind == JsonValueKind.Array
+                ? list.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.Object)
+                    .Select(e => (RecordFiles.String(e, "old_string") ?? "", RecordFiles.String(e, "new_string") ?? "")).ToList()
+                : [];
+        string oldText = FoldText(string.Join("\n", edits.Select(e => JsonUnescape(e.Old))));
+        string newText = FoldText(string.Join("\n", edits.Select(e => JsonUnescape(e.New))));
+        return all.Where(q => Count(newText, FoldText(q.Words)) > Count(oldText, FoldText(q.Words))).ToList();
+    }
+
+    /// <summary>How many times a text holds some words, not overlapping; none for empty words.</summary>
+    /// <param name="text">The text.</param>
+    /// <param name="words">The words.</param>
+    static int Count(string text, string words)
+    {
+        if (words.Length == 0)
+            return 0;
+        int n = 0;
+        for (int at = text.IndexOf(words, StringComparison.Ordinal); at >= 0; at = text.IndexOf(words, at + words.Length, StringComparison.Ordinal))
+            n++;
+        return n;
+    }
+
+    /// <summary>A piece of a JSON file's text with its string escapes undone (<c>\"</c>, <c>\\</c>, <c>\n</c>, <c>’</c>), so it reads as the values do.</summary>
+    /// <param name="text">The raw text, such as an Edit's <c>new_string</c>.</param>
+    static string JsonUnescape(string text) => JsonEscape().Replace(text, m => m.Groups[1].Value switch
+    {
+        { Length: 5 } hex => ((char)Convert.ToInt32(hex[1..], 16)).ToString(),
+        "n" or "r" or "t" => " ",
+        var c => c,
+    });
+
+    /// <summary>A JSON string escape: a backslash and the character, or <c>u</c> and four hex digits.</summary>
+    [GeneratedRegex(@"\\(u[0-9a-fA-F]{4}|.)", RegexOptions.CultureInvariant)]
+    private static partial Regex JsonEscape();
 
     /// <summary>Each quotation of the player a record's rows and limits give as their source, with where it is.</summary>
     /// <param name="record">The record, or null for none.</param>

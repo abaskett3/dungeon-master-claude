@@ -2,7 +2,7 @@
 
 A part of the hook's output after the canon reminder, printed only in a campaign with `records/`. It never fails: on
 any error it prints nothing (`ContextCheckCommand.Quietly`). Its own cap is 2,400 bytes: word lines first, then the
-person blocks. Every due person's "says" line comes before the rest of any block and may take the part past its cap, up
+person blocks. Every due person's "says" line and limits line (T057) come before the rest of any block and may take the part past its cap, up
 to what the hook's whole output (9,500 bytes) has left; the rest of each block is printed whole while the part stays
 within its cap (T055, found by SC-003's run, 2026-11-27: in one pass a long block, most of it what others call that
 person, left no room for the next, and one risk speaker's block was never printed).
@@ -18,7 +18,7 @@ For each row word in the player's message (whole, ignoring case, longest first),
 
 ## Person blocks (once per scene)
 
-A header with the scene's key (an 8-hex hash of the Present text) and the persons due, then one block each:
+A header with the scene's key (an 8-hex hash of who is present, in name order, so an HP change in the Combat tracker is not a new scene; T056) and the persons due, then one block each:
 
 ```
 Called, scene 3fa91c0d (who says what for whom here; dmc records show for more): Pim Kettering; Hessa Kettering

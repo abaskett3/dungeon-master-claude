@@ -22,8 +22,8 @@ internal static partial class RecordFiles
     /// <summary>The keys a limit may have.</summary>
     static readonly string[] LimitKeys = ["text", "source"];
 
-    /// <summary>A run of characters that are not lower-case letters or digits, for the slug.</summary>
-    [GeneratedRegex("[^a-z0-9]+", RegexOptions.CultureInvariant)]
+    /// <summary>A run of characters that are not lower-case or other letters, their marks or digits, for the slug.</summary>
+    [GeneratedRegex(@"[^\p{Ll}\p{Lo}\p{Lm}\p{Mn}\p{Nd}]+", RegexOptions.CultureInvariant)]
     private static partial Regex NotSlug();
 
     /// <summary>The records of a campaign and the files that could not be read.</summary>
@@ -31,7 +31,11 @@ internal static partial class RecordFiles
     /// <param name="Errors">One line per file that is not a JSON object with a person, first file first.</param>
     internal sealed record Loaded(List<PersonRecord> Records, List<string> Errors);
 
-    /// <summary>The file name of a person's record: their name in lower case, each run of other characters a hyphen.</summary>
+    /// <summary>
+    /// The file name of a person's record: their name in lower case, its letters, their marks and digits kept, those
+    /// outside ASCII too, so two names never share one (T063: "Éla" and "Íla" were both <c>la.json</c>); each run of
+    /// other characters a hyphen. Not normalized: <c>dmc</c> runs in invariant globalization mode, which does not compose.
+    /// </summary>
     /// <param name="person">The person's full name.</param>
     public static string Slug(string person) => NotSlug().Replace(person.ToLowerInvariant(), "-").Trim('-') + ".json";
 

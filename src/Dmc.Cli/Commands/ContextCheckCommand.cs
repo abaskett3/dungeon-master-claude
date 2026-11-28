@@ -19,12 +19,24 @@ namespace Dmc.Commands;
 /// FR-011, <see cref="OocReminder"/>). Last, for a message that names a sheet, how to show one in one line (spec 031
 /// FR-019, <see cref="SheetRequestReminder"/>).
 /// <para>
+/// The whole output stays within <see cref="OutputCapBytes"/>: Claude Code (2.1.317) passes a longer hook output to the
+/// model only as a 2 KB preview and a file path. The one-line parts and the rows always print; canon gets what they
+/// leave, up to its own cap, and the sheet lines what is left after that. A part that runs short leaves a whole person
+/// out, who is due again on the next message (spec 032).
+/// </para>
+/// <para>
 /// It never gets in the way of a prompt: on any error (bad input, a missing or unreadable log) it prints nothing
 /// and exits 0.
 /// </para>
 /// </summary>
 public sealed class ContextCheckCommand : ICommand
 {
+    /// <summary>
+    /// The most bytes (UTF-8, with line ends) the hook prints in all: below Claude Code's limit for a hook's output, over
+    /// which the model gets only a 2 KB preview (2.1.317: 9,018 characters passed whole, 12,022 did not; spec 032).
+    /// </summary>
+    public const int OutputCapBytes = 9_500;
+
     /// <inheritdoc />
     public string Name => "context-check";
 
@@ -63,11 +75,20 @@ public sealed class ContextCheckCommand : ICommand
         // A fresh log (spec 019 FR-005): no call yet and no compaction, so the resume that follows reads the sheets.
         // A log whose latest thing is a compaction is not fresh: the sheet lines print there as before.
         bool fresh = reading.Size == 0 && TranscriptPath(input) is { } log && Quietly(() => TranscriptReader.IsFresh(log), false);
-        var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh), SheetReminder.Found.None);
-        var reminder = Quietly(() => CanonReminder.For(input, project, sheets.WithoutFields), new List<string>());
-        var rows = fresh ? [] : Quietly(() => RowsReminder.For(input, project), new List<string>());
         string ooc = Quietly(() => OocReminder.For(input), "");
         string sheetRequest = Quietly(() => SheetRequestReminder.For(input), "");
+        var rows = fresh ? [] : Quietly(() => RowsReminder.For(input, project), new List<string>());
+        // The output's cap (OutputCapBytes): the one-line parts and the rows first, then canon, then the sheet lines.
+        int left = OutputCapBytes - Bytes([line, ooc, sheetRequest]) - Bytes(rows);
+        var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh), SheetReminder.Found.None);
+        int canonCap = Math.Max(0, Math.Min(CanonReminder.CapBytes, left));
+        var reminder = Quietly(() => CanonReminder.For(input, project, sheets.WithoutFields, canonCap), new List<string>());
+        left -= Bytes(reminder);
+        if (Bytes(sheets.Lines) > left)
+        {
+            int sheetCap = Math.Max(0, left);
+            sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh, sheetCap), SheetReminder.Found.None);
+        }
         if (line.Length > 0)
             io.Out.WriteLine(line);
         foreach (string text in reminder.Concat(rows).Concat(sheets.Lines))
@@ -78,6 +99,10 @@ public sealed class ContextCheckCommand : ICommand
             io.Out.WriteLine(sheetRequest);
         return 0;
     }
+
+    /// <summary>The bytes some lines take when printed: each one's UTF-8 and its line end; an empty line is not printed and takes none.</summary>
+    /// <param name="lines">The lines.</param>
+    static int Bytes(IEnumerable<string> lines) => lines.Where(l => l.Length > 0).Sum(Recall.Bytes);
 
     /// <summary>A part of the output, or <paramref name="none"/> on any failure: a hook must never fail or block a message (spec 013 FR-017).</summary>
     /// <typeparam name="T">The part's type.</typeparam>

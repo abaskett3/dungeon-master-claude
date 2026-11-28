@@ -47,6 +47,27 @@ public sealed class RunnerTests
         Assert.IsEmpty(Directory.EnumerateFiles(Folders.Project(f.ClaudeHome, f.Copy)));
     }
 
+    /// <summary>
+    /// #289 defect 1, spec 032: each run continues its own base log in place, never with <c>--fork-session</c>, so the
+    /// hook's transcript exists when the hook runs (with a fork, Claude Code 2.1.317 names a log it has not written yet,
+    /// and <c>dmc context-check</c> prints nothing); the run's log is that log, kept in the work folder.
+    /// </summary>
+    [TestMethod]
+    public void EachRunContinuesItsOwnBaseLogSoTheHooksTranscriptExists()
+    {
+        using var f = new SlipTestFixtures();
+        var fake = new FakeClaude(f.ClaudeHome);
+        f.Run(null, "prepare");
+        Assert.AreEqual(0, f.Run(fake, "run").Code);
+        Assert.IsTrue(fake.TranscriptExisted.All(e => e), "every run's transcript existed");
+        Assert.IsTrue(fake.Calls.All(c => !ClaudeRunner.Arguments(c.Call).Contains("--fork-session")));
+        var rows = RunRow.ReadAll(f.Work);
+        Assert.IsTrue(rows.All(r => r.Session == fake.Calls[rows.IndexOf(r)].Call.Resume), "the run's session is the base log's id");
+        var fork = LogFile.Read(Path.Combine(f.Work, "runs", "treatment", "p1-1.jsonl"));
+        Assert.IsTrue(fork.LastTyped(SlipTestFixtures.ForkText) >= 0, "the kept log holds the replayed message");
+        Assert.IsEmpty(Directory.EnumerateFiles(Folders.Project(f.ClaudeHome, f.Copy)));
+    }
+
     [TestMethod]
     public void TheForkResumesALogThatHoldsTheArmsRules()
     {
@@ -162,6 +183,12 @@ public sealed class RunnerTests
         var (code, output, _) = f.Run(null, "pilot");
         Assert.AreEqual(1, code);
         StringAssert.Contains(output, "thinking p1 all 1: fail:");
+        // Spec 032: a difference allow.tsv documents, arm by arm, passes as documented (fresh mode's arms have their own bases).
+        File.WriteAllText(Path.Combine(f.Work, "allow.tsv"),
+            "thinking\tcontrol sent 1 dropped 0\teach arm resumes its own base\nthinking\ttreatment sent 1 dropped 1\teach arm resumes its own base\n");
+        (code, output, _) = f.Run(null, "pilot");
+        Assert.AreEqual(0, code, output);
+        StringAssert.Contains(output, "thinking p1 all 1: documented:");
     }
 
     [TestMethod]

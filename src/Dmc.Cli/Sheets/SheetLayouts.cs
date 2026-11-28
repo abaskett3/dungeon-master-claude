@@ -41,6 +41,12 @@ internal sealed record PartySource(string Label) : BoxSource;
 /// <summary>The PC's history: the sheet's history section and <c>&lt;sheet name&gt;-history.md</c>, with <c>--history</c> only.</summary>
 internal sealed record HistorySource : BoxSource;
 
+/// <summary>
+/// The limits on the character's record (spec 032 FR-009): what they cannot do, true and safe to show. The record's rows
+/// are not printed, as the sheet's old "Names they use" was not: they may hold names the PC has not heard.
+/// </summary>
+internal sealed record LimitsSource : BoxSource;
+
 /// <summary>One box of a layout.</summary>
 /// <param name="Title">What the printed box is called.</param>
 /// <param name="Source">The one place it is filled from.</param>
@@ -206,7 +212,7 @@ internal static class SheetLayouts
             new Box("Attacks", new AttackTableSource(), Wide: true)]),
         Now,
         new("Proficiencies", [F("Languages", "Abilities", wide: true), F("Tool and other proficiencies", "Abilities", wide: true)]),
-        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true)]),
+        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true), LimitsBox]),
         new("Spellcasting", [
             F("Casting ability, save DC, attack bonus", "Spellcasting", wide: true), F("Slots per level", "Spellcasting", wide: true),
             F("Cantrips", "Spellcasting", wide: true), F("Prepared or known spells", "Spellcasting", wide: true),
@@ -236,7 +242,7 @@ internal static class SheetLayouts
         Now,
         new("About them", [
             F("Appearance", "Playing them", wide: true), F("Personality", "Playing them", wide: true),
-            new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true)]),
+            new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true), LimitsBox]),
     ];
 
     /// <summary>The layout of a companion whose sheet follows the PC template: the play card, then the PC's panels, its story cut to what is not a spoiler.</summary>
@@ -258,7 +264,7 @@ internal static class SheetLayouts
             new Box("Attacks", new AttackTableSource(), CardHeld: true, Wide: true)]),
         Now,
         new("Proficiencies", [F("Languages", "Abilities", wide: true), F("Tool and other proficiencies", "Abilities", wide: true)]),
-        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true)]),
+        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true), LimitsBox]),
         new("Spellcasting", [
             F("Casting ability, save DC, attack bonus", "Spellcasting", wide: true), F("Slots per level", "Spellcasting", wide: true),
             F("Cantrips", "Spellcasting", wide: true), F("Prepared or known spells", "Spellcasting", wide: true),
@@ -269,6 +275,12 @@ internal static class SheetLayouts
             new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true)]),
         new("About them", [F("Appearance", "Story", wide: true), F("Personality", "Story", wide: true)]),
     ];
+
+    /// <summary>
+    /// The limits box, the same on every layout: last in "Features and traits", or in "About them" on a layout without
+    /// that panel. A character with no record, or a record with no limits, prints <see cref="SheetHtml.None"/>.
+    /// </summary>
+    static Box LimitsBox => new("Limits (from their record)", new LimitsSource(), Wide: true);
 
     /// <summary>The play card's exported fields, the same on both companion layouts.</summary>
     static Panel CardPanel => new("Play card", [

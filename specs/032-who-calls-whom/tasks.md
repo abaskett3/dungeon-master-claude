@@ -116,7 +116,7 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 **Independent Test**: the text view of a fixture record matches contracts/dmc-records.md.
 
 - [X] T031 [US6] Write `src/Dmc.Cli/PersonRecords/RecordText.cs` and `dmc records show <campaign> [<person>...]` (Called, relationships from both sides, the words the person uses for others, limits, each with its source)
-- [ ] T032 [US6] Show the Called list and the limits from the record in `dmc sheet` (`src/Dmc.Cli/Sheets/SheetExport.cs`, `SheetHtml.cs`, `SheetText.cs` as needed), spoiler-free as the sheet is
+- [X] T032 [US6] Show the limits from the record in `dmc sheet` (the player ruled: limits only, not the Called list; FR-009 amended) (`src/Dmc.Cli/Sheets/SheetExport.cs`, `SheetHtml.cs`, `SheetText.cs` as needed), spoiler-free as the sheet is
 - [X] T033 [US6] In `kit/skills/dmc-resume-campaign/SKILL.md`, read the text view of the records of the persons in the party (`dmc records show <campaign> <names>`) in place of the play card's Names line
 - [X] T034 [P] [US6] Extend `tests/Dmc.Tests/PersonRecords/RecordsCommandContract.cs` for `show`, and the sheet export tests in `tests/Dmc.Tests/Sheets/`
 
@@ -149,6 +149,9 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [ ] T048 **This computer**: SC-001's probes and "Nytha?" on the migrated copy; SC-002 (the four known cases, a hand check of every finding at 20% or fewer false, planted errors in a second copy)
 - [ ] T049 If the change alters how DMC plays (CLAUDE.md § Git and GitHub, "Slip test", says what counts), run the slip test against the pass line in the issue and put the result in the PR: SC-003 with the pass line, fork points and runs fixed on #263 (comment of 2026-11-26), against a control at the same time, after checking for other slip-test runs on this computer
 - [ ] T050 `/speckit-converge` until a pass adds no tasks, after the tests and again after the code review's fixes
+- [X] T051 SC-003's pilot found no hook output in any fork: run each slip-test run on its own base log in place, with no `--fork-session`, so the hook's transcript exists (`src/Dmc.SlipTest/ClaudeRunner.cs`, `Runner.cs`; the stand-in in `tests/Dmc.Tests/SlipTest/SlipTestFixtures.cs`; `RunnerTests.EachRunContinuesItsOwnBaseLogSoTheHooksTranscriptExists`), and note on #289 that it is its defect 1
+- [X] T052 Cap `dmc context-check`'s whole output at 9,500 bytes (FR-005): the one-line parts and the rows first, then canon, then the sheet lines (`src/Dmc.Cli/Commands/ContextCheckCommand.cs`, `Retrieval/CanonReminder.cs`, `Retrieval/SheetReminder.cs`; `SheetReminderContract.TheWholeOutputStaysWithinTheHooksCapAndTheShortLinesAlwaysPrint`); SC-003's control is 0.4.3 with the same cap and nothing else
+- [X] T053 The pilot's thinking check takes a difference `allow.tsv` documents arm by arm (`src/Dmc.SlipTest/PilotCheck.cs`; `RunnerTests.ThinkingThatDiffersBetweenArmsFailsThePilot`)
 
 ---
 

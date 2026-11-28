@@ -81,7 +81,7 @@ public sealed class ScoringTests
     public void TheCommandLineCarriesTheOriginalsSettings()
     {
         CollectionAssert.AreEqual(
-            new[] { "-p", "--output-format", "json", "--resume", "id", "--fork-session", "--model", "m", "--effort", "high", "--permission-mode", "auto" },
+            new[] { "-p", "--output-format", "json", "--resume", "id", "--model", "m", "--effort", "high", "--permission-mode", "auto" },
             ClaudeRunner.Arguments(new ClaudeCall("id", "m", "high", "auto")));
         CollectionAssert.AreEqual(new[] { "-p", "--output-format", "json" }, ClaudeRunner.Arguments(new ClaudeCall(null, null, null, null)));
     }

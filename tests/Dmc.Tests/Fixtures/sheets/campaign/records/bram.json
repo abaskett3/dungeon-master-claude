@@ -1,0 +1,17 @@
+{
+  "person": "Bram",
+  "rows": [
+    {
+      "kind": "name",
+      "from": "anyone",
+      "word": "SPOILER-TRUE-NAME",
+      "source": "s1"
+    }
+  ],
+  "limits": [
+    {
+      "text": "Cannot swim",
+      "source": "s1"
+    }
+  ]
+}

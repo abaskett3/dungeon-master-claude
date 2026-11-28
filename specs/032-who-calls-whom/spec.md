@@ -238,7 +238,9 @@ corrects them, or asks the player, before they reach play.
   A person's rows and limits are printed once per scene, for each person present or named: a change in who is present
   (the Present line) starts a new scene. A row whose word is in the message is printed each time the word appears,
   so an ambiguous word is never left unresolved. The hook never fails or blocks a message. Its extra tokens per average play turn are measured against
-  the present output.
+  the present output. Its whole output stays within 9,500 bytes, below the size over which Claude Code passes a hook's
+  output only as a 2 KB preview: the one-line parts and the rows first, then canon, then the sheet lines; a part that
+  runs short leaves a whole person out (found by SC-003's pilot, 2026-11-27).
 - **FR-006 (writing)**: DMC changes a record with Edit on its JSON file, and creates one with Write. Right after each
   edit of a record, `dmc` checks every record of the campaign. On a bad one it refuses in one line (the file, the
   row, what is wrong) and DMC fixes or undoes the change before it replies. A usage that makes one word mean two
@@ -289,7 +291,8 @@ corrects them, or asks the player, before they reach play.
   It names at least one shape check that fails on a campaign left in the old shape.
 - **FR-009 (the text view)**: `dmc` prints a record as text: Called (word, who says it, when, never), relationships
   from both sides, the words the person uses for others, and limits, each with its source. `dmc sheet` (#191) shows
-  the Called list and the limits from the record.
+  the limits from the record, not its Called list: a Called list may hold a name the PC has not heard, as the old
+  "Names they use" could (the player's ruling, 2026-11-27).
 - **FR-010 (resume and full save)**: The resume reads the text view of the records of the persons in the party, in
   place of the play card's Names line. The full save runs the check of FR-007 and acts on its findings.
 - **FR-011 (documents)**: These change in the same PR:

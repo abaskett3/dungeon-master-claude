@@ -91,6 +91,20 @@ public abstract class SheetCommandContract
         Assert.Contains("left the barges", html, "and the history file the full save moved it to");
     }
 
+    /// <summary>Spec 032 FR-009: the limits on each character's record print in their box; its rows (who calls them what) never do; a character with no record prints none.</summary>
+    [TestMethod]
+    public void TheRecordsLimitsArePrintedAndItsRowsAreNot()
+    {
+        Assert.AreEqual(0, Sheet("--party").ExitCode);
+        string html = File.ReadAllText(Page(Root, "party.html"));
+        Assert.Contains("<li>Reads no <em>Elvish</em> script</li><li>Never rides a horse</li>", html, "Ana's limits, in the record's order");
+        Assert.Contains("<li>Cannot swim</li>", html, "Bram's");
+        Assert.DoesNotContain("SPOILER-TRUE-NAME", html);
+        Assert.DoesNotContain("SPOILER-BRAMS-WORD", html);
+        string[] sheets = html.Split("<section class=\"sheet\">");
+        Assert.Contains("<h3>Limits (from their record)</h3><div class=\"v\"><p class=\"empty\">none</p>", sheets[3], "Cora has no record");
+    }
+
     [TestMethod]
     public void HistoryIsLeftOutUnlessAskedFor()
     {

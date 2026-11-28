@@ -1023,3 +1023,21 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Cost:** `kit/dm-rules.md` −21 bytes (lines 78 and 81 point to the record). The resume skill +190 bytes, the full save +230, the sheet-update skill +600 net, `records-format.md` about 3,300 bytes, loaded only by the sheet-update skill. The hook part is capped at 2,400 bytes; its tokens per play turn are measured on the migrated copy before the PR (SC-004, limit 1,000).
 - **Limits:** `dmc` cannot know if a row is true, only that it has a speaker and a source; it cannot choose which form a speaker uses, nor check which DMC used in a reply. A quotation of the player is checked only against this session's messages.
 - **Source:** Issues #263, #270, #290, #237; the write-path test on #263; `specs/032-who-calls-whom/`; `kit/migrations/010-who-calls-whom.md`.
+
+## The context hook's whole output stays within 9,500 bytes (issue #290, spec 032)
+
+- **Date:** 2026-11-27
+- **Decision:** `dmc context-check` keeps its whole output within 9,500 bytes. The context line, the out-of-character line, the sheet-request line and the rows of who calls whom what always print; canon gets what they leave, up to its own 4,000 bytes, and the sheet lines what is left after canon, up to their own 10,000. A part that runs short leaves a whole person out, header and lines, so they are due again on the next message.
+- **Reason:** Claude Code 2.1.317 passes a hook output over about 10,000 characters to the model only as a 2 KB `<persisted-output>` preview and a file path (a probe: 9,018 characters passed whole, 12,022 did not). Right after a resume, with everyone due, the hook printed 13.0 KB in 0.4.3 and 15.3 KB with the rows, so the model saw only the first canon lines. In the long campaign's play, 4 of 2,510 prompt-hook outputs had already gone over. The rows come before canon because they are what part A adds and they are small (2,400 bytes for the scene block); the sheet lines come last because they are the largest and the resume reads the sheets anyway.
+- **Rejected:** Leaving it to Claude Code's preview (the model rarely reads the saved file); cutting the output at the cap (a header would name people whose lines were cut, so they would count as reminded); a lower cap per part (the parts rarely all print at once, and a fixed split wastes the room one part leaves).
+- **Limits:** The limit is Claude Code's and not documented; 9,500 bytes is below the measured edge. The cap counts bytes, the limit characters, so text outside ASCII only adds margin.
+- **Source:** Issue #290; the pilot of #263's slip test (2026-11-27); `src/Dmc.Cli/Commands/ContextCheckCommand.cs`.
+
+## The slip test's runs continue their own base log, with no fork (issues #289, #290)
+
+- **Date:** 2026-11-27
+- **Decision:** `slip-test run` writes each run's base log under a new session id, as before, and now resumes it in place with `claude -p --resume <id>` and no `--fork-session`; the log Claude Code leaves is the run's log. The pilot's thinking check takes a difference that `allow.tsv` documents arm by arm, as the contract always said.
+- **Reason:** With `--fork-session`, Claude Code 2.1.317 hands the UserPromptSubmit hook the fork's own new log before writing it, so `dmc context-check` read nothing and printed nothing in every fork of #263's first pilot, in both arms, while play had output at every point (#289's defect 1, found again in fresh mode). Resuming in place gives the hook a log that exists, as in play. Fresh mode's arms resume their own base sessions, so their thinking counts differ by design; Claude Code drops all of each base's thinking blocks on resume.
+- **Rejected:** A wrapper that hands the hook another log (#289's interim fix, outside the repository); `--fork-session` with a copy of the base log under the fork's id (the id is not known before the run).
+- **Cost:** Each run re-writes its arm's base context to the prompt cache, as the forks did (about $1.1 to $1.6 a run on #263's base at API prices).
+- **Source:** Issues #289, #290, #263; `src/Dmc.SlipTest/ClaudeRunner.cs`, `Runner.cs`, `PilotCheck.cs`.

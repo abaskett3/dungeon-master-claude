@@ -183,7 +183,8 @@ internal static class PilotCheck
 
     /// <summary>
     /// Check (d) at one point: the thinking counts of every arm's run are equal. When no run records them, the outcome
-    /// is <c>not recorded</c>, which passes only as documented.
+    /// is <c>not recorded</c>, which passes only as documented; counts that differ pass only when <c>allow.tsv</c>
+    /// documents each arm's (<c>control sent 3 dropped 3</c>).
     /// </summary>
     /// <param name="byArm">Each arm's counts, or null when its turn records none.</param>
     /// <param name="allow">The documented differences.</param>
@@ -195,7 +196,9 @@ internal static class PilotCheck
         if (distinct.Count == 1)
             return (Outcome.Pass, []);
         var names = byArm.Select(p => p.Value is { } v ? $"{p.Key} sent {v.Sent} dropped {v.Dropped}" : $"{p.Key} not recorded").ToList();
-        return (Outcome.Fail, names);
+        // allow.tsv may document each arm's counts (contract): in fresh mode each arm resumes its own base session, so
+        // the counts differ by design and the maintainer says why (spec 032).
+        return (Judge(names, "thinking", allow), names);
     }
 
     /// <summary>Pass when nothing differs, documented when <c>allow.tsv</c> names every difference, else fail.</summary>

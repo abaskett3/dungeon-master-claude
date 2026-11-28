@@ -11,9 +11,15 @@ namespace Dmc.Sheets;
 /// <param name="Party">The fields of the character's Party status block, or null when they have none.</param>
 /// <param name="PartyOthers">The lines of that block that are not fields, for the check's warning.</param>
 /// <param name="HistoryFile">The lines of <c>character-sheets/&lt;sheet name&gt;-history.md</c> without its title, or null when there is none or it was not asked for.</param>
+/// <param name="Limits">
+/// The texts of the limits on the character's record (<c>records/&lt;slug&gt;.json</c>, spec 032 FR-009), in the record's
+/// order; empty when they have no record or it has none. The record's rows (who calls them what) are never read here:
+/// they may hold names the PC has not heard.
+/// </param>
 internal sealed record CharacterSheet(
     string File, string Title, SheetKind? Kind, IReadOnlyList<SheetSection> Sections,
-    IReadOnlyList<SheetField>? Party, IReadOnlyList<string> PartyOthers, IReadOnlyList<string>? HistoryFile)
+    IReadOnlyList<SheetField>? Party, IReadOnlyList<string> PartyOthers, IReadOnlyList<string>? HistoryFile,
+    IReadOnlyList<string> Limits)
 {
     /// <summary>Whether the sheet has a <c>## Play card</c> section.</summary>
     public bool HasCard => SheetText.Find(Sections, SheetLayouts.PlayCard) is not null;

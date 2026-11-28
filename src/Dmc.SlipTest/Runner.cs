@@ -336,7 +336,12 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         return (LogRewriter.Rewrite(baseLog, baseLog.Records.Count, id, trial.Copy, trial.Copy, null).Lines, model, effort, permission);
     }
 
-    /// <summary>Writes a base log into the copy folder's project folder under a session id, runs the replay, and keeps its log and output in the work folder.</summary>
+    /// <summary>
+    /// Writes a base log into the copy folder's project folder under a session id, runs the replay on it in place (no
+    /// fork, so the hook's transcript exists, as in play), and keeps its log and output in the work folder. The base log
+    /// is gone from the project folder afterwards: moved as the run's log, or deleted when Claude Code wrote the run
+    /// under another id.
+    /// </summary>
     /// <param name="lines">The base log.</param>
     /// <param name="id">The base log's session id.</param>
     /// <param name="call">The call.</param>
@@ -367,18 +372,22 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
             ClearCopyLogs();
             throw;
         }
-        finally
-        {
-            File.Delete(basePath);
-            string history = Path.Combine(claudeHome, "file-history", id);
-            if (Directory.Exists(history))
-                Directory.Delete(history, recursive: true);
-        }
         string runs = Path.Combine(trial.Work, "runs", arm);
         Directory.CreateDirectory(runs);
         string stem = Path.Combine(runs, $"{point}-{run}");
         File.WriteAllText(stem + ".json", raw);
-        MoveLog(result.SessionId, stem + ".jsonl");
+        try
+        {
+            MoveLog(result.SessionId, stem + ".jsonl");
+        }
+        finally
+        {
+            if (File.Exists(basePath))
+                File.Delete(basePath);
+            string history = Path.Combine(claudeHome, "file-history", id);
+            if (Directory.Exists(history))
+                Directory.Delete(history, recursive: true);
+        }
         return new RunRow(point, arm, run, result.SessionId, call.Model ?? "", call.Effort ?? "", call.Permission ?? "", version, kind ?? "", result, watch.Elapsed.TotalSeconds);
     }
 

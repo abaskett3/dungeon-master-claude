@@ -83,6 +83,10 @@ internal static class SheetHtml
                 if (sheet.HistoryFile is { } older)
                     lines = [.. older, "", .. lines];
                 return OrNone(SheetMarkdown.Blocks(lines));
+            case LimitsSource:
+                return sheet.Limits.Count > 0
+                    ? "<ul>" + string.Concat(sheet.Limits.Select(l => "<li>" + SheetMarkdown.Inline(l) + "</li>")) + "</ul>"
+                    : Plain(None);
             default:
                 return Plain(None);
         }

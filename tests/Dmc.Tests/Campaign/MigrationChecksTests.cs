@@ -89,6 +89,31 @@ public sealed class MigrationChecksTests
         Assert.AreEqual("(Quillamere)", Dmc.PersonRecords.RecordFiles.SheetPerson("(Quillamere)"));
     }
 
+    /// <summary>
+    /// T080: records-in-place takes a speaker it cannot see only when the campaign continues another, as dmc reads the
+    /// Continues line; the template's <c>none</c> and a side or world link are not one.
+    /// </summary>
+    /// <param name="links">The Continuity section's three values.</param>
+    /// <param name="takes">Whether the unseen speaker passes.</param>
+    [TestMethod]
+    [DataRow("none|none|none", false)]
+    [DataRow("none|main-campaign|none", false)]
+    [DataRow("none|none|other-campaign", false)]
+    [DataRow("kettle-before|none|none", true)]
+    public void RecordsInPlaceTakesAnUnseenSpeakerOnlyInASequel(string links, bool takes)
+    {
+        string[] value = links.Split('|');
+        var failures = Run("records-in-place", now: new()
+        {
+            ["player-options.md"] = $"# Player options\n\n## Continuity\n\n- **Continues**: {value[0]} <!-- a sequel -->\n- **Side campaign of**: {value[1]} <!-- a side campaign -->\n- **Shares a world with**: {value[2]} <!-- other campaigns -->\n",
+            ["records/mara.json"] = "{ \"person\": \"Mara\", \"rows\": [ { \"kind\": \"usage\", \"from\": \"Old Wik\", \"word\": \"Mar\", \"source\": \"setup\" } ], \"limits\": [] }\n",
+        });
+        if (takes)
+            CollectionAssert.AreEqual(Array.Empty<string>(), failures);
+        else
+            StringAssert.StartsWith(failures.Single(), "records-in-place: records/mara.json row 1 (\"Mar\"): speaker \"Old Wik\" is not a person of the records");
+    }
+
     [TestMethod]
     public void RecordsInPlaceNamesWhatIsLeftInTheOldShape()
     {

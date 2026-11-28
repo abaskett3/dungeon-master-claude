@@ -170,8 +170,11 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
         foreach (string start in new[] { "npc-", "pc-" })
             if (stem.StartsWith(start, StringComparison.Ordinal))
                 stem = stem[start.Length..];
-        if (index.Records.FirstOrDefault(r => RecordFiles.Slug(r.Person) == stem + ".json" || (stem.Length > 0 && RecordFiles.AsciiSlug(r.Person) == stem + ".json")) is { } file)
+        if (index.Records.FirstOrDefault(r => RecordFiles.Slug(r.Person) == stem + ".json") is { } file)
             return [file];
+        // The file name from before T063 only when no record has the name as it is now (T083).
+        if (stem.Length > 0 && index.Records.FirstOrDefault(r => RecordFiles.AsciiSlug(r.Person) == stem + ".json") is { } old)
+            return [old];
         var words = Words(stem);
         return words.Length == 0 ? [] : [.. index.Records.Where(r => words.All(Words(r.Person).Contains))];
     }

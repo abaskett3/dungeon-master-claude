@@ -106,13 +106,14 @@ internal static partial class RecordEdit
         }
 
         // The notes: only those the edit brings, against the records as they were (the file as it was, or the edit
-        // undone; a wrong guess here costs only a repeated note). A note on a person with no record yet is given for the
-        // record edited only, and once (T068, T078).
+        // undone; a wrong guess here costs a repeated or a missed note, never a refusal). A note on a person with no
+        // record yet is given for the record edited only, and once, whatever its row's number now (T068, T078, T082).
         RecordFiles.Parse(campaign, fileName, original ?? Undone(now, tool, toolName), out var previous);
         var others = loaded.Records.Where(r => !r.FileName.Equals(fileName, StringComparison.Ordinal)).ToList();
         var notesBefore = RecordRules.Check(scenes, previous is null ? others : [.. others, previous], pending).Notes;
         string label = $"{RecordFiles.Folder}/{fileName} ";
-        var fresh = outcome.Notes.Except(notesBefore, StringComparer.Ordinal)
+        var before = notesBefore.Select(Unnumbered).ToHashSet(StringComparer.Ordinal);
+        var fresh = outcome.Notes.Distinct(StringComparer.Ordinal).Where(n => !before.Contains(Unnumbered(n)))
             .Where(n => !RecordRules.IsWaitingNote(n) || n.StartsWith(label, StringComparison.Ordinal)).ToList();
         return fresh.Count > 0 ? new Outcome(null, "dmc records: " + string.Join(" ", fresh)) : Outcome.Pass;
     }
@@ -128,10 +129,19 @@ internal static partial class RecordEdit
             ? original.ValueKind switch { JsonValueKind.String => original.GetString(), JsonValueKind.Null => "", _ => null }
             : null;
 
+    /// <summary>A note without its row's number, so a row that moves keeps its note (T082).</summary>
+    /// <param name="note">The note.</param>
+    static string Unnumbered(string note) => RowNumber().Replace(note, "$1", 1);
+
+    /// <summary>The row number after a note's record label: <c>records/x.json row 2</c>.</summary>
+    [GeneratedRegex(@"^(\S+) row \d+", RegexOptions.CultureInvariant)]
+    private static partial Regex RowNumber();
+
     /// <summary>
     /// The file with an Edit or MultiEdit undone, for the notes only: each new text put back as its old text, the first
     /// match (every match for <c>replace_all</c>). Empty for a Write, a new record. It may be wrong where a new text
-    /// occurs more than once; the notes then print once more.
+    /// occurs more than once, and an edit whose new text is empty (a deletion) is not undone; a note may then print once
+    /// more, or not at all (T085).
     /// </summary>
     /// <param name="now">The file's text now.</param>
     /// <param name="tool">The hook's <c>tool_input</c>.</param>

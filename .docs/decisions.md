@@ -1136,3 +1136,25 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - Without `originalFile`, an edit of part of an existing quotation's words, or a deletion inside them, is not caught; the rules already forbid it. That the hook is given `originalFile` is unverified.
   - A row citing the scene after a full save's last one passes until the next scene is logged.
 - **Source:** Issue #297; the code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 13.
+
+## The code review of PR #299, second round (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Six fixes (tasks T080 to T085):
+  - Migration 010's shape-only check takes an unseen speaker only when the campaign continues another, as dmc reads the Continues line.
+  - A session file whose number overflows is not the latest session.
+  - The edit hook compares notes without their row's number.
+  - `dmc records show` tries the file name as it is now before the old one.
+  - The old file name's stem test names `.json`'s length.
+  - Comments and the roadmap.
+- **Reason:**
+  - T075 read the Continuity lines with a parser of its own, which took the template's `none` as a link, so every campaign took unseen speakers. It also took side and world links, whose persons the check after each edit does not know, so the migration passed a speaker play then refused. `CampaignLinks.ContinuesOf` is the reading dmc uses when it follows links.
+  - T077 fixed an overflowing scene number, but not an overflowing session file's.
+  - A note on a person with no record yet names its row's number, so a row that moved gave it again.
+  - The review said an old name could find the wrong person before the exact one. With records named by their persons, the exact file sorts first, so this could not happen; the order now says so.
+- **Left, with the maintainer's agreement:**
+  - A refused edit stays in the file (a `PostToolUse` hook runs after the edit and cannot undo it). A later edit of the same record then takes a refused quotation as old: on both paths it is in the file as it was, or not in the edit's text. #298 had the same gap. Closing it needs a store of what was refused between edits.
+  - A row citing the scene after a full save's last one passes the save (T074). If that scene is never logged, every record edit after the next session begins is refused, naming that row, until it is fixed.
+  - Running the check twice per edit (speed only); one helper for a person's sheet in the seven other places that test it by hand; renaming old record files once instead of accepting the old name.
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Source:** Issue #297; the second code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 14.

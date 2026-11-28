@@ -44,7 +44,7 @@ internal static class RecordRules
             foreach (string problem in record.Problems)
                 errors.Add($"{record.Label}: {problem}");
             string slug = RecordFiles.Slug(record.Person);
-            if (!record.FileName.Equals(slug, StringComparison.Ordinal) && !(RecordFiles.AsciiSlug(record.Person) is { Length: > 5 } old && record.FileName.Equals(old, StringComparison.Ordinal)))
+            if (!record.FileName.Equals(slug, StringComparison.Ordinal) && !(RecordFiles.AsciiSlug(record.Person) is { } old && old.Length > ".json".Length && record.FileName.Equals(old, StringComparison.Ordinal)))
                 errors.Add($"{record.Label}: the record of \"{record.Person}\" must be {RecordFiles.Folder}/{slug}");
             if (record.Of is { } of && !scenes.IsLinked(of))
                 errors.Add($"{record.Label}: \"of\" names {of}, which is not a campaign this one continues");
@@ -280,7 +280,7 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
         return _scenes[log] = numbers;
     }
 
-    /// <summary>The number of this campaign's latest session log; 0 when it has none.</summary>
+    /// <summary>The number of this campaign's latest session log; 0 when it has none. A number that overflows counts as none (T081).</summary>
     int Latest()
     {
         if (_latest is { } latest)
@@ -288,7 +288,7 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
         string sessions = Path.Combine(campaignFolder, "story", "sessions");
         _latest = Directory.Exists(sessions)
             ? Directory.EnumerateFiles(sessions, "session-*.md").Select(p => SessionFile().Match(Path.GetFileName(p)))
-                .Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).DefaultIfEmpty(0).Max()
+                .Where(m => m.Success).Select(m => int.TryParse(m.Groups[1].Value, out int n) ? n : 0).DefaultIfEmpty(0).Max()
             : 0;
         return _latest.Value;
     }

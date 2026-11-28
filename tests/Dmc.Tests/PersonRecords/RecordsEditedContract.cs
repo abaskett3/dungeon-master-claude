@@ -175,6 +175,15 @@ public abstract class RecordsEditedContract
         var again = Edited(input.ToJsonString());
         Assert.AreEqual(0, again.ExitCode, again.ToString());
         Assert.AreEqual("", again.Stdout, "the note is given once, not on every edit of the record (T078)");
+
+        const string moved = PimRow + ",\n    " + """{ "kind": "usage", "from": "Grumbald", "word": "Kettle-boy", "source": "s3.3" }""";
+        original = File.ReadAllText(path);
+        File.WriteAllText(path, original.Replace(PimRow, moved));
+        input = System.Text.Json.Nodes.JsonNode.Parse(RecordFixtures.Edited(_folder, "Edit", path, PimRow, moved))!;
+        input["tool_response"] = new System.Text.Json.Nodes.JsonObject { ["filePath"] = path, ["originalFile"] = original };
+        var shifted = Edited(input.ToJsonString());
+        Assert.AreEqual(0, shifted.ExitCode, shifted.ToString());
+        Assert.AreEqual("", shifted.Stdout, "a row that moves keeps its note (T082)");
     }
 
     [TestMethod]

@@ -108,13 +108,15 @@ public sealed class RecordRulesTests
     /// <summary>
     /// T061, T064 and T074: a scene is one of the log's real headings, not the template's commented <c>### Scene N:</c>
     /// nor one whose number overflows, and the scene in play (the one after the latest session's last heading) counts
-    /// before its block is written, in every check: the rewind runs the full save's check mid-session.
+    /// before its block is written, in every check: the rewind runs the full save's check mid-session. A session file
+    /// whose number overflows is not the latest session (T081).
     /// </summary>
     [TestMethod]
     public void AScenesHeadingMustBeRealAndTheSceneInPlayCounts()
     {
         File.WriteAllText(Path.Combine(Root, "story", "sessions", "session-007.md"),
             "# Session 7\n\n## Scenes\n\n<!--\n### Scene N: short title (location, in-world time)\n-->\n\n### Scene 1: an invented scene (the lock)\n\n### Scene 99999999999: a typo\n");
+        File.WriteAllText(Path.Combine(Root, "story", "sessions", "session-99999999999.md"), "# Session ?\n");
         var book = SceneBook.For(_folder, RecordFixtures.Campaign);
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 1)));
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 2)), "the scene in play");

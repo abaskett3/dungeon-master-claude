@@ -211,3 +211,12 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [X] T077 Read a heading's number with `TryParse`, its pattern built from `ReadSet.ScenePattern` (`SceneBook`; the scene test's overflowing heading)
 - [X] T078 Give the note on a person with no record yet once: the notes are compared with those of the records as they were (`RecordEdit.cs`; `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
 - [X] T079 One test for a person's sheet file, `RecordFiles.IsPersonSheet`, in `RecordCheck.cs`; the rows part's `IsFirst` comment brought up to date
+
+## Phase 14: The code review of PR #299, second round
+
+- [X] T080 Take an unseen speaker in the shape-only check only when the campaign continues another, as dmc reads the Continues line (`CampaignLinks.ContinuesOf`): the template's `none` and a side or world link are not one (`MigrationChecks.ContinuesAnother`; `MigrationChecksTests.RecordsInPlaceTakesAnUnseenSpeakerOnlyInASequel`)
+- [X] T081 Read a session file's number with `TryParse`, so one that overflows is not the latest session (`SceneBook.Latest`; the overflowing file in `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T082 Compare the notes without their row's number, so a row that moves keeps its note (`RecordEdit.Unnumbered`; the moved row in `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T083 In `dmc records show`, try the file name as it is now before the one from before T063 (`RecordsCommand.Matches`; `RecordsCommandContract.ShowFindsARecordByItsOldFileNameAfterOneWithThatName`)
+- [X] T084 Write the old file name's stem test as `".json".Length` (`RecordRules.cs`)
+- [X] T085 Say in `Undone`'s comment that a deletion is not undone and a note may be missed; the roadmap row and the decision record's limits brought up to date

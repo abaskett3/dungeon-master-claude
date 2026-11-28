@@ -60,7 +60,7 @@ Checked over every record of the campaign, after each edit and at `dmc records c
    (speaker only) or `group: …`. After an edit, a person with a sheet (not `minor-npcs.md` or a history file) and no record yet is a
    note on the record edited, not a refusal, so two records that name each other can be written one at a time (T059,
    T068, T071); `dmc records check` refuses it. Migration 010's `records-in-place`, which checks shape alone, takes
-   any speaker a row names in a campaign linked to another (T070, T075).
+   any speaker a row names in a campaign that continues another, as dmc reads the Continues line (T070, T075, T080).
 5. No row repeats another on the same record (same kind, speaker and word, ignoring case).
 6. No row's speaker is on the `never` list of a row with the same word on the same record.
 7. Each limit has text and a source.

@@ -243,15 +243,14 @@ internal static partial class MigrationChecks
     const string RecordsFolder = "records/";
 
     /// <summary>
-    /// Whether the campaign's <c>player-options.md</c> links it to another (a <c>Continues</c>, <c>Side campaign of</c>
-    /// or <c>Shares a world with</c> line with a value, <see cref="CampaignLinks.SectionLines"/>), so its records may
-    /// name persons whose records are there.
+    /// Whether the campaign's <c>player-options.md</c> says it continues another, as dmc reads the line when it follows
+    /// links (<see cref="CampaignLinks.ContinuesOf"/>: <c>none</c> is no link), so its records may name persons whose
+    /// records are there. A side or world link is not one: the check after each edit knows only the persons of a
+    /// campaign this one continues (T080).
     /// </summary>
     /// <param name="input">The migrated campaign.</param>
-    static bool LinksAnother(CheckInput input) =>
-        input.New.TryGetValue("player-options.md", out var text) && Lines(text).Any(line =>
-            CampaignLinks.SectionLines.Any(name => line.TrimStart().StartsWith($"- **{name}**:", StringComparison.Ordinal)
-                && line.TrimStart()[$"- **{name}**:".Length..].Trim().Length > 0));
+    static bool ContinuesAnother(CheckInput input) =>
+        input.New.TryGetValue(PlayerOptions, out var text) && CampaignLinks.ContinuesOf(text, "") is not null;
 
     /// <summary>The sheet line migration 010 leaves for the names of places and things.</summary>
     const string NamesForPlaces = "Names for places and things";
@@ -264,7 +263,7 @@ internal static partial class MigrationChecks
     /// <param name="input">The migrated campaign.</param>
     static IEnumerable<string> RecordsInPlace(CheckInput input)
     {
-        // In a campaign linked to another, a row may name a person whose record is there, which this check cannot see (T075).
+        // In a campaign that continues another, a row may name a person whose record is there, which this check cannot see (T075, T080).
         var records = new List<PersonRecords.PersonRecord>();
         foreach (var (path, text) in input.New.Where(f => f.Key.StartsWith(RecordsFolder, StringComparison.Ordinal) && f.Key.EndsWith(".json", StringComparison.Ordinal)).OrderBy(f => f.Key, StringComparer.Ordinal))
         {
@@ -273,7 +272,7 @@ internal static partial class MigrationChecks
             else
                 records.Add(record!);
         }
-        foreach (string error in PersonRecords.RecordRules.Check(PersonRecords.SceneBook.Lenient(LinksAnother(input)), records).Errors)
+        foreach (string error in PersonRecords.RecordRules.Check(PersonRecords.SceneBook.Lenient(ContinuesAnother(input)), records).Errors)
             yield return error;
         var persons = new HashSet<string>(records.Select(r => r.Person), StringComparer.OrdinalIgnoreCase);
         foreach (var (path, text) in SheetsOf(input.New, npcOnly: false))

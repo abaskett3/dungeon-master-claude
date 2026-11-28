@@ -91,6 +91,8 @@ The toolkit tests scan `kit/` (what DMC reads in play), and `CLAUDE.md`, `README
 
 `TestEnv.Need` skips a test whose tool is missing (bash, PowerShell, Playwright's Chromium, the published `dmc`) on a developer's machine, and fails it when the `CI` environment variable is set. CI installs everything, so nothing is skipped there.
 
+`ContextCheck/RowsAtSlipPointsCheck.cs` is a check on the maintainer's computer, inconclusive everywhere else, CI included: with `DMC_ROWS_CHECK_FOLDER` (a DMC folder holding a migrated campaign, only read), `DMC_ROWS_CHECK_MESSAGES` (a file of `## <point>` sections, each a player's message) and `DMC_ROWS_CHECK_PERSONS` (full names, separated by `|`), it runs `dmc context-check` on each message and fails when a chosen person present or named has a "says" line that does not print, or the output passes 9,500 bytes. Play's names and text stay out of the repository (spec 032 T055).
+
 ### Which binary the black-box tests run
 
 - By default, `artifacts/bin/dmc`. It must exist, must not be older than any source file (`.cs`, `.csproj`, `.props`) or any file under `kit/` (they are embedded), and must print `dmc 0.0.0-dev`; otherwise the test fails with one line saying to republish into `artifacts/bin`.

@@ -240,7 +240,9 @@ corrects them, or asks the player, before they reach play.
   so an ambiguous word is never left unresolved. The hook never fails or blocks a message. Its extra tokens per average play turn are measured against
   the present output. Its whole output stays within 9,500 bytes, below the size over which Claude Code passes a hook's
   output only as a 2 KB preview: the one-line parts and the rows first, then canon, then the sheet lines; a part that
-  runs short leaves a whole person out (found by SC-003's pilot, 2026-11-27).
+  runs short leaves a whole person out (found by SC-003's pilot, 2026-11-27). Within the rows, every present or named
+  person's "says" line (what they call the others there) prints before the rest of any block; a person is present when
+  the Present line names them outside its bracketed notes (found by SC-003's run, 2026-11-27).
 - **FR-006 (writing)**: DMC changes a record with Edit on its JSON file, and creates one with Write. Right after each
   edit of a record, `dmc` checks every record of the campaign. On a bad one it refuses in one line (the file, the
   row, what is wrong) and DMC fixes or undoes the change before it replies. A usage that makes one word mean two
@@ -327,6 +329,13 @@ corrects them, or asks the player, before they reach play.
   of the risk speakers' quoted lines that use a word the speaker never says for the person meant decreases by 1/3 or
   more, with a one-sided permutation p below 0.05. The pass line, the fork points, the runs and the key are fixed on
   #263 (comment of 2026-11-26).
+  **Result (2026-11-27): fail, and underpowered; the treatment arm was defective, so the run is no evidence against
+  part A.** 60 points, 3 runs each, 360 forks. Slip lines: control 1/265 (0.4%), treatment 3/310 (1.0%); one-sided p
+  0.94. The control's share over p01 to p10 was 0/47, below the 0.10 the trial needed. The treatment's hook printed
+  no rows of Hala (present at every point), Shale, Kole, Hush or Rorn in any of its 180 runs: the rows part let the
+  first long block crowd out the rest, and its Present rule missed Hala and counted the persons of a bracketed note
+  as present (T055). Two of the treatment's three slips were Hala's, the kind her rows name. Not rerun, by the
+  maintainer's ruling: at this control rate a rerun would be underpowered too.
 - **SC-004**: The hook's extra tokens per average play turn, against the present output, stay within #241's limit
   of 1,000.
 - **SC-005**: The migration of the copy passes `dmc campaign verify`, with every line that went accounted for and

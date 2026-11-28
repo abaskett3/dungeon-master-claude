@@ -143,4 +143,45 @@ public sealed class RowsReminderCapTests
         Assert.IsLessThanOrEqualTo(RowsReminder.CapBytes, lines.Sum(l => System.Text.Encoding.UTF8.GetByteCount(l) + 1));
         Assert.IsTrue(lines.Count > 0 && lines.All(l => l.StartsWith("\"word", StringComparison.Ordinal)), "word lines fill the cap before any person block");
     }
+
+    /// <summary>
+    /// SC-003's run (2026-11-27): a person whose short name is only another's word for them is present, and the persons
+    /// a bracketed note names (who is away) are not.
+    /// </summary>
+    [TestMethod]
+    public void APersonIsPresentByAnyWordThatMeansOnlyThemAndABracketedNoteNamesNoOne()
+    {
+        var index = new Dmc.PersonRecords.RecordIndex([
+            new Dmc.PersonRecords.PersonRecord("c", "ann.json", "Ann Reedley", null, [new Dmc.PersonRecords.Row("usage", "Bo", "Annie", null, null, "s1.1", [])], [], []),
+            new Dmc.PersonRecords.PersonRecord("c", "bo.json", "Bo", null, [new Dmc.PersonRecords.Row("name", "anyone", "Bo", null, null, "setup", [])], [], []),
+            new Dmc.PersonRecords.PersonRecord("c", "cy.json", "Cy", null, [new Dmc.PersonRecords.Row("name", "anyone", "Cy", null, null, "setup", [])], [], []),
+        ]);
+        CollectionAssert.AreEqual(new[] { "Ann Reedley", "Bo" }, RowsReminder.Present(index, "Annie, Bo. (Cy at the mill (since noon).)"));
+    }
+
+    /// <summary>
+    /// SC-003's run (2026-11-27): the first person present has a long block (what many others call them), and in one
+    /// pass it left no room for the next person's block, so that speaker's own words were never printed. Every "says"
+    /// line now comes first, and the rest while it fits, within the cap.
+    /// </summary>
+    [TestMethod]
+    public void EverySpeakersSaysLineIsPrintedBeforeTheRestOfAnyBlock()
+    {
+        var calledBo = Enumerable.Range(0, 40).Select(i => new Dmc.PersonRecords.Row("name", $"Speaker{i:00}", $"Bo-name-{i:00}", "a note on when", null, "s1.1", [])).ToList();
+        calledBo.Add(new Dmc.PersonRecords.Row("usage", "Ann", "Bobo", null, null, "s1.2", []));
+        var calledAnn = Enumerable.Range(0, 20).Select(i => new Dmc.PersonRecords.Row("name", $"Speaker{i:00}", $"Ann-name-{i:00}", "a note on when", null, "s1.1", [])).ToList();
+        calledAnn.Add(new Dmc.PersonRecords.Row("usage", "Bo", "Sis", null, null, "s1.3", []));
+        var index = new Dmc.PersonRecords.RecordIndex([
+            new Dmc.PersonRecords.PersonRecord("c", "bo.json", "Bo", null, calledBo, [], []),
+            new Dmc.PersonRecords.PersonRecord("c", "ann.json", "Ann", null, calledAnn, [], []),
+        ]);
+        var lines = RowsReminder.Lines(index, "They wave.", "Bo, Ann", new HashSet<string>());
+        Assert.IsLessThanOrEqualTo(RowsReminder.CapBytes, lines.Sum(l => System.Text.Encoding.UTF8.GetByteCount(l) + 1));
+        CollectionAssert.Contains(lines, "- Bo says: \"Sis\" for Ann");
+        CollectionAssert.Contains(lines, "- Ann says: \"Bobo\" for Bo");
+        Assert.EndsWith("Bo; Ann", lines.Single(l => l.StartsWith(RowsReminder.HeaderStart, StringComparison.Ordinal)));
+        Assert.IsTrue(lines.Any(l => l.StartsWith("- Bo, called:", StringComparison.Ordinal)), "the first block's rest fits");
+        Assert.IsFalse(lines.Any(l => l.StartsWith("- Ann, called:", StringComparison.Ordinal)), "the second block's rest does not fit: " + string.Join("\n", lines));
+        Assert.IsLessThan(lines.FindIndex(l => l.StartsWith("- Ann", StringComparison.Ordinal)), lines.FindIndex(l => l.StartsWith("- Bo, called:", StringComparison.Ordinal)), "a person's lines stay together, in the header's order");
+    }
 }

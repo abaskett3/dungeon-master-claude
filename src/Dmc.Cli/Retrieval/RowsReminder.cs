@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Dmc.PersonRecords;
 using Dmc.Size;
 
@@ -14,9 +15,12 @@ namespace Dmc.Retrieval;
 /// Prints nothing in a campaign without <c>records/</c>. Reads only, stores nothing: what was printed in this scene is
 /// read back from the session's log.
 /// </summary>
-internal static class RowsReminder
+internal static partial class RowsReminder
 {
-    /// <summary>The most bytes the part may print: word lines first, then person blocks while they fit.</summary>
+    /// <summary>
+    /// The part's own cap: word lines first, then the rest of each block while it fits. Every person's "says" line comes
+    /// before the rest and may take the part past it, up to the room the hook's whole output has left (<see cref="Lines"/>).
+    /// </summary>
     public const int CapBytes = 2_400;
 
     /// <summary>The start of the header; the log is searched for it.</summary>
@@ -34,9 +38,10 @@ internal static class RowsReminder
     /// </summary>
     /// <param name="input">The hook's JSON (<c>prompt</c>, <c>cwd</c>, <c>transcript_path</c>).</param>
     /// <param name="projectFolder">The <c>CLAUDE_PROJECT_DIR</c> the hook runs with, used when <c>cwd</c> is not a DMC folder; null for none.</param>
+    /// <param name="room">The most bytes the part may print with the "says" lines (<see cref="Lines"/>): what the hook's whole output has left.</param>
     /// <returns>The lines to print; empty for none.</returns>
     /// <exception cref="JsonException">The input is not JSON; the caller turns any failure into silence.</exception>
-    public static List<string> For(string input, string? projectFolder)
+    public static List<string> For(string input, string? projectFolder, int room = CapBytes)
     {
         var (_, prompt) = HookInput.Field(input, "prompt");
         if (string.IsNullOrWhiteSpace(prompt) || prompt.TrimStart().StartsWith('/'))
@@ -55,35 +60,32 @@ internal static class RowsReminder
         string presentText = File.Exists(gameState) ? ReadSet.PresentText(Measurement.ReadLines(gameState)) : "";
         var (_, log) = HookInput.Field(input, "transcript_path");
         var shown = string.IsNullOrEmpty(log) ? new HashSet<string>(StringComparer.Ordinal) : Shown(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()));
-        return Lines(index, prompt, presentText, shown);
+        return Lines(index, prompt, presentText, shown, room);
     }
 
     /// <summary>
-    /// The persons who are present: each record whose person the Present text names in full, or by a name row's word.
-    /// Not by a surname alone, as the sheet lines match a title: a family shares one, and a person the text does not name
-    /// would be shown as present.
+    /// The persons who are present: those the Present text names as a message names them (<see cref="RecordIndex.Named"/>:
+    /// in full, or by a row word whose rows all mean that one person), with any text in brackets left out, as play writes
+    /// notes on who is away there ("(Benno at the mill)"). Not by a surname alone: a family shares one. Found by
+    /// SC-003's run (2026-11-27): by name rows only, a person whose short name is only others' word for them was
+    /// never present, and the persons in the note always were.
     /// </summary>
     /// <param name="index">The index.</param>
     /// <param name="presentText">The Present line and Combat tracker (<see cref="ReadSet.PresentText"/>).</param>
     internal static List<string> Present(RecordIndex index, string presentText)
     {
-        if (presentText.Trim().Length == 0)
-            return [];
-        var present = new List<(string Person, int At)>();
-        foreach (var record in index.Records)
+        string text = presentText;
+        for (string before = ""; before != text;)
         {
-            int at = ReadSet.WholeWordAt(presentText, record.Person);
-            foreach (var row in record.Rows.Where(r => r.Kind == RowKind.Name && !string.IsNullOrWhiteSpace(r.Word)))
-            {
-                int w = ReadSet.WholeWordAt(presentText, row.Word!.Trim());
-                if (w >= 0 && (at < 0 || w < at))
-                    at = w;
-            }
-            if (at >= 0)
-                present.Add((record.Person, at));
+            before = text;
+            text = Bracketed().Replace(text, " ");
         }
-        return present.OrderBy(p => p.At).Select(p => p.Person).Distinct(StringComparer.Ordinal).ToList();
+        return text.Trim().Length == 0 ? [] : index.Named(text);
     }
+
+    /// <summary>Text in round brackets with no bracket inside; applied until nothing changes, it takes nested ones from the inside out.</summary>
+    [GeneratedRegex(@"\([^()]*\)")]
+    private static partial Regex Bracketed();
 
     /// <summary>The key of a scene: the first 8 hex digits of the SHA-256 of its Present text, so a change in who is present makes a new one.</summary>
     /// <param name="presentText">The Present line and Combat tracker.</param>
@@ -92,21 +94,28 @@ internal static class RowsReminder
 
     /// <summary>
     /// The part's lines: a word line for each row word in the message; then, when anyone present or named has not been
-    /// shown in this scene (<paramref name="shown"/> holds <c>key|person</c>), the header and their blocks while the
-    /// whole fits in <see cref="CapBytes"/>. A person whose block does not fit is left out, header and block.
+    /// shown in this scene (<paramref name="shown"/> holds <c>key|person</c>), the header and their blocks, in two
+    /// passes: first each person's "says" line, what they call the others here (short, and what keeps a speaker's words
+    /// right), within <paramref name="room"/>; then the rest of each block, whole, while the part stays within
+    /// <see cref="CapBytes"/>. In one pass, within the part's cap, a long block left no room for those after it: in
+    /// SC-003's run (2026-11-27) one person's block, most of it what others call them, crowded out the main risk
+    /// speaker's in every treatment run. A person is named in the header when any line of theirs is printed, so a person whose rest did not fit is
+    /// not shown it again in this scene; one with no line printed is not named.
     /// </summary>
     /// <param name="index">The index.</param>
     /// <param name="prompt">The player's message.</param>
     /// <param name="presentText">The Present text.</param>
     /// <param name="shown">The <c>key|person</c> pairs the log's current part already shows.</param>
-    internal static List<string> Lines(RecordIndex index, string prompt, string presentText, IReadOnlySet<string> shown)
+    /// <param name="room">The most bytes the part may print with the "says" lines; the word lines and the rest of the blocks stay within the smaller of it and <see cref="CapBytes"/>.</param>
+    internal static List<string> Lines(RecordIndex index, string prompt, string presentText, IReadOnlySet<string> shown, int room = CapBytes)
     {
         var output = new List<string>();
+        int cap = Math.Min(CapBytes, room);
         int used = 0;
         foreach (var found in index.WordsIn(prompt))
         {
             string line = WordLine(found);
-            if (used + Bytes(line) > CapBytes)
+            if (used + Bytes(line) > cap)
                 break;
             output.Add(line);
             used += Bytes(line);
@@ -116,28 +125,44 @@ internal static class RowsReminder
         var scene = present.Concat(index.Named(prompt)).Distinct(StringComparer.Ordinal).ToList();
         string key = SceneKey(presentText);
         var due = scene.Where(p => !shown.Contains(key + "|" + p)).ToList();
-        var included = new List<string>();
-        var blocks = new List<string>();
+        var blocks = due.Select(p => (Person: p, Lines: Block(index, p, scene))).Where(b => b.Lines.Count > 0).ToList();
+        var printed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         used += Bytes(HeaderStart + key + HeaderMiddle);
-        foreach (string person in due)
+
+        // Adds a person's lines when they fit within the limit with the person's name in the header, if it is not there yet.
+        void Add(string person, List<string> lines, int limit)
         {
-            var block = Block(index, person, scene);
-            if (block.Count == 0)
-                continue;
-            int cost = block.Sum(Bytes) + Encoding.UTF8.GetByteCount(person) + (included.Count > 0 ? NameSeparator.Length : 0);
-            if (used + cost > CapBytes)
-                continue;
-            included.Add(person);
-            blocks.AddRange(block);
+            int name = printed.ContainsKey(person) ? 0 : Encoding.UTF8.GetByteCount(person) + (printed.Count > 0 ? NameSeparator.Length : 0);
+            int cost = lines.Sum(Bytes) + name;
+            if (used + cost > limit)
+                return;
+            if (!printed.TryGetValue(person, out var list))
+                printed[person] = list = [];
+            list.AddRange(lines);
             used += cost;
         }
+
+        foreach (var (person, lines) in blocks)
+            if (lines[0].StartsWith(SaysStart(person), StringComparison.Ordinal))
+                Add(person, [lines[0]], room);
+        foreach (var (person, lines) in blocks)
+        {
+            var rest = lines.Where(l => !l.StartsWith(SaysStart(person), StringComparison.Ordinal)).ToList();
+            if (rest.Count > 0)
+                Add(person, rest, cap);
+        }
+        var included = due.Where(printed.ContainsKey).ToList();
         if (included.Count > 0)
         {
             output.Add(HeaderStart + key + HeaderMiddle + string.Join(NameSeparator, included));
-            output.AddRange(blocks);
+            output.AddRange(included.SelectMany(p => printed[p]));
         }
         return output;
     }
+
+    /// <summary>The start of a person's "says" line in their block.</summary>
+    /// <param name="person">The person.</param>
+    static string SaysStart(string person) => $"- {person} says: ";
 
     /// <summary>A word's line: every row of it, the persons it means and who uses it for each.</summary>
     /// <param name="found">The word and its rows.</param>
@@ -173,7 +198,7 @@ internal static class RowsReminder
         var nevers = index.Rows.Where(e => scene.Contains(e.Person) && (e.Row.Never ?? []).Contains(person))
             .Select(e => $"never \"{e.Row.Word}\" for {e.Person}").ToList();
         if (says.Count + nevers.Count > 0)
-            lines.Add($"- {person} says: {string.Join("; ", says.Concat(nevers))}");
+            lines.Add(SaysStart(person) + string.Join("; ", says.Concat(nevers)));
         if (index.Record(person) is not { } record)
             return lines;
         var called = record.Rows.Where(r => r.Kind != RowKind.Relationship && !string.IsNullOrWhiteSpace(r.Word))

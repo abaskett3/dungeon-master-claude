@@ -68,7 +68,9 @@ measured.
   - **Scene**: a short hash of the Present text. The header carries it; a person is due when no header since the log's
     last compaction carries this hash and their name, which is how `SheetReminder` and `CanonReminder` find what they
     printed (`SheetReminder.cs:199`, `CanonReminder.cs:141`).
-  - A cap of 2,400 bytes on the part; past it, persons are cut before words.
+  - A cap of 2,400 bytes on the part; past it, persons are cut before words. Amended after SC-003's run (2026-11-27,
+    T055): every person's "says" line prints first and may pass the part's cap, up to the room the hook's 9,500-byte
+    output has left; only the rest of the blocks is cut.
 - **Rationale**: the clarification (once per scene; a word each time). The log-based lookback keeps the hook
   stateless, as the other parts are.
 - **Unverified**: the extra tokens per average turn (SC-004), measured in the build against the present output on

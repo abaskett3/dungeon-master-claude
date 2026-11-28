@@ -20,8 +20,9 @@ namespace Dmc.Commands;
 /// FR-019, <see cref="SheetRequestReminder"/>).
 /// <para>
 /// The whole output stays within <see cref="OutputCapBytes"/>: Claude Code (2.1.317) passes a longer hook output to the
-/// model only as a 2 KB preview and a file path. The one-line parts and the rows always print; canon gets what they
-/// leave, up to its own cap, and the sheet lines what is left after that. A part that runs short leaves a whole person
+/// model only as a 2 KB preview and a file path. The one-line parts always print; the rows get what they leave (their
+/// "says" lines all of it, the rest up to the rows' own cap); canon gets what the rows leave, up to its own cap, and the
+/// sheet lines what is left after that. A part that runs short leaves a whole person
 /// out, who is due again on the next message (spec 032).
 /// </para>
 /// <para>
@@ -77,9 +78,10 @@ public sealed class ContextCheckCommand : ICommand
         bool fresh = reading.Size == 0 && TranscriptPath(input) is { } log && Quietly(() => TranscriptReader.IsFresh(log), false);
         string ooc = Quietly(() => OocReminder.For(input), "");
         string sheetRequest = Quietly(() => SheetRequestReminder.For(input), "");
-        var rows = fresh ? [] : Quietly(() => RowsReminder.For(input, project), new List<string>());
         // The output's cap (OutputCapBytes): the one-line parts and the rows first, then canon, then the sheet lines.
-        int left = OutputCapBytes - Bytes([line, ooc, sheetRequest]) - Bytes(rows);
+        int left = OutputCapBytes - Bytes([line, ooc, sheetRequest]);
+        var rows = fresh ? [] : Quietly(() => RowsReminder.For(input, project, left), new List<string>());
+        left -= Bytes(rows);
         var sheets = Quietly(() => SheetReminder.For(input, project, reading.Size, fresh), SheetReminder.Found.None);
         int canonCap = Math.Max(0, Math.Min(CanonReminder.CapBytes, left));
         var reminder = Quietly(() => CanonReminder.For(input, project, sheets.WithoutFields, canonCap), new List<string>());

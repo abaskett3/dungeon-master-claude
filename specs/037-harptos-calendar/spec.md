@@ -75,18 +75,25 @@ Uktar), with Shieldmeet after Midsummer every fourth year. Years are counted DR.
   `session-046.md` scene 8) is the 30th of Hammer, so Day 50, the first day on the road, is Midwinter, with Hala in
   Riverhold with the Birches. → A: Accepted.
 
+- Q: The gap between the campaigns (a date after The Silver Egg's end and before Rorn's Landing's start, such as the
+  first flight "on the 19th of Ches")? → A: It counts from Midsummer, as Rorn's Landing does, so its weekdays agree
+  with Rorn's Landing's and the 41 days fall just after The Silver Egg's end: the first flight becomes the 25th of
+  Tarsakh.
+- Q: Kole's Fall Festival, "the Autumn Solstice, also called the Harvest Festival"? → A: "Highharvestide, also called
+  the Harvest Festival" (Harptos's autumn equinox is the 21st of Eleint, nine days before).
+- Q: The Bench's New Year sitting "(a Tuesday: the 28th is Saturday, the 1st Sunday)"? → A: The aside goes; the
+  sitting stays on the 3rd of Hammer.
+- Q: The quarter-day lines ("she pays the factor on quarter day")? → A: Kept as written; canon states that quarter
+  day is rent day, the 1st of every month.
+- Q: May the migration change the two closed campaigns? → A: Yes, as an exception the player grants: "This is the
+  exception to the rule. The DMC must comply. Approved by me, the creator of this project and lone player of the two
+  campaigns." A closed campaign stays closed afterwards; only the run of this migration, on the player's word, may
+  write in one.
+
 ### Open (to put to the player)
 
-- **The gap between the campaigns.** A date after The Silver Egg's end and before Rorn's Landing's start (the first
-  flight "on the 19th of Ches") is in neither anchor's span. Proposed: it counts from Midsummer, as Rorn's Landing
-  does, so its weekdays agree with Rorn's Landing's ("Thursday the 26th of Kythorn", two days before its start,
-  becomes Thursday the 25th of Flamerule) and the 41 days fall just after The Silver Egg's end. The first flight
-  becomes the 25th of Tarsakh. (Keeping the day and month as written put that Thursday a month before a Saturday two
-  days after it.)
-- **A weekday reference** in canon ("the 1st of Hammer 1494 is a <weekday>") so DMC counts weekdays from one known
-  day.
-- **Changing closed campaigns.** A closed campaign is never migrated and `dmc` refuses to write in one
-  (`.docs/campaign-files.md` § Closing a campaign). This migration must change both, with a backup first.
+- **A weekday reference** in canon so DMC counts weekdays from one known day. Proposed: "The 1st of Hammer, 1494 DR,
+  is a Tuesday" (Rorn's Landing's last day, Wednesday the 12th of Eleint, plus 111 days).
 
 ## User Scenarios & Testing *(mandatory)*
 

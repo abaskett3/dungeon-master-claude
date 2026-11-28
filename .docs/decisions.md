@@ -1077,7 +1077,7 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - For T059, migration 010 writing every record empty before its rows: it fixes only the migration.
   - For T056, a hash of the Present line alone: its notes and spelling still change.
   - The review's two speed findings, the index built twice per message and the sheet lines rebuilt when cut: the hook's median is 128 ms.
-- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes. The hook prints less in a fight. SC-004 was measured again on 4,161 play turns (spec.md SC-004).
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes. The hook prints less in a fight. SC-004, measured again on 4,161 play turns: +2 tokens per turn on average, max 683, as before.
 - **Limits:**
   - A Write over an existing record still checks every quotation in it; the kit creates records with Write and changes them with Edit.
   - A name written with a combining accent gets a different file name from the same name composed: `dmc` runs in invariant globalization mode, which does not compose.

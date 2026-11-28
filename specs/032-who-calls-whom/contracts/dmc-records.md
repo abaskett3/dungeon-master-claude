@@ -6,7 +6,8 @@ One class, `src/Dmc.Cli/Commands/RecordsCommand.cs`, in `CommandTable.All`. `<ca
 ## `dmc records show <campaign> [<person>...]`
 
 The text view (FR-009). With no person, every record. A person is named by full name, by a record's or a sheet's file
-name (`kibil-rornson`, `npc-kibil-rornson.md`), or by words of their name in any order and case, quotes and
+name (`kibil-rornson`, `npc-kibil-rornson.md`; the file name a record had before letters outside ASCII were kept, only
+when no record has that name now, T076, T083), or by words of their name in any order and case, quotes and
 punctuation ignored; a name several records fit gives them all. Output, per record:
 
 ```
@@ -45,5 +46,5 @@ nothing and exits 0, except a refusal: one line on standard error and exit 2.
 | A `player:` source the edit adds whose quotation is not in the player's typed messages (added: its words were not a quotation of the file as it was, `tool_response.originalFile`, when given and a record; else the edit's new text holds its words more often than its old; for a Write, every one; T058, T066, T073) | `dmc records: <file> row <n>: the player's words "<…>" are not in this session's messages; quote them exactly, or use another source.` | 2 |
 | An Edit of a campaign Markdown file that changes a line and adds a credit to the player | `dmc records: <file>: this edit changes the text and credits the player in the same edit; credit only words the player wrote.` | 2 |
 | A new usage giving one speaker one word for two persons | `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"dmc records: to <speaker>, \"<word>\" now means <A> and <B>; the hook prints both."}}` on stdout | 0 |
-| A row of the record edited whose speaker or never-person has a sheet and no record yet (T059, T068; `check` refuses it) | `{"hookSpecificOutput":{…,"additionalContext":"dmc records: <file> row <n> (\"<word>\"): \"<person>\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then)."}}` on stdout | 0 |
+| A row of the record edited whose speaker or never-person has a sheet and no record yet, once: not again on a later edit, nor when the row's number changes (T059, T068, T078, T082; `check` refuses it) | `{"hookSpecificOutput":{…,"additionalContext":"dmc records: <file> row <n> (\"<word>\"): \"<person>\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then)."}}` on stdout | 0 |
 | Anything else | nothing | 0 |

@@ -1,0 +1,23 @@
+{
+  "person": "Wren",
+  "sheet": "pc-wren.md",
+  "rows": [
+    { "kind": "name", "from": "anyone", "word": "Wren", "source": "setup" },
+    { "kind": "usage", "from": "Mara Quill", "word": "boss", "source": "s1.3" },
+    { "kind": "usage", "from": "Mara Quill", "word": "little fish", "when": "when she is worried", "source": "s1.3" }
+  ],
+  "limits": [],
+  "facts": [
+    { "key": "Player character", "value": "yes", "source": "setup" },
+    { "key": "Species and background", "value": "halfling, urchin", "source": "setup" },
+    { "key": "Class and level", "value": "rogue 5", "source": "setup" },
+    { "key": "Max HP", "value": "31", "section": "Combat", "source": "setup" },
+    { "key": "Armor Class", "value": "15 (studded leather, Dex)", "section": "Combat", "source": "setup" },
+    { "key": "Stored elsewhere", "value": "at the ferry hut, her fishing nets (Mara's cloak: see her sheet)", "section": "Inventory", "source": "setup" },
+    { "key": "Long-term goals", "value": "a ferry of her own on the Marrow", "section": "Story", "source": "setup" }
+  ],
+  "lists": [
+    { "list": "Wardrobe and keepsakes", "text": "none", "section": "Wardrobe and keepsakes", "source": "setup" },
+    { "list": "History", "text": "s1.3: pulled Mara from the sinkhole.", "section": "History", "source": "s1.3" }
+  ]
+}

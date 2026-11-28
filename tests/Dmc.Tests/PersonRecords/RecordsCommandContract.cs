@@ -118,6 +118,24 @@ public abstract class RecordsCommandContract
     }
 
     [TestMethod]
+    public void ShowPrintsAPersonsSheetFromTheirRecordToTheCardOrToHistory()
+    {
+        SheetFixtures.Put(Folder, "hessa-kettering.json", SheetFixtures.Hessa);
+        var card = Records("show", RecordFixtures.Campaign, "Hessa", "--card", "--folder", Folder);
+        Assert.AreEqual(0, card.ExitCode, card.ToString());
+        Assert.AreEqual("# Hessa Kettering", card.StdoutLines[0]);
+        Assert.AreEqual("- **Voice**: Slow, dry; ends a sentence with \"so.\" \"Sit, Pim, so.\" (to Pim Kettering) (s1.2)", card.StdoutLines[^1]);
+        var sheet = Records("show", RecordFixtures.Campaign, "Hessa", "--sheet", "--folder", Folder).StdoutLines;
+        Assert.AreEqual("- **STR**: 10 (setup)", sheet[^1]);
+        var all = Records("show", RecordFixtures.Campaign, "Hessa", "--all", "--folder", Folder).StdoutLines;
+        Assert.AreEqual("- The 5th of Mirtul: mended Pim's sail for nothing. (s5.1)", all[^1]);
+        // A record that prints no sheet gives its text view for the flag.
+        Assert.AreEqual("Pim Kettering, called:", Records("show", RecordFixtures.Campaign, "Pim Kettering", "--card", "--folder", Folder).StdoutLines[0]);
+        Assert.AreEqual(2, Records("show", RecordFixtures.Campaign, "Hessa", "--card", "--all", "--folder", Folder).ExitCode);
+        Assert.AreEqual(2, Records("show", RecordFixtures.Campaign, "Hessa", "--loud", "--folder", Folder).ExitCode);
+    }
+
+    [TestMethod]
     public void AUsageMistakeIsExitCode2AndAMissingPersonExitCode1()
     {
         Assert.AreEqual(2, Records("nope").ExitCode);

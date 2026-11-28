@@ -1,0 +1,35 @@
+{
+  "person": "Mara Quill",
+  "sheet": "npc-mara.md",
+  "rows": [
+    { "kind": "name", "from": "anyone", "word": "Mara", "source": "s1.3" },
+    { "kind": "name", "from": "anyone", "word": "the scout", "source": "s1.3" }
+  ],
+  "limits": [],
+  "facts": [
+    { "key": "Role in the story", "value": "Wren's sworn companion, a scout of the Fen Watch", "source": "setup" },
+    { "key": "Species, occupation, age", "value": "half-elf, scout, 24", "source": "setup" },
+    { "key": "Usually found", "value": "with the party", "source": "setup" },
+    { "key": "First appeared", "value": "session 1", "source": "s1" },
+    { "key": "Status", "value": "alive", "source": "setup" },
+    { "key": "Names for places and things", "value": "the Marrow is \"the old lady\"", "card": true, "source": "setup" },
+    { "key": "AC, max HP, speed, saves, senses", "value": "AC 14, max HP 22, speed 30 ft; darkvision 60 ft", "card": true, "source": "setup" },
+    { "key": "Attacks", "value": "longbow +6, 1d8+3 piercing, range 150/600 ft", "card": true, "source": "setup" },
+    { "key": "Recharge and limited abilities", "value": "none", "card": true, "source": "setup" },
+    { "key": "Standing traits that change play", "value": "none", "card": true, "source": "setup" }
+  ],
+  "lists": [
+    { "list": "Who", "text": "Wren's sworn companion, a half-elf scout of the Fen Watch, 24.", "card": true, "source": "setup" },
+    { "list": "Looks", "text": "lean, freckled, a green hood patched at the elbow", "card": true, "source": "s1.3" },
+    { "list": "Voice", "text": "clipped and dry: \"Well. That's a problem with teeth.\"", "card": true, "source": "s1.3" },
+    { "list": "Toward the PC, and what they want now", "text": "fiercely loyal since the sinkhole", "card": true, "source": "s1.3" },
+    { "list": "Toward the PC, and what they want now", "text": "wants to clear her brother's name", "card": true, "source": "setup" },
+    { "list": "Items used in play", "text": "longbow and 30 arrows", "card": true, "source": "setup" },
+    { "list": "Voice", "text": "clipped, never wastes a word", "section": "Playing them", "source": "s1.3" },
+    { "list": "Secrets", "text": "Her brother is alive and serves the Drowned King.", "section": "Secrets", "source": "setup" },
+    { "list": "Wardrobe and keepsakes", "text": "her grey fur cloak: kept by Wren at the ferry hut; cold days", "section": "Wardrobe and keepsakes", "source": "setup" },
+    { "list": "Wardrobe and keepsakes", "text": "her blue sash: where kept not recorded; the Watch's feast", "section": "Wardrobe and keepsakes", "source": "setup" },
+    { "list": "Wardrobe and keepsakes", "text": "her mother's silver brooch: kept by Wren; a keepsake, when worn not recorded", "section": "Wardrobe and keepsakes", "source": "setup" },
+    { "list": "History", "text": "s1.3: Wren pulled her from the sinkhole.", "section": "History", "source": "s1.3" }
+  ]
+}

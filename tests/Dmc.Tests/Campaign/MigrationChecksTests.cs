@@ -81,6 +81,41 @@ public sealed class MigrationChecksTests
             ["story/canon.md"] = "# Canon\n\n## People\n\n- **Mara**: keeps the ferry (s1)\n",
         }));
 
+    // ---------- sheets-in-records (migration 011, spec 036) ----------
+
+    /// <summary>Mara's record holding her sheet's facts and lists, printing <c>npc-mara.md</c>.</summary>
+    const string MaraRecord = "{ \"person\": \"Mara\", \"sheet\": \"npc-mara.md\", \"rows\": [], \"limits\": [], \"facts\": [ { \"key\": \"Status\", \"value\": \"alive\", \"source\": \"setup\" } ], \"lists\": [ { \"list\": \"Looks\", \"text\": \"Tall.\", \"card\": true, \"source\": \"s1\" } ] }\n";
+
+    [TestMethod]
+    public void SheetsInRecordsPassesAMigratedCampaign() =>
+        CollectionAssert.AreEqual(Array.Empty<string>(), Run("sheets-in-records",
+            old: new() { ["character-sheets/npc-mara.md"] = "# Mara\n\n- **Status**: alive\n", ["character-sheets/minor-npcs.md"] = "# Minor NPCs\n" },
+            now: new()
+            {
+                ["records/mara.json"] = MaraRecord,
+                ["character-sheets/minor-npcs.md"] = "# Minor NPCs\n",
+                ["character-sheets/npc-mara-history.md"] = "# Mara: history\n",
+            }));
+
+    [TestMethod]
+    public void SheetsInRecordsNamesWhatIsLeftInTheOldShape()
+    {
+        var failures = Run("sheets-in-records",
+            old: new() { ["character-sheets/npc-mara.md"] = "# Mara\n", ["character-sheets/pc-wren.md"] = "# Wren\n" },
+            now: new()
+            {
+                ["records/mara.json"] = MaraRecord.Replace("\"sheet\": \"npc-mara.md\", ", ""),
+                ["character-sheets/pc-wren.md"] = "# Wren\n",
+            });
+        CollectionAssert.AreEqual(new[]
+        {
+            "sheets-in-records: records/mara.json: a record with facts or lists names its sheet (\"sheet\": \"npc-mara.md\")",
+            "sheets-in-records: character-sheets/pc-wren.md is still a Markdown sheet: move its lines into its person's record",
+            "sheets-in-records: character-sheets/npc-mara.md: no record prints it (\"sheet\": \"npc-mara.md\", with its facts and lists)",
+            "sheets-in-records: character-sheets/pc-wren.md: no record prints it (\"sheet\": \"pc-wren.md\", with its facts and lists)",
+        }, failures);
+    }
+
     [TestMethod]
     public void ASheetTitlesEndBracketIsNotPartOfThePerson()
     {

@@ -1,0 +1,9 @@
+{
+  "person": "Wren",
+  "rows": [
+    { "kind": "name", "from": "anyone", "word": "Wren", "source": "setup" },
+    { "kind": "usage", "from": "Mara Quill", "word": "boss", "source": "s1.3" },
+    { "kind": "usage", "from": "Mara Quill", "word": "little fish", "when": "when she is worried", "source": "s1.3" }
+  ],
+  "limits": []
+}

@@ -10,7 +10,8 @@ namespace Dmc.Commands;
 /// <c>records/&lt;slug&gt;.json</c>. <c>show</c> prints records as text (FR-009); <c>check</c> lists the findings of the
 /// full save, or with <c>--draft</c> of migration 010's draft (FR-007); <c>draft</c> starts that draft (FR-008); and
 /// <c>edited</c> is the <c>PostToolUse</c> hook that checks every record right after an edit and refuses a bad one in one
-/// line with exit code 2 (FR-006).
+/// line with exit code 2 (FR-006). Spec 036 adds the rest of a sheet: <c>show --card</c>, <c>--sheet</c> and
+/// <c>--all</c> print a record as a sheet (FR-009), and <c>draft --sheets</c> starts migration 011's draft (FR-012).
 /// </summary>
 /// <remarks>
 /// <c>edited</c> runs in a hook and must never get in the way of an edit it does not refuse, so it catches every failure
@@ -32,16 +33,17 @@ public sealed partial class RecordsCommand : ICommand
     static readonly string Help = """
 usage: dmc records show <campaign> [PERSON ...] [--card | --sheet | --all] [--folder PATH]
        dmc records check <campaign> [--draft] [--folder PATH]
-       dmc records draft <campaign> [--folder PATH]
+       dmc records draft <campaign> [--sheets] [--folder PATH]
        dmc records edited            (the PostToolUse hook; reads the hook's JSON on stdin)
 
-Who calls whom what, and each person's limits, from the campaign's records/<person>.json.
+Who calls whom what, each person's limits, and the rest of their sheet, from the campaign's records/<person>.json.
   show    the records as text: what each person is called and by whom, relationships, their words for
           others, limits, facts and lists; with PERSON, only those (a full name, or a word of a name no one else has);
           --card, --sheet, --all print a person's sheet from their record with sources: to the end of the
           play card, to History, or all of it
   check   one line per finding of the full save, then the count; --draft checks migration 010's draft
-  draft   start migration 010's draft beside the latest backup, from canon's People (also: …) items
+  draft   start migration 010's draft beside the latest backup, from canon's People (also: …) items;
+          --sheets starts migration 011's, one entry for each line of each person sheet
   edited  check every record after an edit; a bad one is refused in one line on stderr, exit 2
 """.Replace("\r\n", "\n");
 
@@ -95,8 +97,17 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
                     io.Out.WriteLine(line);
                 return 0;
             default:
+                if (rest is ["--sheets"])
+                {
+                    // Migration 011's draft (spec 036 FR-012): one entry for each line of each person sheet.
+                    string sheetsPath = SheetDraft.PathFor(root, campaign);
+                    var entries = SheetDraft.FromSheets(root);
+                    SheetDraft.Write(sheetsPath, entries);
+                    io.Out.WriteLine($"draft: {Path.GetRelativePath(folder, sheetsPath).Replace('\\', '/')}, {entries.Count} entries ({entries.Count(e => e.Source is not null)} with a source)");
+                    return 0;
+                }
                 if (rest.Length > 0)
-                    throw new DmcException($"unexpected \"{rest[0]}\": dmc records draft <campaign>", 2);
+                    throw new DmcException($"unexpected \"{rest[0]}\": dmc records draft <campaign> [--sheets]", 2);
                 string path = RecordDraft.PathFor(root, campaign);
                 var rows = RecordDraft.FromCanon(root);
                 RecordDraft.Write(path, rows);

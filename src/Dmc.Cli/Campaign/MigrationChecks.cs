@@ -46,6 +46,7 @@ internal static partial class MigrationChecks
         ["arc-plan-guidance-current"] = ArcPlanGuidanceCurrent,
         ["wardrobe-sections-in-place"] = WardrobeSectionsInPlace,
         ["records-in-place"] = RecordsInPlace,
+        ["sheets-in-records"] = SheetsInRecords,
     };
 
     /// <summary>The heading of a sheet's wardrobe section, without the <c>## </c> (migration 009, spec 030).</summary>
@@ -287,6 +288,33 @@ internal static partial class MigrationChecks
         if (input.New.TryGetValue(Canon, out string? canon) && Section(canon, Retrieval.Register.PeopleHeading) is { } people)
             foreach (string line in people.Where(l => l.Contains("(also:", StringComparison.OrdinalIgnoreCase)))
                 yield return $"{Canon} People: an entry still has (also: …): {(line.Length > 80 ? line[..80] + "..." : line.Trim())}";
+    }
+
+    /// <summary>
+    /// <c>sheets-in-records</c> (migration 011, spec 036 FR-013): no person sheet is left in <c>character-sheets/</c>
+    /// (<c>minor-npcs.md</c> and the <c>-history.md</c> files stay); each person sheet the campaign had before is printed
+    /// by a record that names it as <c>sheet</c> and holds its facts or lists; and every record passes the rules of its
+    /// shape, as <see cref="RecordsInPlace"/> checks them.
+    /// </summary>
+    /// <param name="input">The campaign before and after.</param>
+    static IEnumerable<string> SheetsInRecords(CheckInput input)
+    {
+        var records = new List<PersonRecords.PersonRecord>();
+        foreach (var (path, text) in input.New.Where(f => f.Key.StartsWith(RecordsFolder, StringComparison.Ordinal) && f.Key.EndsWith(".json", StringComparison.Ordinal)).OrderBy(f => f.Key, StringComparer.Ordinal))
+        {
+            if (PersonRecords.RecordFiles.Parse("", path[RecordsFolder.Length..], text, out var record) is { } error)
+                yield return error;
+            else
+                records.Add(record!);
+        }
+        foreach (string error in PersonRecords.RecordRules.Check(PersonRecords.SceneBook.Lenient(ContinuesAnother(input)), records).Errors)
+            yield return error;
+        foreach (var (path, _) in SheetsOf(input.New, npcOnly: false))
+            yield return $"{path} is still a Markdown sheet: move its lines into its person's record";
+        var printed = new HashSet<string>(records.Where(r => r.HasSheetContent && r.Sheet is not null).Select(r => r.Sheet!), StringComparer.OrdinalIgnoreCase);
+        foreach (var (path, _) in SheetsOf(input.Old, npcOnly: false))
+            if (!printed.Contains(path[Sheets.Length..]))
+                yield return $"{path}: no record prints it (\"sheet\": \"{path[Sheets.Length..]}\", with its facts and lists)";
     }
 
     /// <summary><c>no-dead-opposition-rows</c> (migration 004): the Opposition table of <c>story/dm-notes.md</c> has no row with none left alive.</summary>

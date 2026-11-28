@@ -53,8 +53,14 @@ internal static partial class BackupFolder
     /// </summary>
     public const string RecordsDraftSuffix = ".records-draft.json";
 
+    /// <summary>
+    /// The companion <c>dmc records draft --sheets</c> writes for migration 011 (spec 036 research R7): one entry for each
+    /// line of each person sheet, before the model splits them. It is never a campaign file, and goes with its backup.
+    /// </summary>
+    public const string SheetsDraftSuffix = ".sheets-draft.json";
+
     /// <summary>Every companion suffix, in the order they are removed.</summary>
-    public static readonly string[] CompanionSuffixes = [AccountingSuffix, VerifiedSuffix, MigratingSuffix, RecordsDraftSuffix];
+    public static readonly string[] CompanionSuffixes = [AccountingSuffix, VerifiedSuffix, MigratingSuffix, RecordsDraftSuffix, SheetsDraftSuffix];
 
     /// <summary>A counted backup's name, after the campaign's name: <c>_backup_</c>, 14 digits, an optional <c>-N</c>, <c>.zip</c>.</summary>
     [GeneratedRegex(@"^_backup_(\d{14})(?:-(\d+))?\.zip$", RegexOptions.CultureInvariant)]

@@ -197,6 +197,41 @@ public abstract class RecordsEditedContract
         Assert.AreEqual("dmc records: to Pim Kettering, \"Cap\" now means Hessa Kettering and Ilvane Vell; the hook prints both.", (string?)output["additionalContext"]);
     }
 
+    /// <summary>Hessa's Status fact in <see cref="SheetFixtures.Hessa"/>, which the edits below add after.</summary>
+    const string HessaStatus = """{ "key": "Status", "value": "alive", "source": "s5.1" }""";
+
+    [TestMethod]
+    public void ASecondValueForAKeyIsRefusedInOneLine()
+    {
+        SheetFixtures.Put(_folder, "hessa-kettering.json", SheetFixtures.Hessa);
+        var result = EditRecord("hessa-kettering.json", HessaStatus, HessaStatus + ",\n    " + """{ "key": "Status", "value": "dead", "source": "s6.1" }""");
+        Assert.AreEqual(2, result.ExitCode, result.ToString());
+        CollectionAssert.AreEqual(new[] { "dmc records: records/hessa-kettering.json fact 3 (\"Status\"): a second value for \"Status\" (fact 2 says \"alive\"): change that fact, or put this one back. Fix the record now, or put it back as it was." }, result.StderrLines);
+    }
+
+    [TestMethod]
+    public void ADayWithNoMonthIsRefused()
+    {
+        SheetFixtures.Put(_folder, "hessa-kettering.json", SheetFixtures.Hessa);
+        var result = EditRecord("hessa-kettering.json", HessaStatus, HessaStatus + ",\n    " + """{ "key": "Net ready", "value": "on the 14th", "source": "s6.1" }""");
+        Assert.AreEqual(2, result.ExitCode, result.ToString());
+        StringAssert.Contains(result.Stderr, "\"the 14th\" has no month: write the full in-world date");
+    }
+
+    [TestMethod]
+    public void ANewKeyStandsWithTheKeysTheRecordHas()
+    {
+        SheetFixtures.Put(_folder, "hessa-kettering.json", SheetFixtures.Hessa);
+        var result = EditRecord("hessa-kettering.json", HessaStatus, HessaStatus + ",\n    " + """{ "key": "Status at home", "value": "head of the galley", "source": "s6.1" }""");
+        Assert.AreEqual(0, result.ExitCode, result.ToString());
+        var output = System.Text.Json.Nodes.JsonNode.Parse(result.Stdout)!["hookSpecificOutput"]!;
+        Assert.AreEqual("dmc records: records/hessa-kettering.json adds the key \"Status at home\" (close to \"Status\"); its keys: Role in the story, Status, AC, max HP, speed, saves, senses, STR; its lists: Looks, Voice, What they know, History. Merge any that say the same.",
+            (string?)output["additionalContext"]);
+
+        var same = EditRecord("hessa-kettering.json", "head of the galley", "head of the barge's galley");
+        Assert.AreEqual("", same.Stdout + same.Stderr, "a changed value adds no key");
+    }
+
     [TestMethod]
     public void ASheetEditThatChangesTheTextAndCreditsThePlayerIsRefused()
     {

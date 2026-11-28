@@ -1,0 +1,39 @@
+# 011: made with dmc campaign verify --list of after/ against a backup of before/.
+# Each sheet line moved into a fact or list entry of its person's record, anchored on the record's text; each heading
+# on the section or card mark that now places its entries.
+8e9853da6250	reworded	"key": "Role in the story"
+df09f7fd35e9	reworded	"value": "half-elf, scout, 24"
+ac04196d7c3d	reworded	"value": "with the party"
+fdb0d2c168c3	reworded	"key": "First appeared"
+647d91f7eac9	reworded	"key": "Status", "value": "alive"
+8a750a95cd05	reworded	"card": true
+41d22a0171ca	reworded	"list": "Who"
+25814dce2a06	reworded	a green hood patched at the elbow
+380259cc6944	reworded	clipped and dry
+4d3a94f5f897	reworded	"key": "Names for places and things"
+27ba36f02cc7	reworded	fiercely loyal since the sinkhole
+1eddc4e00243	reworded	AC 14, max HP 22, speed 30 ft; darkvision 60 ft
+87e5a334fdb8	reworded	longbow +6, 1d8+3 piercing, range 150/600 ft
+7464b00b34e2	reworded	"key": "Recharge and limited abilities"
+40b885449486	reworded	"key": "Standing traits that change play"
+ba1160c90920	reworded	longbow and 30 arrows
+36aec415d906	reworded	"section": "Playing them"
+5424cba0a70a	reworded	clipped, never wastes a word
+ec6d0d4602e8	reworded	Her brother is alive and serves the Drowned King.
+be481bc63ab3	reworded	"section": "Wardrobe and keepsakes"
+79f15126c862	reworded	her grey fur cloak: kept by Wren at the ferry hut; cold days
+7d06b31a9c6d	reworded	her blue sash: where kept not recorded; the Watch's feast
+0d10b041bbd9	reworded	her mother's silver brooch: kept by Wren; a keepsake, when worn not recorded
+0e7696009337	reworded	"section": "History"
+f4fcd87e61ad	reworded	s1.3: Wren pulled her from the sinkhole.
+ea10b7982e8a	reworded	"key": "Player character"
+42bdb14dc82d	reworded	"value": "halfling, urchin"
+acb7973584bd	reworded	"value": "rogue 5"
+49fcf2c78b50	reworded	"section": "Combat"
+2de8e1911af9	reworded	"key": "Max HP", "value": "31"
+b03f7aa686ba	reworded	15 (studded leather, Dex)
+758f487fe8e9	reworded	"section": "Inventory"
+158fc3592a59	reworded	at the ferry hut, her fishing nets
+e9e509dcd358	reworded	"section": "Story"
+436f2efb8d88	reworded	a ferry of her own on the Marrow
+a8a4931eb07d	reworded	s1.3: pulled Mara from the sinkhole.

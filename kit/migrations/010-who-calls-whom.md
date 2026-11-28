@@ -1,7 +1,7 @@
 ---
 standard: 10
 title: Who calls whom what, and what each person cannot do, move into a record per person
-shipped: the PR for issue #290
+shipped: PR #296
 touches: [character-sheets/, story/canon.md, records/]
 drops: []
 checks: [records-in-place]

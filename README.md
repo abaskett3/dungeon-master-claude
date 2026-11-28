@@ -170,7 +170,7 @@ DMC can run a published adventure from your own copy instead of an original stor
 3. DMC reads the book and writes an index, a DM digest of each chapter and reference lists into `modules/<module>/`, keeping page references back to your original. A long book takes a while and is best done in its own session; the opening chapters are enough to start, and the rest can be ingested later.
 4. Type `/dmc-new-campaign` and say you want to play that module.
 
-During play DMC runs from the digest and the original pages, not from memory, and keeps `module-progress.md` in your campaign folder: where you are, which areas are cleared, what you found and where you left the script. You are free to leave the script; DMC improvises and records what changed. Encounters are scaled for a solo character, since modules assume a party of four or five.
+During play DMC runs from the digest and the original pages, not from memory, and keeps `module-progress.md` in your campaign folder: where you are, which areas are cleared, what you found and where you left the script. You are free to leave the script; DMC improvises from the module and records what changed. The module's world is the edge: if you head out of it, something in the story turns you back safely, and when the module ends DMC asks whether to go on in that world or take your characters somewhere else. Encounters are scaled for a solo character, since modules assume a party of four or five.
 
 `modules/` is full of spoilers. Use your own purchased copy of a book and do not share that folder.
 

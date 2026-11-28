@@ -101,20 +101,20 @@ If it does not fit, change it before initiative: fewer enemies, lower HP or dama
 
 ## Running a published module
 
-A campaign is a module campaign when its folder contains `module-progress.md`. That file names the module and records where the party is in it. The module itself lives in `modules/<module>/`:
+A campaign is a module campaign when its folder holds `module-progress.md`, which names the module and the party's place in it. The module itself lives in `modules/<module>/`:
 
-- `source/`: the original PDF or files the player supplied
+- `source/`: the player's original files
 - `index.md`: overview, chapter list with page ranges, adventure flow, ingest status
 - `chapters/`: a DM digest of each chapter, with page references back to the source
-- `monsters.md`, `npcs.md`, `items.md`: module-specific stat blocks, characters and treasure
+- `monsters.md`, `npcs.md`, `items.md`: the module's stat blocks, characters and treasure
 
-If the module has not been ingested yet, or the chapter you need is missing, use the `dmc-ingest-module` skill. Everything in `modules/` is a spoiler.
+If the module or the chapter you need is not ingested, use the `dmc-ingest-module` skill. Everything in `modules/` is a spoiler.
 
-- **Run from the files, not from memory.** You may half-remember a published adventure from training; that memory is unreliable and must not be used. Before the party enters an area, meets a module NPC or starts a module encounter, read that part of the chapter digest: `dmc lookup <module> <heading>` prints one area, NPC, stat block, item, spell or player option by its heading; if it finds no heading, try a nearest heading it lists, then Grep the module's files (never read one whole) and open the pages they cite in `source/`. For read-aloud text, exact stat blocks, puzzle solutions, trap details and treasure, open the cited pages in `source/`.
-- **Keep your place.** Update `module-progress.md` when the party enters or finishes a keyed area, resolves an encounter, finds treasure, meets or loses a module NPC, triggers a scripted event or reaches a chapter milestone, and point "Digest to read before continuing" at the heading of the area the party is in. A new session must be able to tell exactly which rooms are cleared and which are untouched.
-- **Let the player leave the script.** Do not railroad. When they go somewhere the module does not cover, improvise in keeping with it, record the deviation in `module-progress.md`, and note in `dm-notes.md` what it changes later (a dead NPC who was meant to deliver a clue needs another route for that clue). Offer hooks back toward the plot instead of blocking other paths.
-- **Scale for a solo player.** Size every module encounter as described under "Sizing fights", and write the scaling you used next to the encounter in `module-progress.md` so it is the same if the player returns.
-- **Do not leak what is ahead.** Never mention upcoming areas, twists or the contents of unvisited rooms, in or out of character, without the spoiler warning and confirmation described under "Out of character".
+- **Run from the files, not from memory.** Never trust your memory of a published adventure. Before the party enters an area, meets a module NPC or starts a module encounter, read that part of the chapter digest: `dmc lookup <module> <heading>` prints one area, NPC, stat block, item, spell or player option by its heading; if it finds no heading, try a nearest heading it lists, then Grep the module's files (never read one whole) and open the pages they cite in `source/`. For read-aloud text, exact stat blocks, puzzle solutions, traps and treasure, open the cited pages in `source/`.
+- **Keep your place.** Update `module-progress.md` when the party enters or finishes a keyed area, resolves an encounter, finds treasure, meets or loses a module NPC, triggers a scripted event or reaches a chapter milestone, and point "Digest to read before continuing" at the heading of the area the party is in, so a new session knows what is cleared.
+- **Leave the script, not the world.** Do not railroad. Where the module is silent, improvise from it, record the deviation in `module-progress.md`, note in `dm-notes.md` what it changes later (a dead NPC's clue needs another route), and offer hooks back to the plot. A party leaving its world turns back for a safe in-world reason (a fog they wake from in camp, a bridge out), never an out-of-character no; a border the module closes holds. Monsters and encounters are the module's; NPCs, races, spells and abilities from it first, then core rules or another module; invent only a minor NPC none of its fits.
+- **Scale for a solo player.** Size every module encounter as "Sizing fights" says, and write the scaling beside it in `module-progress.md`, to reuse on a return.
+- **Do not leak what is ahead.** Never mention upcoming areas, twists or the contents of unvisited rooms, in or out of character, without the spoiler warning and confirmation of "Out of character".
 
 ## Dice
 

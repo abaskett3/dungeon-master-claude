@@ -68,15 +68,15 @@ Uktar), with Shieldmeet after Midsummer every fourth year. Years are counted DR.
   with them.
 - Q: Where does it go? → A: Its own spec and migration (012), with a backup of each of the two closed campaigns.
 
+- Q: The 41 days? Harptos puts Midsummer 41 days later in the year than the old calendar (the 213th day, not the
+  172nd), so the two anchors stretch the time between The Silver Egg's end and Rorn's Landing's start from 135 days
+  to 176. → A: Accepted: the wyrmlings are about nine months old in Rorn's Landing, not "about seven".
+- Q: Midwinter 1493 falls on the road home: The Silver Egg's Day 49 (the leave-taking from Riverhold,
+  `session-046.md` scene 8) is the 30th of Hammer, so Day 50, the first day on the road, is Midwinter, with Hala in
+  Riverhold with the Birches. → A: Accepted.
+
 ### Open (to put to the player)
 
-- **The 41 days.** Harptos puts Midsummer 41 days later in the year than the old calendar (the 213th day, not the
-  172nd), so the two anchors stretch the time between The Silver Egg's end and Rorn's Landing's start from 135 days
-  to 176. The wyrmlings are about nine months old in Rorn's Landing, not "about seven". Accept?
-- **Midwinter 1493 falls on the road home.** By the 1st of Hammer anchor The Silver Egg's Day 49 (Monday the 2nd of
-  the second month, the leave-taking from Riverhold, `session-046.md` scene 8) is the 30th of Hammer, so Day 50, the
-  first day on the road, is Midwinter; Hala was in Riverhold with the Birches. The player remembers Shale in
-  Riverhold at the time.
 - **The gap between the campaigns.** A date after The Silver Egg's end and before Rorn's Landing's start (the first
   flight "on the 19th of Ches") is in neither anchor's span. Proposed: it counts from Midsummer, as Rorn's Landing
   does, so its weekdays agree with Rorn's Landing's ("Thursday the 26th of Kythorn", two days before its start,

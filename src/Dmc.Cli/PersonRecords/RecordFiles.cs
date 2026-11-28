@@ -39,6 +39,17 @@ internal static partial class RecordFiles
     /// <param name="person">The person's full name.</param>
     public static string Slug(string person) => NotSlug().Replace(person.ToLowerInvariant(), "-").Trim('-') + ".json";
 
+    /// <summary>A run of characters that are not lower-case ASCII letters or digits, for the file name before T063.</summary>
+    [GeneratedRegex("[^a-z0-9]+", RegexOptions.CultureInvariant)]
+    private static partial Regex NotAsciiSlug();
+
+    /// <summary>
+    /// The file name a record had before T063 kept letters outside ASCII: only <c>a</c> to <c>z</c> and digits kept.
+    /// The check takes it too, so a record written under the old rule still passes.
+    /// </summary>
+    /// <param name="person">The person's full name.</param>
+    public static string AsciiSlug(string person) => NotAsciiSlug().Replace(person.ToLowerInvariant(), "-").Trim('-') + ".json";
+
     /// <summary>A bracket at the end of a sheet's title, such as the <c> (Hysvearorn)</c> of <c># Rorn (Hysvearorn)</c>.</summary>
     [GeneratedRegex(@"\s*\([^()]*\)\s*$", RegexOptions.CultureInvariant)]
     private static partial Regex TitleBracket();

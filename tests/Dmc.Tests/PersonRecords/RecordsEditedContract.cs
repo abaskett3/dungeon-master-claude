@@ -95,6 +95,31 @@ public abstract class RecordsEditedContract
         Assert.AreEqual(0, deleted.ExitCode, "a deleting edit adds no quotation: " + deleted);
     }
 
+    /// <summary>
+    /// A quotation whose words an edit changes is new and must be in this session's messages: an Edit of part of it,
+    /// or a deletion inside it when the hook is given the file as it was (<c>tool_response.originalFile</c>).
+    /// </summary>
+    [TestMethod]
+    public void AQuotationAnEditChangesIsNew()
+    {
+        string earlier = RecordFixtures.Log(_folder, "OOC: Grumbald calls Pim \"Thimble\", he said it when she sewed his glove.");
+        const string quoted = """{ "kind": "usage", "from": "Grumbald", "word": "Thimble", "source": "player: \"he said it when she sewed his glove\"" }""";
+        Assert.AreEqual(0, EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + quoted, earlier).ExitCode);
+
+        string today = RecordFixtures.Log(_folder, "We pole on downriver.");
+        var changed = EditRecord("pim-kettering.json", "his glove", "her glove", today);
+        Assert.AreEqual(2, changed.ExitCode, changed.ToString());
+        StringAssert.Contains(changed.Stderr, "the player's words \"he said it when she sewed her glove\" are not in this session's messages");
+
+        string path = Path.Combine(Root, "records", "pim-kettering.json");
+        string original = File.ReadAllText(path);
+        File.WriteAllText(path, original.Replace("sewed her glove", "sewed glove"));
+        var input = System.Text.Json.Nodes.JsonNode.Parse(RecordFixtures.Edited(_folder, "Edit", path, "her ", "", today))!;
+        input["tool_response"] = new System.Text.Json.Nodes.JsonObject { ["filePath"] = path, ["originalFile"] = original };
+        var deleted = Edited(input.ToJsonString());
+        Assert.AreEqual(2, deleted.ExitCode, "a deletion inside a quotation: " + deleted);
+    }
+
     /// <summary>T059: a row whose speaker has a sheet and no record yet stands with a note, so two records that name each other can be written one at a time.</summary>
     [TestMethod]
     public void ASpeakerWithASheetAndNoRecordYetStandsWithANote()
@@ -104,6 +129,11 @@ public abstract class RecordsEditedContract
         Assert.AreEqual(0, result.ExitCode, result.ToString());
         var output = System.Text.Json.Nodes.JsonNode.Parse(result.Stdout)!["hookSpecificOutput"]!;
         Assert.AreEqual("dmc records: records/pim-kettering.json row 2 (\"Pip\"): \"Orrin Flax\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then).", (string?)output["additionalContext"]);
+
+        const string hessa = """{ "kind": "name", "from": "anyone", "word": "Hessa", "source": "setup" }""";
+        var other = EditRecord("hessa-kettering.json", hessa, hessa + ",\n    " + """{ "kind": "usage", "from": "Grumbald", "word": "Cook", "source": "s6.1" }""");
+        Assert.AreEqual(0, other.ExitCode, other.ToString());
+        Assert.AreEqual("", other.Stdout, "the note is for the record edited only");
     }
 
     [TestMethod]

@@ -98,10 +98,11 @@ internal static partial class RowsReminder
 
     /// <summary>
     /// The part's lines: a word line for each row word in the message; then, when anyone present or named has not been
-    /// shown in this scene (<paramref name="shown"/> holds <c>key|person</c>), the header and their blocks, in two
-    /// passes: first each person's "says" line, what they call the others here (short, and what keeps a speaker's words
-    /// right), and their limits line (US3, T057), within <paramref name="room"/>; then the rest of each block (what
-    /// they are called, their relationships), whole, while the part stays within <see cref="CapBytes"/>. Each person's
+    /// shown in this scene (<paramref name="shown"/> holds <c>key|person</c>), the header and their blocks, in three
+    /// passes: first every person's "says" line, what they call the others here (short, and what keeps a speaker's
+    /// words right), then every person's limits line (US3, T057), each line on its own within <paramref name="room"/>,
+    /// so one person's long limits never keep out another's words; then the rest of each block (what they are called,
+    /// their relationships), whole, while the part stays within <see cref="CapBytes"/>. Each person's
     /// lines print in their block's order. In one pass, within the part's cap, a long block left no room for those
     /// after it: in SC-003's run (2026-11-27) one person's block, most of it what others call them, crowded out the main
     /// risk speaker's in every treatment run. A person is named in the header when any line of theirs is printed, so a
@@ -149,8 +150,11 @@ internal static partial class RowsReminder
             used += cost;
         }
 
+        // Three passes, each line on its own: every "says" line, then every limits line, within the room; then the rest.
         foreach (var (person, lines) in blocks)
-            Add(person, lines.Where(l => IsFirst(person, l)).ToList(), room);
+            Add(person, lines.Where(l => l.StartsWith(SaysStart(person), StringComparison.Ordinal)).ToList(), room);
+        foreach (var (person, lines) in blocks)
+            Add(person, lines.Where(l => l.StartsWith(LimitsStart(person), StringComparison.Ordinal)).ToList(), room);
         foreach (var (person, lines) in blocks)
             Add(person, lines.Where(l => !IsFirst(person, l)).ToList(), cap);
         var included = due.Where(printed.ContainsKey).ToList();

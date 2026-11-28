@@ -114,9 +114,11 @@ public sealed class RecordRulesTests
     {
         File.WriteAllText(Path.Combine(Root, "story", "sessions", "session-007.md"),
             "# Session 7\n\n## Scenes\n\n<!--\n### Scene N: short title (location, in-world time)\n-->\n\n### Scene 1: an invented scene (the lock)\n");
-        var book = SceneBook.For(_folder, RecordFixtures.Campaign);
+        var book = SceneBook.For(_folder, RecordFixtures.Campaign, inPlay: true);
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 1)));
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 2)), "the scene in play");
+        Assert.AreEqual("scene s7.2 is not in the session logs", SceneBook.For(_folder, RecordFixtures.Campaign).Missing(new RecordSource.SceneRef(null, 7, 2)),
+            "the full save's check, run after the scene's block is written, does not take the scene in play");
         Assert.AreEqual("scene s7.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 7, 3)));
         Assert.AreEqual("scene s6.7 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 6, 7)), "not the latest session");
         Assert.AreEqual("scene kettle-before s2.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(RecordFixtures.Earlier, 2, 3)), "not a campaign this one continues' scene in play");
@@ -154,5 +156,25 @@ public sealed class RecordRulesTests
         Assert.AreEqual("íla.json", RecordFiles.Slug("Íla"));
         Assert.AreEqual("ясна.json", RecordFiles.Slug("Ясна"));
         Assert.AreEqual("shalefire-shale-stoutheart.json", RecordFiles.Slug("Shalefire \"Shale\" Stoutheart"));
+        Assert.HasCount(0, With("la.json", """{ "person": "Éla", "rows": [ { "kind": "name", "from": "anyone", "word": "Éla", "source": "setup" } ], "limits": [] }""").Errors,
+            "a record written under the old file name still passes");
+    }
+
+    /// <summary>A check of shape alone (migration 010's records-in-place) cannot see an earlier campaign, so it takes any named speaker.</summary>
+    [TestMethod]
+    public void AShapeOnlyCheckTakesASpeakerItCannotSee()
+    {
+        var record = new PersonRecord(RecordFixtures.Campaign, "pim-kettering.json", "Pim Kettering", null,
+            [new Row("usage", "Old Wick", "Minnow", null, ["Old Wick"], "kettle-before s2.1", [])], [], []);
+        Assert.HasCount(0, RecordRules.Check(SceneBook.Lenient(), [record]).Errors);
+    }
+
+    /// <summary>A minor-NPC list or a history file is no person with a sheet.</summary>
+    [TestMethod]
+    public void TheSheetTitlesNameOnlyPersons()
+    {
+        File.WriteAllText(Path.Combine(Root, "character-sheets", "minor-npcs.md"), "# Minor NPCs\n");
+        File.WriteAllText(Path.Combine(Root, "character-sheets", "npc-pim-kettering-history.md"), "# Pim Kettering history\n");
+        CollectionAssert.AreEquivalent(new[] { "Pim Kettering", "Ilvane Vell" }, RecordCheck.SheetTitles(Root).ToList());
     }
 }

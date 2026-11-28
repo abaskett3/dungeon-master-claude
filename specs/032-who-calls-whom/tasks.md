@@ -190,3 +190,14 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [X] T062 Measure SC-004 again after T055 and T057 on the migrated copy, and record it in `specs/032-who-calls-whom/spec.md` per SC-004 (partial); +2 tokens per turn on average, max 683, as before
 - [X] T063 Keep every letter and digit in a record's file name, lower-cased, so two persons never share one, in `src/Dmc.Cli/PersonRecords/RecordFiles.cs` per FR-001 (partial); `RecordRulesTests.AFileNameKeepsEveryLetter`
 - [X] T064 Accept a scene source for the scene in play, the one after the last heading of this campaign's latest session log, whose block is written when the scene ends, in `src/Dmc.Cli/PersonRecords/RecordRules.cs` (`SceneBook`), by the maintainer's ruling (2026-11-28) per FR-003 and FR-006 (partial); `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`
+
+## Phase 12: The code review of PR #298
+
+- [X] T065 Place each "says" line, then each limits line, on its own within the room, so one person's long limits never keep out a "says" line (`src/Dmc.Cli/Retrieval/RowsReminder.cs`; `RowsReminderCapTests.ALongLimitsLineNeverKeepsOutASaysLine`)
+- [X] T066 Find an edit's new quotations against the record as it was before the edit (`tool_response.originalFile` when given, else the edit undone), so a quotation whose words the edit changes is new (`src/Dmc.Cli/PersonRecords/RecordEdit.cs`; `RecordsEditedContract.AQuotationAnEditChangesIsNew`)
+- [X] T067 Take the scene in play only in the check after each edit, not in `dmc records check` at the full save (`RecordRules.cs`, `SceneBook`; `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T068 Give the note on a person with no record yet only for the record edited (`RecordEdit.cs`; `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T069 Accept a record's file name from before T063 (`RecordFiles.AsciiSlug`; `RecordRulesTests.AFileNameKeepsEveryLetter`)
+- [X] T070 Let migration 010's shape-only check take any speaker a row names, as it cannot see the campaigns this one continues (`RecordRules.cs`; `RecordRulesTests.AShapeOnlyCheckTakesASpeakerItCannotSee`)
+- [X] T071 Leave `minor-npcs.md` and history files out of the sheet titles (`RecordCheck.SheetTitles`; `RecordRulesTests.TheSheetTitlesNameOnlyPersons`)
+- [X] T072 Read a scene heading's number with a capture group (`SceneBook.SceneHeading`)

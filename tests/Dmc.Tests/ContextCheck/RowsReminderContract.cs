@@ -159,6 +159,21 @@ public sealed class RowsReminderCapTests
         CollectionAssert.AreEqual(new[] { "Ann Reedley", "Bo" }, RowsReminder.Present(index, "Annie, Bo. (Cy at the mill (since noon).)"));
     }
 
+    /// <summary>One person's long limits line never keeps out their own or another's "says" line: each line is placed on its own.</summary>
+    [TestMethod]
+    public void ALongLimitsLineNeverKeepsOutASaysLine()
+    {
+        var index = new Dmc.PersonRecords.RecordIndex([
+            new Dmc.PersonRecords.PersonRecord("c", "bo.json", "Bo", null, [new Dmc.PersonRecords.Row("usage", "Ann", "Bobo", null, null, "s1.1", [])],
+                [new Dmc.PersonRecords.Limit(new string('x', 2_500), "s1.2", [])], []),
+            new Dmc.PersonRecords.PersonRecord("c", "ann.json", "Ann", null, [new Dmc.PersonRecords.Row("usage", "Bo", "Sis", null, null, "s1.3", [])], [], []),
+        ]);
+        var lines = RowsReminder.Lines(index, "They wave.", "Bo, Ann", new HashSet<string>());
+        CollectionAssert.Contains(lines, "- Bo says: \"Sis\" for Ann");
+        CollectionAssert.Contains(lines, "- Ann says: \"Bobo\" for Bo");
+        Assert.IsFalse(lines.Any(l => l.StartsWith("- Bo, limits:", StringComparison.Ordinal)), "the limits line is over the room");
+    }
+
     /// <summary>T056: the scene key follows who is present, not the rest of the text, so a round of a fight is not a new scene.</summary>
     [TestMethod]
     public void TheSceneKeyChangesWithWhoIsPresentAndNothingElse()

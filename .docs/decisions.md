@@ -1083,3 +1083,31 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - A name written with a combining accent gets a different file name from the same name composed: `dmc` runs in invariant globalization mode, which does not compose.
   - The scene in play is accepted for this campaign only, and only in its latest session log.
 - **Source:** Issue #297; PR #296's code review; `specs/032-who-calls-whom/tasks.md` Phase 11; `src/Dmc.Cli/Retrieval/RowsReminder.cs`; `src/Dmc.Cli/PersonRecords/RecordEdit.cs`, `RecordRules.cs`, `RecordFiles.cs`.
+
+## The code review of PR #298: the record checks' remaining gaps (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Eight fixes (tasks T065 to T072):
+  - The rows part places every "says" line, then every limits line, each on its own within the room, then the rest.
+  - `dmc records edited` finds new quotations against the record as it was before the edit: the hook's `tool_response.originalFile` when given, else the edit undone.
+  - The scene in play counts in the check after each edit only.
+  - The note on a person with no record yet is given only for the record edited.
+  - A record's file name from before T063 still passes.
+  - Migration 010's shape-only check takes any speaker a row names.
+  - `minor-npcs.md` and history files are not sheet titles.
+  - A scene heading's number is read with a capture group.
+- **Reason:**
+  - The review of #298 found that a long limits line could keep out a "says" line.
+  - An Edit of part of a quotation ("lass" to "lad") passed as old.
+  - The full save took a scene that does not exist.
+  - The note on a waiting record repeated on every edit of any record.
+  - A record written under the old file name would be refused, and so would every edit of the campaign.
+  - `records-in-place` still refused a sequel's carried-over speakers.
+  - "Minor NPCs" counted as a person.
+  - The maintainer approved the eight fixes (2026-11-28).
+- **Rejected:** Reprinting a scene's blocks on a later return to the same people, since the rows are still in the context until a compaction, which clears what was shown. Caching the linked records and sheet titles, which only cost speed.
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Limits:**
+  - That Claude Code gives a `PostToolUse` hook `tool_response.originalFile` is unverified. The play logs' tool results hold it for Edit and Write, and a probe of the hook's input was not run.
+  - Without it, a deletion inside a quotation's words is not caught.
+- **Source:** Issue #297; the code review of PR #298; `specs/032-who-calls-whom/tasks.md` Phase 12; `src/Dmc.Cli/PersonRecords/`; `src/Dmc.Cli/Retrieval/RowsReminder.cs`.

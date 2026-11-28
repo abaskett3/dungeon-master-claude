@@ -190,7 +190,11 @@ internal static partial class RecordCheck
         }
     }
 
-    /// <summary>The titles of a campaign's sheets, so a draft may name a person whose record it will create.</summary>
+    /// <summary>
+    /// The titles of a campaign's sheets, so a draft may name a person whose record it will create, and the edit hook
+    /// a person whose record is still to be written; not <c>minor-npcs.md</c> or a <c>-history.md</c> file, whose titles
+    /// name no one.
+    /// </summary>
     /// <param name="root">The campaign folder.</param>
     internal static IEnumerable<string> SheetTitles(string root)
     {
@@ -198,6 +202,7 @@ internal static partial class RecordCheck
         if (!Directory.Exists(folder))
             return [];
         return Directory.EnumerateFiles(folder, "*.md")
+            .Where(p => Path.GetFileName(p) != "minor-npcs.md" && !p.EndsWith("-history.md", StringComparison.Ordinal))
             .Select(p => File.ReadLines(p).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)))
             .OfType<string>().Select(t => RecordFiles.SheetPerson(t[2..])).ToList();
     }

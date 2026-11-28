@@ -159,6 +159,19 @@ public sealed class RowsReminderCapTests
         CollectionAssert.AreEqual(new[] { "Ann Reedley", "Bo" }, RowsReminder.Present(index, "Annie, Bo. (Cy at the mill (since noon).)"));
     }
 
+    /// <summary>T056: the scene key follows who is present, not the rest of the text, so a round of a fight is not a new scene.</summary>
+    [TestMethod]
+    public void TheSceneKeyChangesWithWhoIsPresentAndNothingElse()
+    {
+        var index = new Dmc.PersonRecords.RecordIndex([
+            new Dmc.PersonRecords.PersonRecord("c", "bo.json", "Bo", null, [new Dmc.PersonRecords.Row("name", "anyone", "Bo", null, null, "setup", [])], [], []),
+            new Dmc.PersonRecords.PersonRecord("c", "cy.json", "Cy", null, [new Dmc.PersonRecords.Row("name", "anyone", "Cy", null, null, "setup", [])], [], []),
+        ]);
+        string Key(string text) => RowsReminder.SceneKey(RowsReminder.Present(index, text));
+        Assert.AreEqual(Key("Bo, Cy\n| Bo | 12/20 HP | initiative 14 |"), Key("Cy, Bo\n| Bo | 7/20 HP | initiative 14 | (Cy hidden)"));
+        Assert.AreNotEqual(Key("Bo, Cy"), Key("Bo"));
+    }
+
     /// <summary>
     /// SC-003's run (2026-11-27): the first person present has a long block (what many others call them), and in one
     /// pass it left no room for the next person's block, so that speaker's own words were never printed. Every "says"
@@ -173,12 +186,14 @@ public sealed class RowsReminderCapTests
         calledAnn.Add(new Dmc.PersonRecords.Row("usage", "Bo", "Sis", null, null, "s1.3", []));
         var index = new Dmc.PersonRecords.RecordIndex([
             new Dmc.PersonRecords.PersonRecord("c", "bo.json", "Bo", null, calledBo, [], []),
-            new Dmc.PersonRecords.PersonRecord("c", "ann.json", "Ann", null, calledAnn, [], []),
+            new Dmc.PersonRecords.PersonRecord("c", "ann.json", "Ann", null, calledAnn, [new Dmc.PersonRecords.Limit("Cannot swim.", "s1.4", [])], []),
         ]);
         var lines = RowsReminder.Lines(index, "They wave.", "Bo, Ann", new HashSet<string>());
         Assert.IsLessThanOrEqualTo(RowsReminder.CapBytes, lines.Sum(l => System.Text.Encoding.UTF8.GetByteCount(l) + 1));
         CollectionAssert.Contains(lines, "- Bo says: \"Sis\" for Ann");
         CollectionAssert.Contains(lines, "- Ann says: \"Bobo\" for Bo");
+        CollectionAssert.Contains(lines, "- Ann, limits: Cannot swim. (s1.4)", "a limit prints in the first pass (T057)");
+        Assert.IsLessThan(lines.IndexOf("- Ann, limits: Cannot swim. (s1.4)"), lines.IndexOf("- Ann says: \"Bobo\" for Bo"), "in the block's order");
         Assert.EndsWith("Bo; Ann", lines.Single(l => l.StartsWith(RowsReminder.HeaderStart, StringComparison.Ordinal)));
         Assert.IsTrue(lines.Any(l => l.StartsWith("- Bo, called:", StringComparison.Ordinal)), "the first block's rest fits");
         Assert.IsFalse(lines.Any(l => l.StartsWith("- Ann, called:", StringComparison.Ordinal)), "the second block's rest does not fit: " + string.Join("\n", lines));

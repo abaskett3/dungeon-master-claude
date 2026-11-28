@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Dmc.PersonRecords;
 
 /// <summary>
@@ -16,10 +18,19 @@ internal static class RecordRules
     /// <summary>Checks every record of a campaign.</summary>
     /// <param name="scenes">Where a scene source is looked up.</param>
     /// <param name="records">The campaign's records.</param>
-    public static Outcome Check(SceneBook scenes, IReadOnlyList<PersonRecord> records)
+    /// <param name="pending">
+    /// The persons with a sheet and no record yet, for the check after each edit (T059): a row that names one as its
+    /// speaker or in its never list gets a note, not a refusal, so two records that name each other can be written
+    /// one at a time. Null, as at the full save, refuses them.
+    /// </param>
+    public static Outcome Check(SceneBook scenes, IReadOnlyList<PersonRecord> records, IReadOnlyCollection<string>? pending = null)
     {
         var errors = new List<string>();
-        var persons = new HashSet<string>(records.Select(r => r.Person), StringComparer.Ordinal);
+        var notes = new List<string>();
+        // The persons of the campaigns this one continues are speakers too (T060): a carried-over person keeps their record there.
+        var known = new HashSet<string>(records.Select(r => r.Person).Concat(scenes.LinkedPersons()), StringComparer.Ordinal);
+        var waiting = new HashSet<string>((pending ?? []).Where(p => !known.Contains(p)), StringComparer.Ordinal);
+        var persons = new HashSet<string>(known.Concat(waiting), StringComparer.Ordinal);
         foreach (var group in records.GroupBy(r => r.Person, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
             errors.Add($"two records for \"{group.Key}\": {string.Join(", ", group.Select(r => r.Label))}");
         foreach (var record in records)
@@ -32,7 +43,7 @@ internal static class RecordRules
             if (record.Of is { } of && !scenes.IsLinked(of))
                 errors.Add($"{record.Label}: \"of\" names {of}, which is not a campaign this one continues");
             for (int i = 0; i < record.Rows.Count; i++)
-                errors.AddRange(RowErrors(scenes, persons, record, i));
+                errors.AddRange(RowErrors(scenes, persons, waiting, notes, record, i));
             for (int i = 0; i < record.Limits.Count; i++)
             {
                 var limit = record.Limits[i];
@@ -44,15 +55,17 @@ internal static class RecordRules
                     errors.Add($"{where}: {error}");
             }
         }
-        return new Outcome(errors, Notes(records));
+        return new Outcome(errors, [.. Notes(records), .. notes]);
     }
 
-    /// <summary>The breaks of one row.</summary>
+    /// <summary>The breaks of one row; a speaker or never-person who has a sheet and no record yet adds a note instead.</summary>
     /// <param name="scenes">Where a scene source is looked up.</param>
-    /// <param name="persons">The full names of the campaign's records.</param>
+    /// <param name="persons">The full names of the records, of the campaigns this one continues, and of <paramref name="waiting"/>.</param>
+    /// <param name="waiting">The persons with a sheet and no record yet.</param>
+    /// <param name="notes">Where a note on a person in <paramref name="waiting"/> goes.</param>
     /// <param name="record">The record.</param>
     /// <param name="index">The row's index.</param>
-    static IEnumerable<string> RowErrors(SceneBook scenes, HashSet<string> persons, PersonRecord record, int index)
+    static IEnumerable<string> RowErrors(SceneBook scenes, HashSet<string> persons, HashSet<string> waiting, List<string> notes, PersonRecord record, int index)
     {
         var row = record.Rows[index];
         string where = $"{record.Label} row {index + 1}" + (row.Word is { } w ? $" (\"{w}\")" : "");
@@ -66,9 +79,13 @@ internal static class RecordRules
             yield return $"{where}: no word";
         if (SpeakerError(persons, row) is { } speaker)
             yield return $"{where}: {speaker}";
+        else if (row.From is { } speakerName && waiting.Contains(speakerName))
+            notes.Add(Waiting(where, speakerName));
         foreach (string never in row.Never ?? [])
             if (!persons.Contains(never) && !Speaker.IsGroup(never))
                 yield return $"{where}: never \"{never}\" is not a person of the records or group: …{Hint(persons, never)}";
+            else if (waiting.Contains(never))
+                notes.Add(Waiting(where, never));
         if (SourceError(scenes, row.Source) is { } source)
             yield return $"{where}: {source}";
         for (int j = 0; j < index; j++)
@@ -85,6 +102,12 @@ internal static class RecordRules
                     yield return $"{where}: {Speaker.Shown(from)} never says \"{word}\" for {record.Person} (row {j + 1}, {other.Source})";
             }
     }
+
+    /// <summary>The note on a row that names a person with a sheet and no record yet.</summary>
+    /// <param name="where">The row, as a finding names it.</param>
+    /// <param name="person">The person.</param>
+    static string Waiting(string where, string person) =>
+        $"{where}: \"{person}\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then).";
 
     /// <summary>What is wrong with a row's speaker for its kind, or null when nothing is.</summary>
     /// <param name="persons">The full names of the campaign's records.</param>
@@ -150,18 +173,27 @@ internal static class RecordRules
 
 /// <summary>
 /// Where scene sources are looked up (spec 032 research R2): this campaign's session logs, and those of each linked
-/// campaign it continues. A scene <c>sN.M</c> exists when <c>story/sessions/session-NNN.md</c> exists and holds at
-/// least M <c>### Scene</c> headings; <c>sN</c> when the file exists.
+/// campaign it continues. A scene <c>sN.M</c> exists when <c>story/sessions/session-NNN.md</c> exists and has a real
+/// heading <c>### Scene M:</c> (<see cref="Size.ReadSet.ScenePattern"/>, so the template's commented
+/// <c>### Scene N:</c> is none, T061); <c>sN</c> when the file exists. The scene in play counts too: the one after the
+/// last heading of this campaign's latest session log, whose block is written only when the scene ends (T064).
 /// </summary>
 /// <param name="campaignFolder">The campaign whose records are checked.</param>
 /// <param name="linked">The folder name and folder of each campaign it continues.</param>
-internal sealed class SceneBook(string campaignFolder, IReadOnlyDictionary<string, string> linked)
+internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictionary<string, string> linked)
 {
-    /// <summary>The number of scene headings in each session log read so far, by path; -1 for a file that does not exist.</summary>
-    readonly Dictionary<string, int> _scenes = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The scene numbers of each session log read so far, by path; null for a file that does not exist.</summary>
+    readonly Dictionary<string, HashSet<int>?> _scenes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The number of this campaign's latest session log, once found; 0 for none.</summary>
+    int? _latest;
 
     /// <summary>True for a book that finds every scene and every linked campaign: for a check of shape only.</summary>
     bool _lenient;
+
+    /// <summary>A session log's file name, with its number.</summary>
+    [GeneratedRegex(@"^session-(\d+)\.md$", RegexOptions.CultureInvariant)]
+    private static partial Regex SessionFile();
 
     /// <summary>
     /// A book that finds every scene and every linked campaign, for a check of the records' shape alone: migration 010's
@@ -184,6 +216,10 @@ internal sealed class SceneBook(string campaignFolder, IReadOnlyDictionary<strin
     /// <param name="name">Its folder name.</param>
     public bool IsLinked(string name) => _lenient || linked.ContainsKey(name);
 
+    /// <summary>The persons of the records of the campaigns this one continues (T060); none for a lenient book.</summary>
+    public IEnumerable<string> LinkedPersons() =>
+        _lenient ? [] : linked.Values.SelectMany(folder => RecordFiles.Read(folder).Records.Select(r => r.Person));
+
     /// <summary>Why a scene cannot be found, or null when it exists.</summary>
     /// <param name="scene">The scene.</param>
     public string? Missing(RecordSource.SceneRef scene)
@@ -195,12 +231,41 @@ internal sealed class SceneBook(string campaignFolder, IReadOnlyDictionary<strin
             folder = campaignFolder;
         else if (!linked.TryGetValue(scene.Campaign, out folder!))
             return $"{scene.Campaign} is not a campaign this one continues";
-        string log = Path.Combine(folder, "story", "sessions", $"session-{scene.Session:000}.md");
-        if (!_scenes.TryGetValue(log, out int count))
-            _scenes[log] = count = File.Exists(log) ? File.ReadLines(log).Count(l => l.StartsWith("### Scene", StringComparison.Ordinal)) : -1;
+        var numbers = Scenes(Path.Combine(folder, "story", "sessions", $"session-{scene.Session:000}.md"));
         string name = (scene.Campaign is null ? "" : scene.Campaign + " ") + $"s{scene.Session}" + (scene.Scene is { } n ? $".{n}" : "");
-        if (count < 0 || (scene.Scene is { } m && (m < 1 || m > count)))
+        if (numbers is null)
+            return $"scene {name} is not in the session logs";
+        if (scene.Scene is { } m && !numbers.Contains(m) && !(scene.Campaign is null && scene.Session == Latest() && m == (numbers.Count == 0 ? 1 : numbers.Max() + 1)))
             return $"scene {name} is not in the session logs";
         return null;
+    }
+
+    /// <summary>The scene numbers of a session log's real headings, read once; null when it does not exist.</summary>
+    /// <param name="log">The session log's path.</param>
+    HashSet<int>? Scenes(string log)
+    {
+        if (_scenes.TryGetValue(log, out var numbers))
+            return numbers;
+        if (File.Exists(log))
+        {
+            numbers = [];
+            foreach (string line in File.ReadLines(log))
+                if (Regex.IsMatch(line, Size.ReadSet.ScenePattern) && int.TryParse(line["### Scene ".Length..line.IndexOf(':')], out int number))
+                    numbers.Add(number);
+        }
+        return _scenes[log] = numbers;
+    }
+
+    /// <summary>The number of this campaign's latest session log; 0 when it has none.</summary>
+    int Latest()
+    {
+        if (_latest is { } latest)
+            return latest;
+        string sessions = Path.Combine(campaignFolder, "story", "sessions");
+        _latest = Directory.Exists(sessions)
+            ? Directory.EnumerateFiles(sessions, "session-*.md").Select(p => SessionFile().Match(Path.GetFileName(p)))
+                .Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).DefaultIfEmpty(0).Max()
+            : 0;
+        return _latest.Value;
     }
 }

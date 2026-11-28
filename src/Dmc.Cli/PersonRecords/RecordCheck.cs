@@ -192,7 +192,7 @@ internal static partial class RecordCheck
 
     /// <summary>The titles of a campaign's sheets, so a draft may name a person whose record it will create.</summary>
     /// <param name="root">The campaign folder.</param>
-    static IEnumerable<string> SheetTitles(string root)
+    internal static IEnumerable<string> SheetTitles(string root)
     {
         string folder = Path.Combine(root, "character-sheets");
         if (!Directory.Exists(folder))

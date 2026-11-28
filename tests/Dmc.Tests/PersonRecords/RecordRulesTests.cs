@@ -104,4 +104,55 @@ public sealed class RecordRulesTests
     public void AnOfThatNamesNoCampaignThisOneContinuesIsRefused() =>
         Assert.AreEqual("records/mother-gorse.json: \"of\" names nowhere, which is not a campaign this one continues",
             With("mother-gorse.json", """{ "person": "Mother Gorse", "of": "nowhere", "rows": [], "limits": [] }""").Errors.Single());
+
+    /// <summary>
+    /// T061 and T064: a scene is one of the log's real headings, not the template's commented <c>### Scene N:</c>, and
+    /// the scene in play (the one after the latest session's last heading) counts before its block is written.
+    /// </summary>
+    [TestMethod]
+    public void AScenesHeadingMustBeRealAndTheSceneInPlayCounts()
+    {
+        File.WriteAllText(Path.Combine(Root, "story", "sessions", "session-007.md"),
+            "# Session 7\n\n## Scenes\n\n<!--\n### Scene N: short title (location, in-world time)\n-->\n\n### Scene 1: an invented scene (the lock)\n");
+        var book = SceneBook.For(_folder, RecordFixtures.Campaign);
+        Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 1)));
+        Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 2)), "the scene in play");
+        Assert.AreEqual("scene s7.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 7, 3)));
+        Assert.AreEqual("scene s6.7 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 6, 7)), "not the latest session");
+        Assert.AreEqual("scene kettle-before s2.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(RecordFixtures.Earlier, 2, 3)), "not a campaign this one continues' scene in play");
+    }
+
+    /// <summary>T060: a person whose record is in a campaign this one continues may be a speaker and in a never list.</summary>
+    [TestMethod]
+    public void APersonOfTheCampaignThisOneContinuesMayBeASpeaker()
+    {
+        string earlier = Path.Combine(_folder, "adventures", RecordFixtures.Earlier, "records");
+        Directory.CreateDirectory(earlier);
+        File.WriteAllText(Path.Combine(earlier, "old-wick.json"), """{ "person": "Old Wick", "rows": [ { "kind": "name", "from": "anyone", "word": "Wick", "source": "setup" } ], "limits": [] }""");
+        var outcome = PimRow("""{ "kind": "usage", "from": "Old Wick", "word": "Minnow", "source": "kettle-before s2.1" }, { "kind": "usage", "from": "Grumbald", "word": "Pimmy", "never": ["Old Wick"], "source": "s3.3" }""");
+        Assert.HasCount(0, outcome.Errors, string.Join("\n", outcome.Errors));
+    }
+
+    /// <summary>T059: after an edit, a speaker with a sheet and no record yet is a note; the full save's check still refuses the row.</summary>
+    [TestMethod]
+    public void ASpeakerWithASheetAndNoRecordIsANoteAfterAnEditAndABreakAtTheFullSave()
+    {
+        const string row = """{ "kind": "usage", "from": "Orrin Flax", "word": "Pip", "source": "s3.3" }""";
+        StringAssert.StartsWith(PimRow(row).Errors.Single(), "records/pim-kettering.json row 1 (\"Pip\"): speaker \"Orrin Flax\" is not a person of the records");
+        var loaded = RecordFiles.Read(Root);
+        var afterEdit = RecordRules.Check(SceneBook.For(_folder, RecordFixtures.Campaign), loaded.Records, ["Orrin Flax", "Pim Kettering"]);
+        Assert.HasCount(0, afterEdit.Errors, string.Join("\n", afterEdit.Errors));
+        CollectionAssert.Contains(afterEdit.Notes, "records/pim-kettering.json row 1 (\"Pip\"): \"Orrin Flax\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then).");
+    }
+
+    /// <summary>T063: a record's file name keeps letters outside ASCII, so two names never share one.</summary>
+    [TestMethod]
+    public void AFileNameKeepsEveryLetter()
+    {
+        Assert.AreEqual("pim-kettering.json", RecordFiles.Slug("Pim Kettering"));
+        Assert.AreEqual("éla.json", RecordFiles.Slug("Éla"));
+        Assert.AreEqual("íla.json", RecordFiles.Slug("Íla"));
+        Assert.AreEqual("ясна.json", RecordFiles.Slug("Ясна"));
+        Assert.AreEqual("shalefire-shale-stoutheart.json", RecordFiles.Slug("Shalefire \"Shale\" Stoutheart"));
+    }
 }

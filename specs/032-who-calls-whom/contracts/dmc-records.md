@@ -42,7 +42,8 @@ nothing and exits 0, except a refusal: one line on standard error and exit 2.
 |---|---|---|
 | A file outside the active campaign, or no active campaign | nothing | 0 |
 | A record edit that breaks a rule | `dmc records: <the error>. Fix the record now, or put it back as it was.` on stderr | 2 |
-| A new `player:` source whose quotation is not in the player's typed messages | `dmc records: <file> row <n>: the player's words "<…>" are not in this session's messages; quote them exactly, or use another source.` | 2 |
+| A `player:` source the edit adds whose quotation is not in the player's typed messages (added: the edit's new text, or a MultiEdit's, holds its words more often than its old text; for a Write, every one; T058) | `dmc records: <file> row <n>: the player's words "<…>" are not in this session's messages; quote them exactly, or use another source.` | 2 |
 | An Edit of a campaign Markdown file that changes a line and adds a credit to the player | `dmc records: <file>: this edit changes the text and credits the player in the same edit; credit only words the player wrote.` | 2 |
 | A new usage giving one speaker one word for two persons | `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"dmc records: to <speaker>, \"<word>\" now means <A> and <B>; the hook prints both."}}` on stdout | 0 |
+| A row whose speaker or never-person has a sheet and no record yet (T059; `check` refuses it) | `{"hookSpecificOutput":{…,"additionalContext":"dmc records: <file> row <n> (\"<word>\"): \"<person>\" has a sheet and no record yet; write theirs (the full save's check refuses the row until then)."}}` on stdout | 0 |
 | Anything else | nothing | 0 |

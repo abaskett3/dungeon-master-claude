@@ -338,6 +338,8 @@ corrects them, or asks the player, before they reach play.
   maintainer's ruling: at this control rate a rerun would be underpowered too.
 - **SC-004**: The hook's extra tokens per average play turn, against the present output, stay within #241's limit
   of 1,000.
+  **Result:** +2 tokens per play turn on average over 4,161 turns of 145 sessions (median 0, max 683), measured at
+  T044 and again after T055 to T057 with the same result (2026-11-28); the hook's median run time 127 ms, p95 191 ms.
 - **SC-005**: The migration of the copy passes `dmc campaign verify`, with every line that went accounted for and
   every conflict put to the player.
 

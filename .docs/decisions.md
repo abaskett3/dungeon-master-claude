@@ -1051,3 +1051,35 @@ This log is for contributors who want to know why the toolkit is the way it is b
 - **Cost:** More of the rows part in a scene's first message where blocks had been cut, nothing in other messages; the whole output stays within 9,500 bytes (largest 9,496 at the trial's 60 points), so canon and the sheet lines get less room in such a message. SC-004 (+2 tokens per turn on average) was measured before this change and not again. `kit/dm-rules.md` 0 bytes.
 - **Limits:** A note on who is away written without brackets ("Benno is at the mill") still counts its names as present. A person whose "says" line printed but whose rest did not fit is not shown the rest again in that scene. Brackets in the Present line no longer count toward presence even where play writes a present person inside them.
 - **Source:** Issues #290, #263 (the SC-003 result); `specs/032-who-calls-whom/` (T055, SC-003); `src/Dmc.Cli/Retrieval/RowsReminder.cs`; `tests/Dmc.Tests/ContextCheck/RowsAtSlipPointsCheck.cs`.
+
+## The record checks follow how play writes, and a scene is who is present (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Eight fixes found by the code review of PR #296 and by `/speckit-converge` after it merged (tasks T056 to T064):
+  - The rows part keys a scene on who is present, in name order, not on the whole Present text and Combat tracker (T056).
+  - It prints each person's limits line in the first pass, with their "says" line (T057).
+  - `dmc records edited` finds the player's quotations an edit adds by their words in the edit's new text, not by row position (T058).
+  - After an edit, a row whose speaker or never-person has a sheet and no record yet stands with a note, and `dmc records check` still refuses it (T059).
+  - A person whose record is in a campaign this one continues may be a speaker (T060).
+  - A scene source is a real `### Scene N:` heading, by number (T061), or the scene in play, the one after the last heading of this campaign's latest session (T064).
+  - A record's file name keeps letters outside ASCII (T063).
+- **Reason:**
+  - An HP change each round made every message of a fight a new scene and reprinted every block.
+  - A long Called list could crowd out a limit, which US3 requires.
+  - A moved row or a deleting Edit made an earlier session's quotation "new", so a good edit was refused.
+  - Two records that name each other could not be written one at a time, which migration 010 step 5 and two new people in play both need.
+  - A sequel could not name a carried-over person as a speaker.
+  - The session-log template's commented heading counted as a scene.
+  - The session-log template writes a scene's block only when the scene ends, so a row about the scene in play was refused.
+  - "Éla" and "Íla" shared `la.json`.
+  - The maintainer ruled the hook note for T059 and the scene in play for T064 (2026-11-28).
+- **Rejected:**
+  - For T059, migration 010 writing every record empty before its rows: it fixes only the migration.
+  - For T056, a hash of the Present line alone: its notes and spelling still change.
+  - The review's two speed findings, the index built twice per message and the sheet lines rebuilt when cut: the hook's median is 128 ms.
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes. The hook prints less in a fight. SC-004, measured again on 4,161 play turns: +2 tokens per turn on average, max 683, as before.
+- **Limits:**
+  - A Write over an existing record still checks every quotation in it; the kit creates records with Write and changes them with Edit.
+  - A name written with a combining accent gets a different file name from the same name composed: `dmc` runs in invariant globalization mode, which does not compose.
+  - The scene in play is accepted for this campaign only, and only in its latest session log.
+- **Source:** Issue #297; PR #296's code review; `specs/032-who-calls-whom/tasks.md` Phase 11; `src/Dmc.Cli/Retrieval/RowsReminder.cs`; `src/Dmc.Cli/PersonRecords/RecordEdit.cs`, `RecordRules.cs`, `RecordFiles.cs`.

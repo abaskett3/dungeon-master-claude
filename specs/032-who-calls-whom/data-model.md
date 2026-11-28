@@ -6,7 +6,8 @@ the rules `dmc` holds them to.
 ## Record
 
 One person. File `adventures/<campaign>/records/<slug>.json`, where the slug is the person's name in lower case with
-each run of other characters a hyphen ("Captain Emmajeen Kole" → `captain-emmajeen-kole.json`).
+each run of characters that are not letters, their marks or digits a hyphen, letters outside ASCII kept (T063)
+("Captain Emmajeen Kole" → `captain-emmajeen-kole.json`, "Éla" → `éla.json`).
 
 | Field | Type | Rule |
 |---|---|---|
@@ -44,7 +45,8 @@ person: the record's person is that to the speaker (on Dessa's record, from Tam,
 
 One of: `sN` or `sN.M` (a scene of this campaign); `<campaign> sN[.M]` (a scene of a linked earlier campaign);
 `player: "<the player's words>"`; `setup`; `inference`. A scene must exist in that campaign's session logs (research
-R2).
+R2): a real `### Scene M:` heading of `session-NNN.md`, not the template's commented one (T061), or the scene in
+play, the one after the last heading of this campaign's latest session log, whose block is written when it ends (T064).
 
 ## Rules the check holds (refusals)
 
@@ -53,7 +55,9 @@ Checked over every record of the campaign, after each edit and at `dmc records c
 1. The file is a JSON object with only `person`, `of`, `rows` and `limits`; a row or limit has only its fields.
 2. The file name is the person's slug; no two records name the same person.
 3. Each row has a valid kind, a word, a speaker that fits the kind, and a source (Source above).
-4. A speaker or `never` entry is a person with a record, `anyone` (speaker only) or `group: …`.
+4. A speaker or `never` entry is a person with a record here or in a campaign this one continues (T060), `anyone`
+   (speaker only) or `group: …`. After an edit, a person with a sheet and no record yet is a note, not a refusal, so two
+   records that name each other can be written one at a time (T059); `dmc records check` refuses it.
 5. No row repeats another on the same record (same kind, speaker and word, ignoring case).
 6. No row's speaker is on the `never` list of a row with the same word on the same record.
 7. Each limit has text and a source.

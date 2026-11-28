@@ -87,26 +87,31 @@ internal static partial class RowsReminder
     [GeneratedRegex(@"\([^()]*\)")]
     private static partial Regex Bracketed();
 
-    /// <summary>The key of a scene: the first 8 hex digits of the SHA-256 of its Present text, so a change in who is present makes a new one.</summary>
-    /// <param name="presentText">The Present line and Combat tracker.</param>
-    internal static string SceneKey(string presentText) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(presentText.Trim())))[..8];
+    /// <summary>
+    /// The key of a scene: the first 8 hex digits of the SHA-256 of who is present, in name order, so a change in who is
+    /// present makes a new one and nothing else does: not an HP or initiative change in the Combat tracker, nor a note
+    /// (T056; the whole Present text made every round of a fight a new scene).
+    /// </summary>
+    /// <param name="present">The persons present (<see cref="Present"/>).</param>
+    internal static string SceneKey(IEnumerable<string> present) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", present.Order(StringComparer.Ordinal)))))[..8];
 
     /// <summary>
     /// The part's lines: a word line for each row word in the message; then, when anyone present or named has not been
     /// shown in this scene (<paramref name="shown"/> holds <c>key|person</c>), the header and their blocks, in two
     /// passes: first each person's "says" line, what they call the others here (short, and what keeps a speaker's words
-    /// right), within <paramref name="room"/>; then the rest of each block, whole, while the part stays within
-    /// <see cref="CapBytes"/>. In one pass, within the part's cap, a long block left no room for those after it: in
-    /// SC-003's run (2026-11-27) one person's block, most of it what others call them, crowded out the main risk
-    /// speaker's in every treatment run. A person is named in the header when any line of theirs is printed, so a person whose rest did not fit is
-    /// not shown it again in this scene; one with no line printed is not named.
+    /// right), and their limits line (US3, T057), within <paramref name="room"/>; then the rest of each block (what
+    /// they are called, their relationships), whole, while the part stays within <see cref="CapBytes"/>. Each person's
+    /// lines print in their block's order. In one pass, within the part's cap, a long block left no room for those
+    /// after it: in SC-003's run (2026-11-27) one person's block, most of it what others call them, crowded out the main
+    /// risk speaker's in every treatment run. A person is named in the header when any line of theirs is printed, so a
+    /// person whose rest did not fit is not shown it again in this scene; one with no line printed is not named.
     /// </summary>
     /// <param name="index">The index.</param>
     /// <param name="prompt">The player's message.</param>
     /// <param name="presentText">The Present text.</param>
     /// <param name="shown">The <c>key|person</c> pairs the log's current part already shows.</param>
-    /// <param name="room">The most bytes the part may print with the "says" lines; the word lines and the rest of the blocks stay within the smaller of it and <see cref="CapBytes"/>.</param>
+    /// <param name="room">The most bytes the part may print with the "says" and limits lines; the word lines and the rest of the blocks stay within the smaller of it and <see cref="CapBytes"/>.</param>
     internal static List<string> Lines(RecordIndex index, string prompt, string presentText, IReadOnlySet<string> shown, int room = CapBytes)
     {
         var output = new List<string>();
@@ -123,46 +128,54 @@ internal static partial class RowsReminder
 
         var present = Present(index, presentText);
         var scene = present.Concat(index.Named(prompt)).Distinct(StringComparer.Ordinal).ToList();
-        string key = SceneKey(presentText);
+        string key = SceneKey(present);
         var due = scene.Where(p => !shown.Contains(key + "|" + p)).ToList();
         var blocks = due.Select(p => (Person: p, Lines: Block(index, p, scene))).Where(b => b.Lines.Count > 0).ToList();
-        var printed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var printed = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         used += Bytes(HeaderStart + key + HeaderMiddle);
 
         // Adds a person's lines when they fit within the limit with the person's name in the header, if it is not there yet.
         void Add(string person, List<string> lines, int limit)
         {
+            if (lines.Count == 0)
+                return;
             int name = printed.ContainsKey(person) ? 0 : Encoding.UTF8.GetByteCount(person) + (printed.Count > 0 ? NameSeparator.Length : 0);
             int cost = lines.Sum(Bytes) + name;
             if (used + cost > limit)
                 return;
-            if (!printed.TryGetValue(person, out var list))
-                printed[person] = list = [];
-            list.AddRange(lines);
+            if (!printed.TryGetValue(person, out var set))
+                printed[person] = set = new HashSet<string>(StringComparer.Ordinal);
+            set.UnionWith(lines);
             used += cost;
         }
 
         foreach (var (person, lines) in blocks)
-            if (lines[0].StartsWith(SaysStart(person), StringComparison.Ordinal))
-                Add(person, [lines[0]], room);
+            Add(person, lines.Where(l => IsFirst(person, l)).ToList(), room);
         foreach (var (person, lines) in blocks)
-        {
-            var rest = lines.Where(l => !l.StartsWith(SaysStart(person), StringComparison.Ordinal)).ToList();
-            if (rest.Count > 0)
-                Add(person, rest, cap);
-        }
+            Add(person, lines.Where(l => !IsFirst(person, l)).ToList(), cap);
         var included = due.Where(printed.ContainsKey).ToList();
         if (included.Count > 0)
         {
             output.Add(HeaderStart + key + HeaderMiddle + string.Join(NameSeparator, included));
-            output.AddRange(included.SelectMany(p => printed[p]));
+            foreach (var (person, lines) in blocks.Where(b => printed.ContainsKey(b.Person)))
+                output.AddRange(lines.Where(printed[person].Contains));
         }
         return output;
     }
 
+    /// <summary>Whether a line of a person's block prints in the first pass: their "says" line or their limits line.</summary>
+    /// <param name="person">The person.</param>
+    /// <param name="line">The line.</param>
+    static bool IsFirst(string person, string line) =>
+        line.StartsWith(SaysStart(person), StringComparison.Ordinal) || line.StartsWith(LimitsStart(person), StringComparison.Ordinal);
+
     /// <summary>The start of a person's "says" line in their block.</summary>
     /// <param name="person">The person.</param>
     static string SaysStart(string person) => $"- {person} says: ";
+
+    /// <summary>The start of a person's limits line in their block.</summary>
+    /// <param name="person">The person.</param>
+    static string LimitsStart(string person) => $"- {person}, limits: ";
 
     /// <summary>A word's line: every row of it, the persons it means and who uses it for each.</summary>
     /// <param name="found">The word and its rows.</param>
@@ -213,7 +226,7 @@ internal static partial class RowsReminder
             lines.Add($"- {person}: {string.Join("; ", relationships)}");
         var limits = record.Limits.Where(l => !string.IsNullOrWhiteSpace(l.Text)).Select(l => $"{l.Text!.Trim()} ({l.Source})").ToList();
         if (limits.Count > 0)
-            lines.Add($"- {person}, limits: {string.Join(" ", limits)}");
+            lines.Add(LimitsStart(person) + string.Join(" ", limits));
         return lines;
     }
 

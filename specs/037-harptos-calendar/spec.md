@@ -78,7 +78,11 @@ Uktar), with Shieldmeet after Midsummer every fourth year. Years are counted DR.
   first day on the road, is Midwinter; Hala was in Riverhold with the Birches. The player remembers Shale in
   Riverhold at the time.
 - **The gap between the campaigns.** A date after The Silver Egg's end and before Rorn's Landing's start (the first
-  flight "on the 19th of Ches") is in neither anchor's span. Proposed: it keeps its day and month and gains 1493 DR.
+  flight "on the 19th of Ches") is in neither anchor's span. Proposed: it counts from Midsummer, as Rorn's Landing
+  does, so its weekdays agree with Rorn's Landing's ("Thursday the 26th of Kythorn", two days before its start,
+  becomes Thursday the 25th of Flamerule) and the 41 days fall just after The Silver Egg's end. The first flight
+  becomes the 25th of Tarsakh. (Keeping the day and month as written put that Thursday a month before a Saturday two
+  days after it.)
 - **A weekday reference** in canon ("the 1st of Hammer 1494 is a <weekday>") so DMC counts weekdays from one known
   day.
 - **Changing closed campaigns.** A closed campaign is never migrated and `dmc` refuses to write in one

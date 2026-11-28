@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dmc.PersonRecords;
 using Dmc.Size;
 
 namespace Dmc.Sheets;
@@ -56,7 +57,8 @@ internal static class SheetExport
 
         var skipped = new List<string>();
         var chosen = Choose(files, blocks, request, campaign, skipped);
-        var sheets = chosen.Select(f => Read(root, f, blocks, request.History)).ToList();
+        var records = RecordIndex.Build(dmcFolder, campaign).Records;
+        var sheets = chosen.Select(f => Read(root, f, blocks, request.History, records)).ToList();
 
         var result = SheetCheck.Run(sheets);
         var lines = Capped([.. result.Findings, .. result.Warnings]);
@@ -232,12 +234,17 @@ internal static class SheetExport
         return chosen;
     }
 
-    /// <summary>A chosen sheet read: its sections and kind, its Party status block, and with <c>--history</c> a PC's history file.</summary>
+    /// <summary>
+    /// A chosen sheet read: its sections and kind, its Party status block, with <c>--history</c> a PC's history file, and
+    /// the limits of its person's record.
+    /// </summary>
     /// <param name="root">The campaign folder.</param>
     /// <param name="file">The sheet.</param>
     /// <param name="blocks">The Party status blocks.</param>
     /// <param name="history">Whether <c>--history</c> was given.</param>
-    static CharacterSheet Read(string root, SheetFileText file, List<(string Name, IReadOnlyList<string> Lines)> blocks, bool history)
+    /// <param name="records">The records of the campaign and of each campaign it continues, the campaign's first.</param>
+    static CharacterSheet Read(string root, SheetFileText file, List<(string Name, IReadOnlyList<string> Lines)> blocks, bool history,
+        IReadOnlyList<PersonRecord> records)
     {
         var sections = SheetText.Sections(file.Lines);
         SheetKind? kind = file.Pc ? SheetKind.Pc : CharacterSheet.CompanionKind(sections);
@@ -255,7 +262,21 @@ internal static class SheetExport
         string historyPath = Path.Combine(root, "character-sheets", Path.GetFileNameWithoutExtension(file.File) + "-history.md");
         if (history && file.Pc && File.Exists(historyPath))
             older = [.. SheetText.LinesWithoutComments(ReadText(historyPath)).Where(l => !l.StartsWith("# ", StringComparison.Ordinal))];
-        return new CharacterSheet(file.File, file.Title, kind, sections, party, others, older);
+        return new CharacterSheet(file.File, file.Title, kind, sections, party, others, older, Limits(records, file.Title));
+    }
+
+    /// <summary>
+    /// The limit texts of the person a sheet's title names (<see cref="RecordFiles.SheetPerson"/>): from the first record
+    /// of that person, ignoring case, so the campaign's own record wins over an earlier campaign's. None when there is no
+    /// such record; a limit with no text is left out.
+    /// </summary>
+    /// <param name="records">The records, the campaign's first.</param>
+    /// <param name="title">The sheet's title.</param>
+    static List<string> Limits(IReadOnlyList<PersonRecord> records, string title)
+    {
+        string person = RecordFiles.SheetPerson(title);
+        var record = records.FirstOrDefault(r => r.Person.Equals(person, StringComparison.OrdinalIgnoreCase));
+        return record is null ? [] : [.. record.Limits.Select(l => l.Text?.Trim() ?? "").Where(t => t.Length > 0)];
     }
 
     /// <summary>Writes the page: to a file beside it first, then over the old page, so a failed write leaves the old one whole.</summary>

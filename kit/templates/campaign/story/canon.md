@@ -12,7 +12,7 @@ Enemy numbers and anything else the character does not know belong in `dm-notes.
 
 ## People
 
-<!-- Who exists, who they are to each other. Each line starts with the bold name, then any other names and role words the player may use: `- **Oswin Reed** (also: Oswin, the ferryman): keeps the Marrow ferry (s3)`. Details live on their sheets. -->
+<!-- Who exists, who they are to each other. Each line starts with the bold name: `- **Oswin Reed**: keeps the Marrow ferry (s3)`. Who calls them what, and by whom, is in their record (`records/`); details live on their sheets. -->
 
 ## Places
 

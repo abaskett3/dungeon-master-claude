@@ -17,7 +17,11 @@ internal sealed record ClaudeResult(string SessionId, long Input, long Output, l
 /// <summary>
 /// The settings of one replay's command line: where it runs and how the original session ran (FR-003).
 /// </summary>
-/// <param name="Resume">The session id to resume with <c>--fork-session</c>, or null for a new session (a fresh-mode base).</param>
+/// <param name="Resume">
+/// The session id to resume, or null for a new session (a fresh-mode base). The runner wrote that log under a new id for
+/// this run alone, so the run continues it in place: with <c>--fork-session</c>, Claude Code (2.1.317) names the fork's
+/// own log as the hook's transcript before writing it, and the context hook reads nothing (#289; spec 032, #290).
+/// </param>
 /// <param name="Model">The model, or null for Claude Code's default.</param>
 /// <param name="Effort">The effort, or null.</param>
 /// <param name="Permission">The permission mode, or null.</param>
@@ -51,13 +55,13 @@ internal sealed class ClaudeProcess(string program) : IClaude
 /// <summary>Builds and runs the <c>claude</c> command line of a replay, and reads its JSON output.</summary>
 internal static class ClaudeRunner
 {
-    /// <summary>The arguments of a call: print mode with JSON output, the resume and fork, and the original's model, effort and permission mode. The message goes on standard input, so it needs no quoting.</summary>
+    /// <summary>The arguments of a call: print mode with JSON output, the resume (never a fork, see <see cref="ClaudeCall"/>), and the original's model, effort and permission mode. The message goes on standard input, so it needs no quoting.</summary>
     /// <param name="call">The call.</param>
     public static List<string> Arguments(ClaudeCall call)
     {
         var args = new List<string> { "-p", "--output-format", "json" };
         if (call.Resume is not null)
-            args.AddRange(["--resume", call.Resume, "--fork-session"]);
+            args.AddRange(["--resume", call.Resume]);
         if (call.Model is not null)
             args.AddRange(["--model", call.Model]);
         if (call.Effort is not null)

@@ -163,6 +163,43 @@ public abstract class SheetReminderContract
         Assert.IsFalse(part.Any(l => l.Contains("npc-person7.md", StringComparison.Ordinal)), "and none of its lines are printed");
     }
 
+    /// <summary>
+    /// Spec 032: the whole output stays within the hook's cap, below Claude Code's limit (over it, the model gets only a
+    /// 2 KB preview): the out-of-character line and canon print, and the sheet lines take only what they leave, a person
+    /// who does not fit left out whole.
+    /// </summary>
+    [TestMethod]
+    public void TheWholeOutputStaysWithinTheHooksCapAndTheShortLinesAlwaysPrint()
+    {
+        var names = new List<string>();
+        var canon = new StringBuilder("# Canon\n\n## People\n\n");
+        for (int i = 0; i < 8; i++)
+        {
+            string name = $"Person{i} Reed";
+            names.Add($"Person{i}");
+            string field = new('x', 400);
+            Write(_root, $"character-sheets/npc-person{i}.md",
+                $"# {name}\n\n- **Usually found**: {field}\n\n## Play card\n\n- **Looks**: {field}\n- **AC, max HP, speed, saves, senses**: {field}\n"
+                + $"- **Standing traits that change play**: {field}\n- **Items used in play**: {field}\n");
+            canon.Append($"- **{name}**: a ferry hand (s1).\n");
+        }
+        var archive = new StringBuilder("# Canon archive\n\n## Timeline\n\n");
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 3; j++)
+                archive.Append($"- Person{i} Reed rowed the barge on day {j}, {new string('y', 150)} (s{i + 1}.{j + 1}).\n");
+        Write(_root, "story/canon.md", canon.ToString());
+        Write(_root, "story/canon-archive.md", archive.ToString());
+        Present("Shale, " + string.Join(", ", names));
+        var result = ContextCheck(Input("ooc: what do Person0 Reed and Person1 Reed know?"));
+        string output = string.Join("\n", result.StdoutLines) + "\n";
+        Assert.IsLessThanOrEqualTo(Dmc.Commands.ContextCheckCommand.OutputCapBytes, Encoding.UTF8.GetByteCount(output));
+        Assert.IsTrue(result.StdoutLines.Any(l => l.StartsWith("Canon on Person0 Reed", StringComparison.Ordinal)), "canon prints");
+        Assert.IsTrue(result.StdoutLines.Any(l => l.StartsWith("Out of character", StringComparison.Ordinal)), "the short line prints");
+        var part = SheetPart(result);
+        Assert.IsNotEmpty(part, "the sheet lines take what is left");
+        Assert.DoesNotContain("Person6 Reed", part[0], "a person who does not fit is left out of the header");
+    }
+
     /// <summary>A person shown within the last 100,000 tokens is skipped, and shown again once that has passed.</summary>
     [TestMethod]
     public void APersonShownWithinTheLast100000TokensIsSkippedThenShownAgain()

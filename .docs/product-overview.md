@@ -6,7 +6,7 @@ This document is for anyone who wants to know what Dungeon Master Claude is, wha
 
 Dungeon Master Claude (DMC) is a toolkit that turns [Claude Code](https://claude.com/claude-code) into the Dungeon Master for a solo game of Dungeons & Dragons 5th edition. The player installs the toolkit's program, `dmc`, which writes a DMC folder for them (the Dungeon Master rules, skills and settings, beside their own campaigns); they start a session with `dmc play`, and play by typing what their character does. Claude, acting as DMC, narrates, runs the non-player characters and monsters, applies the rules and keeps the books.
 
-The whole campaign lives in plain Markdown files on the player's machine. Every session starts by reading those files, so a campaign can be picked up weeks later, after a crash, or after the conversation has been cleared, and carry on where it stopped.
+The whole campaign lives in files on the player's machine: plain Markdown, and one small record per person (JSON) of who calls whom what and what they cannot do, which `dmc` checks on every change. Every session starts by reading those files, so a campaign can be picked up weeks later, after a crash, or after the conversation has been cleared, and carry on where it stopped.
 
 It is for one person who wants to play D&D 5e without a group, and who is comfortable starting a program in a terminal. Players install Claude Code and `dmc`, and nothing else; `dmc` installs itself and writes and updates the DMC folder, and never touches the player's own files.
 

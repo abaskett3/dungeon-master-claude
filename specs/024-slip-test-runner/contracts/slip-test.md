@@ -56,8 +56,9 @@ One folder per trial, outside the repository (suggested: `slip-test/<trial>/` in
   count). Neither may be inside the other.
 - `runs`: runs per point and arm, 1 to 20.
 - `arms`: name to a rules file (fork mode, the whole text of the DMC folder's `CLAUDE.md`) or an overlay folder (fresh
-  mode, files laid over the copy at the same relative paths). Paths are relative to the work folder. One arm measures a
-  base rate.
+  mode, files laid over the copy at the same relative paths; an overlay's `adventures/` folder replaces the copy's whole
+  `adventures/` before that arm's base session, so the arms may start from different campaign files, spec 032). Paths
+  are relative to the work folder. One arm measures a base rate.
 - `pass`, optional: the trial passes when the upper end of the 95% interval of `arm`'s rate minus `against`'s is below
   `below`. Without it, `score` reports and gives no verdict.
 - `resume`, fresh mode: the message that starts each base session.
@@ -89,8 +90,11 @@ it holds a `.slip-test` marker from an earlier `prepare`); writes `lock.json`.
 
 Refuses if a locked file changed. For each point, each run number, and the arms in a random order: skips a run that
 `runs.tsv` already holds; restores the copy (fork mode: `adventures/` from the DMC folder, then the restore to the fork
-time; fresh mode: the arm's base `adventures/`); writes the base log into the copy's project folder; runs `claude`;
-copies its log into `runs/`; deletes both logs from the project folder; appends to `runs.tsv`. The base log holds only the fork message's chain of `parentUuid`s (an abandoned branch after a rewind, or a subagent's records, is left out) and every record with no uuid. A run that Claude Code reports as an error (`is_error`) is not recorded: the runner deletes every log in the copy's project folder and stops, and the next `run` repeats it. `--pilot` stops after
+time; fresh mode: the arm's base `adventures/`); writes the base log into the copy's project folder under a new session
+id; runs `claude -p --resume <that id>`, with no `--fork-session`, so the run continues that log in place and the
+hook's transcript exists when the hook runs (with a fork, Claude Code 2.1.317 names the fork's own log before writing it,
+and `dmc context-check` prints nothing: #289, spec 032); copies the run's log into `runs/`; deletes it from the project
+folder; appends to `runs.tsv`. The base log holds only the fork message's chain of `parentUuid`s (an abandoned branch after a rewind, or a subagent's records, is left out) and every record with no uuid. A run that Claude Code reports as an error (`is_error`) is not recorded: the runner deletes every log in the copy's project folder and stops, and the next `run` repeats it. `--pilot` stops after
 the first four point-and-arm pairs. Prints one line per run: `point arm run: <seconds>s $<cost>`.
 
 ### `pilot`
@@ -107,6 +111,8 @@ verdict: pass
 ```
 
 then, for each failure or documented difference, one line `check point arm run: <type name or count>`. No text of play.
+A thinking difference is named arm by arm (`control sent 3 dropped 3`), and `allow.tsv` documents it the same way: in
+fresh mode each arm resumes its own base session, so the counts differ by design (spec 032).
 
 When an arm has a context folder, the hook check leaves out every hook output whose text is that arm's text at the
 point, and a `context` row follows `hook`: a run passes when that text is one of its hook outputs, or the file is

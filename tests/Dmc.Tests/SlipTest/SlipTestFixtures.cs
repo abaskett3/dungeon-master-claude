@@ -227,9 +227,10 @@ internal sealed class SlipTestFixtures : IDisposable
 }
 
 /// <summary>
-/// A stand-in for Claude Code: it reads the log a call resumes from the copy folder's project folder, and writes a
-/// fork log under a new session id: that history, the message, the hook output and notices it is given, and a reply.
-/// It records what each call saw.
+/// A stand-in for Claude Code: it reads the log a call resumes from the copy folder's project folder and continues it
+/// in place, under the same session id, as <c>--resume</c> without <c>--fork-session</c> does (a new session gets a new
+/// id): that history, the message, the hook output and notices it is given, and a reply. It records what each call saw,
+/// and whether the hook's transcript existed when the hook ran.
 /// </summary>
 /// <param name="claudeHome">The Claude Code folder.</param>
 internal sealed class FakeClaude(string claudeHome) : IClaude
@@ -253,6 +254,9 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
     /// </summary>
     public bool RunsContextHooks { get; set; } = true;
 
+    /// <summary>For each call, whether the log the hook names as its transcript (the session's own) existed when the hook ran: true for a resume in place, as in play.</summary>
+    public List<bool> TranscriptExisted { get; } = [];
+
     /// <summary>The copy's <c>.claude/settings.local.json</c> as each call saw it, or null when there was none.</summary>
     public List<string?> LocalSettings { get; } = [];
 
@@ -274,7 +278,8 @@ internal sealed class FakeClaude(string claudeHome) : IClaude
         LocalSettings.Add(File.Exists(settings) ? File.ReadAllText(settings) : null);
         string project = Folders.Project(claudeHome, cwd);
         Directory.CreateDirectory(project);
-        string id = Guid.NewGuid().ToString();
+        string id = call.Resume ?? Guid.NewGuid().ToString();
+        TranscriptExisted.Add(call.Resume is not null && File.Exists(Path.Combine(project, id + ".jsonl")));
         var lines = call.Resume is null ? [] : File.ReadAllLines(Path.Combine(project, call.Resume + ".jsonl")).ToList();
         string history = string.Join("\n", lines);
         lines.Add(SlipTestFixtures.Typed(Guid.NewGuid().ToString(), message, SlipTestFixtures.T2, cwd, id).ToJsonString());

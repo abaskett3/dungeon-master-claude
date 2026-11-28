@@ -1,0 +1,21 @@
+{
+  "person": "Ana Reed",
+  "rows": [
+    {
+      "kind": "usage",
+      "from": "Bram",
+      "word": "SPOILER-BRAMS-WORD",
+      "source": "s1"
+    }
+  ],
+  "limits": [
+    {
+      "text": "Reads no *Elvish* script",
+      "source": "s1"
+    },
+    {
+      "text": "Never rides a horse",
+      "source": "player: \"Ana never rides\""
+    }
+  ]
+}

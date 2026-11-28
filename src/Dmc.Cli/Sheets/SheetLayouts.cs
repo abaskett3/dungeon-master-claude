@@ -41,6 +41,12 @@ internal sealed record PartySource(string Label) : BoxSource;
 /// <summary>The PC's history: the sheet's history section and <c>&lt;sheet name&gt;-history.md</c>, with <c>--history</c> only.</summary>
 internal sealed record HistorySource : BoxSource;
 
+/// <summary>
+/// The limits on the character's record (spec 032 FR-009): what they cannot do, true and safe to show. The record's rows
+/// are not printed, as the sheet's old "Names they use" was not: they may hold names the PC has not heard.
+/// </summary>
+internal sealed record LimitsSource : BoxSource;
+
 /// <summary>One box of a layout.</summary>
 /// <param name="Title">What the printed box is called.</param>
 /// <param name="Source">The one place it is filled from.</param>
@@ -117,7 +123,7 @@ internal static class SheetLayouts
         ["Combat"] = ["Max HP", "Hit dice", "Armor Class", "Initiative", "Speed", "Senses", "Resistances, immunities, vulnerabilities"],
         ["Spellcasting"] = ["Casting ability, save DC, attack bonus", "Slots per level", "Cantrips", "Prepared or known spells", "Spellbook or other spells available"],
         ["Inventory"] = ["Equipped", "Carried", "Magic items", "Stored elsewhere"],
-        ["Story"] = ["Appearance", "Personality", "Names they use", "Ideals, bonds, flaws", "Backstory", "Current objectives", "Long-term goals"],
+        ["Story"] = ["Appearance", "Personality", "Names for places and things", "Ideals, bonds, flaws", "Backstory", "Current objectives", "Long-term goals"],
     };
 
     /// <summary>The template's labels of each structured section of the NPC template.</summary>
@@ -125,13 +131,20 @@ internal static class SheetLayouts
     {
         [SheetText.Top] = ["Role in the story", "Species, occupation, age", "Usually found", "First appeared", "Status"],
         [PlayCard] = CardLabels,
-        ["Playing them"] = ["Appearance", "Voice", "Names they use", "Personality", "What they want", "What they fear", "Attitude to the PC, and why"],
+        ["Playing them"] = ["Appearance", "Voice", "Names for places and things", "Personality", "What they want", "What they fear", "Attitude to the PC, and why"],
         ["Stat block"] = ["Based on", "AC", "Max HP", "Speed", "STR / DEX / CON / INT / WIS / CHA", "Saves and skills", "Senses and languages", "Traits", "Actions", "Spells or special abilities", "Gear"],
     };
 
+    /// <summary>
+    /// Labels of an older template that a sheet not yet migrated still has, accepted wherever they stand and never
+    /// printed: "Names they use", which migration 010 (spec 032) replaced with "Names for places and things" and the
+    /// records. They are not the templates' labels, so the lists above leave them out.
+    /// </summary>
+    public static IReadOnlyList<string> RetiredLabels { get; } = ["Names they use"];
+
     /// <summary>The play card's labels, the same on both templates.</summary>
     static string[] CardLabels =>
-        ["Who", "Looks", "Voice", "Names they use", "Toward the PC, and what they want now", "AC, max HP, speed, saves, senses",
+        ["Who", "Looks", "Voice", "Names for places and things", "Toward the PC, and what they want now", "AC, max HP, speed, saves, senses",
          "Attacks", "Recharge and limited abilities", "Standing traits that change play", "Items used in play"];
 
     /// <summary>The labels of the PC template that no layout prints, and why.</summary>
@@ -140,9 +153,9 @@ internal static class SheetLayouts
         new(SheetText.Top, "Player character", "a marker of the sheet's kind"),
         new(SheetText.Top, "Companion", "a marker of the sheet's kind"),
         new(PlayCard, "Who", "DMC's own summary, which may hold what the PC has not learned"),
-        new(PlayCard, "Names they use", "DMC's notes for voicing them"),
+        new(PlayCard, "Names for places and things", "DMC's notes for voicing them"),
         new(PlayCard, "Toward the PC, and what they want now", "their motives, which may be a spoiler"),
-        new("Story", "Names they use", "DMC's notes for voicing them"),
+        new("Story", "Names for places and things", "DMC's notes for voicing them"),
     ];
 
     /// <summary>The labels of the PC template that only a companion's layout leaves out, and why: what a companion wants and where they come from may be a spoiler.</summary>
@@ -161,10 +174,10 @@ internal static class SheetLayouts
         new(SheetText.Top, "Usually found", "DMC's notes"),
         new(SheetText.Top, "First appeared", "DMC's notes"),
         new(PlayCard, "Who", "DMC's own summary, which may hold what the PC has not learned"),
-        new(PlayCard, "Names they use", "DMC's notes for voicing them"),
+        new(PlayCard, "Names for places and things", "DMC's notes for voicing them"),
         new(PlayCard, "Toward the PC, and what they want now", "their motives, which may be a spoiler"),
         new("Playing them", "Voice", "the play card's Voice is printed instead"),
-        new("Playing them", "Names they use", "DMC's notes for voicing them"),
+        new("Playing them", "Names for places and things", "DMC's notes for voicing them"),
         new("Playing them", "What they want", "their motives, which may be a spoiler"),
         new("Playing them", "What they fear", "their motives, which may be a spoiler"),
         new("Playing them", "Attitude to the PC, and why", "their motives, which may be a spoiler"),
@@ -199,7 +212,7 @@ internal static class SheetLayouts
             new Box("Attacks", new AttackTableSource(), Wide: true)]),
         Now,
         new("Proficiencies", [F("Languages", "Abilities", wide: true), F("Tool and other proficiencies", "Abilities", wide: true)]),
-        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true)]),
+        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true), LimitsBox]),
         new("Spellcasting", [
             F("Casting ability, save DC, attack bonus", "Spellcasting", wide: true), F("Slots per level", "Spellcasting", wide: true),
             F("Cantrips", "Spellcasting", wide: true), F("Prepared or known spells", "Spellcasting", wide: true),
@@ -229,7 +242,7 @@ internal static class SheetLayouts
         Now,
         new("About them", [
             F("Appearance", "Playing them", wide: true), F("Personality", "Playing them", wide: true),
-            new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true)]),
+            new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true), LimitsBox]),
     ];
 
     /// <summary>The layout of a companion whose sheet follows the PC template: the play card, then the PC's panels, its story cut to what is not a spoiler.</summary>
@@ -251,7 +264,7 @@ internal static class SheetLayouts
             new Box("Attacks", new AttackTableSource(), CardHeld: true, Wide: true)]),
         Now,
         new("Proficiencies", [F("Languages", "Abilities", wide: true), F("Tool and other proficiencies", "Abilities", wide: true)]),
-        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true)]),
+        new("Features and traits", [new Box("Features and traits", new FreeSource("Features and traits"), Wide: true), LimitsBox]),
         new("Spellcasting", [
             F("Casting ability, save DC, attack bonus", "Spellcasting", wide: true), F("Slots per level", "Spellcasting", wide: true),
             F("Cantrips", "Spellcasting", wide: true), F("Prepared or known spells", "Spellcasting", wide: true),
@@ -262,6 +275,12 @@ internal static class SheetLayouts
             new Box("Wardrobe and keepsakes", new FreeSource("Wardrobe and keepsakes"), Wide: true)]),
         new("About them", [F("Appearance", "Story", wide: true), F("Personality", "Story", wide: true)]),
     ];
+
+    /// <summary>
+    /// The limits box, the same on every layout: last in "Features and traits", or in "About them" on a layout without
+    /// that panel. A character with no record, or a record with no limits, prints <see cref="SheetHtml.None"/>.
+    /// </summary>
+    static Box LimitsBox => new("Limits (from their record)", new LimitsSource(), Wide: true);
 
     /// <summary>The play card's exported fields, the same on both companion layouts.</summary>
     static Panel CardPanel => new("Play card", [

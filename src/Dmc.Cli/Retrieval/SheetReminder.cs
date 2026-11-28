@@ -76,9 +76,10 @@ internal static partial class SheetReminder
     /// <param name="projectFolder">The <c>CLAUDE_PROJECT_DIR</c> the hook runs with, used when <c>cwd</c> is not a DMC folder; null for none.</param>
     /// <param name="contextNow">The session's latest context size, in tokens; 0 when it is not known, and then anyone shown or read since the latest compaction is skipped.</param>
     /// <param name="freshLog">True when the session's log holds no compaction boundary and no reply yet (<see cref="TranscriptReader.IsFresh"/>); nothing is printed then.</param>
+    /// <param name="cap">The most bytes the lines may take: <see cref="CapBytes"/>, or less when the hook's other parts leave less of its output's cap (<see cref="Commands.ContextCheckCommand.OutputCapBytes"/>).</param>
     /// <returns>The lines to print and the people to hand on to the canon reminder.</returns>
     /// <exception cref="JsonException">The input is not JSON; the caller turns any failure into silence.</exception>
-    public static Found For(string input, string? projectFolder, long contextNow, bool freshLog = false)
+    public static Found For(string input, string? projectFolder, long contextNow, bool freshLog = false, int cap = CapBytes)
     {
         var (_, prompt) = HookInput.Field(input, "prompt");
         if (string.IsNullOrWhiteSpace(prompt) || prompt.TrimStart().StartsWith('/'))
@@ -105,7 +106,7 @@ internal static partial class SheetReminder
             var seen = Seen(Commands.ContextCheckCommand.ExpandUser(log, OperatingSystem.IsWindows()), contextNow);
             due = due.Where(p => !Recent(seen, p, contextNow)).ToList();
         }
-        return new Found(Lines(due), without);
+        return new Found(Lines(due, cap), without);
     }
 
     /// <summary>
@@ -165,11 +166,12 @@ internal static partial class SheetReminder
     }
 
     /// <summary>
-    /// The header and the lines for some people, in the order given, while the whole fits in <see cref="CapBytes"/>. A
-    /// person whose lines do not all fit is left out, header and lines, so a later message tries again.
+    /// The header and the lines for some people, in the order given, while the whole fits in the cap. A person whose
+    /// lines do not all fit is left out, header and lines, so a later message tries again.
     /// </summary>
     /// <param name="people">The people due, in the Present text's order.</param>
-    internal static List<string> Lines(IReadOnlyList<Person> people)
+    /// <param name="cap">The most bytes the whole may take; <see cref="CapBytes"/> by default.</param>
+    internal static List<string> Lines(IReadOnlyList<Person> people, int cap = CapBytes)
     {
         var shown = new List<Person>();
         var body = new List<string>();
@@ -178,7 +180,7 @@ internal static partial class SheetReminder
         {
             var lines = person.Lines.Select(l => $"{SheetsFolder}/{person.File} | {l}").ToList();
             int cost = lines.Sum(Recall.Bytes) + Encoding.UTF8.GetByteCount(person.Title) + (shown.Count > 0 ? NameSeparator.Length : 0);
-            if (used + cost > CapBytes)
+            if (used + cost > cap)
                 continue;
             shown.Add(person);
             body.AddRange(lines);

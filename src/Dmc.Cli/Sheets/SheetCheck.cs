@@ -121,6 +121,8 @@ internal static class SheetCheck
         var counted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var field in fields)
         {
+            if (SheetLayouts.RetiredLabels.Contains(field.Label, StringComparer.OrdinalIgnoreCase))
+                continue; // an older template's label (spec 032): accepted, never printed
             if (!labels.Contains(field.Label, StringComparer.OrdinalIgnoreCase))
                 findings.Add($"{file}: {Where(section.Heading)}: \"{Cut(field.Line)}\" has no label of {Template(kind)}: move it to the field it belongs to");
             else if (!counted.Add(field.Label))

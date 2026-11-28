@@ -38,9 +38,10 @@ internal static class CanonReminder
     /// People counted as named although the message does not name them: those present whose sheets hold none of the
     /// lines the sheet part prints (<see cref="SheetReminder"/>, spec 016 FR-008), so canon covers them instead. Null for none.
     /// </param>
+    /// <param name="cap">The most bytes the lines may take: <see cref="CapBytes"/>, or less when the hook's other parts leave less of its output's cap (<see cref="Commands.ContextCheckCommand.OutputCapBytes"/>).</param>
     /// <returns>The lines to print, the header first; empty for none.</returns>
     /// <exception cref="JsonException">The input is not JSON; the caller turns any failure into silence.</exception>
-    public static List<string> For(string input, string? projectFolder, IReadOnlyList<string>? alsoNamed = null)
+    public static List<string> For(string input, string? projectFolder, IReadOnlyList<string>? alsoNamed = null, int cap = CapBytes)
     {
         var (_, prompt) = HookInput.Field(input, "prompt");
         if (string.IsNullOrWhiteSpace(prompt) || prompt.TrimStart().StartsWith('/'))
@@ -56,6 +57,10 @@ internal static class CanonReminder
 
         var canon = Measurement.ReadLines(canonPath);
         string namedText = alsoNamed is { Count: > 0 } ? prompt + "\n" + string.Join("; ", alsoNamed) : prompt;
+        // A campaign with records (spec 032 research R6): the persons the message names through the index, a word whose
+        // rows all mean one person included, so a bare title such as "Auntie" is no longer dropped by the register.
+        if (PersonRecords.RecordFiles.Has(root) && PersonRecords.RecordIndex.Build(folder, campaign).Named(prompt) is { Count: > 0 } byRecords)
+            namedText += "\n" + string.Join("; ", byRecords);
         var named = Register.Named(namedText, Register.Of(canon));
         if (named.Count == 0)
             return [];
@@ -70,17 +75,18 @@ internal static class CanonReminder
         List<LineUnit> units = small ? [] : SceneRead.Units(root, campaign, canonPath, canon);
         units.AddRange(ArchiveUnits(root, campaign));
         units = Recall.Merge(units);
-        return Lines(named, units);
+        return Lines(named, units, cap);
     }
 
     /// <summary>
     /// The header and the lines for some people, in the order given: each person's best <see cref="LinesPerPerson"/> lines
-    /// not already printed for another, while the whole fits in <see cref="CapBytes"/>. A person no line is found for is
-    /// left out of the header, so a later message can try again.
+    /// not already printed for another, while the whole fits in the cap. A person no line is found for is left out of
+    /// the header, so a later message can try again.
     /// </summary>
     /// <param name="people">The people to remind, in the prompt's order.</param>
     /// <param name="units">The lines that may be printed: canon outside its always-read sections, then the archive.</param>
-    internal static List<string> Lines(IReadOnlyList<Person> people, IReadOnlyList<LineUnit> units)
+    /// <param name="cap">The most bytes the whole may take; <see cref="CapBytes"/> by default.</param>
+    internal static List<string> Lines(IReadOnlyList<Person> people, IReadOnlyList<LineUnit> units, int cap = CapBytes)
     {
         var printed = new HashSet<LineUnit>();
         var shown = new List<(Person Person, List<string> Lines)>();
@@ -96,7 +102,7 @@ internal static class CanonReminder
             {
                 string line = Recall.Hit(unit, wanted);
                 int cost = Recall.Bytes(line) + (lines.Count == 0 ? nameBytes : 0);
-                if (used + cost > CapBytes)
+                if (used + cost > cap)
                     break;
                 lines.Add(line);
                 printed.Add(unit);

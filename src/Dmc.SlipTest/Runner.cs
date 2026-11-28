@@ -251,7 +251,9 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
 
     /// <summary>
     /// Fresh mode: every file any overlay names put back as the DMC folder has it (or removed), then this arm's overlay
-    /// laid over the copy and its base session's <c>adventures/</c> restored.
+    /// laid over the copy and its base session's <c>adventures/</c> restored. An overlay with an <c>adventures/</c> folder
+    /// gives the arm's whole <c>adventures/</c> before its base session, in place of the DMC folder's (spec 032: the arms
+    /// differ in their campaign files, and the DMC folder's campaign is closed).
     /// </summary>
     /// <param name="arm">The arm.</param>
     /// <param name="withBase">Whether to restore the base's <c>adventures/</c> (false before the base session itself).</param>
@@ -261,18 +263,27 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
             foreach (string file in Directory.EnumerateFiles(other.Source, "*", SearchOption.AllDirectories))
             {
                 string relative = Path.GetRelativePath(other.Source, file);
+                if (IsAdventures(relative))
+                    continue;
                 string original = Path.Combine(trial.Folder, relative), target = Path.Combine(trial.Copy, relative);
                 if (File.Exists(original))
                     File.Copy(original, target, overwrite: true);
                 else if (File.Exists(target))
                     File.Delete(target);
             }
-        Folders.CopyTree(arm.Source, trial.Copy);
+        string own = Path.Combine(arm.Source, "adventures");
+        Folders.CopyTree(arm.Source, trial.Copy, skip: own);
         if (withBase)
             Folders.Replace(Path.Combine(trial.Work, "base", arm.Name + "-adventures"), Path.Combine(trial.Copy, "adventures"));
         else
-            Folders.Replace(Path.Combine(trial.Folder, "adventures"), Path.Combine(trial.Copy, "adventures"));
+            Folders.Replace(Directory.Exists(own) ? own : Path.Combine(trial.Folder, "adventures"), Path.Combine(trial.Copy, "adventures"));
     }
+
+    /// <summary>Whether an overlay's file is under its <c>adventures/</c> folder, which replaces the copy's whole <c>adventures/</c> instead.</summary>
+    /// <param name="relative">The file's path relative to the overlay.</param>
+    static bool IsAdventures(string relative) =>
+        relative.StartsWith("adventures" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+        || relative.StartsWith("adventures" + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Fresh mode: one base session for an arm, started with the trial's resume message (FR-005).</summary>
     /// <param name="arm">The arm.</param>
@@ -325,7 +336,12 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
         return (LogRewriter.Rewrite(baseLog, baseLog.Records.Count, id, trial.Copy, trial.Copy, null).Lines, model, effort, permission);
     }
 
-    /// <summary>Writes a base log into the copy folder's project folder under a session id, runs the replay, and keeps its log and output in the work folder.</summary>
+    /// <summary>
+    /// Writes a base log into the copy folder's project folder under a session id, runs the replay on it in place (no
+    /// fork, so the hook's transcript exists, as in play), and keeps its log and output in the work folder. The base log
+    /// is gone from the project folder afterwards: moved as the run's log, or deleted when Claude Code wrote the run
+    /// under another id.
+    /// </summary>
     /// <param name="lines">The base log.</param>
     /// <param name="id">The base log's session id.</param>
     /// <param name="call">The call.</param>
@@ -356,18 +372,22 @@ internal sealed class Runner(Trial trial, string claudeHome, IClaude? claude, Te
             ClearCopyLogs();
             throw;
         }
-        finally
-        {
-            File.Delete(basePath);
-            string history = Path.Combine(claudeHome, "file-history", id);
-            if (Directory.Exists(history))
-                Directory.Delete(history, recursive: true);
-        }
         string runs = Path.Combine(trial.Work, "runs", arm);
         Directory.CreateDirectory(runs);
         string stem = Path.Combine(runs, $"{point}-{run}");
         File.WriteAllText(stem + ".json", raw);
-        MoveLog(result.SessionId, stem + ".jsonl");
+        try
+        {
+            MoveLog(result.SessionId, stem + ".jsonl");
+        }
+        finally
+        {
+            if (File.Exists(basePath))
+                File.Delete(basePath);
+            string history = Path.Combine(claudeHome, "file-history", id);
+            if (Directory.Exists(history))
+                Directory.Delete(history, recursive: true);
+        }
         return new RunRow(point, arm, run, result.SessionId, call.Model ?? "", call.Effort ?? "", call.Permission ?? "", version, kind ?? "", result, watch.Elapsed.TotalSeconds);
     }
 

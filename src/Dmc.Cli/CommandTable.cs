@@ -20,6 +20,7 @@ public static class CommandTable
         new CampaignCommand(),
         new SizeCommand(),
         new SheetCommand(),
+        new RecordsCommand(),
         new LookupCommand(),
         new ModuleCommand(),
         new RecallCommand(),

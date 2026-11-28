@@ -74,11 +74,11 @@ Nettlebone, Quenby Tolliver).
 ## Phase 8: Found in the build, open
 
 - [X] T031 `dmc recall` searches a record's print with sources as a sheet (`src/Dmc.Cli/Retrieval/RecallScope.cs`, `Recall.cs`), so a fact moved into a record is still found; a hit names the sheet's path and the print's line
-- [ ] T036 `dmc lookup <campaign> <heading>` and the canon reminder's sheet lookups read Markdown files only (`src/Dmc.Cli/Retrieval/Lookup.cs`, `CanonReminder.cs:130`): give them a record's print
-- [ ] T032 `dmc campaign sequel` and the closing sample read a closed campaign's sheets (`src/Dmc.Cli/Campaign/SequelDigest.cs`, `SampleDraw.cs`): give them the prints of a campaign at standard 11
-- [ ] T033 `dmc size`'s flags that read sheets (`src/Dmc.Cli/Size/Flags.cs`, a companion with no play card) on a printed sheet, with a test
-- [ ] T034 The date rule: let a range carry a word before its joint ("the 14th night to the 18th of Eleasis") and take "of the <ordinal> month", the two kinds of false hit SC-002's sample found
-- [ ] T035 `dmc size` counts a printed sheet without its source marks (the play-card budget, #262), so the resume's tokens are under-counted by the marks (74 tokens on migration 011's fixture): decide whether the report shows them apart
+- [X] T036 `dmc lookup <campaign> <heading>` searches each record's print with sources as a sheet (`src/Dmc.Cli/Retrieval/Lookup.cs`). (The canon reminder reads only `canon-archive.md`, not sheets: nothing to change there.)
+- [X] T032 `dmc campaign sequel` and the closing sample read a closed campaign's records that hold sheets (`src/Dmc.Cli/Campaign/SequelDigest.cs`, `SampleDraw.cs`): each fact and entry a unit, worded as the print words it, so a copied digest line matches; a record of rows and limits alone is not a source, as before
+- [X] T033 `dmc size` marks a companion's printed sheet with no card entry as having no play card, and reads one with a card to its end (`ReadSet.SheetPart`), with a test
+- [X] T034 The date rule takes up to two words before a range's joint ("the 14th night to the 18th of Eleasis") and "of the <ordinal> month", the two kinds of false hit SC-002's sample found
+- [X] T035 `dmc size` measures a printed sheet with its source marks, which the resume reads, and compares the budget without them (`Part.MarkCharacters`, `Part.BudgetTokens`; #262)
 
 ## Dependencies
 

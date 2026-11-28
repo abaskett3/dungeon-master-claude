@@ -121,15 +121,59 @@ public sealed class RecordSheetTests
     }
 
     [TestMethod]
-    public void TheReadSetMeasuresThePrintWithoutSources()
+    public void TheReadSetCountsTheSourceMarksButNotAgainstTheBudget()
     {
         var parts = ReadSet.Build(_folder, RecordFixtures.Campaign);
         var hessa = parts.Single(p => p.Path == "records/hessa-kettering.json");
         Assert.AreEqual(PartKind.ToHistory, hessa.Kind);
-        Assert.IsFalse(hessa.Lines.Any(l => l.Text.Contains("(s4.1)", StringComparison.Ordinal)));
-        Assert.IsTrue(hessa.Lines.Any(l => l.Text == "- The smugglers land at the north stair on the 3rd of Mirtul."));
+        Assert.IsTrue(hessa.Lines.Any(l => l.Text == "- The smugglers land at the north stair on the 3rd of Mirtul. (s4.1)"), "the resume reads the marks");
         Assert.IsFalse(hessa.Lines.Any(l => l.Text.StartsWith("## History", StringComparison.Ordinal)));
+        // T035: " (s4.1)" and the rest are counted in what the resume reads and left out of what the budget sees (#262).
+        long marks = RecordSheet.Part(RecordSheet.Print(Record("Hessa Kettering"), sources: true), PrintPart.Sheet).Sum(l => l.Length)
+                     - RecordSheet.Part(RecordSheet.Print(Record("Hessa Kettering"), sources: false), PrintPart.Sheet).Sum(l => l.Length);
+        Assert.AreEqual(marks, hessa.MarkCharacters);
+        Assert.AreEqual(Measurement.Tokens(hessa.Characters - marks), hessa.BudgetTokens);
+        Assert.IsGreaterThan(hessa.BudgetTokens, hessa.Tokens);
         Assert.IsTrue(parts.Any(p => p.Path == "records/benno-kettering.json"), "a PC's printed sheet is always read");
+    }
+
+    [TestMethod]
+    public void ACompanionsPrintedSheetIsReadToItsCardOrMarkedAsHavingNone()
+    {
+        File.AppendAllText(Path.Combine(Root, "game-state.md"), "\n## Party status\n\n### Hessa Kettering\n\n- **HP**: 9 / 9\n");
+        var card = ReadSet.Build(_folder, RecordFixtures.Campaign).Single(p => p.Path == "records/hessa-kettering.json");
+        Assert.AreEqual(PartKind.ToPlayCard, card.Kind);
+        Assert.AreEqual(BudgetKind.PlayCard, card.Budget);
+        Assert.IsFalse(card.NoPlayCard);
+
+        // T033: with no card entry the print has no card, and the read set marks it for the full save to write one.
+        SheetFixtures.Put(_folder, "hessa-kettering.json", SheetFixtures.Hessa.Replace("\"card\": true, ", ""));
+        var none = ReadSet.Build(_folder, RecordFixtures.Campaign).Single(p => p.Path == "records/hessa-kettering.json");
+        Assert.IsTrue(none.NoPlayCard);
+        Assert.AreEqual(PartKind.ToHistory, none.Kind);
+    }
+
+    [TestMethod]
+    public void LookupFindsAPersonsSectionInARecordsPrint()
+    {
+        // T036: a sheet's heading is found in the print, as in a Markdown sheet.
+        var lines = Dmc.Retrieval.Lookup.Run(_folder, RecordFixtures.Campaign, "What they know");
+        Assert.IsTrue(lines.Any(l => l.Contains("north stair", StringComparison.Ordinal)), string.Join("\n", lines));
+    }
+
+    [TestMethod]
+    public void TheSequelDigestAndTheClosingSampleReadAClosedCampaignsRecords()
+    {
+        // T032: a closed campaign's files as its closing backup gives them.
+        var files = Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories).ToDictionary(
+            p => Path.GetRelativePath(Root, p).Replace('\\', '/'), File.ReadAllBytes);
+        var units = Dmc.Campaign.SequelDigest.Units(files);
+        CollectionAssert.Contains(units.Where(u => u.Path == "records/hessa-kettering.json").Select(u => u.Text).ToList(), "**Status**: alive");
+        CollectionAssert.Contains(units.Select(u => u.Text).ToList(), "The smugglers land at the north stair on the 3rd of Mirtul.");
+        CollectionAssert.Contains(units.Select(u => u.Text).ToList(), "**Looks**: Grey shawl, a net needle behind one ear.");
+        Assert.IsFalse(units.Any(u => u.Path == "records/pim-kettering.json"), "a record of rows and limits alone is not a source");
+        var people = Dmc.Campaign.SampleDraw.PeopleOf(files, []);
+        Assert.IsTrue(people.Any(p => p.Text == "Hessa Kettering" && p.Where == "records/hessa-kettering.json"), string.Join(", ", people.Select(p => p.Text)));
     }
 
     [TestMethod]

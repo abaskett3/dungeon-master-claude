@@ -14,12 +14,18 @@ internal static partial class RecordDates
     [GeneratedRegex(@"(?<![\w.])(?<day>\d{1,2}(?:st|nd|rd|th))\b", RegexOptions.CultureInvariant)]
     private static partial Regex Ordinal();
 
-    /// <summary>A month right after a day: an optional <c>of</c>, then a capitalised word.</summary>
-    [GeneratedRegex(@"^,?\s+(?:of\s+)?\p{Lu}[\p{L}'’-]*", RegexOptions.CultureInvariant)]
+    /// <summary>
+    /// A month right after a day: an optional <c>of</c>, then a capitalised word; or a month counted in words, <c>of the
+    /// second month</c> (T034).
+    /// </summary>
+    [GeneratedRegex(@"^,?\s+(?:of\s+the\s+[\p{L}-]+\s+month\b|(?:of\s+)?\p{Lu}[\p{L}'’-]*)", RegexOptions.CultureInvariant)]
     private static partial Regex MonthAfter();
 
-    /// <summary>The joint of a range of days, after the first: <c>to</c>, <c>and</c>, <c>or</c>, a dash, an optional <c>the</c>.</summary>
-    [GeneratedRegex(@"^\s*(?:to|and|or|through|-|–|—)\s*(?:the\s+)?(?=\d{1,2}(?:st|nd|rd|th)\b)", RegexOptions.CultureInvariant)]
+    /// <summary>
+    /// The joint of a range of days, after the first: up to two lower-case words (<c>the 14th night to the 18th</c>, T034),
+    /// then <c>to</c>, <c>and</c>, <c>or</c>, <c>through</c> or a dash, and an optional <c>the</c>.
+    /// </summary>
+    [GeneratedRegex(@"^(?:\s+\p{Ll}+){0,2}?\s*(?:to|and|or|through|-|–|—)\s*(?:the\s+)?(?=\d{1,2}(?:st|nd|rd|th)\b)", RegexOptions.CultureInvariant)]
     private static partial Regex RangeJoint();
 
     /// <summary>A year within three words after a month: a number of three or four digits.</summary>

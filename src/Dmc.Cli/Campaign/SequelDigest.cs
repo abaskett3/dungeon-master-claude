@@ -281,8 +281,9 @@ internal static partial class SequelDigest
     /// <summary>
     /// The accounted units of a closed campaign's files (FR-021, research R9), in source order, each text once: every line of
     /// <c>story/canon.md</c>, <c>story/canon-archive.md</c>, <c>module-progress.md</c> and every file in <c>character-sheets/</c>;
-    /// in <c>story/dm-notes.md</c> only § Secrets and in <c>story/summary.md</c> only § How it ended. A source the campaign
-    /// lacks counts no units.
+    /// in <c>story/dm-notes.md</c> only § Secrets and in <c>story/summary.md</c> only § How it ended; and in a record that holds
+    /// a person's sheet (spec 036), each fact and list entry (<see cref="RecordUnits"/>). A source the campaign lacks counts no
+    /// units.
     /// </summary>
     /// <param name="files">The closed campaign's files, from its closing backup.</param>
     /// <exception cref="DmcException">Two different units share an id.</exception>
@@ -298,6 +299,7 @@ internal static partial class SequelDigest
             {
                 "story/dm-notes.md" => SectionUnits(text, "Secrets"),
                 "story/summary.md" => SectionUnits(text, "How it ended"),
+                _ when IsRecord(path) => RecordUnits(text),
                 _ => ContentUnits.Lines(text),
             };
             foreach (var (line, unit) in lines)
@@ -423,8 +425,67 @@ internal static partial class SequelDigest
             yield return path;
         foreach (string path in files.Keys.Where(IsSheet).Order(StringComparer.Ordinal))
             yield return path;
+        foreach (string path in files.Keys.Where(p => IsRecord(p) && HoldsASheet(p, files[p])).Order(StringComparer.Ordinal))
+            yield return path;
         foreach (string path in new[] { "story/dm-notes.md", "story/summary.md", "module-progress.md" }.Where(files.ContainsKey))
             yield return path;
+    }
+
+    /// <summary>True for a person's record, <c>records/&lt;name&gt;.json</c> (spec 032).</summary>
+    /// <param name="path">A campaign path.</param>
+    internal static bool IsRecord(string path) =>
+        path.StartsWith(PersonRecords.RecordFiles.Folder + "/", StringComparison.Ordinal) && path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+        && path.IndexOf('/', PersonRecords.RecordFiles.Folder.Length + 1) < 0;
+
+    /// <summary>
+    /// Whether a record holds a person's sheet (spec 036): it reads as a record, names its <c>sheet</c>, and has a fact or a
+    /// list entry. A record of rows and limits alone, as at standard 10, is not a source, as before.
+    /// </summary>
+    /// <param name="path">The record's campaign path.</param>
+    /// <param name="bytes">Its bytes.</param>
+    internal static bool HoldsASheet(string path, byte[] bytes) =>
+        PersonRecords.RecordFiles.Parse("", path[(PersonRecords.RecordFiles.Folder.Length + 1)..], Text(bytes), out var record) is null
+        && record!.Sheet is not null && record.HasSheetContent;
+
+    /// <summary>
+    /// The units of a record that holds a sheet: one for each fact and list entry, on its line of the file (the record format
+    /// puts one a line), worded as the record's print words it (<see cref="PersonRecords.RecordSheet.Print"/>):
+    /// <c>**Key**: value</c> for a fact, the text for an entry of a list named as its section, <c>**List**: text</c> for any
+    /// other. So a digest line copied from the sheet matches its unit as a Markdown sheet's would. Rows and limits are not
+    /// units, as they were not at standard 10.
+    /// </summary>
+    /// <param name="text">The record's text.</param>
+    internal static List<(int Line, string Unit)> RecordUnits(string text)
+    {
+        var units = new List<(int, string)>();
+        string[] lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].Trim().TrimEnd(',').Trim();
+            if (!line.StartsWith('{') || !line.EndsWith('}') || i == 0)
+                continue;
+            string? worded = null;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(line);
+                var item = doc.RootElement;
+                string? Field(string name) => item.TryGetProperty(name, out var v)
+                    ? v.ValueKind == System.Text.Json.JsonValueKind.String ? v.GetString() : v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetRawText() : null
+                    : null;
+                if (Field("key") is { } key && Field("value") is { } value)
+                    worded = $"**{key.Trim()}**: {value.Trim()}";
+                else if (Field("list") is { } list && Field("text") is { } entry)
+                    worded = Field("section") is { } section && section.Trim().Equals(list.Trim(), StringComparison.OrdinalIgnoreCase)
+                        ? entry.Trim() : $"**{list.Trim()}**: {entry.Trim()}";
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                continue;
+            }
+            if (worded is not null && ContentUnits.Split(worded) is [var unit])
+                units.Add((i + 1, unit));
+        }
+        return units;
     }
 
     /// <summary>True for a markdown file in <c>character-sheets/</c>, at any depth.</summary>
@@ -733,8 +794,8 @@ internal static partial class SequelDigest
         return size;
     }
 
-    /// <summary>The folders whose files a part names as a run: the sheets and the session logs.</summary>
-    static readonly string[] GroupedFolders = ["character-sheets", "story/sessions"];
+    /// <summary>The folders whose files a part names as a run: the sheets, the records that hold sheets (spec 036) and the session logs.</summary>
+    static readonly string[] GroupedFolders = ["character-sheets", "records", "story/sessions"];
 
     /// <summary>
     /// How a part prints: a whole file by its path, a range as <c>path a-b</c>, and a run of two or more whole files of the

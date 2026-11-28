@@ -50,12 +50,12 @@ and their limits. The rest of a sheet is still free Markdown with no source on a
 Each answer below was chosen as the one closest to #263's model, because the player was not there to rule. The
 player confirms or changes each before the PR.
 
-- Q: Where does the rest of a sheet go? → **ASSUMED**: into the person's record from part A, so a person has one
+- Q: Where does the rest of a sheet go? → **Ruled by the player, 2026-11-28** (was ASSUMED): into the person's record from part A, so a person has one
   file and one home for each fact. Two new lists, `facts` and `lists`, and a `sheet` field naming the sheet file the
   record now prints as (`npc-hala-rornsdottir.md`). The migration removes the Markdown sheet. (Closest to #263 item 1:
   all the adventure files move to the model.)
 - Q: How do readers that expect a Markdown sheet (the resume, `dmc size`, the hook's sheet lines, `dmc sheet`, the
-  check of sample lines) get one? → **ASSUMED**: `dmc` prints the record as a sheet in the template's shape (its
+  check of sample lines) get one? → **Ruled by the player, 2026-11-28** (was ASSUMED): `dmc` prints the record as a sheet in the template's shape (its
   sections and labels), and each reader reads that print where the Markdown file is gone. The templates stay as the
   shape of the print and the names DMC gives keys and lists.
 - Q: The play card, which the resume reads alone for a companion? → **ASSUMED**: a view, not a copy. An entry marked

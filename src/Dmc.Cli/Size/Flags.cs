@@ -91,8 +91,8 @@ internal static partial class Flags
                     $"{part.Path} {Fmt(part.ReadCost)} is near the Read cap ({Fmt(Budgets.ReadCapTokens)}): it may be cut short at resume"
                     + (trimmed ? "" : $" {NotTheSaves}"), trimmed));
 
-            if (Budgets.Of(part.Budget) is { } budget && part.Tokens > budget)
-                flags.Add(new Flag(FlagKind.OverBudget, part.Path, $"{part.Path} {Fmt(part.Tokens)} is over its {Fmt(budget)} budget", true));
+            if (Budgets.Of(part.Budget) is { } budget && part.BudgetTokens > budget)
+                flags.Add(new Flag(FlagKind.OverBudget, part.Path, $"{part.Path} {Fmt(part.BudgetTokens)} is over its {Fmt(budget)} budget", true));
 
             if (part.NoPlayCard)
                 flags.Add(new Flag(FlagKind.NoPlayCard, part.Path, $"{part.Path}: a companion with no play card: the full save writes one", true));

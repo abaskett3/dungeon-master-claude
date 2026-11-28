@@ -77,9 +77,14 @@ internal enum EntryState
 /// <param name="PointerMiss">For a module digest named by <c>module-progress.md</c>: the line saying a heading it names was not found, or found more than once, so the save fixes the pointer (spec 012 research R8); null otherwise.</param>
 /// <param name="ExtraCharacters">Characters the resume reads for this file beyond <paramref name="Lines"/>, in a call of their own: for canon read by scene, what <c>dmc recall --scene</c> prints (spec 013 FR-009); 0 otherwise.</param>
 /// <param name="NoPlayCard">True for a companion's sheet that has no play card, which the full save writes (spec 013 FR-004).</param>
+/// <param name="MarkCharacters">
+/// For a sheet a record prints (spec 036), the characters of its source marks within <paramref name="Lines"/>: the resume
+/// reads them, so they count in <see cref="Tokens"/>, but not against the budget (#262), so <see cref="BudgetTokens"/> leaves
+/// them out; 0 otherwise.
+/// </param>
 internal sealed record Part(string Path, PartKind Kind, EntryState State, BudgetKind Budget, IReadOnlyList<Line> Lines,
     string? Note, IReadOnlyList<Line> FileLines, bool InTotal = true, string? PointerMiss = null, long ExtraCharacters = 0,
-    bool NoPlayCard = false)
+    bool NoPlayCard = false, long MarkCharacters = 0)
 {
     /// <summary>The bytes on disk of the lines read (<see cref="ExtraCharacters"/> is not on disk, so it is not included).</summary>
     public long Bytes { get; } = Lines.Sum(l => (long)l.Bytes);
@@ -87,8 +92,11 @@ internal sealed record Part(string Path, PartKind Kind, EntryState State, Budget
     /// <summary>The characters of the part read, <see cref="ExtraCharacters"/> included.</summary>
     public long Characters { get; } = Lines.Sum(l => (long)l.Characters) + ExtraCharacters;
 
-    /// <summary>The tokens of the text of the part read (<see cref="Measurement.Tokens"/>): what its budget is compared with.</summary>
+    /// <summary>The tokens of the text of the part read (<see cref="Measurement.Tokens"/>).</summary>
     public long Tokens => Measurement.Tokens(Characters);
+
+    /// <summary>What its budget is compared with: <see cref="Tokens"/> without a printed sheet's source marks (<see cref="MarkCharacters"/>).</summary>
+    public long BudgetTokens => Measurement.Tokens(Characters - MarkCharacters);
 
     /// <summary>The Read calls the part takes: one, and one more for the output of <c>dmc recall --scene</c> when there is any.</summary>
     public int Calls => ExtraCharacters > 0 ? 2 : 1;

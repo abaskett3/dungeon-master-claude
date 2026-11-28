@@ -33,6 +33,10 @@ public sealed class RecordDatesTests
         Assert.IsNull(RecordDates.Error("long rests the nights of the 5th and 6th of Kythorn", needsYear: false));
         Assert.IsNull(RecordDates.Error("the 1st-3rd of Ches", needsYear: false));
         Assert.IsNotNull(RecordDates.Error("the 8th to the 10th", needsYear: false));
+        // T034: a word before the joint, and a month counted in words (the false hits of SC-002's sample).
+        Assert.IsNull(RecordDates.Error("the 14th night to the 18th of Eleasis", needsYear: false));
+        Assert.IsNull(RecordDates.Error("met the wagon (the 5th of the second month)", needsYear: false));
+        Assert.IsNotNull(RecordDates.Error("the 14th night", needsYear: false));
     }
 
     [TestMethod]

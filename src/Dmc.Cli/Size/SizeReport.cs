@@ -127,7 +127,7 @@ internal static class SizeReport
             var notes = new List<string>();
             if (part.Note is { } note)
                 notes.Add(note);
-            if (part.State == EntryState.Measured && Budgets.Of(part.Budget) is { } over && part.Tokens > over)
+            if (part.State == EntryState.Measured && Budgets.Of(part.Budget) is { } over && part.BudgetTokens > over)
                 notes.Add("over");
             if (part.State == EntryState.Measured && Flags.IsNearCap(part))
                 notes.Add("near the Read cap");

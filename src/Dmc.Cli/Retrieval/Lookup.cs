@@ -42,6 +42,16 @@ internal static partial class Lookup
             for (int i = 0; i < file.Headings.Count; i++)
                 candidates.Add((file, i));
         }
+        // A campaign's sheets held in records (spec 036 T036): each print with its sources, under the sheet's path in
+        // character-sheets/, so a person's title and sections are found as a Markdown sheet's are.
+        if (source.Kind == SourceKind.Campaign && source.File is null)
+            foreach (var printed in PersonRecords.RecordSheet.Printed(source.Folder))
+            {
+                var file = MarkdownFile.FromText(Path.Combine(source.Folder, "character-sheets", printed.File),
+                    string.Concat(PersonRecords.RecordSheet.Print(printed.Record!, sources: true).Select(l => l + "\n")));
+                for (int i = 0; i < file.Headings.Count; i++)
+                    candidates.Add((file, i));
+            }
 
         var matches = Exact(candidates, heading);
         // Markdown beside a rules PDF (house rules, say) wins only with an exact heading; otherwise the PDF's index and

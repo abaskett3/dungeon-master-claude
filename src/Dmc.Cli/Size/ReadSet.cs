@@ -89,7 +89,8 @@ internal static partial class ReadSet
     /// <param name="Pc">True for a <c>pc-*.md</c> sheet.</param>
     /// <param name="Lines">The sheet's lines, read once for both its title and its measurement.</param>
     /// <param name="Shown">The path the report names: <c>character-sheets/&lt;file&gt;</c>, or for a sheet a record prints (spec 036) the record's.</param>
-    sealed record Sheet(string File, string Title, bool Pc, List<Line> Lines, string Shown);
+    /// <param name="Unmarked">For a sheet a record prints, the print without sources, line for line with <paramref name="Lines"/> (the print with them); null for a Markdown sheet.</param>
+    sealed record Sheet(string File, string Title, bool Pc, List<Line> Lines, string Shown, List<Line>? Unmarked = null);
 
     /// <summary>
     /// Words never matched on their own when a sheet's first or last word is tried: articles, prepositions and titles,
@@ -198,11 +199,12 @@ internal static partial class ReadSet
                 sheets.Add(new Sheet(file, title, file.StartsWith("pc-", StringComparison.Ordinal), lines, "character-sheets/" + file));
             }
         }
-        // A sheet a record prints where its Markdown file is gone (spec 036 FR-010), measured without its source marks,
-        // as the play-card budget counts it (#262); the resume reads the marks too (dmc records show --card).
+        // A sheet a record prints where its Markdown file is gone (spec 036 FR-010), measured with its source marks, which
+        // the resume reads (dmc records show --card), and without them for the budget (#262).
         foreach (var printed in PersonRecords.RecordSheet.Printed(root))
             sheets.Add(new Sheet(printed.File, printed.Record!.Person, PersonRecords.RecordSheet.IsPc(printed.File),
-                PersonRecords.RecordSheet.Measured(printed.Lines), printed.Record.Label));
+                PersonRecords.RecordSheet.Measured(PersonRecords.RecordSheet.Print(printed.Record, sources: true)), printed.Record.Label,
+                PersonRecords.RecordSheet.Measured(printed.Lines)));
         sheets.Sort((a, b) => string.CompareOrdinal(a.File, b.File));
 
         var chosen = new List<Sheet>();
@@ -383,9 +385,11 @@ internal static partial class ReadSet
     static Part SheetPart(Sheet sheet, bool companion)
     {
         var lines = sheet.Lines;
+        // The source marks among the first n lines: the print with sources and without them match line for line.
+        long Marks(int n) => sheet.Unmarked is { } bare ? lines.Take(n).Sum(l => (long)l.Characters) - bare.Take(n).Sum(l => (long)l.Characters) : 0;
         if (companion && PlayCardEnd(lines) is { } cardEnd)
             return new Part(sheet.Shown, PartKind.ToPlayCard, EntryState.Measured, BudgetKind.PlayCard,
-                lines.GetRange(0, cardEnd), "to its play card", lines);
+                lines.GetRange(0, cardEnd), "to its play card", lines, MarkCharacters: Marks(cardEnd));
         int last = -1;
         for (int i = 0; i < lines.Count; i++)
             if (Measurement.IsSectionHeading(lines[i].Text))
@@ -394,9 +398,9 @@ internal static partial class ReadSet
         var budget = sheet.Pc ? BudgetKind.PcSheet : BudgetKind.OtherSheet;
         if (last >= 0 && HistoryHeadings.Contains(lines[last].Text[3..].Trim(), StringComparer.OrdinalIgnoreCase))
             return new Part(shown, PartKind.ToHistory, EntryState.Measured, budget, lines.GetRange(0, last), "to its history", lines,
-                NoPlayCard: companion);
+                NoPlayCard: companion, MarkCharacters: Marks(last));
         return new Part(shown, PartKind.Whole, EntryState.Measured, budget, lines, "whole (no history last)", lines,
-            NoPlayCard: companion);
+            NoPlayCard: companion, MarkCharacters: Marks(lines.Count));
     }
 
     /// <summary>

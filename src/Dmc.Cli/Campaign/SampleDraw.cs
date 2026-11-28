@@ -124,7 +124,8 @@ internal static partial class SampleDraw
     /// <summary>
     /// The people of the closing backup (research R11): the <c># </c> title of each sheet in <c>character-sheets/</c> but
     /// <c>*-history.md</c> and <c>minor-npcs.md</c>, and the Name cell of each row of <c>minor-npcs.md</c>'s table. A person
-    /// whose name is on the Carried line is marked.
+    /// whose name is on the Carried line is marked. A closed campaign whose sheets are records (spec 036) gives the person of
+    /// each record that holds a sheet.
     /// </summary>
     /// <param name="files">The closed campaign's files.</param>
     /// <param name="carried">The names on the index's Carried line.</param>
@@ -165,6 +166,10 @@ internal static partial class SampleDraw
                 people.Add(new SampleItem(path, name, Carried(name)));
             }
         }
+        foreach (var (path, bytes) in files.Where(f => SequelDigest.IsRecord(f.Key) && SequelDigest.HoldsASheet(f.Key, f.Value)).OrderBy(f => f.Key, StringComparer.Ordinal))
+            if (PersonRecords.RecordFiles.Parse("", path[(PersonRecords.RecordFiles.Folder.Length + 1)..], SequelDigest.Text(bytes), out var record) is null
+                && !files.ContainsKey("character-sheets/" + record!.Sheet))
+                people.Add(new SampleItem(path, record.Person, Carried(record.Person)));
         return people;
     }
 

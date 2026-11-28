@@ -1158,3 +1158,17 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - Running the check twice per edit (speed only); one helper for a person's sheet in the seven other places that test it by hand; renaming old record files once instead of accepting the old name.
 - **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
 - **Source:** Issue #297; the second code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 14.
+
+## A person's sheet moves into their record, as facts and lists
+
+- **Date:** 2026-11-28
+- **Decision:** From standard 11 (spec 036, issue #291, part B of #263) a person's sheet is in their record: `sheet` names the file it replaces, `facts` hold one value a key and `lists` one fact an entry, each with a source. `dmc` prints the record as the sheet in its template's shape, and every reader of a sheet reads that print where the Markdown file is gone. The play card is a view (`"card": true`), not a copy. A date is an ordinal day with its month after it, and its year when the in-world date in `game-state.md` has one. The keys `dmc` checks are the ones `dmc sheet`'s arithmetic reads. The `-history.md` archives and `minor-npcs.md` stay Markdown.
+- **Reason:**
+  - The model agreed with the player on 2026-11-18 (#263 items 2 to 4 and 11): atomic facts with a source, keys not a fixed list, free text in lists, JSON.
+  - One file a person keeps one home for each fact; part A's reader, rules and edit hook already work on one record a file.
+  - Readers that parse a Markdown sheet (the read set, the hook's sheet lines, `dmc sheet`, the sample check) keep their parsing when given a print in the same shape, so no reader learns the JSON.
+  - The date slip of 2026-11-25 was in free text ("ready on the 14th"), so the rule reads text, not a date field.
+  - On a sample of 50 of the rule's 390 hits on the long campaign's sheets (read only, 2026-11-28), 4 were not a day with its month missing (a spell slot's "1st", two ranges with a word before "to", "the 5th of the second month"): 8%.
+- **Not ruled by the player:** these choices were made unattended, as the closest to #263's model, and are marked ASSUMED in `specs/036-sheet-facts/spec.md` until the player confirms each.
+- **Cost:** `kit/dm-rules.md` 0 bytes. Skills: resume +273 bytes, character-sheet update +532, full save +99, new campaign +219; `records-format.md` +2,127 (loaded only by the skills that write records). On migration 011's fixture the resume's read set fell from 2,602 to 2,428 tokens as `dmc size` counts it (the print has no template comments), and the source marks the resume reads with `dmc records show` add 74 back; the hook's sheet lines are the same bytes. A record is larger than the sheet it replaces (+16% and +49% on the fixture), which an Edit reads.
+- **Source:** Issue #291; #263; `specs/036-sheet-facts/`.

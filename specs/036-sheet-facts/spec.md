@@ -189,8 +189,8 @@ reads JSON to check a sheet.
 - **FR-004 (sources)**: A fact and a list entry take part A's sources (spec 032 FR-003): a scene in the logs, the
   player's words quoted, `setup` or `inference`. The check after each edit refuses one with none, or with a scene the
   logs do not have, and checks a new quotation of the player against the session's messages, as for rows.
-- **FR-005 (full dates)**: An ordinal day (`14th`, `1st`) in a fact's value, a list entry, a limit's text or a row's
-  `when` must have a month after it (`of Eleasis` or `Eleasis`), or end a range that does (`the 8th to the 10th of
+- **FR-005 (full dates)**: An ordinal day (`14th`, `1st`) in a fact's value, a list entry, and, on a record that holds
+  a sheet, a limit's text or a row's `when` (so a standard 10 record is checked as before) must have a month after it (`of Eleasis` or `Eleasis`), or end a range that does (`the 8th to the 10th of
   Flamerule`, `the 5th and 6th of Kythorn`). When `game-state.md`'s "In-world date and time" line holds a year, each
   such date needs a year after its month too. `dmc` refuses the record in one line that names the entry and the day.
 - **FR-006 (the keys note)**: When an edit adds a fact key or a list name the record did not have, the edit stands

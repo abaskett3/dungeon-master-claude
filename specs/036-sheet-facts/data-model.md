@@ -34,7 +34,7 @@ The file format in full is [contracts/records-file.md](contracts/records-file.md
 
 ## Full dates (rule F)
 
-In a fact's value, an entry's text, a limit's text and a row's `when`: each ordinal day (`1st`, `14th`) is followed by
+In a fact's value, an entry's text, and on a record with facts or lists a limit's text and a row's `when`: each ordinal day (`1st`, `14th`) is followed by
 a month (a capitalised word, with an optional `of`), or by `to`, `and`, `or`, `-` or `–` and another ordinal day that
 is. When `game-state.md`'s "In-world date and time" line holds a number of three or four digits, each date also has
 such a number within the next three words after its month.

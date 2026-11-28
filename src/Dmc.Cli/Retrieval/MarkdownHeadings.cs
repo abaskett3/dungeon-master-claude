@@ -84,7 +84,7 @@ internal sealed class MarkdownFile
         return Encoding.UTF8.GetBytes(reader.ReadToEnd());
     }
 
-    /// <summary>Builds a file from text, for tests.</summary>
+    /// <summary>Builds a file from text: for tests, and for a record's print, which recall searches as a sheet (spec 036).</summary>
     /// <param name="path">A path to label it with.</param>
     /// <param name="text">Its text.</param>
     /// <returns>The parsed file.</returns>

@@ -142,6 +142,23 @@ public sealed class RecordSheetTests
     }
 
     [TestMethod]
+    public void RecallFindsAFactThatIsOnlyInARecordsPrint()
+    {
+        var hits = Dmc.Retrieval.Recall.Run(_folder, RecordFixtures.Campaign, "smugglers north stair");
+        Assert.IsTrue(hits.Any(h => h.Contains("character-sheets/npc-hessa-kettering.md:", StringComparison.Ordinal) && h.Contains("north stair", StringComparison.Ordinal)),
+            string.Join("\n", hits));
+    }
+
+    [TestMethod]
+    public void DmcSheetFindsAndChecksASheetHeldInARecord()
+    {
+        // Benno's printed sheet is short of the PC template's fields, so the check names what it lacks: it was found and read.
+        var result = DmcRunner.InProcess(["sheet", "Benno Kettering", "--campaign", RecordFixtures.Campaign, "--check", "--folder", _folder]);
+        Assert.IsTrue(result.StdoutLines.Concat(result.StderrLines).Any(l => l.StartsWith("pc-benno-kettering.md: ", StringComparison.Ordinal)), result.ToString());
+        Assert.IsFalse(result.Stderr.Contains("no sheet named", StringComparison.Ordinal), result.ToString());
+    }
+
+    [TestMethod]
     public void ShowPrintsTheFactsAndListsAfterPartAsLines()
     {
         var index = RecordIndex.Build(_folder, RecordFixtures.Campaign);

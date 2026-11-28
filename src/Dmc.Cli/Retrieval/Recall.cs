@@ -41,7 +41,7 @@ internal static class Recall
             MarkdownFile markdown;
             try
             {
-                markdown = MarkdownFile.Read(path);
+                markdown = file.Text is { } text ? MarkdownFile.FromText(path, text) : MarkdownFile.Read(path);
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {

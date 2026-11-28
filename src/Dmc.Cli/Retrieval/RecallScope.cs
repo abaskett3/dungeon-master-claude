@@ -41,7 +41,12 @@ internal sealed record Place(string Label, string Folder, bool IsModule, int Dis
 /// <param name="Tier">Its authority.</param>
 /// <param name="Weight">The factor its lines' relevance is multiplied by.</param>
 /// <param name="DigestLink">For a digest's file, how the campaign it digests is linked to the one recalled in; null otherwise, and for a digest of that campaign itself.</param>
-internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double Weight, string? DigestLink = null);
+/// <param name="Text">
+/// For a sheet a record prints (spec 036), the print with its sources, searched in place of a file: its
+/// <paramref name="Relative"/> is the sheet's path in <c>character-sheets/</c>, which does not exist, and a hit's line is
+/// the print's (<c>dmc records show &lt;campaign&gt; &lt;name&gt; --all</c>). Null for a file on disk.
+/// </param>
+internal sealed record ScopeFile(Place Place, string Relative, Tier Tier, double Weight, string? DigestLink = null, string? Text = null);
 
 /// <summary>
 /// What recall searches (research R1, R6, R11; spec 011 R4): the campaign; every campaign of its linked set
@@ -138,6 +143,10 @@ internal static class RecallScope
                 }
                 files.Add(new ScopeFile(place, relative, tier, weight * Math.Pow(StepFactor, distance) * factor, digestLink));
             }
+            // A sheet a record prints where its Markdown file is gone (spec 036 T031), searched as a sheet.
+            foreach (var printed in PersonRecords.RecordSheet.Printed(place.Folder))
+                files.Add(new ScopeFile(place, "character-sheets/" + printed.File, Tier.Sheet, SheetWeight * Math.Pow(StepFactor, place.Distance) * factor,
+                    Text: string.Concat(PersonRecords.RecordSheet.Print(printed.Record!, sources: true).Select(l => l + "\n"))));
         }
         return files;
     }

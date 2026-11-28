@@ -78,6 +78,8 @@ Nettlebone, Quenby Tolliver).
 - [X] T032 `dmc campaign sequel` and the closing sample read a closed campaign's records that hold sheets (`src/Dmc.Cli/Campaign/SequelDigest.cs`, `SampleDraw.cs`): each fact and entry a unit, worded as the print words it, so a copied digest line matches; a record of rows and limits alone is not a source, as before
 - [X] T033 `dmc size` marks a companion's printed sheet with no card entry as having no play card, and reads one with a card to its end (`ReadSet.SheetPart`), with a test
 - [X] T034 The date rule takes up to two words before a range's joint ("the 14th night to the 18th of Eleasis") and "of the <ordinal> month", the two kinds of false hit SC-002's sample found
+- [X] T037 `dmc-generate-image-prompt` reads a sheet held in a record with `dmc records show --all`
+- [ ] T038 A sheet's title bracket (`# Rorn (Hysvearorn)`) is lost in the print, which titles it with the record's person (`Rorn`): keep the sheet's full title (a `title` field, or the migration keeps it as a fact) so Party status blocks and `dmc sheet` still match it
 - [X] T035 `dmc size` measures a printed sheet with its source marks, which the resume reads, and compares the budget without them (`Part.MarkCharacters`, `Part.BudgetTokens`; #262)
 
 ## Dependencies

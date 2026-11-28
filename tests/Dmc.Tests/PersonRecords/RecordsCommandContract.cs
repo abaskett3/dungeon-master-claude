@@ -78,6 +78,30 @@ public abstract class RecordsCommandContract
         Assert.AreEqual(1, again.ExitCode, "a second draft must not overwrite the first");
     }
 
+    /// <summary>
+    /// Spec 032 (SC-003's base resume needed six calls): a person is found by a file name, a sheet's file name, or words
+    /// of their name in any order and case; a name several records fit gives them all; a name that fits none is named
+    /// last, after the others' records, with exit 0.
+    /// </summary>
+    [TestMethod]
+    public void ShowFindsAPersonByAFileNameOrWordsOfTheirNameAndNamesTheMissesLast()
+    {
+        string First(params string[] names) => Records(["show", RecordFixtures.Campaign, .. names, "--folder", Folder]).StdoutLines[0];
+        Assert.AreEqual("Hessa Kettering, called:", First("hessa-kettering"));
+        Assert.AreEqual("Hessa Kettering, called:", First("npc-hessa-kettering.md"));
+        Assert.AreEqual("Hessa Kettering, called:", First("kettering HESSA"));
+
+        var all = Records("show", RecordFixtures.Campaign, "Kettering", "--folder", Folder);
+        Assert.AreEqual(0, all.ExitCode, all.ToString());
+        foreach (string person in new[] { "Hessa Kettering", "Pim Kettering", "Benno Kettering" })
+            Assert.IsTrue(all.StdoutLines.Any(l => l.StartsWith(person + ", called:", StringComparison.Ordinal) || l.StartsWith(person + " ", StringComparison.Ordinal)), person);
+
+        var some = Records("show", RecordFixtures.Campaign, "Quenby", "Hessa", "--folder", Folder);
+        Assert.AreEqual(0, some.ExitCode, some.ToString());
+        Assert.AreEqual("Hessa Kettering, called:", some.StdoutLines[0]);
+        Assert.AreEqual($"no record for \"Quenby\" (dmc records show {RecordFixtures.Campaign} prints everyone)", some.StdoutLines[^1]);
+    }
+
     [TestMethod]
     public void AUsageMistakeIsExitCode2AndAMissingPersonExitCode1()
     {

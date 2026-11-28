@@ -291,7 +291,7 @@ public sealed partial class ErrorPathTests
                 ["records", "show", "--folder", folder],
                 ["records", "show", "no-such-campaign", "--folder", folder],
                 ["records", "show", campaign, "Quenby", "--folder", folder],
-                ["records", "show", campaign, "Kettering", "--folder", folder],
+                ["records", "show", campaign, "Quenby", "Zedd", "--folder", folder],
                 ["records", "show", Dmc.Tests.PersonRecords.RecordFixtures.Earlier, "--folder", folder],
                 ["records", "check", campaign, "--loud", "--folder", folder],
                 ["records", "check", campaign, "--draft", "--folder", folder],

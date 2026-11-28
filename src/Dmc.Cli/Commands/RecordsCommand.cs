@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Dmc.Campaign;
 using Dmc.PersonRecords;
 
@@ -16,7 +17,7 @@ namespace Dmc.Commands;
 /// itself and exits 0; the other subcommands fail with one line, as every command does (<see cref="NeverFails"/> is
 /// false because it covers the whole command).
 /// </remarks>
-public sealed class RecordsCommand : ICommand
+public sealed partial class RecordsCommand : ICommand
 {
     /// <inheritdoc />
     public string Name => "records";
@@ -101,17 +102,34 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
         }
     }
 
-    /// <summary>The text of the records asked for: every record, or the persons named.</summary>
+    /// <summary>
+    /// The text of the records asked for: every record, or those the names give (<see cref="Matches"/>), each once, in
+    /// the order named. A name that fits several records gives them all; a name that fits none is named on one line at
+    /// the end, after the others' records, so one name the resume gets wrong does not cost the rest (spec 032: SC-003's
+    /// base resume needed six calls).
+    /// </summary>
     /// <param name="folder">The DMC folder.</param>
     /// <param name="campaign">The campaign's folder name.</param>
-    /// <param name="names">The persons, by full name or a word of a name no other record has; empty for all.</param>
-    /// <exception cref="DmcException">The campaign has no records, or a name fits no record or more than one.</exception>
+    /// <param name="names">The persons (<see cref="Matches"/>); empty for all.</param>
+    /// <exception cref="DmcException">The campaign has no records, or no name fits any record.</exception>
     static List<string> Show(string folder, string campaign, string[] names)
     {
         var index = RecordIndex.Build(folder, campaign);
         if (index.Records.Count == 0)
             throw new DmcException($"{campaign} has no records (records/ comes with migration 010)");
-        var chosen = names.Length == 0 ? index.Records.Where(r => r.Campaign == campaign).ToList() : names.Select(n => Find(index, n)).ToList();
+        var chosen = new List<PersonRecord>();
+        var missing = new List<string>();
+        if (names.Length == 0)
+            chosen.AddRange(index.Records.Where(r => r.Campaign == campaign));
+        foreach (string name in names)
+        {
+            var found = Matches(index, name);
+            if (found.Count == 0)
+                missing.Add($"\"{name.Trim()}\"");
+            chosen.AddRange(found.Where(r => !chosen.Contains(r)));
+        }
+        if (chosen.Count == 0)
+            throw new DmcException($"no record for {string.Join(", ", missing)}");
         var lines = new List<string>();
         foreach (var record in chosen)
         {
@@ -119,25 +137,43 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
                 lines.Add("");
             lines.AddRange(RecordText.Of(index, record));
         }
+        if (missing.Count > 0)
+            lines.AddRange(["", $"no record for {string.Join(", ", missing)} (dmc records show {campaign} prints everyone)"]);
         return lines;
     }
 
-    /// <summary>The record a name means: a full name, or a word of one record's name.</summary>
+    /// <summary>A run of characters that are not letters or digits: what separates the words of a name.</summary>
+    [GeneratedRegex(@"[^\p{L}\p{N}]+", RegexOptions.CultureInvariant)]
+    private static partial Regex NotWord();
+
+    /// <summary>The words of a name, lower case, without quotes or other punctuation (<c>Shalefire "Shale" Stoutheart</c>: shalefire, shale, stoutheart).</summary>
+    /// <param name="name">A name.</param>
+    static string[] Words(string name) =>
+        NotWord().Split(name.ToLowerInvariant()).Where(w => w.Length > 0).ToArray();
+
+    /// <summary>
+    /// The records a name gives: the one whose full name it is (ignoring case); else the one whose file it names
+    /// (<c>kibil-rornson</c>, or a sheet's <c>npc-kibil-rornson.md</c>); else every record whose name holds each of its
+    /// words, ignoring case, quotes and punctuation (<c>Shale</c>, <c>Emmajeen Kole</c>). None when nothing fits.
+    /// </summary>
     /// <param name="index">The index.</param>
     /// <param name="name">The name as typed.</param>
-    /// <exception cref="DmcException">No record fits, or more than one does.</exception>
-    static PersonRecord Find(RecordIndex index, string name)
+    static List<PersonRecord> Matches(RecordIndex index, string name)
     {
         string wanted = name.Trim();
         if (index.Records.FirstOrDefault(r => r.Person.Equals(wanted, StringComparison.OrdinalIgnoreCase)) is { } exact)
-            return exact;
-        var partial = index.Records.Where(r => r.Person.Split(' ').Any(w => w.Equals(wanted, StringComparison.OrdinalIgnoreCase))).ToList();
-        return partial.Count switch
-        {
-            1 => partial[0],
-            0 => throw new DmcException($"no record for \"{wanted}\""),
-            _ => throw new DmcException($"\"{wanted}\" could be {string.Join(" or ", partial.Select(p => p.Person))}: use the full name"),
-        };
+            return [exact];
+        string stem = wanted.ToLowerInvariant();
+        foreach (string end in new[] { ".json", ".md" })
+            if (stem.EndsWith(end, StringComparison.Ordinal))
+                stem = stem[..^end.Length];
+        foreach (string start in new[] { "npc-", "pc-" })
+            if (stem.StartsWith(start, StringComparison.Ordinal))
+                stem = stem[start.Length..];
+        if (index.Records.FirstOrDefault(r => RecordFiles.Slug(r.Person) == stem + ".json") is { } file)
+            return [file];
+        var words = Words(stem);
+        return words.Length == 0 ? [] : [.. index.Records.Where(r => words.All(Words(r.Person).Contains))];
     }
 
     /// <summary>

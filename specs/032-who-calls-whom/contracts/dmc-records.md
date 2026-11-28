@@ -5,8 +5,9 @@ One class, `src/Dmc.Cli/Commands/RecordsCommand.cs`, in `CommandTable.All`. `<ca
 
 ## `dmc records show <campaign> [<person>...]`
 
-The text view (FR-009). With no person, every record. A person is named by full name or by a word of their name no
-other record has. Output, per record:
+The text view (FR-009). With no person, every record. A person is named by full name, by a record's or a sheet's file
+name (`kibil-rornson`, `npc-kibil-rornson.md`), or by words of their name in any order and case, quotes and
+punctuation ignored; a name several records fit gives them all. Output, per record:
 
 ```
 Hessa Kettering, called:
@@ -18,7 +19,8 @@ Hessa Kettering says: "Pim" for Pim Kettering (setup)
 Limits: Cannot read. (inference)
 ```
 
-Exit 0. A person with no record: one line, exit 1.
+Exit 0. A name that fits no record is named on a last line, `no record for "X" (dmc records show <campaign> prints
+everyone)`, after the others' records; when no name fits any record: one line on stderr, exit 1.
 
 ## `dmc records check <campaign> [--draft]`
 

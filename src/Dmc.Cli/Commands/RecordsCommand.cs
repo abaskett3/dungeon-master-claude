@@ -30,14 +30,16 @@ public sealed partial class RecordsCommand : ICommand
 
     /// <summary>The text <c>--help</c> prints.</summary>
     static readonly string Help = """
-usage: dmc records show <campaign> [PERSON ...] [--folder PATH]
+usage: dmc records show <campaign> [PERSON ...] [--card | --sheet | --all] [--folder PATH]
        dmc records check <campaign> [--draft] [--folder PATH]
        dmc records draft <campaign> [--folder PATH]
        dmc records edited            (the PostToolUse hook; reads the hook's JSON on stdin)
 
 Who calls whom what, and each person's limits, from the campaign's records/<person>.json.
   show    the records as text: what each person is called and by whom, relationships, their words for
-          others, limits; with PERSON, only those (a full name, or a word of a name no one else has)
+          others, limits, facts and lists; with PERSON, only those (a full name, or a word of a name no one else has);
+          --card, --sheet, --all print a person's sheet from their record with sources: to the end of the
+          play card, to History, or all of it
   check   one line per finding of the full save, then the count; --draft checks migration 010's draft
   draft   start migration 010's draft beside the latest backup, from canon's People (also: …) items
   edited  check every record after an edit; a bad one is refused in one line on stderr, exit 2
@@ -80,7 +82,8 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
         switch (sub)
         {
             case "show":
-                foreach (string line in Show(folder, campaign, rest))
+                var part = ShowPart(ref rest);
+                foreach (string line in Show(folder, campaign, rest, part))
                     io.Out.WriteLine(line);
                 return 0;
             case "check":
@@ -112,7 +115,8 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
     /// <param name="campaign">The campaign's folder name.</param>
     /// <param name="names">The persons (<see cref="Matches"/>); empty for all.</param>
     /// <exception cref="DmcException">The campaign has no records, or no name fits any record.</exception>
-    static List<string> Show(string folder, string campaign, string[] names)
+    /// <param name="part">The part of each record's print (<c>--card</c>, <c>--sheet</c>, <c>--all</c>, spec 036 FR-009), or null for the text view.</param>
+    static List<string> Show(string folder, string campaign, string[] names, PrintPart? part = null)
     {
         var index = RecordIndex.Build(folder, campaign);
         if (index.Records.Count == 0)
@@ -135,11 +139,28 @@ Who calls whom what, and each person's limits, from the campaign's records/<pers
         {
             if (lines.Count > 0)
                 lines.Add("");
-            lines.AddRange(RecordText.Of(index, record));
+            lines.AddRange(part is { } p && record.Sheet is not null && record.HasSheetContent
+                ? RecordSheet.Part(RecordSheet.Print(record, sources: true), p)
+                : RecordText.Of(index, record));
         }
         if (missing.Count > 0)
             lines.AddRange(["", $"no record for {string.Join(", ", missing)} (dmc records show {campaign} prints everyone)"]);
         return lines;
+    }
+
+    /// <summary>
+    /// The print part <c>show</c> was asked for, taken out of its arguments: <c>--card</c>, <c>--sheet</c> or <c>--all</c>
+    /// (spec 036 FR-009); null for none.
+    /// </summary>
+    /// <param name="rest">The arguments after the campaign; the flag is removed.</param>
+    /// <exception cref="DmcException">Two of the flags, or another option.</exception>
+    static PrintPart? ShowPart(ref string[] rest)
+    {
+        var flags = rest.Where(a => a.StartsWith("--", StringComparison.Ordinal)).ToList();
+        if (flags.Count > 1 || flags.Any(f => f is not ("--card" or "--sheet" or "--all")))
+            throw new DmcException($"unexpected \"{flags.FirstOrDefault(f => f is not ("--card" or "--sheet" or "--all")) ?? flags[1]}\": dmc records show <campaign> [PERSON ...] [--card | --sheet | --all]", 2);
+        rest = rest.Where(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
+        return flags.Count == 0 ? null : flags[0] switch { "--card" => PrintPart.Card, "--sheet" => PrintPart.Sheet, _ => PrintPart.All };
     }
 
     /// <summary>A run of characters that are not letters or digits: what separates the words of a name.</summary>

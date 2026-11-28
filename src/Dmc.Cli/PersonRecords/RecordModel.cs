@@ -67,7 +67,43 @@ internal sealed record PersonRecord(string Campaign, string FileName, string Per
 {
     /// <summary>The file as a message names it: <c>records/&lt;file&gt;</c>.</summary>
     public string Label => $"{RecordFiles.Folder}/{FileName}";
+
+    /// <summary>The sheet file the record prints as (<c>npc-hessa-kettering.md</c>, spec 036 FR-007); null when it names none.</summary>
+    public string? Sheet { get; init; }
+
+    /// <summary>The record's facts: one value a key (spec 036 FR-001).</summary>
+    public IReadOnlyList<Fact> Facts { get; init; } = [];
+
+    /// <summary>The record's list entries: free text, one fact an entry (spec 036 FR-003).</summary>
+    public IReadOnlyList<ListEntry> Lists { get; init; } = [];
+
+    /// <summary>Whether the record holds the rest of a sheet: any fact or list entry.</summary>
+    public bool HasSheetContent => Facts.Count > 0 || Lists.Count > 0;
 }
+
+/// <summary>
+/// One fact of a record (spec 036 FR-001, data-model.md § Fact): a key and its one value, with a source. Every field is
+/// as the file gives it, null when it is missing or of the wrong type, so <see cref="RecordRules"/> can name what is wrong.
+/// </summary>
+/// <param name="Key">The key: any text (<c>Hair</c>, <c>STR</c>, <c>Status</c>).</param>
+/// <param name="Value">The value, as text; a JSON number is taken as its text.</param>
+/// <param name="Section">The sheet heading it prints under, without <c>## </c>; null for the opening fields.</param>
+/// <param name="Card">True when it prints on the play card instead of its section.</param>
+/// <param name="Source">Where it comes from (<see cref="RecordSource"/>).</param>
+/// <param name="Problems">What is wrong with its shape: an unknown key, a field of the wrong type.</param>
+internal sealed record Fact(string? Key, string? Value, string? Section, bool Card, string? Source, IReadOnlyList<string> Problems);
+
+/// <summary>
+/// One entry of one of a record's lists (spec 036 FR-003, data-model.md § List entry): one fact in free text, with a
+/// source. <c>dmc</c> checks its source and its dates, never what the text says.
+/// </summary>
+/// <param name="List">The list's name (<c>Looks</c>, <c>What they know</c>, <c>History</c>).</param>
+/// <param name="Text">The fact.</param>
+/// <param name="Section">The sheet heading it prints under, without <c>## </c>; null for the opening fields.</param>
+/// <param name="Card">True when it prints on the play card instead of its section.</param>
+/// <param name="Source">Where it comes from.</param>
+/// <param name="Problems">What is wrong with its shape.</param>
+internal sealed record ListEntry(string? List, string? Text, string? Section, bool Card, string? Source, IReadOnlyList<string> Problems);
 
 /// <summary>One row of the migration's draft (data-model.md § Draft): a row with the person it names and the line it came from.</summary>
 /// <param name="To">The person the row names (the record it will be on).</param>

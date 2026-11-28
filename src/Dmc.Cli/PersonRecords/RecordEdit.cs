@@ -115,7 +115,54 @@ internal static partial class RecordEdit
         var before = notesBefore.Select(Unnumbered).ToHashSet(StringComparer.Ordinal);
         var fresh = outcome.Notes.Distinct(StringComparer.Ordinal).Where(n => !before.Contains(Unnumbered(n)))
             .Where(n => !RecordRules.IsWaitingNote(n) || n.StartsWith(label, StringComparison.Ordinal)).ToList();
+        if (KeysNote(current, previous) is { } keys)
+            fresh.Add(keys);
         return fresh.Count > 0 ? new Outcome(null, "dmc records: " + string.Join(" ", fresh)) : Outcome.Pass;
+    }
+
+    /// <summary>
+    /// The keys note (spec 036 FR-006, research R6): when an edit adds a fact key or a list name that the record did not
+    /// have, one line naming them, any of the record's other keys or lists that shares a word with one (so "Hair colour"
+    /// meets "Hair"), and the record's other keys and lists. Null when nothing new was added, or the record is new: a
+    /// record written for the first time has no keys to show.
+    /// </summary>
+    /// <param name="current">The record now.</param>
+    /// <param name="previous">The record before the edit, or null for a new one.</param>
+    internal static string? KeysNote(PersonRecord? current, PersonRecord? previous)
+    {
+        if (current is null || previous is null)
+            return null;
+        static List<string> Names(IEnumerable<string?> names) =>
+            names.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n!.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var oldKeys = Names(previous.Facts.Select(f => f.Key));
+        var oldLists = Names(previous.Lists.Select(e => e.List));
+        var newKeys = Names(current.Facts.Select(f => f.Key)).Where(k => !oldKeys.Contains(k, StringComparer.OrdinalIgnoreCase)).ToList();
+        var newLists = Names(current.Lists.Select(e => e.List)).Where(l => !oldLists.Contains(l, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (newKeys.Count == 0 && newLists.Count == 0)
+            return null;
+        var others = oldKeys.Concat(oldLists).ToList();
+        string Added(string what, string name)
+        {
+            var close = others.Where(o => SharesAWord(o, name)).ToList();
+            return $"the {what} \"{name}\"" + (close.Count > 0 ? $" (close to {string.Join(", ", close.Select(c => $"\"{c}\""))})" : "");
+        }
+        var added = newKeys.Select(k => Added("key", k)).Concat(newLists.Select(l => Added("list", l)));
+        string keys = oldKeys.Count > 0 ? string.Join(", ", oldKeys) : "none";
+        string lists = oldLists.Count > 0 ? string.Join(", ", oldLists) : "none";
+        return $"{current.Label} adds {string.Join(" and ", added)}; its keys: {keys}; its lists: {lists}. Merge any that say the same.";
+    }
+
+    /// <summary>A word of three letters or more, for the keys note.</summary>
+    [GeneratedRegex(@"\p{L}{3,}", RegexOptions.CultureInvariant)]
+    private static partial Regex LongWord();
+
+    /// <summary>Whether two names share a word of three letters or more, ignoring case.</summary>
+    /// <param name="a">One name.</param>
+    /// <param name="b">The other.</param>
+    static bool SharesAWord(string a, string b)
+    {
+        var words = LongWord().Matches(a).Select(m => m.Value.ToLowerInvariant()).ToHashSet(StringComparer.Ordinal);
+        return LongWord().Matches(b).Any(m => words.Contains(m.Value.ToLowerInvariant()));
     }
 
     /// <summary>
@@ -235,7 +282,7 @@ internal static partial class RecordEdit
     [GeneratedRegex(@"\\(u[0-9a-fA-F]{4}|.)", RegexOptions.CultureInvariant)]
     private static partial Regex JsonEscape();
 
-    /// <summary>Each quotation of the player a record's rows and limits give as their source, with where it is.</summary>
+    /// <summary>Each quotation of the player a record's rows, limits, facts and list entries give as their source, with where it is.</summary>
     /// <param name="record">The record, or null for none.</param>
     static IEnumerable<(string Where, string Words)> Quotations(PersonRecord? record)
     {
@@ -247,6 +294,12 @@ internal static partial class RecordEdit
         for (int i = 0; i < record.Limits.Count; i++)
             if (record.Limits[i].Source is { } s && RecordSource.PlayerWords(s) is { } w)
                 yield return ($"limit {i + 1}", w);
+        for (int i = 0; i < record.Facts.Count; i++)
+            if (record.Facts[i].Source is { } s && RecordSource.PlayerWords(s) is { } w)
+                yield return ($"fact {i + 1}", w);
+        for (int i = 0; i < record.Lists.Count; i++)
+            if (record.Lists[i].Source is { } s && RecordSource.PlayerWords(s) is { } w)
+                yield return ($"list {i + 1}", w);
     }
 
     /// <summary>Whether an Edit both changes the text and adds a credit to the player.</summary>

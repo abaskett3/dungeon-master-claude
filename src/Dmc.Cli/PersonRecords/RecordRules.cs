@@ -8,7 +8,7 @@ namespace Dmc.PersonRecords;
 /// and what is wrong; the first is the one a refusal prints. A usage that makes one word mean two persons to the same
 /// speaker is a note, not a break.
 /// </summary>
-internal static class RecordRules
+internal static partial class RecordRules
 {
     /// <summary>The breaks and the notes for a campaign's records.</summary>
     /// <param name="Errors">One line per break, in file and row order; empty when every record passes.</param>
@@ -59,9 +59,70 @@ internal static class RecordRules
                     errors.Add($"{where}: no text");
                 if (SourceError(scenes, limit.Source) is { } error)
                     errors.Add($"{where}: {error}");
+                if (record.HasSheetContent && RecordDates.Error(limit.Text, scenes.CalendarHasYear) is { } date)
+                    errors.Add($"{where}: {date}");
             }
+            errors.AddRange(SheetErrors(scenes, record));
         }
+        foreach (var group in records.Where(r => r.Sheet is not null).GroupBy(r => r.Sheet!, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+            errors.Add($"two records print the sheet {group.Key}: {string.Join(", ", group.Select(r => r.Label))}");
         return new Outcome(errors, [.. Notes(records), .. notes]);
+    }
+
+    /// <summary>A sheet file name a record may print as: <c>pc-…md</c> or <c>npc-…md</c>, with no folder (spec 036 FR-007).</summary>
+    [GeneratedRegex(@"^(?:pc|npc)-[^/\\]+\.md$", RegexOptions.CultureInvariant)]
+    private static partial Regex SheetName();
+
+    /// <summary>
+    /// The breaks of a record's facts and lists (spec 036, data-model.md rules 8 to 12): each fact's key, value and
+    /// source, one value a key, the checked keys' values, each entry's list, text and source, full dates in both, and
+    /// the <c>sheet</c> a record with any of them names.
+    /// </summary>
+    /// <param name="scenes">Where a scene source is looked up; it also says whether the calendar has a year.</param>
+    /// <param name="record">The record.</param>
+    static IEnumerable<string> SheetErrors(SceneBook scenes, PersonRecord record)
+    {
+        if (record.Sheet is { } sheet && !SheetName().IsMatch(sheet))
+            yield return $"{record.Label}: sheet \"{sheet}\" must be a sheet's file name, pc-<name>.md or npc-<name>.md";
+        else if (record.Sheet is null && record.HasSheetContent)
+            yield return $"{record.Label}: a record with facts or lists names its sheet (\"sheet\": \"npc-{Path.GetFileNameWithoutExtension(record.FileName)}.md\")";
+        var keys = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < record.Facts.Count; i++)
+        {
+            var fact = record.Facts[i];
+            string where = $"{record.Label} fact {i + 1}" + (fact.Key is { } k ? $" (\"{k}\")" : "");
+            foreach (string problem in fact.Problems)
+                yield return $"{where}: {problem}";
+            if (string.IsNullOrWhiteSpace(fact.Key))
+                yield return $"{where}: no key";
+            else if (keys.TryGetValue(fact.Key.Trim(), out int first))
+                yield return $"{where}: a second value for \"{fact.Key.Trim()}\" (fact {first + 1} says \"{record.Facts[first].Value}\"): change that fact, or put this one back";
+            else
+                keys[fact.Key.Trim()] = i;
+            if (string.IsNullOrWhiteSpace(fact.Value))
+                yield return $"{where}: no value";
+            else if (fact.Key is { } key && CheckedKeys.ValueError(key.Trim(), fact.Value) is { } bad)
+                yield return $"{where}: {bad}";
+            if (SourceError(scenes, fact.Source) is { } source)
+                yield return $"{where}: {source}";
+            if (RecordDates.Error(fact.Value, scenes.CalendarHasYear) is { } date)
+                yield return $"{where}: {date}";
+        }
+        for (int i = 0; i < record.Lists.Count; i++)
+        {
+            var entry = record.Lists[i];
+            string where = $"{record.Label} list {i + 1}" + (entry.List is { } l ? $" (\"{l}\")" : "");
+            foreach (string problem in entry.Problems)
+                yield return $"{where}: {problem}";
+            if (string.IsNullOrWhiteSpace(entry.List))
+                yield return $"{where}: no list (the list's name, such as Looks or History)";
+            if (string.IsNullOrWhiteSpace(entry.Text))
+                yield return $"{where}: no text";
+            if (SourceError(scenes, entry.Source) is { } source)
+                yield return $"{where}: {source}";
+            if (RecordDates.Error(entry.Text, scenes.CalendarHasYear) is { } date)
+                yield return $"{where}: {date}";
+        }
     }
 
     /// <summary>The breaks of one row; a speaker or never-person who has a sheet and no record yet adds a note instead.</summary>
@@ -94,6 +155,8 @@ internal static class RecordRules
                 notes.Add(Waiting(where, never));
         if (SourceError(scenes, row.Source) is { } source)
             yield return $"{where}: {source}";
+        if (record.HasSheetContent && RecordDates.Error(row.When, scenes.CalendarHasYear) is { } date)
+            yield return $"{where}: {date}";
         for (int j = 0; j < index; j++)
         {
             var other = record.Rows[j];
@@ -235,6 +298,15 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
 
     /// <summary>Whether this book's check takes a person it cannot see as known: shape only, in a campaign that continues another.</summary>
     public bool TakesUnseenSpeakers => _lenient && _unseen;
+
+    /// <summary>Whether the campaign's calendar has a year, read once (<see cref="RecordDates.CalendarHasYear"/>); false for a lenient book.</summary>
+    bool? _hasYear;
+
+    /// <summary>
+    /// Whether a date in the campaign's records needs a year (spec 036 FR-005): its <c>game-state.md</c>'s in-world date
+    /// holds one. A book of shape only cannot see the game state and asks for none.
+    /// </summary>
+    public bool CalendarHasYear => _hasYear ??= !_lenient && campaignFolder.Length > 0 && RecordDates.CalendarHasYear(campaignFolder);
 
     /// <summary>Whether a campaign is one this one continues.</summary>
     /// <param name="name">Its folder name.</param>

@@ -127,22 +127,29 @@ internal static class SheetExport
         }
     }
 
-    /// <summary>The sheets in <c>character-sheets/</c>, in file name order: every <c>*.md</c> but <c>minor-npcs.md</c> and the <c>-history.md</c> files.</summary>
+    /// <summary>
+    /// The sheets in <c>character-sheets/</c>, in file name order: every <c>*.md</c> but <c>minor-npcs.md</c> and the
+    /// <c>-history.md</c> files; and each sheet a record prints where its Markdown file is gone (spec 036 FR-010).
+    /// </summary>
     /// <param name="root">The campaign folder.</param>
     static List<SheetFileText> SheetFiles(string root)
     {
         string folder = Path.Combine(root, "character-sheets");
-        if (!Directory.Exists(folder))
-            return [];
         var files = new List<SheetFileText>();
-        foreach (string file in Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal))
+        if (Directory.Exists(folder))
+            foreach (string file in Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal))
+            {
+                if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
+                    continue;
+                var lines = SheetText.LinesWithoutComments(ReadText(Path.Combine(folder, file)));
+                files.Add(new SheetFileText(file, SheetText.Title(lines) ?? Path.GetFileNameWithoutExtension(file), lines));
+            }
+        foreach (var printed in RecordSheet.Printed(root))
         {
-            if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
-                continue;
-            var lines = SheetText.LinesWithoutComments(ReadText(Path.Combine(folder, file)));
-            files.Add(new SheetFileText(file, SheetText.Title(lines) ?? Path.GetFileNameWithoutExtension(file), lines));
+            var lines = SheetText.LinesWithoutComments(string.Join("\n", printed.Lines));
+            files.Add(new SheetFileText(printed.File, SheetText.Title(lines) ?? printed.Record!.Person, lines));
         }
-        return files;
+        return [.. files.OrderBy(f => f.File, StringComparer.Ordinal)];
     }
 
     /// <summary>

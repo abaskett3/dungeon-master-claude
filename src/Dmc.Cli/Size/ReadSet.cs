@@ -88,7 +88,8 @@ internal static partial class ReadSet
     /// <param name="Title">Its <c># </c> title, or the file name without <c>.md</c> when it has none.</param>
     /// <param name="Pc">True for a <c>pc-*.md</c> sheet.</param>
     /// <param name="Lines">The sheet's lines, read once for both its title and its measurement.</param>
-    sealed record Sheet(string File, string Title, bool Pc, List<Line> Lines);
+    /// <param name="Shown">The path the report names: <c>character-sheets/&lt;file&gt;</c>, or for a sheet a record prints (spec 036) the record's.</param>
+    sealed record Sheet(string File, string Title, bool Pc, List<Line> Lines, string Shown);
 
     /// <summary>
     /// Words never matched on their own when a sheet's first or last word is tried: articles, prepositions and titles,
@@ -194,9 +195,15 @@ internal static partial class ReadSet
                 var lines = Measurement.ReadLines(Path.Combine(folder, file));
                 var first = lines.FirstOrDefault(l => l.Text.StartsWith("# ", StringComparison.Ordinal));
                 string title = first.Text is { } t ? t[2..].Trim() : Path.GetFileNameWithoutExtension(file);
-                sheets.Add(new Sheet(file, title, file.StartsWith("pc-", StringComparison.Ordinal), lines));
+                sheets.Add(new Sheet(file, title, file.StartsWith("pc-", StringComparison.Ordinal), lines, "character-sheets/" + file));
             }
         }
+        // A sheet a record prints where its Markdown file is gone (spec 036 FR-010), measured without its source marks,
+        // as the play-card budget counts it (#262); the resume reads the marks too (dmc records show --card).
+        foreach (var printed in PersonRecords.RecordSheet.Printed(root))
+            sheets.Add(new Sheet(printed.File, printed.Record!.Person, PersonRecords.RecordSheet.IsPc(printed.File),
+                PersonRecords.RecordSheet.Measured(printed.Lines), printed.Record.Label));
+        sheets.Sort((a, b) => string.CompareOrdinal(a.File, b.File));
 
         var chosen = new List<Sheet>();
         var companions = new HashSet<Sheet>();
@@ -377,13 +384,13 @@ internal static partial class ReadSet
     {
         var lines = sheet.Lines;
         if (companion && PlayCardEnd(lines) is { } cardEnd)
-            return new Part("character-sheets/" + sheet.File, PartKind.ToPlayCard, EntryState.Measured, BudgetKind.PlayCard,
+            return new Part(sheet.Shown, PartKind.ToPlayCard, EntryState.Measured, BudgetKind.PlayCard,
                 lines.GetRange(0, cardEnd), "to its play card", lines);
         int last = -1;
         for (int i = 0; i < lines.Count; i++)
             if (Measurement.IsSectionHeading(lines[i].Text))
                 last = i;
-        string shown = "character-sheets/" + sheet.File;
+        string shown = sheet.Shown;
         var budget = sheet.Pc ? BudgetKind.PcSheet : BudgetKind.OtherSheet;
         if (last >= 0 && HistoryHeadings.Contains(lines[last].Text[3..].Trim(), StringComparer.OrdinalIgnoreCase))
             return new Part(shown, PartKind.ToHistory, EntryState.Measured, budget, lines.GetRange(0, last), "to its history", lines,

@@ -36,8 +36,19 @@ internal static partial class RecordCheck
         var outcome = RecordRules.Check(SceneBook.For(dmcFolder, campaign), loaded.Records);
         findings.AddRange(outcome.Errors.Select(e => (e.Contains(" never says ", StringComparison.Ordinal) ? "rows-disagree: " : "invalid: ") + e));
         findings.AddRange(Samples(root, RecordIndex.Build(dmcFolder, campaign)));
+        findings.AddRange(SheetAndRecord(root, loaded.Records));
         return findings;
     }
+
+    /// <summary>
+    /// The <c>sheet-and-record</c> findings (spec 036 FR-011): a Markdown sheet that still exists beside a record that
+    /// prints it, two homes for one person's facts, as a migration left part way through leaves them.
+    /// </summary>
+    /// <param name="root">The campaign folder.</param>
+    /// <param name="records">The campaign's records.</param>
+    static IEnumerable<string> SheetAndRecord(string root, IReadOnlyList<PersonRecord> records) =>
+        records.Where(r => r.Sheet is { } s && r.HasSheetContent && File.Exists(Path.Combine(root, "character-sheets", s)))
+            .Select(r => $"sheet-and-record: character-sheets/{r.Sheet}: {r.Person}'s record prints this sheet; remove the Markdown sheet once its lines are in the record");
 
     /// <summary>The findings for the migration's draft: its rows checked with the campaign's records, and the sheets' samples against them.</summary>
     /// <param name="dmcFolder">The DMC folder.</param>
@@ -118,9 +129,8 @@ internal static partial class RecordCheck
     internal static List<string> Samples(string root, RecordIndex index)
     {
         var findings = new List<string>();
-        foreach (var (file, title, lineNumber, text) in VoiceLines(root))
+        foreach (var (where, title, text) in VoiceLines(root))
         {
-            string where = $"character-sheets/{file}:{lineNumber}";
             string? speaker = index.Records.FirstOrDefault(r => r.Person.Equals(title, StringComparison.OrdinalIgnoreCase))?.Person;
             if (speaker is null)
                 continue;
@@ -170,23 +180,33 @@ internal static partial class RecordCheck
     internal static string? Lisped(string key) =>
         key.IndexOfAny(['r', 'l']) < 0 ? null : key.Replace('r', 'w').Replace('l', 'w');
 
-    /// <summary>Each sheet's Voice lines (play card and Playing them): the file, the sheet's title, the 1-based line and its text.</summary>
+    /// <summary>
+    /// Each sheet's Voice lines (play card and Playing them): where it is, the sheet's person and its text. A Markdown
+    /// sheet's line is <c>character-sheets/&lt;file&gt;:&lt;n&gt;</c>; for a sheet a record prints (spec 036), each entry of
+    /// its Voice list, <c>records/&lt;file&gt; list &lt;n&gt;</c>.
+    /// </summary>
     /// <param name="root">The campaign folder.</param>
-    static IEnumerable<(string File, string Title, int Line, string Text)> VoiceLines(string root)
+    static IEnumerable<(string Where, string Title, string Text)> VoiceLines(string root)
     {
         string folder = Path.Combine(root, "character-sheets");
-        if (!Directory.Exists(folder))
-            yield break;
-        foreach (string path in Directory.EnumerateFiles(folder, "*.md").Order(StringComparer.Ordinal))
+        if (Directory.Exists(folder))
+            foreach (string path in Directory.EnumerateFiles(folder, "*.md").Order(StringComparer.Ordinal))
+            {
+                string file = Path.GetFileName(path);
+                if (!RecordFiles.IsPersonSheet(file))
+                    continue;
+                var lines = File.ReadAllLines(path);
+                string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t ? RecordFiles.SheetPerson(t[2..]) : Path.GetFileNameWithoutExtension(file);
+                for (int i = 0; i < lines.Length; i++)
+                    if (lines[i].TrimStart().StartsWith("- **Voice**", StringComparison.Ordinal))
+                        yield return ($"character-sheets/{file}:{i + 1}", title, lines[i]);
+            }
+        foreach (var printed in RecordSheet.Printed(root))
         {
-            string file = Path.GetFileName(path);
-            if (!RecordFiles.IsPersonSheet(file))
-                continue;
-            var lines = File.ReadAllLines(path);
-            string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t ? RecordFiles.SheetPerson(t[2..]) : Path.GetFileNameWithoutExtension(file);
-            for (int i = 0; i < lines.Length; i++)
-                if (lines[i].TrimStart().StartsWith("- **Voice**", StringComparison.Ordinal))
-                    yield return (file, title, i + 1, lines[i]);
+            var record = printed.Record!;
+            for (int i = 0; i < record.Lists.Count; i++)
+                if (record.Lists[i] is { List: { } list, Text: { } text } && list.Trim().Equals("Voice", StringComparison.OrdinalIgnoreCase))
+                    yield return ($"{record.Label} list {i + 1}", record.Person, text);
         }
     }
 

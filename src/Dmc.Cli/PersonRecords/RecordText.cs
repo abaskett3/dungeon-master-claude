@@ -3,7 +3,8 @@ namespace Dmc.PersonRecords;
 /// <summary>
 /// A record as text for the player and for the resume (spec 032 FR-009, contracts/dmc-records.md § show): what the
 /// person is called and by whom, their relationships from both sides, the words they use for others, and their limits,
-/// each with its source. Nobody reads the JSON to check a sheet.
+/// each with its source; then the facts and each list of the rest of the sheet (spec 036 FR-009). Nobody reads the
+/// JSON to check a sheet.
 /// </summary>
 internal static class RecordText
 {
@@ -31,6 +32,11 @@ internal static class RecordText
             lines.Add($"{record.Person} says: {string.Join("; ", says)}");
         if (record.Limits.Count > 0)
             lines.Add($"Limits: {string.Join(" ", record.Limits.Select(l => $"{l.Text?.Trim()} ({l.Source})"))}");
+        // The rest of the sheet (spec 036 FR-009): the facts on one line, then one line per list, each with its sources.
+        if (record.Facts.Count > 0)
+            lines.Add($"Facts: {string.Join("; ", record.Facts.Select(f => $"{f.Key?.Trim()}: {f.Value?.Trim()} ({f.Source})"))}");
+        foreach (var list in record.Lists.GroupBy(e => e.List?.Trim() ?? "", StringComparer.OrdinalIgnoreCase))
+            lines.Add($"{list.First().List?.Trim()}: {string.Join(" ", list.Select(e => $"{e.Text?.Trim()} ({e.Source})"))}");
         return lines;
     }
 }

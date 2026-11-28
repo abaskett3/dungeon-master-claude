@@ -119,14 +119,20 @@ internal static partial class SheetReminder
     internal static List<Person> Present(string root, string presentText)
     {
         string folder = Path.Combine(root, SheetsFolder);
-        if (presentText.Trim().Length == 0 || !Directory.Exists(folder))
+        if (presentText.Trim().Length == 0)
             return [];
         var people = new List<Person>();
-        foreach (string file in Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal))
+        var sheets = new List<(string File, List<Line> Lines)>();
+        if (Directory.Exists(folder))
+            foreach (string file in Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal))
+                if (file != "minor-npcs.md" && !file.EndsWith("-history.md", StringComparison.Ordinal))
+                    sheets.Add((file, Measurement.ReadLines(Path.Combine(folder, file))));
+        // A sheet a record prints where its Markdown file is gone (spec 036 FR-010).
+        sheets.AddRange(PersonRecords.RecordSheet.Printed(root).Select(p => (p.File, PersonRecords.RecordSheet.Measured(p.Lines))));
+        foreach (var (file, lines) in sheets)
         {
-            if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal) || file.StartsWith("pc-", StringComparison.Ordinal))
+            if (file.StartsWith("pc-", StringComparison.Ordinal))
                 continue;
-            var lines = Measurement.ReadLines(Path.Combine(folder, file));
             string title = lines.FirstOrDefault(l => l.Text.StartsWith("# ", StringComparison.Ordinal)).Text is { } t ? t[2..].Trim() : Path.GetFileNameWithoutExtension(file);
             int at = ReadSet.MentionAt(presentText, title);
             if (at >= 0)

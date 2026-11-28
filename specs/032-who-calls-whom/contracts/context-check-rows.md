@@ -2,7 +2,8 @@
 
 A part of the hook's output after the canon reminder, printed only in a campaign with `records/`. It never fails: on
 any error it prints nothing (`ContextCheckCommand.Quietly`). Its own cap is 2,400 bytes: word lines first, then the
-person blocks. Every due person's "says" line and limits line (T057) come before the rest of any block and may take the part past its cap, up
+person blocks. Every due person's "says" line, then every due person's limits line (T057, T065), comes before the rest of any block,
+each placed on its own so a long limits line never keeps out a "says" line, and they may take the part past its cap, up
 to what the hook's whole output (9,500 bytes) has left; the rest of each block is printed whole while the part stays
 within its cap (T055, found by SC-003's run, 2026-11-27: in one pass a long block, most of it what others call that
 person, left no room for the next, and one risk speaker's block was never printed).

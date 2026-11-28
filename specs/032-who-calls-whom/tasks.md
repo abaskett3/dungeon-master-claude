@@ -220,3 +220,7 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [X] T083 In `dmc records show`, try the file name as it is now before the one from before T063 (`RecordsCommand.Matches`; `RecordsCommandContract.ShowFindsARecordByItsOldFileNameAfterOneWithThatName`)
 - [X] T084 Write the old file name's stem test as `".json".Length` (`RecordRules.cs`)
 - [X] T085 Say in `Undone`'s comment that a deletion is not undone and a note may be missed; the roadmap row and the decision record's limits brought up to date
+
+## Phase 15: Convergence
+
+- [X] T086 Bring `contracts/context-check-rows.md` and `contracts/dmc-records.md` up to date with T065, T076, T078, T082 and T083: every due person's "says" line is placed before any limits line; `show` finds a record by its old file name only when no record has that name now; the note on a person with no record yet is given once, whatever its row's number, per Constitution Documentation 4 (partial)

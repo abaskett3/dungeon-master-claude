@@ -180,7 +180,7 @@ internal static partial class RecordCheck
         foreach (string path in Directory.EnumerateFiles(folder, "*.md").Order(StringComparer.Ordinal))
         {
             string file = Path.GetFileName(path);
-            if (file == "minor-npcs.md" || file.EndsWith("-history.md", StringComparison.Ordinal))
+            if (!RecordFiles.IsPersonSheet(file))
                 continue;
             var lines = File.ReadAllLines(path);
             string title = lines.FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)) is { } t ? RecordFiles.SheetPerson(t[2..]) : Path.GetFileNameWithoutExtension(file);
@@ -202,7 +202,7 @@ internal static partial class RecordCheck
         if (!Directory.Exists(folder))
             return [];
         return Directory.EnumerateFiles(folder, "*.md")
-            .Where(p => Path.GetFileName(p) != "minor-npcs.md" && !p.EndsWith("-history.md", StringComparison.Ordinal))
+            .Where(p => RecordFiles.IsPersonSheet(Path.GetFileName(p)))
             .Select(p => File.ReadLines(p).FirstOrDefault(l => l.StartsWith("# ", StringComparison.Ordinal)))
             .OfType<string>().Select(t => RecordFiles.SheetPerson(t[2..])).ToList();
     }

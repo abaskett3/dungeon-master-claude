@@ -167,7 +167,7 @@ internal static partial class RowsReminder
         return output;
     }
 
-    /// <summary>Whether a line of a person's block prints in the first pass: their "says" line or their limits line.</summary>
+    /// <summary>Whether a line of a person's block is their "says" line or their limits line, which the first two passes place and the third leaves out.</summary>
     /// <param name="person">The person.</param>
     /// <param name="line">The line.</param>
     static bool IsFirst(string person, string line) =>

@@ -201,3 +201,13 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [X] T070 Let migration 010's shape-only check take any speaker a row names, as it cannot see the campaigns this one continues (`RecordRules.cs`; `RecordRulesTests.AShapeOnlyCheckTakesASpeakerItCannotSee`)
 - [X] T071 Leave `minor-npcs.md` and history files out of the sheet titles (`RecordCheck.SheetTitles`; `RecordRulesTests.TheSheetTitlesNameOnlyPersons`)
 - [X] T072 Read a scene heading's number with a capture group (`SceneBook.SceneHeading`)
+
+## Phase 13: The code review of PR #299
+
+- [X] T073 Find an edit's new quotations against the file as it was only when the hook is given it (`tool_response.originalFile`) and it was a record, else count them in the edit's own text; drop undoing the edit for quotations, so a record left broken can be fixed and an undo that misses or hits the wrong place decides nothing (`RecordEdit.cs`; `RecordsEditedContract.ARecordLeftBrokenCanBeFixed`, `AQuotationAnEditChangesIsNewWhenTheHookIsGivenTheFileAsItWas`)
+- [X] T074 Take the scene in play in every check again, undoing T067: the rewind runs the full save's check mid-session (`SceneBook`; `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T075 Let the shape-only check take an unseen speaker only in a campaign linked to another (`MigrationChecks.LinksAnother`, `SceneBook.Lenient`; `RecordRulesTests.AShapeOnlyCheckTakesASpeakerItCannotSeeOnlyInALinkedCampaign`)
+- [X] T076 Accept the old file name only with a stem, and find a record by it in `dmc records show` (`RecordRules.cs`, `RecordsCommand.cs`; `RecordRulesTests.AFileNameKeepsEveryLetter`)
+- [X] T077 Read a heading's number with `TryParse`, its pattern built from `ReadSet.ScenePattern` (`SceneBook`; the scene test's overflowing heading)
+- [X] T078 Give the note on a person with no record yet once: the notes are compared with those of the records as they were (`RecordEdit.cs`; `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T079 One test for a person's sheet file, `RecordFiles.IsPersonSheet`, in `RecordCheck.cs`; the rows part's `IsFirst` comment brought up to date

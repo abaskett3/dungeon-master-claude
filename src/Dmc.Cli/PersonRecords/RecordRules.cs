@@ -29,9 +29,10 @@ internal static class RecordRules
         var notes = new List<string>();
         // The persons of the campaigns this one continues are speakers too (T060): a carried-over person keeps their record there.
         var known = new HashSet<string>(records.Select(r => r.Person).Concat(scenes.LinkedPersons()), StringComparer.Ordinal);
-        // A check of shape alone (migration 010's records-in-place) cannot see the campaigns this one continues, so it
-        // takes every person a row names as known.
-        if (scenes.IsLenient)
+        // A check of shape alone (migration 010's records-in-place) cannot see the campaigns this one continues, so in
+        // a campaign that continues another it takes every person a row names as known (T075); in one that continues
+        // none, a speaker with no record is still a misspelling.
+        if (scenes.TakesUnseenSpeakers)
             known.UnionWith(records.SelectMany(r => r.Rows).SelectMany(row => (row.Never ?? []).Append(row.From ?? ""))
                 .Where(p => p.Length > 0 && p != Speaker.Anyone && !Speaker.IsGroup(p)));
         var waiting = new HashSet<string>((pending ?? []).Where(p => !known.Contains(p)), StringComparer.Ordinal);
@@ -43,7 +44,7 @@ internal static class RecordRules
             foreach (string problem in record.Problems)
                 errors.Add($"{record.Label}: {problem}");
             string slug = RecordFiles.Slug(record.Person);
-            if (!record.FileName.Equals(slug, StringComparison.Ordinal) && !record.FileName.Equals(RecordFiles.AsciiSlug(record.Person), StringComparison.Ordinal))
+            if (!record.FileName.Equals(slug, StringComparison.Ordinal) && !(RecordFiles.AsciiSlug(record.Person) is { Length: > 5 } old && record.FileName.Equals(old, StringComparison.Ordinal)))
                 errors.Add($"{record.Label}: the record of \"{record.Person}\" must be {RecordFiles.Folder}/{slug}");
             if (record.Of is { } of && !scenes.IsLinked(of))
                 errors.Add($"{record.Label}: \"of\" names {of}, which is not a campaign this one continues");
@@ -186,14 +187,14 @@ internal static class RecordRules
 /// Where scene sources are looked up (spec 032 research R2): this campaign's session logs, and those of each linked
 /// campaign it continues. A scene <c>sN.M</c> exists when <c>story/sessions/session-NNN.md</c> exists and has a real
 /// heading <c>### Scene M:</c> (so the template's commented <c>### Scene N:</c> is none, T061); <c>sN</c> when the
-/// file exists. For the check after each edit, the scene in play counts too: the one after the last heading of this
-/// campaign's latest session log, whose block is written only when the scene ends (T064). The full save's check,
-/// run after that block is written, does not take it.
+/// file exists. The scene in play counts too: the one after the last heading of this campaign's latest session log,
+/// whose block is written only when the scene ends (T064). Every check takes it, the full save's and the rewind's too,
+/// which run mid-session (T074, undoing T067); a row citing the scene after a full save's last one passes until the
+/// next scene is logged.
 /// </summary>
 /// <param name="campaignFolder">The campaign whose records are checked.</param>
 /// <param name="linked">The folder name and folder of each campaign it continues.</param>
-/// <param name="inPlay">True to take the scene in play, for the check after each edit.</param>
-internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictionary<string, string> linked, bool inPlay = false)
+internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictionary<string, string> linked)
 {
     /// <summary>The scene numbers of each session log read so far, by path; null for a file that does not exist.</summary>
     readonly Dictionary<string, HashSet<int>?> _scenes = new(StringComparer.OrdinalIgnoreCase);
@@ -204,9 +205,11 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
     /// <summary>True for a book that finds every scene and every linked campaign: for a check of shape only.</summary>
     bool _lenient;
 
-    /// <summary>A real scene heading of a session log (<see cref="Size.ReadSet.ScenePattern"/>), with its number.</summary>
-    [GeneratedRegex(@"^### Scene ([0-9]+):", RegexOptions.CultureInvariant)]
-    private static partial Regex SceneHeading();
+    /// <summary>True for a book of shape only for a campaign that continues another, whose persons it cannot see.</summary>
+    bool _unseen;
+
+    /// <summary>A real scene heading of a session log, built from <see cref="Size.ReadSet.ScenePattern"/> so the two never differ, with its number.</summary>
+    static readonly Regex SceneHeading = new(Size.ReadSet.ScenePattern.Replace("[0-9]+", "([0-9]+)", StringComparison.Ordinal), RegexOptions.CultureInvariant);
 
     /// <summary>A session log's file name, with its number.</summary>
     [GeneratedRegex(@"^session-(\d+)\.md$", RegexOptions.CultureInvariant)]
@@ -217,7 +220,8 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
     /// <c>records-in-place</c>, which sees only the campaign's own files. The check after each edit has already looked up
     /// each scene when the record was written.
     /// </summary>
-    public static SceneBook Lenient() => new("", new Dictionary<string, string>()) { _lenient = true };
+    /// <param name="continues">True when the campaign continues another, whose persons a row may name (T075).</param>
+    public static SceneBook Lenient(bool continues = false) => new("", new Dictionary<string, string>()) { _lenient = true, _unseen = continues };
 
     /// <summary>A book for a campaign with no linked campaigns.</summary>
     /// <param name="campaignFolder">The campaign folder.</param>
@@ -226,12 +230,11 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
     /// <summary>A book for a campaign in a DMC folder, with the campaigns it continues (<see cref="RecordIndex.Earlier"/>).</summary>
     /// <param name="dmcFolder">The DMC folder.</param>
     /// <param name="campaign">The campaign's folder name.</param>
-    /// <param name="inPlay">True to take the scene in play, for the check after each edit.</param>
-    public static SceneBook For(string dmcFolder, string campaign, bool inPlay = false) =>
-        new(Path.Combine(dmcFolder, "adventures", campaign), RecordIndex.Earlier(dmcFolder, campaign), inPlay);
+    public static SceneBook For(string dmcFolder, string campaign) =>
+        new(Path.Combine(dmcFolder, "adventures", campaign), RecordIndex.Earlier(dmcFolder, campaign));
 
-    /// <summary>Whether this book is for a check of shape alone.</summary>
-    public bool IsLenient => _lenient;
+    /// <summary>Whether this book's check takes a person it cannot see as known: shape only, in a campaign that continues another.</summary>
+    public bool TakesUnseenSpeakers => _lenient && _unseen;
 
     /// <summary>Whether a campaign is one this one continues.</summary>
     /// <param name="name">Its folder name.</param>
@@ -256,7 +259,7 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
         string name = (scene.Campaign is null ? "" : scene.Campaign + " ") + $"s{scene.Session}" + (scene.Scene is { } n ? $".{n}" : "");
         if (numbers is null)
             return $"scene {name} is not in the session logs";
-        if (scene.Scene is { } m && !numbers.Contains(m) && !(inPlay && scene.Campaign is null && scene.Session == Latest() && m == (numbers.Count == 0 ? 1 : numbers.Max() + 1)))
+        if (scene.Scene is { } m && !numbers.Contains(m) && !(scene.Campaign is null && scene.Session == Latest() && m == (numbers.Count == 0 ? 1 : numbers.Max() + 1)))
             return $"scene {name} is not in the session logs";
         return null;
     }
@@ -271,8 +274,8 @@ internal sealed partial class SceneBook(string campaignFolder, IReadOnlyDictiona
         {
             numbers = [];
             foreach (string line in File.ReadLines(log))
-                if (SceneHeading().Match(line) is { Success: true } heading)
-                    numbers.Add(int.Parse(heading.Groups[1].Value));
+                if (SceneHeading.Match(line) is { Success: true } heading && int.TryParse(heading.Groups[1].Value, out int number))
+                    numbers.Add(number);
         }
         return _scenes[log] = numbers;
     }

@@ -95,29 +95,61 @@ public abstract class RecordsEditedContract
         Assert.AreEqual(0, deleted.ExitCode, "a deleting edit adds no quotation: " + deleted);
     }
 
+    /// <summary>Edits a record on disk as the Edit tool would, and runs the hook with the file as it was (<c>tool_response.originalFile</c>).</summary>
+    /// <param name="file">The record's file name.</param>
+    /// <param name="oldText">The text replaced.</param>
+    /// <param name="newText">The text it becomes.</param>
+    /// <param name="log">The session's log.</param>
+    ProcessResult EditRecordGivenTheOriginal(string file, string oldText, string newText, string log)
+    {
+        string path = Path.Combine(Root, "records", file);
+        string original = File.ReadAllText(path);
+        Assert.Contains(oldText, original);
+        File.WriteAllText(path, original.Replace(oldText, newText));
+        var input = System.Text.Json.Nodes.JsonNode.Parse(RecordFixtures.Edited(_folder, "Edit", path, oldText, newText, log))!;
+        input["tool_response"] = new System.Text.Json.Nodes.JsonObject { ["filePath"] = path, ["originalFile"] = original };
+        return Edited(input.ToJsonString());
+    }
+
     /// <summary>
-    /// A quotation whose words an edit changes is new and must be in this session's messages: an Edit of part of it,
-    /// or a deletion inside it when the hook is given the file as it was (<c>tool_response.originalFile</c>).
+    /// T066 and T073: given the file as it was, a quotation whose words an edit changes is new and must be in this
+    /// session's messages, an Edit of part of it or a deletion inside it; without it, the edit's own text is counted,
+    /// which does not catch those (a known limit).
     /// </summary>
     [TestMethod]
-    public void AQuotationAnEditChangesIsNew()
+    public void AQuotationAnEditChangesIsNewWhenTheHookIsGivenTheFileAsItWas()
     {
         string earlier = RecordFixtures.Log(_folder, "OOC: Grumbald calls Pim \"Thimble\", he said it when she sewed his glove.");
         const string quoted = """{ "kind": "usage", "from": "Grumbald", "word": "Thimble", "source": "player: \"he said it when she sewed his glove\"" }""";
         Assert.AreEqual(0, EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + quoted, earlier).ExitCode);
 
         string today = RecordFixtures.Log(_folder, "We pole on downriver.");
-        var changed = EditRecord("pim-kettering.json", "his glove", "her glove", today);
+        var changed = EditRecordGivenTheOriginal("pim-kettering.json", "his glove", "her glove", today);
         Assert.AreEqual(2, changed.ExitCode, changed.ToString());
         StringAssert.Contains(changed.Stderr, "the player's words \"he said it when she sewed her glove\" are not in this session's messages");
-
-        string path = Path.Combine(Root, "records", "pim-kettering.json");
-        string original = File.ReadAllText(path);
-        File.WriteAllText(path, original.Replace("sewed her glove", "sewed glove"));
-        var input = System.Text.Json.Nodes.JsonNode.Parse(RecordFixtures.Edited(_folder, "Edit", path, "her ", "", today))!;
-        input["tool_response"] = new System.Text.Json.Nodes.JsonObject { ["filePath"] = path, ["originalFile"] = original };
-        var deleted = Edited(input.ToJsonString());
+        var deleted = EditRecordGivenTheOriginal("pim-kettering.json", "sewed her glove", "sewed glove", today);
         Assert.AreEqual(2, deleted.ExitCode, "a deletion inside a quotation: " + deleted);
+
+        Assert.AreEqual(0, EditRecord("pim-kettering.json", "sewed glove", "sewed the glove", today).ExitCode, "without the file as it was, a part of a quotation is not checked");
+    }
+
+    /// <summary>
+    /// T073: a record the edit before left broken can be fixed: with no record to compare against, the fixing edit's own
+    /// text is counted, so an earlier session's quotation does not have to be in this session's messages.
+    /// </summary>
+    [TestMethod]
+    public void ARecordLeftBrokenCanBeFixed()
+    {
+        string earlier = RecordFixtures.Log(_folder, "OOC: Grumbald calls Pim \"Thimble\", he said it when she sewed his glove.");
+        const string quoted = """{ "kind": "usage", "from": "Grumbald", "word": "Thimble", "source": "player: \"he said it when she sewed his glove\"" }""";
+        Assert.AreEqual(0, EditRecord("pim-kettering.json", PimRow, PimRow + ",\n    " + quoted, earlier).ExitCode);
+
+        string today = RecordFixtures.Log(_folder, "We pole on downriver.");
+        var broken = EditRecordGivenTheOriginal("pim-kettering.json", PimRow + ",", PimRow, today);
+        Assert.AreEqual(2, broken.ExitCode, broken.ToString());
+        StringAssert.Contains(broken.Stderr, "not valid JSON");
+        var fixedAgain = EditRecordGivenTheOriginal("pim-kettering.json", PimRow, PimRow + ",", today);
+        Assert.AreEqual(0, fixedAgain.ExitCode, "the fix stands: " + fixedAgain);
     }
 
     /// <summary>T059: a row whose speaker has a sheet and no record yet stands with a note, so two records that name each other can be written one at a time.</summary>
@@ -134,6 +166,15 @@ public abstract class RecordsEditedContract
         var other = EditRecord("hessa-kettering.json", hessa, hessa + ",\n    " + """{ "kind": "usage", "from": "Grumbald", "word": "Cook", "source": "s6.1" }""");
         Assert.AreEqual(0, other.ExitCode, other.ToString());
         Assert.AreEqual("", other.Stdout, "the note is for the record edited only");
+
+        string path = Path.Combine(Root, "records", "pim-kettering.json");
+        string original = File.ReadAllText(path);
+        File.WriteAllText(path, original.Replace("\"s3.3\" }", "\"s3.4\" }"));
+        var input = System.Text.Json.Nodes.JsonNode.Parse(RecordFixtures.Edited(_folder, "Edit", path, "\"s3.3\" }", "\"s3.4\" }"))!;
+        input["tool_response"] = new System.Text.Json.Nodes.JsonObject { ["filePath"] = path, ["originalFile"] = original };
+        var again = Edited(input.ToJsonString());
+        Assert.AreEqual(0, again.ExitCode, again.ToString());
+        Assert.AreEqual("", again.Stdout, "the note is given once, not on every edit of the record (T078)");
     }
 
     [TestMethod]

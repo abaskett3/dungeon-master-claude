@@ -1111,3 +1111,28 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - That Claude Code gives a `PostToolUse` hook `tool_response.originalFile` is unverified. The play logs' tool results hold it for Edit and Write, and a probe of the hook's input was not run.
   - Without it, a deletion inside a quotation's words is not caught.
 - **Source:** Issue #297; the code review of PR #298; `specs/032-who-calls-whom/tasks.md` Phase 12; `src/Dmc.Cli/PersonRecords/`; `src/Dmc.Cli/Retrieval/RowsReminder.cs`.
+
+## The code review of PR #299: simpler where the fixes had grown (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Seven fixes (tasks T073 to T079):
+  - `dmc records edited` finds an edit's new quotations against the file as it was only when the hook is given it (`tool_response.originalFile`) and it was a record; otherwise it counts them in the edit's own text. Undoing the edit is kept only for the notes, where a wrong guess costs a repeated note.
+  - The scene in play counts in every check again, undoing T067.
+  - Migration 010's shape-only check takes an unseen speaker only in a campaign linked to another.
+  - The old file name passes only with a stem, and `records show` finds it.
+  - A heading's number is read with `TryParse`, its pattern built from `ReadSet.ScenePattern`.
+  - The note on a person with no record yet is given once.
+  - One test for a person's sheet file.
+- **Reason:**
+  - The review of #299 found that undoing an edit decided wrongly in three ways. A record the edit before left broken could not be fixed, because the broken text did not parse and every quotation counted as new. An undo that found nothing let a made-up quotation through. An undo at the wrong place refused an earlier session's quotation.
+  - The rewind runs the full save's check mid-session, before the scene's block is written.
+  - Taking every speaker in a shape-only check let a misspelled speaker through in a campaign that continues none.
+  - An empty old file name passed.
+  - A heading with an overflowing number crashed the check.
+  - The maintainer chose the simpler rule over a fourth round of fixes to the undo (2026-11-28).
+- **Rejected:** Keeping the undo with more guards (each round of fixes to it had brought new failures); a `--in-play` flag for the rewind's check (a kit change for a narrow case).
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Limits:**
+  - Without `originalFile`, an edit of part of an existing quotation's words, or a deletion inside them, is not caught; the rules already forbid it. That the hook is given `originalFile` is unverified.
+  - A row citing the scene after a full save's last one passes until the next scene is logged.
+- **Source:** Issue #297; the code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 13.

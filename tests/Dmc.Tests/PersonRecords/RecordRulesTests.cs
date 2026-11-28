@@ -106,19 +106,18 @@ public sealed class RecordRulesTests
             With("mother-gorse.json", """{ "person": "Mother Gorse", "of": "nowhere", "rows": [], "limits": [] }""").Errors.Single());
 
     /// <summary>
-    /// T061 and T064: a scene is one of the log's real headings, not the template's commented <c>### Scene N:</c>, and
-    /// the scene in play (the one after the latest session's last heading) counts before its block is written.
+    /// T061, T064 and T074: a scene is one of the log's real headings, not the template's commented <c>### Scene N:</c>
+    /// nor one whose number overflows, and the scene in play (the one after the latest session's last heading) counts
+    /// before its block is written, in every check: the rewind runs the full save's check mid-session.
     /// </summary>
     [TestMethod]
     public void AScenesHeadingMustBeRealAndTheSceneInPlayCounts()
     {
         File.WriteAllText(Path.Combine(Root, "story", "sessions", "session-007.md"),
-            "# Session 7\n\n## Scenes\n\n<!--\n### Scene N: short title (location, in-world time)\n-->\n\n### Scene 1: an invented scene (the lock)\n");
-        var book = SceneBook.For(_folder, RecordFixtures.Campaign, inPlay: true);
+            "# Session 7\n\n## Scenes\n\n<!--\n### Scene N: short title (location, in-world time)\n-->\n\n### Scene 1: an invented scene (the lock)\n\n### Scene 99999999999: a typo\n");
+        var book = SceneBook.For(_folder, RecordFixtures.Campaign);
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 1)));
         Assert.IsNull(book.Missing(new RecordSource.SceneRef(null, 7, 2)), "the scene in play");
-        Assert.AreEqual("scene s7.2 is not in the session logs", SceneBook.For(_folder, RecordFixtures.Campaign).Missing(new RecordSource.SceneRef(null, 7, 2)),
-            "the full save's check, run after the scene's block is written, does not take the scene in play");
         Assert.AreEqual("scene s7.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 7, 3)));
         Assert.AreEqual("scene s6.7 is not in the session logs", book.Missing(new RecordSource.SceneRef(null, 6, 7)), "not the latest session");
         Assert.AreEqual("scene kettle-before s2.3 is not in the session logs", book.Missing(new RecordSource.SceneRef(RecordFixtures.Earlier, 2, 3)), "not a campaign this one continues' scene in play");
@@ -158,15 +157,22 @@ public sealed class RecordRulesTests
         Assert.AreEqual("shalefire-shale-stoutheart.json", RecordFiles.Slug("Shalefire \"Shale\" Stoutheart"));
         Assert.HasCount(0, With("la.json", """{ "person": "Éla", "rows": [ { "kind": "name", "from": "anyone", "word": "Éla", "source": "setup" } ], "limits": [] }""").Errors,
             "a record written under the old file name still passes");
+        CollectionAssert.Contains(With(".json", """{ "person": "Ясна", "rows": [], "limits": [] }""").Errors,
+            "records/.json: the record of \"Ясна\" must be records/ясна.json", "an old file name with no stem does not pass");
     }
 
-    /// <summary>A check of shape alone (migration 010's records-in-place) cannot see an earlier campaign, so it takes any named speaker.</summary>
+    /// <summary>
+    /// T070 and T075: a check of shape alone (migration 010's records-in-place) cannot see a linked campaign, so in a
+    /// campaign that continues another it takes any named speaker; in one that continues none, a speaker with no record
+    /// is still refused.
+    /// </summary>
     [TestMethod]
-    public void AShapeOnlyCheckTakesASpeakerItCannotSee()
+    public void AShapeOnlyCheckTakesASpeakerItCannotSeeOnlyInALinkedCampaign()
     {
         var record = new PersonRecord(RecordFixtures.Campaign, "pim-kettering.json", "Pim Kettering", null,
             [new Row("usage", "Old Wick", "Minnow", null, ["Old Wick"], "kettle-before s2.1", [])], [], []);
-        Assert.HasCount(0, RecordRules.Check(SceneBook.Lenient(), [record]).Errors);
+        Assert.HasCount(0, RecordRules.Check(SceneBook.Lenient(continues: true), [record]).Errors);
+        StringAssert.StartsWith(RecordRules.Check(SceneBook.Lenient(), [record]).Errors.First(), "records/pim-kettering.json row 1 (\"Minnow\"): speaker \"Old Wick\" is not a person of the records");
     }
 
     /// <summary>A minor-NPC list or a history file is no person with a sheet.</summary>

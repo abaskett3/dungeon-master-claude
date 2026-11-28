@@ -77,18 +77,22 @@ internal static partial class RecordEdit
         var loaded = RecordFiles.Read(campaignFolder);
         // A person with a sheet and no record yet is a note here, not a refusal (T059), so two records that name each
         // other can be written one at a time; the full save's check still refuses the row until the record exists.
-        var outcome = RecordRules.Check(SceneBook.For(folder, campaign, inPlay: true), loaded.Records, RecordCheck.SheetTitles(campaignFolder).ToList());
+        var scenes = SceneBook.For(folder, campaign);
+        var pending = RecordCheck.SheetTitles(campaignFolder).ToList();
+        var outcome = RecordRules.Check(scenes, loaded.Records, pending);
         var errors = loaded.Errors.Concat(outcome.Errors).ToList();
         if (errors.Count > 0)
             return new Outcome($"dmc records: {errors[0]}. Fix the record now, or put it back as it was.", null);
 
         string fileName = Path.GetFileName(path);
         string now = File.Exists(path) ? File.ReadAllText(path) : "";
-        string? before = Before(response, tool, toolName, now);
-        RecordFiles.Parse(campaign, fileName, before ?? "", out var previous);
         var current = loaded.Records.FirstOrDefault(r => r.FileName.Equals(fileName, StringComparison.Ordinal));
-
-        var added = before is null ? CountedQuotations(current, tool, toolName) : NewQuotations(current, previous);
+        string? original = OriginalFile(response);
+        // The new quotations: exact against the file as it was, when the hook is given it and it was a record; else
+        // counted in the edit's own text, so a record left broken by the edit before can still be fixed (T073).
+        PersonRecord? exact = null;
+        bool known = original is not null && (original.Length == 0 || RecordFiles.Parse(campaign, fileName, original, out exact) is null);
+        var added = known ? NewQuotations(current, exact) : CountedQuotations(current, tool, toolName);
         if (added.Count > 0 && !string.IsNullOrEmpty(transcript))
         {
             string log = Commands.ContextCheckCommand.ExpandUser(transcript, OperatingSystem.IsWindows());
@@ -101,9 +105,12 @@ internal static partial class RecordEdit
             }
         }
 
+        // The notes: only those the edit brings, against the records as they were (the file as it was, or the edit
+        // undone; a wrong guess here costs only a repeated note). A note on a person with no record yet is given for the
+        // record edited only, and once (T068, T078).
+        RecordFiles.Parse(campaign, fileName, original ?? Undone(now, tool, toolName), out var previous);
         var others = loaded.Records.Where(r => !r.FileName.Equals(fileName, StringComparison.Ordinal)).ToList();
-        var notesBefore = RecordRules.Notes(previous is null ? others : [.. others, previous]);
-        // A note on a person with no record yet is given for the record just edited only, not again on every edit of another.
+        var notesBefore = RecordRules.Check(scenes, previous is null ? others : [.. others, previous], pending).Notes;
         string label = $"{RecordFiles.Folder}/{fileName} ";
         var fresh = outcome.Notes.Except(notesBefore, StringComparer.Ordinal)
             .Where(n => !RecordRules.IsWaitingNote(n) || n.StartsWith(label, StringComparison.Ordinal)).ToList();
@@ -111,32 +118,32 @@ internal static partial class RecordEdit
     }
 
     /// <summary>
-    /// The record's text before this edit, or null when it cannot be known: Claude Code's <c>tool_response</c>
-    /// <c>originalFile</c> when the hook is given it (the play logs' tool results hold it for Edit and Write; that the
-    /// hook's input does too is unverified), empty when that is null (a new file); else the edit undone, for an Edit or
-    /// a MultiEdit whose new texts are not empty; empty for a Write (a new record); null for an edit that deletes text.
+    /// The file as it was before the edit, from Claude Code's <c>tool_response.originalFile</c>: empty when that is null
+    /// (a new file), null when the hook is not given it. The play logs' tool results hold it for Edit and Write; that
+    /// the hook's input does too is unverified, so everything here works without it.
     /// </summary>
     /// <param name="response">The hook's <c>tool_response</c>, if any.</param>
+    static string? OriginalFile(JsonElement? response) =>
+        response is { ValueKind: JsonValueKind.Object } r && r.TryGetProperty("originalFile", out var original)
+            ? original.ValueKind switch { JsonValueKind.String => original.GetString(), JsonValueKind.Null => "", _ => null }
+            : null;
+
+    /// <summary>
+    /// The file with an Edit or MultiEdit undone, for the notes only: each new text put back as its old text, the first
+    /// match (every match for <c>replace_all</c>). Empty for a Write, a new record. It may be wrong where a new text
+    /// occurs more than once; the notes then print once more.
+    /// </summary>
+    /// <param name="now">The file's text now.</param>
     /// <param name="tool">The hook's <c>tool_input</c>.</param>
     /// <param name="toolName">The tool's name.</param>
-    /// <param name="now">The file's text now.</param>
-    static string? Before(JsonElement? response, JsonElement tool, string toolName, string now)
+    static string Undone(string now, JsonElement tool, string toolName)
     {
-        if (response is { ValueKind: JsonValueKind.Object } r && r.TryGetProperty("originalFile", out var original))
-        {
-            if (original.ValueKind == JsonValueKind.String)
-                return original.GetString();
-            if (original.ValueKind == JsonValueKind.Null)
-                return "";
-        }
-        var edits = Edits(tool, toolName);
-        if (edits is null)
-            return toolName == "Write" ? "" : null;
-        if (edits.Count == 0 || edits.Any(e => e.New.Length == 0))
-            return null;
+        if (Edits(tool, toolName) is not { } edits)
+            return "";
         string text = now;
         foreach (var (old, @new, all) in Enumerable.Reverse(edits))
-            text = all ? text.Replace(@new, old, StringComparison.Ordinal) : ReplaceFirst(text, @new, old);
+            if (@new.Length > 0)
+                text = all ? text.Replace(@new, old, StringComparison.Ordinal) : ReplaceFirst(text, @new, old);
         return text;
     }
 
@@ -158,9 +165,9 @@ internal static partial class RecordEdit
     }
 
     /// <summary>
-    /// The quotations of the player this edit adds (T058), by their words, not by where they are, so a row that moves
-    /// keeps its quotation and a quotation whose words the edit changed is new: each of the record's quotations whose
-    /// words were not a quotation of the record before, counted as often as they occur.
+    /// The quotations of the player this edit adds, against the file as it was (T066): by their words, not by where
+    /// they are, so a row that moves keeps its quotation and a quotation whose words the edit changed is new; each of
+    /// the record's quotations whose words were not a quotation of the record before, counted as often as they occur.
     /// </summary>
     /// <param name="current">The record as it is now, or null.</param>
     /// <param name="previous">The record before the edit, or null for none.</param>
@@ -175,16 +182,18 @@ internal static partial class RecordEdit
     }
 
     /// <summary>
-    /// The quotations an edit adds when the record before it cannot be known (a deleting edit, with no
-    /// <c>originalFile</c>): those whose words the edit's new texts hold more often than its old texts. A deletion
-    /// inside a quotation's words is not caught.
+    /// The quotations an edit adds when the file as it was is not given or was not a record (T058, T073): for an Edit or
+    /// a MultiEdit, those whose words the edit's new texts hold more often than its old texts, so a row that moves or a
+    /// deleting edit adds none; for a Write, every quotation. An edit of part of a quotation's words, or a deletion
+    /// inside them, is not caught this way; with <c>originalFile</c> it is.
     /// </summary>
     /// <param name="current">The record as it is now, or null.</param>
     /// <param name="tool">The hook's <c>tool_input</c>.</param>
     /// <param name="toolName">The tool's name.</param>
     static List<(string Where, string Words)> CountedQuotations(PersonRecord? current, JsonElement tool, string toolName)
     {
-        var edits = Edits(tool, toolName) ?? [];
+        if (Edits(tool, toolName) is not { } edits)
+            return Quotations(current).ToList();
         string oldText = FoldText(string.Join(" ", edits.Select(e => JsonUnescape(e.Old))));
         string newText = FoldText(string.Join(" ", edits.Select(e => JsonUnescape(e.New))));
         return Quotations(current).Where(q => Count(newText, FoldText(q.Words)) > Count(oldText, FoldText(q.Words))).ToList();

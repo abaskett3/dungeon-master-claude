@@ -102,6 +102,21 @@ public abstract class RecordsCommandContract
         Assert.AreEqual($"no record for \"Quenby\" (dmc records show {RecordFixtures.Campaign} prints everyone)", some.StdoutLines[^1]);
     }
 
+    /// <summary>
+    /// T076 and T083: <c>show</c> finds a record by the file name from before T063 (ASCII letters and digits only), but a
+    /// record whose file name is the one asked for comes first.
+    /// </summary>
+    [TestMethod]
+    public void ShowFindsARecordByItsOldFileNameAfterOneWithThatName()
+    {
+        string records = Path.Combine(Folder, "adventures", RecordFixtures.Campaign, "records");
+        File.WriteAllText(Path.Combine(records, "nlé.json"), """{ "person": "Nlé", "rows": [ { "kind": "name", "from": "anyone", "word": "Nlé", "source": "setup" } ], "limits": [] }""");
+        string First(string name) => Records("show", RecordFixtures.Campaign, name, "--folder", Folder).StdoutLines[0];
+        Assert.AreEqual("Nlé, called:", First("nl.json"), "the old file name");
+        File.WriteAllText(Path.Combine(records, "nl.json"), """{ "person": "Nl", "rows": [ { "kind": "name", "from": "anyone", "word": "Nl", "source": "setup" } ], "limits": [] }""");
+        Assert.AreEqual("Nl, called:", First("nl.json"), "the name as it is now first");
+    }
+
     [TestMethod]
     public void AUsageMistakeIsExitCode2AndAMissingPersonExitCode1()
     {

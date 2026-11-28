@@ -190,3 +190,33 @@ Kettering, Ilvane Vell, Grumbald, Nettlebone, Quenby Tolliver).
 - [X] T062 Measure SC-004 again after T055 and T057 on the migrated copy, and record it in `specs/032-who-calls-whom/spec.md` per SC-004 (partial); +2 tokens per turn on average, max 683, as before
 - [X] T063 Keep every letter and digit in a record's file name, lower-cased, so two persons never share one, in `src/Dmc.Cli/PersonRecords/RecordFiles.cs` per FR-001 (partial); `RecordRulesTests.AFileNameKeepsEveryLetter`
 - [X] T064 Accept a scene source for the scene in play, the one after the last heading of this campaign's latest session log, whose block is written when the scene ends, in `src/Dmc.Cli/PersonRecords/RecordRules.cs` (`SceneBook`), by the maintainer's ruling (2026-11-28) per FR-003 and FR-006 (partial); `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`
+
+## Phase 12: The code review of PR #298
+
+- [X] T065 Place each "says" line, then each limits line, on its own within the room, so one person's long limits never keep out a "says" line (`src/Dmc.Cli/Retrieval/RowsReminder.cs`; `RowsReminderCapTests.ALongLimitsLineNeverKeepsOutASaysLine`)
+- [X] T066 Find an edit's new quotations against the record as it was before the edit (`tool_response.originalFile` when given, else the edit undone), so a quotation whose words the edit changes is new (`src/Dmc.Cli/PersonRecords/RecordEdit.cs`; `RecordsEditedContract.AQuotationAnEditChangesIsNew`)
+- [X] T067 Take the scene in play only in the check after each edit, not in `dmc records check` at the full save (`RecordRules.cs`, `SceneBook`; `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T068 Give the note on a person with no record yet only for the record edited (`RecordEdit.cs`; `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T069 Accept a record's file name from before T063 (`RecordFiles.AsciiSlug`; `RecordRulesTests.AFileNameKeepsEveryLetter`)
+- [X] T070 Let migration 010's shape-only check take any speaker a row names, as it cannot see the campaigns this one continues (`RecordRules.cs`; `RecordRulesTests.AShapeOnlyCheckTakesASpeakerItCannotSee`)
+- [X] T071 Leave `minor-npcs.md` and history files out of the sheet titles (`RecordCheck.SheetTitles`; `RecordRulesTests.TheSheetTitlesNameOnlyPersons`)
+- [X] T072 Read a scene heading's number with a capture group (`SceneBook.SceneHeading`)
+
+## Phase 13: The code review of PR #299
+
+- [X] T073 Find an edit's new quotations against the file as it was only when the hook is given it (`tool_response.originalFile`) and it was a record, else count them in the edit's own text; drop undoing the edit for quotations, so a record left broken can be fixed and an undo that misses or hits the wrong place decides nothing (`RecordEdit.cs`; `RecordsEditedContract.ARecordLeftBrokenCanBeFixed`, `AQuotationAnEditChangesIsNewWhenTheHookIsGivenTheFileAsItWas`)
+- [X] T074 Take the scene in play in every check again, undoing T067: the rewind runs the full save's check mid-session (`SceneBook`; `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T075 Let the shape-only check take an unseen speaker only in a campaign linked to another (`MigrationChecks.LinksAnother`, `SceneBook.Lenient`; `RecordRulesTests.AShapeOnlyCheckTakesASpeakerItCannotSeeOnlyInALinkedCampaign`)
+- [X] T076 Accept the old file name only with a stem, and find a record by it in `dmc records show` (`RecordRules.cs`, `RecordsCommand.cs`; `RecordRulesTests.AFileNameKeepsEveryLetter`)
+- [X] T077 Read a heading's number with `TryParse`, its pattern built from `ReadSet.ScenePattern` (`SceneBook`; the scene test's overflowing heading)
+- [X] T078 Give the note on a person with no record yet once: the notes are compared with those of the records as they were (`RecordEdit.cs`; `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T079 One test for a person's sheet file, `RecordFiles.IsPersonSheet`, in `RecordCheck.cs`; the rows part's `IsFirst` comment brought up to date
+
+## Phase 14: The code review of PR #299, second round
+
+- [X] T080 Take an unseen speaker in the shape-only check only when the campaign continues another, as dmc reads the Continues line (`CampaignLinks.ContinuesOf`): the template's `none` and a side or world link are not one (`MigrationChecks.ContinuesAnother`; `MigrationChecksTests.RecordsInPlaceTakesAnUnseenSpeakerOnlyInASequel`)
+- [X] T081 Read a session file's number with `TryParse`, so one that overflows is not the latest session (`SceneBook.Latest`; the overflowing file in `RecordRulesTests.AScenesHeadingMustBeRealAndTheSceneInPlayCounts`)
+- [X] T082 Compare the notes without their row's number, so a row that moves keeps its note (`RecordEdit.Unnumbered`; the moved row in `RecordsEditedContract.ASpeakerWithASheetAndNoRecordYetStandsWithANote`)
+- [X] T083 In `dmc records show`, try the file name as it is now before the one from before T063 (`RecordsCommand.Matches`; `RecordsCommandContract.ShowFindsARecordByItsOldFileNameAfterOneWithThatName`)
+- [X] T084 Write the old file name's stem test as `".json".Length` (`RecordRules.cs`)
+- [X] T085 Say in `Undone`'s comment that a deletion is not undone and a note may be missed; the roadmap row and the decision record's limits brought up to date

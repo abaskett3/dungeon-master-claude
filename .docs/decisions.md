@@ -1083,3 +1083,78 @@ This log is for contributors who want to know why the toolkit is the way it is b
   - A name written with a combining accent gets a different file name from the same name composed: `dmc` runs in invariant globalization mode, which does not compose.
   - The scene in play is accepted for this campaign only, and only in its latest session log.
 - **Source:** Issue #297; PR #296's code review; `specs/032-who-calls-whom/tasks.md` Phase 11; `src/Dmc.Cli/Retrieval/RowsReminder.cs`; `src/Dmc.Cli/PersonRecords/RecordEdit.cs`, `RecordRules.cs`, `RecordFiles.cs`.
+
+## The code review of PR #298: the record checks' remaining gaps (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Eight fixes (tasks T065 to T072):
+  - The rows part places every "says" line, then every limits line, each on its own within the room, then the rest.
+  - `dmc records edited` finds new quotations against the record as it was before the edit: the hook's `tool_response.originalFile` when given, else the edit undone.
+  - The scene in play counts in the check after each edit only.
+  - The note on a person with no record yet is given only for the record edited.
+  - A record's file name from before T063 still passes.
+  - Migration 010's shape-only check takes any speaker a row names.
+  - `minor-npcs.md` and history files are not sheet titles.
+  - A scene heading's number is read with a capture group.
+- **Reason:**
+  - The review of #298 found that a long limits line could keep out a "says" line.
+  - An Edit of part of a quotation ("lass" to "lad") passed as old.
+  - The full save took a scene that does not exist.
+  - The note on a waiting record repeated on every edit of any record.
+  - A record written under the old file name would be refused, and so would every edit of the campaign.
+  - `records-in-place` still refused a sequel's carried-over speakers.
+  - "Minor NPCs" counted as a person.
+  - The maintainer approved the eight fixes (2026-11-28).
+- **Rejected:** Reprinting a scene's blocks on a later return to the same people, since the rows are still in the context until a compaction, which clears what was shown. Caching the linked records and sheet titles, which only cost speed.
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Limits:**
+  - That Claude Code gives a `PostToolUse` hook `tool_response.originalFile` is unverified. The play logs' tool results hold it for Edit and Write, and a probe of the hook's input was not run.
+  - Without it, a deletion inside a quotation's words is not caught.
+- **Source:** Issue #297; the code review of PR #298; `specs/032-who-calls-whom/tasks.md` Phase 12; `src/Dmc.Cli/PersonRecords/`; `src/Dmc.Cli/Retrieval/RowsReminder.cs`.
+
+## The code review of PR #299: simpler where the fixes had grown (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Seven fixes (tasks T073 to T079):
+  - `dmc records edited` finds an edit's new quotations against the file as it was only when the hook is given it (`tool_response.originalFile`) and it was a record; otherwise it counts them in the edit's own text. Undoing the edit is kept only for the notes, where a wrong guess costs a repeated note.
+  - The scene in play counts in every check again, undoing T067.
+  - Migration 010's shape-only check takes an unseen speaker only in a campaign linked to another.
+  - The old file name passes only with a stem, and `records show` finds it.
+  - A heading's number is read with `TryParse`, its pattern built from `ReadSet.ScenePattern`.
+  - The note on a person with no record yet is given once.
+  - One test for a person's sheet file.
+- **Reason:**
+  - The review of #299 found that undoing an edit decided wrongly in three ways. A record the edit before left broken could not be fixed, because the broken text did not parse and every quotation counted as new. An undo that found nothing let a made-up quotation through. An undo at the wrong place refused an earlier session's quotation.
+  - The rewind runs the full save's check mid-session, before the scene's block is written.
+  - Taking every speaker in a shape-only check let a misspelled speaker through in a campaign that continues none.
+  - An empty old file name passed.
+  - A heading with an overflowing number crashed the check.
+  - The maintainer chose the simpler rule over a fourth round of fixes to the undo (2026-11-28).
+- **Rejected:** Keeping the undo with more guards (each round of fixes to it had brought new failures); a `--in-play` flag for the rewind's check (a kit change for a narrow case).
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Limits:**
+  - Without `originalFile`, an edit of part of an existing quotation's words, or a deletion inside them, is not caught; the rules already forbid it. That the hook is given `originalFile` is unverified.
+  - A row citing the scene after a full save's last one passes until the next scene is logged.
+- **Source:** Issue #297; the code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 13.
+
+## The code review of PR #299, second round (issue #297, spec 032)
+
+- **Date:** 2026-11-28
+- **Decision:** Six fixes (tasks T080 to T085):
+  - Migration 010's shape-only check takes an unseen speaker only when the campaign continues another, as dmc reads the Continues line.
+  - A session file whose number overflows is not the latest session.
+  - The edit hook compares notes without their row's number.
+  - `dmc records show` tries the file name as it is now before the old one.
+  - The old file name's stem test names `.json`'s length.
+  - Comments and the roadmap.
+- **Reason:**
+  - T075 read the Continuity lines with a parser of its own, which took the template's `none` as a link, so every campaign took unseen speakers. It also took side and world links, whose persons the check after each edit does not know, so the migration passed a speaker play then refused. `CampaignLinks.ContinuesOf` is the reading dmc uses when it follows links.
+  - T077 fixed an overflowing scene number, but not an overflowing session file's.
+  - A note on a person with no record yet names its row's number, so a row that moved gave it again.
+  - The review said an old name could find the wrong person before the exact one. With records named by their persons, the exact file sorts first, so this could not happen; the order now says so.
+- **Left, with the maintainer's agreement:**
+  - A refused edit stays in the file (a `PostToolUse` hook runs after the edit and cannot undo it). A later edit of the same record then takes a refused quotation as old: on both paths it is in the file as it was, or not in the edit's text. #298 had the same gap. Closing it needs a store of what was refused between edits.
+  - A row citing the scene after a full save's last one passes the save (T074). If that scene is never logged, every record edit after the next session begins is refused, naming that row, until it is fixed.
+  - Running the check twice per edit (speed only); one helper for a person's sheet in the seven other places that test it by hand; renaming old record files once instead of accepting the old name.
+- **Cost:** `kit/dm-rules.md` 0 bytes; no kit file changes.
+- **Source:** Issue #297; the second code review of PR #299; `specs/032-who-calls-whom/tasks.md` Phase 14.

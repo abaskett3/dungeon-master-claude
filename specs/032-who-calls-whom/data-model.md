@@ -6,7 +6,7 @@ the rules `dmc` holds them to.
 ## Record
 
 One person. File `adventures/<campaign>/records/<slug>.json`, where the slug is the person's name in lower case with
-each run of characters that are not letters, their marks or digits a hyphen, letters outside ASCII kept (T063)
+each run of characters that are not letters, their marks or digits a hyphen, letters outside ASCII kept (T063; the name it had before, ASCII letters and digits only, still passes when it has a stem, T069, T076)
 ("Captain Emmajeen Kole" → `captain-emmajeen-kole.json`, "Éla" → `éla.json`).
 
 | Field | Type | Rule |
@@ -45,8 +45,9 @@ person: the record's person is that to the speaker (on Dessa's record, from Tam,
 
 One of: `sN` or `sN.M` (a scene of this campaign); `<campaign> sN[.M]` (a scene of a linked earlier campaign);
 `player: "<the player's words>"`; `setup`; `inference`. A scene must exist in that campaign's session logs (research
-R2): a real `### Scene M:` heading of `session-NNN.md`, not the template's commented one (T061), or the scene in
-play, the one after the last heading of this campaign's latest session log, whose block is written when it ends (T064).
+R2): a real `### Scene M:` heading of `session-NNN.md`, not the template's commented one (T061), or the scene in play,
+the one after the last heading of this campaign's latest session log, whose block is written when it ends (T064; in
+every check, as the rewind runs the full save's mid-session, T074).
 
 ## Rules the check holds (refusals)
 
@@ -56,8 +57,10 @@ Checked over every record of the campaign, after each edit and at `dmc records c
 2. The file name is the person's slug; no two records name the same person.
 3. Each row has a valid kind, a word, a speaker that fits the kind, and a source (Source above).
 4. A speaker or `never` entry is a person with a record here or in a campaign this one continues (T060), `anyone`
-   (speaker only) or `group: …`. After an edit, a person with a sheet and no record yet is a note, not a refusal, so two
-   records that name each other can be written one at a time (T059); `dmc records check` refuses it.
+   (speaker only) or `group: …`. After an edit, a person with a sheet (not `minor-npcs.md` or a history file) and no record yet is a
+   note on the record edited, not a refusal, so two records that name each other can be written one at a time (T059,
+   T068, T071); `dmc records check` refuses it. Migration 010's `records-in-place`, which checks shape alone, takes
+   any speaker a row names in a campaign that continues another, as dmc reads the Continues line (T070, T075, T080).
 5. No row repeats another on the same record (same kind, speaker and word, ignoring case).
 6. No row's speaker is on the `never` list of a row with the same word on the same record.
 7. Each limit has text and a source.

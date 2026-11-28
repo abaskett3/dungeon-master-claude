@@ -122,6 +122,8 @@ A homebrew arc is built on a story structure, named on the Arc plan's first line
 
 **Revising.** When play makes a stage still ahead untrue (an antagonist dead, the goal changed, a stage put off), revise; never restart. Keep every stage, thread, secret, foreshadowing line and character arc that play did not contradict, word for word. Change only what is untrue. Grow anything new from what has happened and the threads already planted: a new antagonist or stage comes out of established events. Keep the arc's stakes, its theme and every beat not yet played, through a resolution: the arc still escalates and still ends. Re-anchor each milestone not yet awarded in the revised stages. A revision changes what the world does next, never what the player chose or what is canon.
 
+**After a module.** When a module is finished and no arc follows it yet, ask the player once, out of character, whether to go on in its world with an arc you plan, or to take the characters to another setting (`dmc-close-campaign`, then a sequel, § 1c). Grow an arc in its world from what the module and play left there: its people, places and open threads. Keep the world's character: a few newcomers fit, a world overrun by them does not.
+
 ## 5. Begin
 
 Confirm the player is ready, then open the first scene.

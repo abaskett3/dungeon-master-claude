@@ -1394,7 +1394,8 @@ public sealed partial class ToolkitTests
     /// on an existing line (about 402 more tokens per turn); and spec 017 (FR-009) lowered it by 12: 16 when the fallback
     /// for a missing <c>dmc</c> went, less 4 when its review named a missing <c>dmc</c> as one not found or that will
     /// not start. Spec 022 (FR-004) kept it: the Present-line read of a sheet names the play card (+33), " as before"
-    /// left the recall fallback (-10) and ": it is closed for good" the closed-campaign rule (-23).
+    /// left the recall fallback (-10) and ": it is closed for good" the closed-campaign rule (-23). Spec 035 (FR-008) kept it: the
+    /// module-world bullet is paid for by cuts in the same section, leaving the file at 32,503 bytes.
     /// </summary>
     const int DmRulesBytesAllowed = 32_510;
 
@@ -1456,6 +1457,27 @@ public sealed partial class ToolkitTests
         string section = end < 0 ? rules[start..] : rules[start..end];
         StringAssert.Contains(section, "\"yes, and\"", "spec 014 FR-001");
         StringAssert.Contains(section, "\"no, but\"", "spec 014 FR-002");
+    }
+
+    /// <summary>
+    /// Spec 035 (issue #215, constitution Dungeon Master 3): § Running a published module keeps the party in the module's
+    /// world, turned back in the fiction and never by an out-of-character no, with its monsters and encounters from the
+    /// module and the rest from it first; and <c>dmc-new-campaign</c> step 4a keeps the world's character after the module
+    /// ends and offers the player another setting. A later cut to the always-loaded rules cannot drop them silently.
+    /// </summary>
+    [TestMethod]
+    public void AModuleCampaignStaysInItsModulesWorld()
+    {
+        string module = SectionOf(Read("kit/dm-rules.md"), "Running a published module");
+        StringAssert.Contains(module, "**Leave the script, not the world.**", "spec 035 FR-001");
+        StringAssert.Contains(module, "A party leaving its world turns back for a safe in-world reason", "spec 035 FR-002");
+        StringAssert.Contains(module, "never an out-of-character no; a border the module closes holds.", "spec 035 FR-002, FR-003");
+        StringAssert.Contains(module, "Monsters and encounters are the module's; NPCs, races, spells and abilities from it first, then core rules or another module; invent only a minor NPC none of its fits.", "spec 035 FR-004, FR-005");
+        Assert.IsFalse(module.Contains("improvise in keeping with it", StringComparison.Ordinal), "spec 035 FR-001: the old line that let play leave the world is back");
+        string arc = SectionOf(Read("kit/skills/dmc-new-campaign/SKILL.md"), "4a. Designing the arc");
+        StringAssert.Contains(arc, "**After a module.**", "spec 035 FR-006");
+        StringAssert.Contains(arc, "to take the characters to another setting (`dmc-close-campaign`, then a sequel, § 1c)", "spec 035 FR-007");
+        StringAssert.Contains(arc, "a few newcomers fit, a world overrun by them does not.", "spec 035 FR-006");
     }
 
     /// <summary>
